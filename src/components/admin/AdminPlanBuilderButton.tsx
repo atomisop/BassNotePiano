@@ -47,6 +47,8 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   const [charge, setCharge] = useState(true);
   // An existing plan is rebuilt around ONE class that was already taught: its day is where the billing cycle starts.
   const [taughtOne, setTaughtOne] = useState("");
+  // The billing cycle starts here (the taught day unless it is changed): the next bill is 28 days after it.
+  const [cycleStart, setCycleStart] = useState("");
   const [recordPay, setRecordPay] = useState(false);
   const [preview, setPreview] = useState<PlanBuilderPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +72,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     setStartDate(c.currentStart ?? todayEt());
     setTaught([]);
     setTaughtOne("");
+    setCycleStart("");
     setRecordPay(c.openPayment);
     setCharge(true);
     const first = c.slot ?? c.choices[0];
@@ -81,10 +84,10 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     if (!scheduleId || chunk === undefined) return null;
     if (ctx?.mode === "existing") {
       if (!taughtOne) return null;
-      return { userId, term, scheduleId, chunkIndex: Number(chunk), startDate: taughtOne, installmentsPaid: paid, taughtDates: [taughtOne], chargeTaught: charge, recordPayment: recordPay };
+      return { userId, term, scheduleId, chunkIndex: Number(chunk), startDate: cycleStart && cycleStart <= taughtOne ? cycleStart : taughtOne, installmentsPaid: paid, taughtDates: [taughtOne], chargeTaught: charge, recordPayment: recordPay };
     }
     return { userId, term, scheduleId, chunkIndex: Number(chunk), startDate, installmentsPaid: paid, taughtDates: taught, chargeTaught: charge };
-  }, [ctx, userId, term, slotKey, startDate, paid, taught, charge, taughtOne, recordPay]);
+  }, [ctx, userId, term, slotKey, startDate, paid, taught, charge, taughtOne, cycleStart, recordPay]);
 
   // The timeline follows the form, a moment after the last change.
   useEffect(() => {
@@ -126,7 +129,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     router.refresh();
   }
 
-  const field = "min-w-0 rounded-lg bg-neu-base px-3 py-2 text-base text-slate-100 shadow-pressed-low";
+  const field = "min-h-11 min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-base text-slate-100 shadow-pressed-low";
 
   return (
     <>
@@ -139,11 +142,11 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
         onOpenChange={(next) => !busy && setOpen(next)}
         title={ctx ? `${ctx.mode === "new" ? "Build a plan for" : "Rebuild the plan for"} ${ctx.studentName}` : "Plan builder"}
         footer={
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => setOpen(false)}>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <Button type="button" variant="secondary" disabled={busy} onClick={() => setOpen(false)} className="w-full sm:w-auto">
               Never mind
             </Button>
-            <Button type="button" disabled={!preview || busy} loading={busy} onClick={apply}>
+            <Button type="button" disabled={!preview || busy} loading={busy} onClick={apply} className="w-full sm:w-auto">
               {ctx?.mode === "new" ? "Create the plan" : "Apply"}
             </Button>
           </div>
@@ -156,14 +159,21 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
             {ctx.mode === "existing" ? (
               <>
                 <p className="flex items-center gap-1 text-small text-slate-400">
-                  Line her plan up with the class you taught
+                  Line the plan up with the class you taught
                   <Hint label="What this does">
-                    Pick the day you already taught. That class is charged (one credit) and counts as class 1 of her 28 days, her next bill lands 28 days after it, and her other weekly classes are booked from there. Nothing changes until you press Apply.
+                    Pick the day you already taught. That class is charged (one credit) and counts as class 1 of the 28 days. The billing cycle starts on the date you choose below (the taught day by default), the next bill lands 28 days after it, and the other weekly classes are booked from there. Nothing changes until you press Apply.
                   </Hint>
                 </p>
                 <label className="block">
                   <span className="mb-1 block text-small font-medium text-slate-200">Class already taught on</span>
                   <input type="date" value={taughtOne} max={todayEt()} onChange={(e) => setTaughtOne(e.target.value)} className={`${field} w-full`} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
+                    Billing cycle starts on
+                    <Hint label="About the billing cycle">The next bill lands exactly 28 days after this date. It is the taught day unless you pick an earlier one (within the same 28 days).</Hint>
+                  </span>
+                  <input type="date" value={cycleStart || taughtOne} min={taughtOne ? new Date(new Date(`${taughtOne}T12:00:00Z`).getTime() - 27 * 86_400_000).toISOString().slice(0, 10) : undefined} max={taughtOne || todayEt()} disabled={!taughtOne} onChange={(e) => setCycleStart(e.target.value)} className={`${field} w-full disabled:opacity-50`} />
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-small font-medium text-slate-200">Weekly time (every week after)</span>
@@ -183,7 +193,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   {ctx.openPayment && (
                     <label className="flex items-center gap-2 text-small text-slate-200">
                       <input type="checkbox" checked={recordPay} onChange={(e) => setRecordPay(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
-                      Her bill is not marked paid yet: mark {usd(ctx.amountCents)} received
+                      The bill is not marked paid yet: mark {usd(ctx.amountCents)} received
                     </label>
                   )}
                   <p className="text-small text-slate-500">
@@ -238,9 +248,9 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   <div>
                     <span className="mb-1 block text-small font-medium text-slate-200">Bills paid</span>
                     <div className="flex items-center gap-2">
-                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-9 w-9 rounded-lg bg-neu-base text-slate-200 shadow-raised-low">-</button>
+                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-lg text-slate-200 shadow-raised-low">-</button>
                       <span className="min-w-10 text-center text-body font-semibold tabular-nums text-slate-50">{paid} of {cycles}</span>
-                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-9 w-9 rounded-lg bg-neu-base text-slate-200 shadow-raised-low">+</button>
+                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-lg text-slate-200 shadow-raised-low">+</button>
                     </div>
                   </div>
                 </div>
@@ -266,7 +276,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                         setTaught((t) => [...t, taughtInput].sort());
                         setTaughtInput("");
                       }}
-                      className="tap inline-flex h-9 items-center gap-1 rounded-lg bg-neu-base px-2.5 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
+                      className="tap inline-flex h-11 items-center gap-1 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
                     >
                       <Plus aria-hidden className="h-3.5 w-3.5" />
                       Add
@@ -297,7 +307,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                 </p>
                 {preview.alreadyMarked.length > 0 && (
                   <p className="mt-1 text-small text-amber-300">
-                    {preview.alreadyMarked.map(dateLabel).join(", ")} is already marked present on her account, so it will not be charged again.
+                    {preview.alreadyMarked.map(dateLabel).join(", ")} is already marked present on the account, so it will not be charged again.
                   </p>
                 )}
                 <div className="mt-2 space-y-2">
@@ -307,9 +317,9 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                         <p className="text-small text-slate-400">
                           Cycle {c.number} · {dateLabel(c.startsOn)} to {dateLabel(c.endsOn)} · {c.paid ? "paid" : "not paid"}
                         </p>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {c.classes.map((k) => (
-                            <span key={k.date} className={`rounded-lg px-2 py-1 text-small ${STATE[k.state].cls}`} title={STATE[k.state].label}>
+                            <span key={k.date} className={`rounded-lg px-2 py-1 text-[0.8125rem] leading-tight ${STATE[k.state].cls}`} title={STATE[k.state].label}>
                               {dateLabel(k.date)} · {STATE[k.state].label}
                             </span>
                           ))}

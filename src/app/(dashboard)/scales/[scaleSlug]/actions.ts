@@ -31,6 +31,7 @@ export async function submitQuizAction(scaleSlug: string, seed: number, answers:
 
   revalidatePath(`/scales/${scaleSlug}`);
   revalidatePath("/dashboard");
+  revalidatePath("/roadmap");
 
   return { passed, score, total };
 }
@@ -48,6 +49,7 @@ export async function markPracticeCompletedAction(scaleSlug: string) {
 
   revalidatePath(`/scales/${scaleSlug}`);
   revalidatePath("/dashboard");
+  revalidatePath("/roadmap");
 }
 
 /**
@@ -74,6 +76,7 @@ export async function markLessonCompleteAction(scaleSlug: string, lessonId: stri
 
   revalidatePath(`/scales/${scaleSlug}`);
   revalidatePath("/dashboard");
+  revalidatePath("/roadmap");
 }
 
 /**

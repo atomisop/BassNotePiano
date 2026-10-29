@@ -106,9 +106,43 @@ function DiscordCard() {
   );
 }
 
-type Slot = { id: string; node: (now: number | null) => ReactNode };
+type Rail = { icon: LucideIcon; label: string; href: string; count?: number; warn?: boolean; dot?: boolean };
+type Slot = { id: string; node: (now: number | null) => ReactNode; rail?: Rail };
+
+/** What matters most comes first: a stopped system, things waiting, today's classes, then the gentle nudges. The Discord invitation leads until it is linked. */
+const RANK: Record<string, number> = { discord: 0, jobsStopped: 1, needsYou: 2, todayClasses: 3, nextClass: 4, credits: 5, scaleUnlocked: 6, fifthClass: 7, continueLesson: 8, streak: 9, friendsPracticing: 10, scaleWaiting: 11 };
+
+function railFor(card: SidebarCard): Rail | undefined {
+  switch (card.kind) {
+    case "nextClass":
+      return { icon: CalendarCheck, label: "Next class", href: "/lessons", dot: true };
+    case "fifthClass":
+      return { icon: Plus, label: "Extra class available", href: "/lessons?tab=extra", dot: true };
+    case "scaleUnlocked":
+      return { icon: Sparkles, label: `${card.scaleCode} is open`, href: `/scales/${card.slug}`, dot: true };
+    case "scaleWaiting":
+      return { icon: Hourglass, label: "Waiting for your teacher", href: "/roadmap" };
+    case "streak":
+      return { icon: Flame, label: card.practicedToday ? "Practiced today" : "Practice today", href: "/practice", dot: !card.practicedToday };
+    case "continueLesson":
+      return { icon: PlayCircle, label: "Continue your lesson", href: `/scales/${card.slug}` };
+    case "friendsPracticing":
+      return { icon: Users, label: "Friends are practicing", href: "/friends", dot: true };
+    case "needsYou":
+      return { icon: Inbox, label: `${card.total} waiting`, href: card.items[0]?.href ?? "/admin", count: card.total, warn: true };
+    case "todayClasses":
+      return { icon: CalendarDays, label: `Today: ${card.count} ${card.count === 1 ? "class" : "classes"}`, href: "/admin/today", count: card.count };
+    case "jobsStopped":
+      return { icon: AlertTriangle, label: `${card.count} automatic ${card.count === 1 ? "task" : "tasks"} stopped`, href: "/admin#tasks", count: card.count, warn: true };
+  }
+}
 
 function slotFor(card: SidebarCard): Slot {
+  const slot = rawSlotFor(card);
+  return { ...slot, rail: railFor(card) };
+}
+
+function rawSlotFor(card: SidebarCard): Slot {
   switch (card.kind) {
     case "nextClass":
       return {
@@ -150,7 +184,7 @@ function slotFor(card: SidebarCard): Slot {
       return {
         id: "scaleWaiting",
         node: () => (
-          <Shell href="/dashboard" icon={Hourglass} label="Next scale">
+          <Shell href="/roadmap" icon={Hourglass} label="Next scale">
             <Big>{card.scaleCode} is done</Big>
             <Sub>Waiting for your teacher to open the next one.</Sub>
           </Shell>
@@ -250,6 +284,7 @@ function slotFor(card: SidebarCard): Slot {
 function creditsSlot(credits: number): Slot {
   return {
     id: "credits",
+    rail: { icon: Ticket, label: credits <= 0 ? "No class credits left" : "1 class credit left", href: "/lessons?tab=extra", warn: true, dot: true },
     node: () => (
       <Shell href="/lessons?tab=extra" icon={Ticket} label="Credits" cta="Get more">
         <Big>{credits <= 0 ? "No class credits left" : "1 class credit left"}</Big>
@@ -313,7 +348,7 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
   }, []);
 
   const slots: Slot[] = [];
-  if (status && !status.discordConnected) slots.push({ id: "discord", node: () => <DiscordCard /> });
+  if (status && !status.discordConnected) slots.push({ id: "discord", node: () => <DiscordCard />, rail: { icon: Plus, label: "Link your Discord", href: "/api/discord/connect", dot: true } });
   const server = cards.map(slotFor);
   if (!isAdmin && status && status.credits <= 1) {
     const at = server.findIndex((s) => s.id === "nextClass");
@@ -321,10 +356,42 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
   }
   slots.push(...server);
   if (slots.length === 0) return null;
+  // Most urgent first, so what needs attention is never hidden behind a gentler card.
+  slots.sort((a, b) => (RANK[a.id] ?? 99) - (RANK[b.id] ?? 99));
 
   const current = slots[Math.min(index, slots.length - 1)];
+  const rails = slots.filter((s): s is Slot & { rail: Rail } => Boolean(s.rail));
   return (
-    <div className="mt-auto">
+    <>
+    {/* When the sidebar is shrunk to icons: every card is still there as a small icon, with a count or a dot when it needs you. */}
+    {rails.length > 0 && (
+      <div className="sb-rail mt-auto" aria-label="Alerts">
+        {rails.map((s) => {
+          const Icon = s.rail.icon;
+          const body = (
+            <>
+              <Icon className={`h-[18px] w-[18px] ${s.rail.warn ? "text-red-300" : "text-slate-300"}`} strokeWidth={1.75} aria-hidden />
+              {s.rail.count !== undefined && s.rail.count > 0 ? (
+                <span className={`absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[0.625rem] font-bold leading-none ${s.rail.warn ? "bg-red-500 text-white" : "bg-signal text-slate-950"}`}>{s.rail.count > 9 ? "9+" : s.rail.count}</span>
+              ) : s.rail.dot ? (
+                <span aria-hidden className="absolute right-1 top-1 h-2 w-2 rounded-full bg-signal" />
+              ) : null}
+            </>
+          );
+          const cls = "tap press-soft relative flex h-10 w-10 items-center justify-center rounded-xl bg-neu-base shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+          return s.rail.href.startsWith("/api/") ? (
+            <a key={s.id} href={s.rail.href} title={s.rail.label} aria-label={s.rail.label} className={cls}>
+              {body}
+            </a>
+          ) : (
+            <Link key={s.id} href={s.rail.href} prefetch title={s.rail.label} aria-label={s.rail.label} className={cls}>
+              {body}
+            </Link>
+          );
+        })}
+      </div>
+    )}
+    <div className="sb-spotlight mt-auto">
       <div key={current.id}>{current.node(now)}</div>
       {slots.length > 1 && (
         <div className="mt-2 flex items-center justify-center gap-1" role="tablist" aria-label="Sidebar cards">
@@ -344,5 +411,6 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
         </div>
       )}
     </div>
+    </>
   );
 }

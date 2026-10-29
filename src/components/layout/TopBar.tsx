@@ -6,10 +6,11 @@ import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQui
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { Breadcrumb } from "./Breadcrumb";
-import { LiveClassesTopLink } from "./LiveClassesTopLink";
+import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { CreditsBadge } from "./CreditsBadge";
+import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
 import { SidebarToggle } from "./SidebarToggle";
 
@@ -71,9 +72,11 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-[45] flex h-12 items-center justify-between border-b border-[var(--neu-edge)] bg-[rgb(var(--ground)/0.72)] px-3 backdrop-blur-[20px] backdrop-saturate-[1.8] md:px-4 lg:border-transparent lg:bg-transparent lg:backdrop-blur-none lg:backdrop-saturate-100">
+    <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
+      {/* A floating pill, the same solid, lightly blurred material as the bottom dock: full width on phones (kept below the notch and Dynamic Island), centered and only as wide as what it holds from iPad up. The page scrolls under it. */}
+      <div data-glass="" className="app-dock pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
-      <div className="pointer-events-auto flex items-center gap-2">
+      <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
         <div className="md:hidden">
           <BrandMark />
@@ -81,11 +84,12 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         <SidebarToggle />
         <Breadcrumb />
       </div>
-      <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
+      <div className="relative z-10 flex items-center gap-1.5 min-[360px]:gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
             menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted
             (md:contents just removes their wrapper from the layout), so their panels still open from the menu and keep counting. */}
+        <StreakBadge />
         <CreditsBadge />
         <AskAiButton />
         {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}
@@ -103,9 +107,14 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             treatment as the bell right next to it, so the two read as one
             matched pair of icon buttons rather than two different styles. */}
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
-        <div className="flex items-center gap-1.5 rounded-2xl bg-neu-base p-1 shadow-pressed-low">
+        <div className="flex items-center gap-1.5">
         <div className="hidden md:contents">
-        {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
+        {/* Friends only where nothing else offers it: tablets (the dock has no Friends). From lg the sidebar has it; on phones the profile menu does.
+            No live classes button: Lessons is already in the dock and the sidebar. */}
+        <span className="contents lg:hidden">
+          <FriendsTopLink />
+        </span>
+        {isAdmin && <AdminTopLink />}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
@@ -116,6 +125,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         </div>
         <ProfileAvatarLink isAdmin={isAdmin} />
         </div>
+      </div>
       </div>
     </header>
   );

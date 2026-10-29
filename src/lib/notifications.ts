@@ -47,7 +47,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   ROLE_UPDATED: { label: "Go to admin panel", url: getAppUrl("/admin"), kind: "default" },
   FRIEND_REQUEST_RECEIVED: { label: "View request", url: getAppUrl("/friends#requests"), kind: "default" },
   FRIEND_REQUEST_ACCEPTED: { label: "Say hello", url: getAppUrl("/friends"), kind: "default" },
-  PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/dashboard"), kind: "default" },
+  PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/roadmap"), kind: "default" },
   PARENT_LINK_REQUEST: { label: "Answer the request", url: getAppUrl("/account?tab=account#parent-mode"), kind: "default" },
   PARENT_LINK_ACCEPTED: { label: "Open Parent mode", url: getAppUrl("/parent"), kind: "default" },
   BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
@@ -82,7 +82,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // family bundle recipient never paid anything themselves, so their own
   // billing history has nothing to do with this, the roadmap they can now
   // actually use does.
-  CURRICULUM_ACCESS_GRANTED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
+  CURRICULUM_ACCESS_GRANTED: { label: "Open your roadmap", url: getAppUrl("/roadmap"), kind: "default" },
   CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
   ACCOUNT_UPDATE: { label: "Open settings", url: getAppUrl("/account"), kind: "notice" },
   LESSON_BOOKING_CONFIRMED: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },

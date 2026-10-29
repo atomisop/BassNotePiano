@@ -89,12 +89,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="pad-safe-x shell-lock fixed inset-0 flex bg-ground">
-      {/* No photographic backdrop behind the app shell, deliberately. The
-          previous system wallpapered every authenticated page with a piano
-          photo; on paper that reads as a smudge under the text rather than
-          atmosphere, and it forced a heavy scrim that muddied every surface
-          sitting on it. Photography now appears only where it is the subject
-          (the marketing pages), never as a bed for UI. */}
+      {/* Plain ground, no photo or colored wallpaper behind the app (the owner's choice, 2026-10-29). */}
       {/* fixed inset-0, not a viewport-unit height: the shell is pinned to the
           visible viewport edges, so it can never be taller or shorter than
           what is on screen. Viewport units were the root cause of the strip
@@ -111,7 +106,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px here by sitting in flow. This padding reserves that same
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
-      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col pt-12 lg:pl-52">
+      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
@@ -121,7 +116,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:mb-3 lg:mr-3 lg:rounded-3xl lg:border lg:border-(--neu-edge) lg:bg-neu-base lg:px-8 lg:pb-8 lg:pt-6"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain app-scroll-under-bar px-4 pb-32 md:px-6 md:pb-32 lg:px-8 lg:pb-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
       <SwipeBack />
       <AutoRefresh />

@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
 import { useEffect, useState, type ReactNode } from "react";
 import { motion, useDragControls, useReducedMotion } from "framer-motion";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -65,7 +66,7 @@ export function Dialog({
             if (info.offset.y > 120 || info.velocity.y > 600) onOpenChange(false);
           }}
           className={cn(
-            "kb-lift fixed z-(--z-overlay) flex max-h-[90svh] flex-col bg-neu-base text-slate-100 shadow-raised-high outline-none",
+            "kb-lift fixed z-(--z-overlay) flex max-h-[90svh] flex-col text-slate-100 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] outline-none",
             // Phone: bottom sheet.
             "inset-x-0 bottom-0 rounded-t-sheet pb-[max(1.25rem,env(safe-area-inset-bottom))] data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom",
             // md and up: centered modal.
@@ -74,6 +75,7 @@ export function Dialog({
             className,
           )}
         >
+          <GlassLens radius={28} bezel={22} strength={14} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           <div onPointerDown={grab} aria-hidden className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 touch-none rounded-full bg-neu-base shadow-pressed-low md:hidden before:absolute before:inset-x-0 before:top-0 before:h-8 before:content-['']" />
           <div onPointerDown={grab} className="flex items-start justify-between gap-4 px-6 pt-5 max-md:touch-none">
             <div>

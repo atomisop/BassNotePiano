@@ -4,6 +4,7 @@ import * as React from "react"
 import * as SwitchPrimitives from "@radix-ui/react-switch"
 
 import { cn } from "@/lib/utils"
+import { GlassLens } from "@/components/ui/GlassLens"
 
 /**
  * A real toggle-switch primitive, track + animated thumb, on
@@ -31,7 +32,7 @@ const Switch = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
-      "peer relative inline-flex h-5 w-9 shrink-0 before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-[''] cursor-pointer items-center rounded-full bg-neu-base p-[2px] shadow-pressed-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+      "lg-ring peer relative inline-flex h-5 w-9 shrink-0 before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-[''] cursor-pointer items-center rounded-full bg-neu-base p-[2px] shadow-pressed-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
       className
     )}
     {...props}
@@ -39,9 +40,11 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        "pointer-events-none block h-4 w-4 rounded-full bg-neu-base shadow-raised-low ring-0 motion-safe:transition-[transform,background-color] data-[state=checked]:translate-x-4 data-[state=checked]:bg-signal data-[state=unchecked]:translate-x-0"
+        "pointer-events-none relative block h-4 w-4 rounded-full ring-0 motion-safe:transition-[transform,background-color] [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)] data-[state=checked]:translate-x-4 data-[state=checked]:bg-signal/70 data-[state=unchecked]:translate-x-0"
       )}
-    />
+    >
+      <GlassLens radius="full" bezel={5} strength={5} />
+    </SwitchPrimitives.Thumb>
   </SwitchPrimitives.Root>
 ))
 Switch.displayName = SwitchPrimitives.Root.displayName

@@ -12,6 +12,7 @@ import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
+import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { PasswordInput } from "@/components/ui/password-input";
 import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -54,6 +55,10 @@ export interface AccountOverview {
   createdAt: string;
   phone: PhoneState;
   discordUsername: string | null;
+  /** They took themselves off the studio leaderboard. */
+  leaderboardHidden: boolean;
+  /** A child linked to a parent: never on the leaderboard, so there is nothing to switch. */
+  leaderboardLinkedChild: boolean;
 }
 
 interface AccountSettingsProps {
@@ -470,6 +475,13 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
       </AccountGroup>
 
       <AccountGroup id="privacy" title="Privacy & data">
+        <SectionCard title="Studio leaderboard">
+          {account.leaderboardLinkedChild ? (
+            <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+          ) : (
+            <LeaderboardPrivacySwitch initialHidden={account.leaderboardHidden} />
+          )}
+        </SectionCard>
         <PrivacySection history={history} />
         <SectionCard advanced title="Download my data">
           <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm" })}>

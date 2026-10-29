@@ -10,6 +10,8 @@ import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { NavTracker } from "@/components/layout/NavTracker";
 import { KeyboardAvoider } from "@/components/layout/KeyboardAvoider";
+import { LiquidPress } from "@/components/layout/LiquidPress";
+import { GlassButtons } from "@/components/layout/GlassButtons";
 
 // Sign-in, sign-up and password screens: nothing to ask Atom about yet, and the
 // launcher only gets in the way of the form. Unmounting (not just hiding) also
@@ -48,6 +50,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <NavigationOverlay />
           <NavTracker />
           <KeyboardAvoider />
+          <LiquidPress />
+          <GlassButtons />
         </ThemeProvider>
       </MotionConfig>
     </SessionProvider>

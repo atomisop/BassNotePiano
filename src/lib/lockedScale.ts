@@ -39,7 +39,7 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
     return {
       heading: "This scale comes later",
       lines: [base, "Finish the scales before this one and it will open in its turn."],
-      primary: { label: "Back to my scales", href: "/dashboard" },
+      primary: { label: "Back to my scales", href: "/roadmap" },
       canAsk: false,
     };
   }
@@ -59,14 +59,14 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
     return {
       heading: `Earliest release: ${date}`,
       lines: [base, "You have finished what comes before it. The one-a-week pacing is the only thing left to wait for."],
-      primary: { label: "Back to my scales", href: "/dashboard" },
+      primary: { label: "Back to my scales", href: "/roadmap" },
       canAsk: false,
     };
   }
   return {
     heading: "Ready for your teacher to release",
     lines: [base, "You have finished what comes before this scale. It opens as soon as your teacher releases it. You can ask them to do it now."],
-    primary: { label: "Back to my scales", href: "/dashboard" },
+    primary: { label: "Back to my scales", href: "/roadmap" },
     canAsk: true,
   };
 }

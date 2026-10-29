@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays } from "lucide-react";
+import { Users } from "lucide-react";
 
-/** The live classes shortcut in the top bar, for students. Stays pressed in while you are on the booking pages. */
-export function LiveClassesTopLink() {
+/** Friends in the top bar (it left the dock to make room for the Roadmap). Stays pressed in while you are on the friends pages. */
+export function FriendsTopLink() {
   const pathname = usePathname();
-  const active = pathname === "/lessons" || pathname.startsWith("/lessons/");
+  const active = pathname === "/friends" || pathname.startsWith("/friends/");
   return (
     <Link
-      href="/lessons"
-      aria-label="Live classes"
-      title="Live classes"
+      href="/friends"
+      aria-label="Friends"
+      title="Friends"
+      data-tour="nav-friends"
       aria-current={active ? "page" : undefined}
       className={`tap flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
         active
@@ -20,7 +21,7 @@ export function LiveClassesTopLink() {
           : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
       }`}
     >
-      <CalendarDays className="h-[18px] w-[18px]" strokeWidth={1.5} />
+      <Users className="h-[18px] w-[18px]" strokeWidth={1.5} />
     </Link>
   );
 }

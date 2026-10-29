@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -34,21 +35,36 @@ function CommandDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  // The window opens out of the button that was pressed and folds back into it, like minimizing and maximizing a Mac window: the moment
+  // the panel is attached (before it is painted), work out how far, and which way, that button is from where the panel sits, and hand
+  // it to the CSS animation.
+  const place = React.useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const trigger = Array.from(document.querySelectorAll<HTMLElement>("[data-search-trigger]")).find((t) => t.getBoundingClientRect().width > 0);
+    const rect = trigger?.getBoundingClientRect();
+    const fromX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+    const fromY = rect ? rect.top + rect.height / 2 : window.innerHeight - 36;
+    el.style.setProperty("--cmd-dx", `${Math.round(fromX - window.innerWidth / 2)}px`);
+    el.style.setProperty("--cmd-dy", `${Math.round(fromY - (el.offsetTop + el.offsetHeight / 2))}px`);
+  }, []);
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+        <DialogPrimitive.Overlay className="cmd-scrim fixed inset-0 z-50" />
         <DialogPrimitive.Content
-          className="glass-surface fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 overflow-hidden !bg-surface p-0 shadow-raised-mid data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          ref={place}
+          className="cmd-window fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 rounded-[1.25rem] p-0 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)]"
           aria-label="Command menu"
         >
+          <GlassLens radius={20} bezel={18} strength={12} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           {/* Radix requires a title for screen readers; it's visually hidden
               because the search field already labels the dialog on screen. */}
           <DialogPrimitive.Title className="sr-only">Search and jump to</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             Type to search scales and pages, then press Enter.
           </DialogPrimitive.Description>
-          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
+          <Command className="!bg-transparent [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
             {children}
           </Command>
         </DialogPrimitive.Content>

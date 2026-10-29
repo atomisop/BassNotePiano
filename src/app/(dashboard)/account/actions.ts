@@ -280,6 +280,15 @@ export async function updateNotificationPreferencesAction(input: NotificationPre
   return { ok: true as const };
 }
 
+/** Settings > Privacy and the leaderboard screen: take yourself off (or put yourself back on) the studio leaderboard. */
+export async function setLeaderboardHiddenAction(hidden: boolean) {
+  const { id } = await requireSession();
+  await prisma.user.update({ where: { id }, data: { hideFromLeaderboard: hidden === true } });
+  revalidatePath("/leaderboard");
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
 // ---------------------------------------------------------------------------
 // Username, used for friend search; not code-gated, same reasoning as the
 // music profile and notification settings above (not a security-sensitive

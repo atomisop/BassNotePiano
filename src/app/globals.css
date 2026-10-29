@@ -113,11 +113,12 @@
   /* Neumorphism (one base surface, one light source at top-left). Raised =
      pressable; pressed = held/filled/selected. Three depths, tokens only:
      never write a one-off shadow on a component. */
-  --color-neu-base: rgb(var(--neu-base));
+  /* --neu-alpha makes every card and panel see-through inside the app (the glass material at the end of this file). */
+  --color-neu-base: rgb(var(--neu-base) / var(--neu-alpha, 1));
   --color-ground: rgb(var(--ground));
   /* One step lighter than the base: the floating dock sits on this so it
      never blends into the page. */
-  --color-neu-lift: rgb(var(--neu-lift));
+  --color-neu-lift: rgb(var(--neu-lift) / var(--neu-alpha, 1));
   --shadow-float: var(--neu-float);
   --shadow-raised-low: var(--neu-raised-low);
   --shadow-raised-mid: var(--neu-raised-mid);
@@ -305,7 +306,7 @@
 /* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
    tap. Callers add their own padding and size. */
 @utility neu-btn {
-  @apply bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50;
+  @apply liquid text-slate-300 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility glass-pill {
@@ -1341,13 +1342,59 @@
    so the content glides over. The transitions only switch on after the saved choice has been applied (`data-sidebar-anim`), so a page
    load never animates a sidebar that was left shrunk. */
 @media (min-width: 1024px) {
+  /* Everything that leaves when the rail closes is eased out, not switched off: the width glides on Apple's curve, the labels fade first
+     and then narrow to nothing, the group titles and the spotlight fold up, and a column of small alert icons fades in to take their
+     place. Hidden pieces also leave the reading order (visibility) once they are gone. */
+  .app-sidebar .sb-label {
+    max-width: 14rem;
+    opacity: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .app-sidebar .sb-group-title {
+    max-height: 2rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .app-sidebar .sb-spotlight {
+    max-height: 40rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .app-sidebar .sb-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    pointer-events: none;
+  }
   html[data-sidebar-anim] .app-sidebar {
     transition:
-      width 320ms var(--ease-ios),
-      padding 320ms var(--ease-ios);
+      width 380ms var(--ease-ios),
+      padding 380ms var(--ease-ios),
+      gap 380ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-shell-col {
-    transition: padding-left 320ms var(--ease-ios);
+    transition: padding-left 380ms var(--ease-ios);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-item {
+    transition: padding 380ms var(--ease-ios), gap 380ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 420ms var(--ease-spring);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-label {
+    transition: opacity 240ms var(--ease-ios) 130ms, max-width 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-group-title {
+    transition: opacity 220ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), padding 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-spotlight {
+    transition: opacity 240ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-rail {
+    transition: opacity 260ms var(--ease-ios), max-height 380ms var(--ease-ios), visibility 0s linear 380ms;
   }
   html[data-sidebar="collapsed"] .app-sidebar {
     width: 3.5rem;
@@ -1358,14 +1405,34 @@
   html[data-sidebar="collapsed"] .app-shell-col {
     padding-left: 3.5rem;
   }
-  html[data-sidebar="collapsed"] .app-sidebar .sb-label,
-  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title,
+  html[data-sidebar="collapsed"] .app-sidebar .sb-label {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
   html[data-sidebar="collapsed"] .app-sidebar .sb-spotlight {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-rail {
+    max-height: 30rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
   html[data-sidebar="collapsed"] .app-sidebar .sb-item {
     justify-content: center;
     padding-inline: 0;
+    gap: 0;
   }
   /* A thin line between the groups stands in for their titles. */
   html[data-sidebar="collapsed"] .app-sidebar .sb-group + .sb-group {
@@ -1702,9 +1769,8 @@ input[type="radio"],
 .app-sidebar {
   view-transition-name: app-sidebar;
 }
-[aria-label="Primary"][role="navigation"] {
-  view-transition-name: app-dock;
-}
+/* The dock is deliberately NOT given a view-transition-name: an element with one becomes a "backdrop root", which stops the glass in the
+   dock from seeing the page behind it, so it could neither blur nor bend anything. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
@@ -1832,51 +1898,500 @@ input[type="radio"],
   }
 }
 
+
 /* ---------------------------------------------------------------------------
-   Admin menu flyout, in Apple's motion language: it is always mounted (so opening costs nothing), animates only opacity and
-   transform (the compositor does the work), opens with a soft springy settle and closes quickly with a plain ease, and its rows
-   follow one after another a few milliseconds apart. Reduced motion gets a plain fade.
+   Liquid Glass. Anything you can press is a small pane of glass: a see-through body that blurs and brightens what is behind it, a bright
+   hairline along the top edge where light catches, a soft glow along the bottom, and a thin shadow. The dock and the theme toggle also get
+   a faint rainbow rim, and (in browsers that can) the dock bends the page behind it like a lens. It stays thin: no heavy shadows, small radii
+   of light, and every blur is cheap. Anywhere the system asks for reduced transparency it becomes a plain solid control.
    --------------------------------------------------------------------------- */
-.admin-flyout {
-  visibility: hidden;
-  opacity: 0;
+:root {
+  --lg-body-top: rgb(255 255 255 / 0.16);
+  --lg-body-bottom: rgb(255 255 255 / 0.05);
+  --lg-edge: rgb(255 255 255 / 0.42);
+  --lg-glow: rgb(255 255 255 / 0.1);
+  --lg-drop: rgb(0 0 0 / 0.42);
+}
+[data-mode="light"] {
+  --lg-body-top: rgb(255 255 255 / 0.7);
+  --lg-body-bottom: rgb(255 255 255 / 0.32);
+  --lg-edge: rgb(255 255 255 / 0.95);
+  --lg-glow: rgb(255 255 255 / 0.5);
+  --lg-drop: rgb(40 40 60 / 0.16);
+}
+
+@utility liquid {
+  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
+  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 var(--lg-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 -6px 10px -8px var(--lg-glow),
+    0 5px 14px -8px var(--lg-drop);
+}
+.liquid:active {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    inset 0 3px 8px rgb(0 0 0 / 0.28);
+}
+
+/* The main action: orange glass, the same light on its edge. */
+@utility liquid-signal {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0) 55%),
+    rgb(var(--cta-bg, var(--primary)));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 0 0 1px rgb(255 255 255 / 0.18),
+    inset 0 -7px 12px -8px rgb(255 255 255 / 0.4),
+    0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
+}
+
+/* A thin rainbow along the rim, painted in the border only (the mask cuts out the middle). */
+@utility liquid-rim {
+  position: relative;
+}
+.liquid-rim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
   pointer-events: none;
-  transform: translateX(-8px) scale(0.96);
-  transform-origin: left top;
+  background: conic-gradient(from 200deg, #ff6b6b, #ffd166, #7bed9f, #5ec8ff, #b388ff, #ff6bd6, #ff6b6b);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0.6;
+}
+
+/* The dock: thicker glass that bends what is behind it. The SVG lens works where backdrop-filter accepts a filter (Chrome); elsewhere
+   the plain blur above it stays. */
+@utility liquid-dock {
+  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
+  -webkit-backdrop-filter: blur(16px) saturate(2) brightness(1.1);
+  backdrop-filter: blur(16px) saturate(2) brightness(1.1);
+  box-shadow:
+    inset 0 1px 0 var(--lg-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    inset 0 -10px 16px -12px var(--lg-glow),
+    -1px 0 0 rgb(255 70 110 / 0.28),
+    1px 0 0 rgb(70 170 255 / 0.28),
+    0 14px 30px -12px var(--lg-drop);
+}
+@supports (backdrop-filter: url(#lg-lens)) {
+  .liquid-dock {
+    backdrop-filter: url(#lg-lens) blur(12px) saturate(2) brightness(1.1);
+  }
+}
+
+/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). */
+button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-red"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-8"]:not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
+  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
+  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 var(--lg-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 -6px 10px -8px var(--lg-glow),
+    0 5px 14px -8px var(--lg-drop);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid,
+  .liquid-dock,
+  button[class*="shadow-raised-low"],
+  a[class*="shadow-raised-low"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(var(--neu-base));
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Switching between light and dark is a slow, even crossfade (the old look melts into the new one) instead of a blink. Where the
+   browser has no View Transitions, every color eases over the same time instead.
+   --------------------------------------------------------------------------- */
+html[data-theme-switching]::view-transition-group(*),
+html[data-theme-switching]::view-transition-old(*),
+html[data-theme-switching]::view-transition-new(*) {
+  animation-duration: 750ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-theme-fade] *,
+html[data-theme-fade] *::before,
+html[data-theme-fade] *::after {
   transition:
-    opacity 130ms cubic-bezier(0.32, 0.72, 0, 1),
-    transform 130ms cubic-bezier(0.32, 0.72, 0, 1),
-    visibility 0s linear 130ms;
+    background-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    fill 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 650ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
-.admin-flyout[data-open="true"] {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-  transform: none;
-  transition:
-    opacity 180ms cubic-bezier(0.32, 0.72, 0, 1),
-    transform 340ms cubic-bezier(0.2, 1.1, 0.3, 1),
-    visibility 0s;
-  will-change: transform, opacity;
+
+/* ---------------------------------------------------------------------------
+   Liquid press. Pressing a glass control makes it swell and light up (it does not dip like a plain button); letting go releases it with
+   a quick stretch and wobble that settles, like a drop of liquid. LiquidPress.tsx sets the two states; nothing here runs for people who
+   ask for reduced motion.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-lg-press] {
+    scale: 1.07 !important;
+    /* Brighter glass, through the lens itself: a filter on the button would wall its glass off from the page. */
+    --lg-bright: 1.32;
+    transition-duration: 130ms !important;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+  [data-lg-release] {
+    animation: lg-release 680ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
 }
-.admin-flyout li {
-  opacity: 0;
-  transform: translateX(-5px);
-  transition: opacity 110ms ease-out, transform 110ms ease-out;
+@keyframes lg-release {
+  0% {
+    transform: scale(1.04, 0.95);
+  }
+  22% {
+    transform: scale(0.965, 1.05);
+  }
+  45% {
+    transform: scale(1.025, 0.985);
+  }
+  68% {
+    transform: scale(0.992, 1.006);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
 }
-.admin-flyout[data-open="true"] li {
-  opacity: 1;
-  transform: none;
-  transition: opacity 220ms cubic-bezier(0.32, 0.72, 0, 1), transform 320ms cubic-bezier(0.2, 1.1, 0.3, 1);
-  transition-delay: calc(var(--i, 0) * 24ms + 30ms);
+
+/* ---------------------------------------------------------------------------
+   The search window: a Mac-style minimize and maximize. It grows out of the button that opened it (the offsets come from command.tsx) with a
+   soft overshoot, and folds back into the same button when it closes. Behind it the page is only softly blurred, not grayed out.
+   --------------------------------------------------------------------------- */
+.cmd-scrim {
+  background: rgb(0 0 0 / 0.04);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
+}
+.cmd-scrim[data-state="open"] {
+  animation: cmd-scrim-in 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.cmd-scrim[data-state="closed"] {
+  animation: cmd-scrim-out 260ms cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+.cmd-window {
+  transform-origin: center center;
+}
+.cmd-window[data-state="open"] {
+  /* "backwards", not "both": a filter left on the window after it opens (even blur(0)) would wall its glass off from the page. */
+  animation: cmd-max 460ms cubic-bezier(0.22, 1.08, 0.36, 1) backwards;
+}
+.cmd-window[data-state="closed"] {
+  animation: cmd-min 300ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+@keyframes cmd-max {
+  0% {
+    opacity: 0;
+    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
+    filter: blur(4px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes cmd-min {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1, 1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
+    filter: blur(4px);
+  }
+}
+@keyframes cmd-scrim-in {
+  from {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+@keyframes cmd-scrim-out {
+  to {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .admin-flyout,
-  .admin-flyout[data-open="true"],
-  .admin-flyout li,
-  .admin-flyout[data-open="true"] li {
-    transform: none;
-    transition-duration: 100ms;
-    transition-delay: 0s;
+  .cmd-window[data-state="open"],
+  .cmd-window[data-state="closed"] {
+    animation-duration: 120ms;
+    animation-name: cmd-scrim-in;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Liquid Glass tokens: change the whole look from here. Read by GlassLens (refraction, blur) and by the .liquid styles above.
+     --lg-refraction   how hard the glass bends what is behind it (1 = as built, 0 = flat)
+     --lg-dispersion   the faint rainbow split along the glass edge (0 = none)
+     --lg-blur         blur of what is behind the middle of the glass, in px
+     --lg-ring         the faint outer ring around pressed or active glass
+   --------------------------------------------------------------------------- */
+:root {
+  --lg-refraction: 1;
+  --lg-dispersion: 1;
+  --lg-blur: 1.5px;
+  --lg-ring: rgb(255 255 255 / 0.28);
+}
+[data-mode="light"] {
+  --lg-ring: rgb(120 200 255 / 0.5);
+}
+/* Active or pressed glass gets a faint outer ring, like the back button in Apple's own shots. */
+.lg-ring {
+  position: relative;
+}
+.lg-ring::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  border: 1px solid var(--lg-ring);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 260ms var(--ease-ios), transform 420ms var(--ease-spring);
+  pointer-events: none;
+}
+.lg-ring:is([data-lg-press], [aria-current="page"], [aria-checked="true"], [data-state="checked"])::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* The body color of sheets, dialogs and the search window: glass that stays readable (mostly opaque; the lens still bends the edge). */
+:root {
+  --lg-sheet-tint: rgb(26 26 28 / 0.8);
+}
+[data-mode="light"] {
+  --lg-sheet-tint: rgb(250 250 253 / 0.8);
+}
+
+/* ---------------------------------------------------------------------------
+   The real lens on every glass button (GlassButtons.tsx picks them and sets --lg-filter, shared by size). The button itself becomes
+   clear (no painted gradient or sheen) and carries no backdrop or filter of its own, because either would wall its glass off from the
+   page; the lens is its ::after, under its label, refracting what is behind it. Hover and press brighten the glass through the lens.
+   --------------------------------------------------------------------------- */
+.lg-glass {
+  isolation: isolate;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  --lg-bright: 1;
+}
+:where(.lg-glass:not(.absolute):not(.fixed):not(.sticky)) {
+  position: relative;
+}
+/* A faint body so a clear button still reads as a button on a plain page (the lens refracts it along with what is behind). */
+.lg-glass:not(.liquid-signal) {
+  background: var(--lg-fill) !important;
+  box-shadow: inset 0 0 0 1px var(--lg-hairline), inset 0 1px 0 var(--lg-hairline) !important;
+}
+:root {
+  --lg-fill: rgb(255 255 255 / 0.07);
+}
+[data-mode="light"] {
+  --lg-fill: rgb(255 255 255 / 0.6);
+}
+.lg-glass.liquid-signal {
+  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
+  box-shadow: 0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.6) !important;
+}
+@media (hover: hover) {
+  .lg-glass:hover {
+    --lg-bright: 1.1;
+  }
+}
+.lg-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: none;
+  transform: none;
+  opacity: 1;
+  transition: none;
+  -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
+  backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
+  clip-path: inset(0 round var(--lg-r, 9999px));
+}
+
+/* The floating top bar's glass: clear enough to see the page bend through it, with a little body so its icons stay readable. */
+:root {
+  --lg-bar-tint: rgb(18 18 20 / 0.32);
+}
+[data-mode="light"] {
+  --lg-bar-tint: rgb(255 255 255 / 0.4);
+}
+
+/* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
+:root {
+  --lg-hairline: rgb(255 255 255 / 0.14);
+}
+[data-mode="light"] {
+  --lg-hairline: rgb(0 0 0 / 0.1);
+}
+
+/* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
+   still begins below the bar, by padding inside the scroll area. A notice banner, when there is one, takes the bar's room instead. */
+.app-scroll-under-bar {
+  padding-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3rem + 1rem);
+}
+@media (min-width: 768px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.25rem);
+  }
+}
+@media (min-width: 1024px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.5rem);
+  }
+}
+.app-shell-col > .announcement-banner {
+  margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
+}
+.app-shell-col:has(> .announcement-banner) .app-scroll-under-bar {
+  padding-top: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+   The card material inside the app (replaces the old raised and pressed neumorphism): flat, solid cards on a plain page, the way a
+   modern phone app looks. No outlines, no bevel, no haze. Every card, panel, button and field still uses the same classes
+   (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*); only what those mean changes here:
+     - the page is a soft near-black (dark) or light gray (light), cards are one solid step lighter (dark) or white (light);
+     - "raised" lays a faint wash over the fill, so a card inside a card is one more step lighter and still reads as its own box;
+     - "pressed" (fields, wells, a held control) lays a faint shade over the fill instead.
+   The washes are inset shadows wide enough to fill the box: they tint the background and never the content.
+   --------------------------------------------------------------------------- */
+[data-surface="app"],
+body:has([data-surface="app"]) {
+  /* Sampled from the owner's reference app: page #121212, cards #222121, dock #333. Cards are solid: stacked cards (the phone card
+     deck) must never show the one behind through them. */
+  --ground: 18 18 18;
+  --neu-base: 27 26 26;
+  --neu-lift: 38 37 37;
+  --neu-alpha: 1;
+  --card-wash: rgb(255 255 255 / 0.035);
+  --card-shade: rgb(0 0 0 / 0.24);
+  --card-line: rgb(255 255 255 / 0.07);
+  --neu-hi: var(--card-line);
+  --neu-lo: var(--card-line);
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 18px 40px -18px rgb(0 0 0 / 0.6);
+  --neu-float: var(--neu-raised-high);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade);
+  --plane-mid-shadow: var(--neu-raised-mid);
+  --plane-front-shadow: var(--neu-raised-high);
+  --surface-bg: rgb(var(--neu-base) / var(--neu-alpha));
+  --surface-shadow: var(--neu-raised-mid);
+  --surface-blur: 0px;
+  --subtle-bg: rgb(var(--neu-base) / var(--neu-alpha));
+  --subtle-border: transparent;
+  --subtle-shadow: var(--neu-pressed-low);
+  --subtle-blur: 0px;
+  --elev-bg: rgb(var(--neu-lift));
+  --elev-shadow: var(--neu-raised-high);
+  --elev-blur: 0px;
+}
+[data-mode="light"] [data-surface="app"],
+[data-mode="light"] body:has([data-surface="app"]) {
+  --ground: 242 242 245;
+  --neu-base: 255 255 255;
+  --neu-lift: 255 255 255;
+  --neu-alpha: 1;
+  --card-wash: rgb(0 0 0 / 0.018);
+  --card-shade: rgb(0 0 0 / 0.045);
+  --card-line: rgb(0 0 0 / 0.07);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 16px 36px -18px rgb(30 30 60 / 0.25);
+}
+/* Dialogs and menus that open over the page get a soft border so they stand off what is under them. */
+body:has([data-surface="app"]) .glass-surface-modal {
+  border-color: var(--card-line);
+}
+/* Engraved grooves become plain hairlines. */
+[data-surface="app"] .neu-groove-t {
+  box-shadow: inset 0 1px 0 var(--card-line);
+}
+[data-surface="app"] .neu-groove-b {
+  box-shadow: inset 0 -1px 0 var(--card-line);
+}
+[data-surface="app"] .neu-groove-r {
+  box-shadow: inset -1px 0 0 var(--card-line);
+}
+
+/* The bottom dock: a solid pill with a light blur, and a darker capsule behind the page you are on. */
+.app-dock {
+  background: rgb(51 51 51 / 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+}
+.app-dock-active {
+  background: rgb(24 24 24 / 0.8);
+}
+[data-mode="light"] .app-dock {
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+}
+[data-mode="light"] .app-dock-active {
+  background: rgb(0 0 0 / 0.07);
+}
+/* The dock bends the page through it (GlassLens), so its own fill is thinner and it carries no blur of its own: a backdrop-filter on
+   the dock would wall the lens off from the page. */
+.app-dock.app-dock-lens {
+  background: rgb(51 51 51 / 0.5);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-mode="light"] .app-dock.app-dock-lens {
+  background: rgb(255 255 255 / 0.5);
+}
+
+/* The current tab's dock icon is filled. Where a filled shape would swallow its inner detail (the calendar's line and check, the
+   gear's center) that detail is cut out in the dock capsule's color instead. */
+.dock-icon-filled {
+  --dock-cut: rgb(30 30 30);
+}
+[data-mode="light"] .dock-icon-filled {
+  --dock-cut: rgb(236 236 238);
+}
+.dock-icon-filled.lucide-calendar-check > :nth-child(n + 4) {
+  fill: none;
+  stroke: var(--dock-cut);
+}
+.dock-icon-filled.lucide-settings > circle {
+  fill: var(--dock-cut);
+  stroke: var(--dock-cut);
+}
+.dock-icon-filled.lucide-map > :nth-child(n + 2) {
+  fill: none;
+  stroke: var(--dock-cut);
 }

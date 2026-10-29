@@ -23,7 +23,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square"
 const lift = "press active:shadow-pressed-low"
 
 const primary = cn(
-  "relative bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95",
+  "liquid-signal relative bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold hover:brightness-110 active:brightness-95",
   lift,
 )
 
@@ -39,21 +39,15 @@ const buttonVariants = cva(
           lift,
         ),
         // Quiet, raised paper/ink button for every secondary action.
-        secondary: cn(
-          "bg-neu-base text-slate-50 shadow-raised-low hover:text-white",
-          lift,
-        ),
-        outline: cn("border border-(--neu-edge) bg-neu-base text-slate-100 shadow-raised-low", lift),
-        ghost: cn("text-slate-300 hover:text-slate-50 hover:shadow-raised-low", lift),
-        destructive: cn(
-          "bg-neu-base text-[rgb(var(--c-rd-300))] shadow-raised-low",
-          lift,
-        ),
+        secondary: cn("liquid text-slate-50 hover:text-white", lift),
+        outline: cn("liquid text-slate-100", lift),
+        ghost: cn("text-slate-300 hover:text-slate-50 hover:liquid", lift),
+        destructive: cn("liquid text-[rgb(var(--c-rd-300))]", lift),
         // Inline text link: tappable, so it carries the signal color.
         // Solid red: only for the final, irreversible step of a destructive flow.
-        danger: cn("relative bg-red-600 text-white font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95", lift),
+        danger: cn("liquid-signal relative bg-red-600 text-white font-semibold [--cta-bg:220_38_38] hover:brightness-110 active:brightness-95", lift),
         link: "text-signal-fg underline-offset-4 hover:underline",
-        glass: cn("bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-mid hover:brightness-110", lift),
+        glass: cn("liquid text-[rgb(var(--c-s-50))] hover:brightness-110", lift),
       },
       size: {
         default: "h-9 px-4",

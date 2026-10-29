@@ -1,10 +1,12 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
+import { Home, Map, CalendarCheck, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
@@ -18,8 +20,8 @@ const POLL_INTERVAL_MS = 30_000;
 // instruction.
 const NAV_ICON: Record<string, LucideIcon> = {
   home: Home,
+  roadmap: Map,
   lessons: CalendarCheck,
-  friends: Users,
   messages: MessageSquare,
   settings: Settings,
 };
@@ -54,9 +56,9 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: "home", dataTour: "nav-roadmap" },
+  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
@@ -110,30 +112,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
   useEffect(() => {
     for (const item of NAV_ITEMS) router.prefetch(item.href);
   }, [router]);
-  // Scrolling down tucks the dock into a smaller pill; scrolling back up (or reaching the top) opens it again.
-  const [compact, setCompact] = useState(false);
-
-  useEffect(() => {
-    const lastTop = new WeakMap<EventTarget, number>();
-    const onScroll = (e: Event) => {
-      const el = e.target;
-      // Only the app's own page scroller (<main>): a list scrolling inside a page should not move the dock.
-      if (!(el instanceof HTMLElement) || el.tagName !== "MAIN") return;
-      const top = el.scrollTop;
-      const prev = lastTop.get(el) ?? top;
-      lastTop.set(el, top);
-      const delta = top - prev;
-      if (top < 24) setCompact(false);
-      else if (delta > 6) setCompact(true);
-      else if (delta < -6) setCompact(false);
-    };
-    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
-    return () => document.removeEventListener("scroll", onScroll, { capture: true });
-  }, []);
-
-  // A new page starts at the top, with the dock open.
-  useEffect(() => setCompact(false), [pathname]);
-
   // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
   // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
   const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
@@ -164,16 +142,18 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       aria-label="Primary"
       className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
     >
-      {/* The Instagram-style floating pill: about 53pt tall, 20pt in from each side on a phone (capped on wider screens), five equal
-          slots, icons about 22pt, and a lighter capsule behind the page you are on that slides to the next one. Frosted white in the light theme, dark glass in the dark one (the colors come from the theme ramp, so they follow the mode on their own). */}
-      <motion.div
-        animate={{ scale: compact ? 0.82 : 1, y: compact ? 8 : 0 }}
-        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 17, mass: 0.8 }}
-        style={{ transformOrigin: "50% 100%" }}
-        className="pointer-events-auto grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full border border-[rgb(var(--c-s-50)/0.1)] bg-white/80 p-1 shadow-[0_8px_28px_rgb(0_0_0/0.16)] backdrop-blur-2xl dark:bg-[rgb(var(--c-s-900)/0.85)] dark:shadow-[0_8px_28px_rgb(0_0_0/0.45)]"
+      {/* A floating glass pill: the page bends through it, five equal icon slots (no names), and a darker capsule behind the page you are
+          on that slides to the next one. Colors come from .app-dock in globals.css, one set per theme. */}
+      <div
+        data-glass=""
+        className="app-dock app-dock-lens pointer-events-auto relative grid h-16 w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1.5"
       >
+        {/* Real refraction: the page bends at the rim like light through a water bottle, with only a touch of blur. */}
+        <GlassLens radius="full" bezel={26} strength={30} magnify={0.5} blur={1.5} />
         {NAV_ITEMS.map((item) => {
-          const active = (pendingHref ?? pathname) === item.href;
+          const at = pendingHref ?? pathname;
+          // A scale's page belongs to the Roadmap tab.
+          const active = at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/"));
           const current = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
           const Icon = NAV_ICON[item.icon];
@@ -197,34 +177,34 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     }
               }
               data-tour={"dataTour" in item ? item.dataTour : undefined}
-              className="tap relative flex h-[45px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="tap relative flex h-full items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {active && (
                 <motion.span
                   layoutId="dock-active-pill"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 15, mass: 0.9 }}
-                  className="pointer-events-none absolute left-1/2 top-0 h-full w-[4.7rem] -translate-x-1/2 rounded-full bg-[rgb(var(--c-s-50)/0.12)]"
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
+                  className="app-dock-active pointer-events-none absolute inset-0 rounded-full"
                 />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
-                animate={{ scale: active && !reduceMotion ? 1.14 : 1 }}
-                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 14, mass: 0.7 }}
-                className="relative flex h-[22px] w-[22px] items-center justify-center"
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
+                className="relative flex h-6 w-6 items-center justify-center"
               >
                 <Icon
                   aria-hidden
                   strokeWidth={active ? 2.4 : 2}
-                  fill={active && item.icon === "home" ? "currentColor" : "none"}
-                  className="h-[22px] w-[22px] text-slate-50"
+                  fill={active ? "currentColor" : "none"}
+                  className={active ? "dock-icon-filled h-6 w-6 text-slate-50" : "h-6 w-6 text-slate-300"}
                 />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040] ring-2 ring-white dark:ring-[rgb(var(--c-s-900))]" />}
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040]" />}
               </motion.span>
+
             </Link>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }

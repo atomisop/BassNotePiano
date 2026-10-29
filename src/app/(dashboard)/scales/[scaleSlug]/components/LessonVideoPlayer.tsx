@@ -1,5 +1,7 @@
 "use client";
 
+import { GlassSlider } from "@/components/ui/GlassSlider";
+import { GlassBubbles } from "@/components/ui/GlassBubbles";
 import { useEffect, useRef, useState } from "react";
 import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 
@@ -188,42 +190,20 @@ export function LessonVideoPlayer({
 
       {/* Control bar */}
       <div className="space-y-2 bg-slate-950 px-4 py-3">
-        <input
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={currentTime}
-          onChange={handleScrub}
-          aria-label="Seek"
-          className="h-1.5 w-full cursor-pointer accent-[rgb(var(--c-s-50))]"
-        />
+        <GlassSlider min={0} max={duration || 0} step={0.1} value={currentTime} onChange={handleScrub} aria-label="Seek" />
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={togglePlay}
-              aria-label={playing ? "Pause" : "Play"}
-              className="tap cta-sheen cta-fill flex h-8 w-8 items-center justify-center rounded-full"
-            >
-              {playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => seek(-15)}
-              aria-label="Back 15 seconds"
-              className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
-            >
-              <RotateCcw size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => seek(15)}
-              aria-label="Forward 15 seconds"
-              className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
-            >
-              <RotateCw size={16} />
-            </button>
+          <div className="flex items-center gap-3">
+            <GlassBubbles size={40}>
+              <button type="button" onClick={() => seek(-15)} aria-label="Back 15 seconds" className="tap flex items-center justify-center text-slate-100">
+                <RotateCcw size={16} />
+              </button>
+              <button type="button" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"} className="tap flex items-center justify-center text-slate-50">
+                {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+              </button>
+              <button type="button" onClick={() => seek(15)} aria-label="Forward 15 seconds" className="tap flex items-center justify-center text-slate-100">
+                <RotateCw size={16} />
+              </button>
+            </GlassBubbles>
             <span className="ml-1 text-small text-slate-400">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
@@ -239,16 +219,7 @@ export function LessonVideoPlayer({
               >
                 {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={muted ? 0 : volume}
-                onChange={handleVolumeChange}
-                aria-label="Volume"
-                className="h-1 w-16 cursor-pointer accent-[rgb(var(--c-s-50))]"
-              />
+              <GlassSlider min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={handleVolumeChange} aria-label="Volume" className="w-24" />
             </div>
             <button
               type="button"

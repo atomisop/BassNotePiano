@@ -171,11 +171,11 @@ enum FamilyGroupKind {
 }
 
 model FamilyPlanGroup {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   kind      FamilyGroupKind @default(FAMILY)
   payerId   String
-  payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  payer     User            @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 
   // When the payer was already on a solo plan: that plan keeps running untouched until the family's combined first payment is
   // approved, and only then is it cancelled and replaced by the payer's family plan (same transaction, same weekly time).
@@ -868,7 +868,11 @@ model User {
   // As of the live-class-only model, hasCurriculumAccess is no longer set by
   // any purchase: it's the admin's complimentary override only. Real access
   // is derived from an active Payment Plan (src/lib/entitlement.ts).
-  hasCurriculumAccess  Boolean   @default(false)
+  hasCurriculumAccess Boolean @default(false)
+
+  // The studio leaderboard (weekly practice minutes) lists everyone except the admin, banned accounts and anyone who turned this
+  // on in Settings > Privacy.
+  hideFromLeaderboard  Boolean   @default(false)
   curriculumUnlockedAt DateTime?
 
   // Set once when a class application is approved (3 days out). Never
@@ -1352,6 +1356,10 @@ model ScaleGroup {
   // nothing reads it anymore; not worth a destructive column drop for it.
   priceCents Int @default(2500)
 
+  // The roadmap (chapter) this scale belongs to. Null means the first roadmap, so scales made by the seed need no roadmap.
+  roadmapId String?
+  roadmap   Roadmap? @relation(fields: [roadmapId], references: [id], onDelete: SetNull)
+
   progress      ScaleProgress[]
   quizAttempts  QuizAttempt[]
   zellePayments ZellePayment[]
@@ -1360,6 +1368,26 @@ model ScaleGroup {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roadmapId])
+}
+
+// A roadmap: a run of consecutive scales shown to students as one course (Scales, Beginner Piano, Worship songs...). The curriculum
+// is still one ordered chain of scales (ScaleGroup.order); roadmaps are chapters of it in their own order, so each one opens after the
+// one before is finished, through the same teacher-approved unlock. Added and ordered by the owner in Admin > Setup > Roadmaps.
+model Roadmap {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?      @db.Text
+  instrument  String? // "Piano", "Guitar", "Bass"; null for any instrument
+  level       String? // "Beginner", "Intermediate", "Advanced"
+  artwork     String       @default("dusk") // a key of ROADMAP_ARTWORKS (src/lib/roadmapRules.ts)
+  order       Int          @unique
+  visible     Boolean      @default(true)
+  scales      ScaleGroup[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // Admin-authored course content (video or PDF) for one scale group's course

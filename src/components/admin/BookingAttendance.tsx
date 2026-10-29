@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Check, MapPin, Pencil, Undo2, Video, X } from "lucide-react";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Hint } from "@/components/ui/Hint";
 import { toast } from "@/components/ui/Toaster";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -103,7 +102,6 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
             {inPersonShown ? <MapPin aria-hidden className="h-3.5 w-3.5" /> : <Video aria-hidden className="h-3.5 w-3.5" />}
             {inPersonShown ? "In person" : "Online"}
           </button>
-          <Hint label="About online and in person">In person means no Discord call is made for this class.</Hint>
         </>
       )}
 
@@ -148,9 +146,6 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
       )}
 
       {!attendance && status === "SCHEDULED" && hasHappened && markButtons}
-      {!attendance && status === "SCHEDULED" && !hasHappened && (
-        <span className="inline-flex h-8 items-center rounded-lg px-2 text-small text-slate-500">Upcoming</span>
-      )}
     </div>
   );
 }
