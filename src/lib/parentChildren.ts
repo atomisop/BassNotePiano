@@ -36,6 +36,8 @@ export interface ChildView {
   scales: ChildScaleRow[];
   /** True when the plan holds a weekly time, so the parent can move it. */
   canMoveWeeklyTime: boolean;
+  /** The plan already holds a standing weekly time (so every class in the paid period is booked on it). */
+  hasWeeklyTime: boolean;
 }
 
 /** Everything a parent sees about one linked child. Throws unless the link is accepted. */
@@ -87,7 +89,8 @@ export async function getChildView(parentId: string, childId: string): Promise<C
       quizPassed: s.quizPassed,
       quizScore: s.quizScore,
     })),
-    canMoveWeeklyTime: Boolean(plan?.reservedScheduleId),
+    canMoveWeeklyTime: Boolean(plan),
+    hasWeeklyTime: Boolean(plan?.reservedScheduleId),
   };
 }
 

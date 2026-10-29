@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { getReservableSlots } from "@/lib/classSchedule";
 import { getHoldChoices } from "@/lib/contacts";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
+import { runOnce } from "@/lib/idempotency";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -120,4 +122,37 @@ export async function moveWeeklyTimeAdminAction(planId: string, scheduleId: stri
   }
   revalidatePath("/", "layout");
   return { ok: true, error: null };
+}
+
+/** Owner only: what settling a late payer would do (the bill, the classes taught on credit, the new due date). Changes nothing. */
+export async function lateSettlementPreviewAction(planId: string): Promise<{ ok: true; preview: LateSettlementPreview } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can settle a late payment." };
+  try {
+    return { ok: true, preview: await getLateSettlementPreview(planId) };
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+  }
+}
+
+/** Owner only: records the payment, charges the class taught on credit, and puts the next bill 28 days from today, in one step. */
+export async function settleLatePaymentAction(planId: string, input: LateSettlementInput, key?: string): Promise<{ ok: boolean; error: string | null; newDueDate?: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can settle a late payment." };
+  const result = await runOnce(
+    admin.id,
+    `settle-late:${planId}`,
+    key,
+    async () => {
+      try {
+        const done = await settleLatePayment(planId, admin.id, input);
+        return { ok: true, error: null, newDueDate: done.newDueDate.toISOString() };
+      } catch (err) {
+        return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again." };
+      }
+    },
+    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } as { ok: boolean; error: string | null; newDueDate?: string } },
+  );
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
 }

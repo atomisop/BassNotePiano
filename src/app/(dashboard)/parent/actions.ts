@@ -161,14 +161,14 @@ export async function childWeeklyChoicesAction(childId: string): Promise<{ ok: t
   try {
     await actingFor(childId);
     const plan = await prisma.paymentPlan.findFirst({ where: { userId: childId, status: "ACTIVE" }, select: { cadence: true, reservedScheduleId: true, reservedChunkIndex: true } });
-    if (!plan?.reservedScheduleId) return { ok: false, error: "This plan has no weekly time to move." };
+    if (!plan) return { ok: false, error: "There is no plan to set a weekly time for." };
     const [free, all] = await Promise.all([getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]), getHoldChoices()]);
     const labelOf = (scheduleId: string, chunkIndex: number) => all.find((c) => c.scheduleId === scheduleId && c.chunkIndex === chunkIndex)?.label ?? null;
     const choices = free.flatMap((s) => {
       const label = labelOf(s.scheduleId, s.chunkIndex);
       return label ? [{ scheduleId: s.scheduleId, chunkIndex: s.chunkIndex, label }] : [];
     });
-    return { ok: true, current: plan.reservedChunkIndex !== null ? labelOf(plan.reservedScheduleId, plan.reservedChunkIndex) : null, choices };
+    return { ok: true, current: plan.reservedScheduleId && plan.reservedChunkIndex !== null ? labelOf(plan.reservedScheduleId, plan.reservedChunkIndex) : null, choices };
   } catch (err) {
     return { ok: false, error: messageOf(err) };
   }

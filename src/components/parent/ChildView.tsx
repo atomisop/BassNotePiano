@@ -148,8 +148,14 @@ export function ChildView({ view }: { view: ChildViewData }) {
                   <dd className="mt-0.5 text-slate-100">{view.plan.weeklyTime ?? "None (books with credits)"}</dd>
                 </div>
               </dl>
+              {!view.hasWeeklyTime && (
+                <div className="mt-4 rounded-xl bg-neu-base p-3 shadow-pressed-low">
+                  <p className="text-small font-semibold text-amber-300">No weekly time yet</p>
+                  <p className="mt-0.5 text-small text-slate-400">Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</p>
+                </div>
+              )}
               <div className="mt-5 flex flex-wrap gap-2">
-                {view.canMoveWeeklyTime && <ChildWeeklyTime childId={view.id} />}
+                {view.canMoveWeeklyTime && <ChildWeeklyTime childId={view.id} hasTime={view.hasWeeklyTime} />}
                 <EndChildPlanButton childId={view.id} />
               </div>
             </div>

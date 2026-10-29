@@ -13,7 +13,7 @@ import { moveWeeklyTimeAdminAction, weeklyTimeChoicesAdminAction, type WeeklyTim
  * Moves a student's whole plan to another weekly time: the standing day and hour and every class already booked on it, together.
  * (The one-class mover on the attendance list moves a single day; this moves them all.)
  */
-export function AdminMovePlanTimeButton({ planId, compact = false }: { planId: string; compact?: boolean }) {
+export function AdminMovePlanTimeButton({ planId, compact = false, hasTime = true }: { planId: string; compact?: boolean; hasTime?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,7 @@ export function AdminMovePlanTimeButton({ planId, compact = false }: { planId: s
     <>
       <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
         <CalendarClock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Move time
+        {hasTime ? "Move time" : "Set weekly time"}
       </button>
       <Dialog open={open} onOpenChange={(next) => !moving && setOpen(next)} title="Move the whole plan to">
         {loading ? (

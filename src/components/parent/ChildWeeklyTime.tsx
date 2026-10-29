@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/Toaster";
 import { childWeeklyChoicesAction, parentEndChildPlanAction, parentMoveWeeklyTimeAction, type WeeklyChoice } from "@/app/(dashboard)/parent/actions";
 
 /** Moves the child's whole plan to another weekly time: the standing day and hour and every class already booked on it. */
-export function ChildWeeklyTime({ childId }: { childId: string }) {
+export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; hasTime?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export function ChildWeeklyTime({ childId }: { childId: string }) {
     const result = await parentMoveWeeklyTimeAction(childId, picked.scheduleId, picked.chunkIndex).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setMoving(false);
     if (!result.ok) return void toast.warning(result.error);
-    toast.success(`Weekly time moved to ${picked.label}`);
+    toast.success(hasTime ? `Weekly time moved to ${picked.label}` : `Weekly time set to ${picked.label}. Their classes are booked.`);
     setOpen(false);
     router.refresh();
   }
@@ -48,9 +48,9 @@ export function ChildWeeklyTime({ childId }: { childId: string }) {
     <>
       <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
         <CalendarClock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Change weekly time
+        {hasTime ? "Change weekly time" : "Set weekly time"}
       </button>
-      <Dialog open={open} onOpenChange={(next) => !moving && setOpen(next)} title="Move the weekly time to">
+      <Dialog open={open} onOpenChange={(next) => !moving && setOpen(next)} title={hasTime ? "Move the weekly time to" : "Pick their weekly time"}>
         {loading ? (
           <div className="flex justify-center py-6">
             <MorphingSquare size={20} />
@@ -75,7 +75,7 @@ export function ChildWeeklyTime({ childId }: { childId: string }) {
             </ul>
             <button type="button" disabled={!picked || moving} onClick={() => void move()} aria-busy={moving} className={buttonVariants({ variant: "primary", className: "mt-4 w-full" })}>
               {moving && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-              Move all their classes
+              {hasTime ? "Move all their classes" : "Book all their classes"}
             </button>
           </>
         )}

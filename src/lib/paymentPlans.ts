@@ -598,9 +598,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         const kind = (await tx.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true } }))?.kind;
         if (kind !== "PARENT") throw new PaymentPlanError("A group plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
       }
-      if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
-        throw new PaymentPlanError("Your plan doesn't have a reserved slot yet. Message us and we'll help.");
-      }
+      // A plan with no weekly time yet (a child on a parent's plan, say) can be given one here: every class in the paid period is then booked.
       if (plan.reservedScheduleId === newScheduleId && plan.reservedChunkIndex === newChunkIndex) {
         throw new PaymentPlanError("That's already your weekly time.");
       }
