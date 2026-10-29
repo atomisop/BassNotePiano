@@ -11,14 +11,18 @@ import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
  * this sets on the button. Only browsers that can refract the backdrop get it (Chrome, Edge); the rest keep the blur-and-rim glass.
  */
 
+// A control with its own solid fill (orange, red, white) keeps it: the lens paints a clear body over the background, which turned a
+// solid orange "Get started" into black text on dark glass.
+const SOLID_FILL = ':not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"])';
+
 export const GLASS_SELECTOR = [
   ".liquid",
   ".liquid-signal",
   ".neu-btn",
-  'button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-red"])',
-  'a[class*="shadow-raised-low"][class*="rounded-full"]',
-  'a[class*="shadow-raised-low"][class*="h-8"]',
-  'a[class*="shadow-raised-low"][class*="h-9"]',
+  `button[class*="shadow-raised-low"]${SOLID_FILL}`,
+  `a[class*="shadow-raised-low"][class*="rounded-full"]${SOLID_FILL}`,
+  `a[class*="shadow-raised-low"][class*="h-8"]${SOLID_FILL}`,
+  `a[class*="shadow-raised-low"][class*="h-9"]${SOLID_FILL}`,
 ].join(", ");
 
 const SKIP = "[data-glass], [data-glass] *, [data-no-lens], .hit-slop";

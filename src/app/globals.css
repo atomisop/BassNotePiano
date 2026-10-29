@@ -1599,14 +1599,17 @@
    and cleans up the type: the system font like native iOS apps, small labels
    in sentence case instead of wide-tracked capitals.
    ========================================================================== */
-[data-surface="app"] .uppercase {
+/* `body:has(...)` also reaches sheets and dialogs, which are portalled to <body> outside the app area: without it the payment sheet
+   showed wide-tracked capitals in the public pages' font. */
+:is([data-surface="app"], body:has([data-surface="app"])) .uppercase {
   text-transform: none;
   font-weight: 500;
 }
-[data-surface="app"] [class*="tracking-"] {
+:is([data-surface="app"], body:has([data-surface="app"])) [class*="tracking-"] {
   letter-spacing: normal;
 }
-[data-surface="app"] {
+[data-surface="app"],
+body:has([data-surface="app"]) {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

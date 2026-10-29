@@ -189,7 +189,7 @@ export function PaymentPlanTierGrid({
                 type="button"
                 disabled={option.value === switchTo.currentTerm || switchTo.pendingTerm !== null}
                 onClick={() => switchTo.onSwitch(option.value)}
-                className={`tap flex h-12 w-full items-center justify-center rounded-xl text-small font-semibold transition disabled:cursor-not-allowed ${
+                className={`tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
                   option.value === switchTo.currentTerm
                     ? "bg-neu-base text-slate-400 shadow-pressed-low"
                     : featured
@@ -203,7 +203,7 @@ export function PaymentPlanTierGrid({
             ) : (
               <Link
                 href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`}
-                className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
+                className={`flex h-12 items-center justify-center rounded-full text-small font-semibold transition ${
                   featured
                     ? "bg-amber-400 text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
                     : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-slate-50"
