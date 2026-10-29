@@ -29,6 +29,7 @@ import { TopBanners } from "@/components/ui/TopBanners";
 import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
+import { getAdminNavBadges } from "@/lib/admin";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import { PricingProvider } from "@/components/billing/PricingContext";
@@ -82,6 +83,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : null;
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
+  // The waiting counts beside the admin sections in the sidebar.
+  const adminBadges = isAdmin ? await getAdminNavBadges().catch(() => ({})) : {};
 
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
@@ -126,7 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
-      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} />
+      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

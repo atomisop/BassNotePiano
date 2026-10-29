@@ -3,17 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, Sparkles, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
 import { Kbd } from "@/components/ui/Kbd";
-import { goKeysFor, OPEN_COMMAND_EVENT } from "@/lib/shortcuts";
-import { themeMode } from "@/lib/themes";
-import { useTheme } from "@/components/theme/ThemeProvider";
+import { goKeysFor } from "@/lib/shortcuts";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminNavBadges } from "@/lib/adminNav";
+import { HUB_ICON } from "@/components/admin/AdminNav";
+import { atomHiddenOn, openAtom } from "@/lib/atomTrigger";
 import { GlassLens } from "@/components/ui/GlassLens";
 
-type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
+type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
 
 // Same destinations as the phone dock, plus Practice and Profile, which have
 // room here. Grouped so a long list stays scannable.
@@ -50,12 +51,27 @@ const GROUPS: { title: string; items: Item[] }[] = [
  * AppDock; this takes its place on wide screens so nothing floats over the
  * content and every destination has a label. Sits under the fixed TopBar.
  */
-export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean }) {
+export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminBadges = {} }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean; adminBadges?: AdminNavBadges }) {
   const pathname = usePathname();
   const unread = useUnreadMessages(initial);
-  const { resolvedTheme, setTheme } = useTheme();
-  const dark = themeMode(resolvedTheme) === "dark";
   const [mounted, setMounted] = useState(false);
+  // The admin's six sections sit under Website as one more group, so the admin pages need no second menu of their own on a computer.
+  const adminHub = pathname.startsWith("/admin") ? locateAdminPage(pathname)?.hub.id ?? "overview" : null;
+  const groups: { title: string; items: Item[] }[] = isAdmin
+    ? [
+        ...GROUPS,
+        {
+          title: "Admin",
+          items: ADMIN_HUBS.map((hub) => ({
+            href: hub.pages[0].href,
+            label: hub.label,
+            icon: HUB_ICON[hub.id],
+            isActive: () => adminHub === hub.id,
+            count: hubWaiting(hub, adminBadges),
+          })),
+        },
+      ]
+    : GROUPS;
   useEffect(() => setMounted(true), []);
 
   // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
@@ -103,16 +119,15 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
           <GlassLens radius={12} bezel={11} strength={10} />
         </span>
       )}
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.title} className="sb-group relative z-10">
           <p className="sb-group-title px-2.5 pb-1.5 text-small font-medium text-slate-500">{group.title}</p>
           <ul className="grid gap-0.5">
             {group.items.map((item) => {
-              const active =
-                pathname === item.href ||
-                pathname.startsWith(`${item.href}/`) ||
-                (item.match?.some((m) => pathname.startsWith(m)) ?? false);
-              const badge = item.href === "/messages" ? unread : 0;
+              const active = item.isActive
+                ? item.isActive(pathname)
+                : pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.match?.some((m) => pathname.startsWith(m)) ?? false);
+              const badge = item.href === "/messages" ? unread : item.count ?? 0;
               const Icon = item.icon;
               return (
                 <li key={item.href}>
@@ -163,28 +178,19 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
       {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
       <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
 
-      {/* Search (opens the command menu) next to the light/dark switch. */}
-      <div className="sb-tools sticky bottom-0 mt-auto flex items-center gap-2 pt-1">
+      {/* Ask AI at the foot of the sidebar (search and the light/dark switch are in the top bar). */}
+      <div className="sb-tools sticky bottom-0 mt-auto pt-1">
+        {!atomHiddenOn(pathname) && (
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_EVENT))}
-          data-search-trigger=""
-          title="Search and commands"
-          className="sb-item press-soft flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={openAtom}
+          title="Ask AI"
+          className="sb-item press-soft flex h-10 w-full min-w-0 items-center gap-2 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Search className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-          <span className="sb-label truncate">Search</span>
-          <Kbd keys={["Mod", "K"]} className="sb-label ml-auto" />
+          <Sparkles className="h-4 w-4 shrink-0 text-signal-fg" strokeWidth={2} aria-hidden />
+          <span className="sb-label truncate">Ask AI</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setTheme(dark ? "paper" : "ink")}
-          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-          title={dark ? "Light theme" : "Dark theme"}
-          className="press-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {mounted && (dark ? <Sun className="h-4 w-4" strokeWidth={1.75} aria-hidden /> : <Moon className="h-4 w-4" strokeWidth={1.75} aria-hidden />)}
-        </button>
+        )}
       </div>
     </nav>
   );

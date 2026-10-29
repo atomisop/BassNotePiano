@@ -9,6 +9,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
+import { TopBarTools } from "./TopBarTools";
 import { CreditsBadge } from "./CreditsBadge";
 import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
@@ -91,7 +92,11 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             (md:contents just removes their wrapper from the layout), so their panels still open from the menu and keep counting. */}
         <StreakBadge />
         <CreditsBadge />
-        <AskAiButton />
+        {/* Ask AI lives at the foot of the sidebar on a computer; search and the light/dark switch take its place here. */}
+        <span className="contents lg:hidden">
+          <AskAiButton />
+        </span>
+        <TopBarTools />
         {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}
         {isOwner && (
           <div className="hidden md:contents">
@@ -114,7 +119,12 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         <span className="contents lg:hidden">
           <FriendsTopLink />
         </span>
-        {isAdmin && <AdminTopLink />}
+        {/* From lg the sidebar lists the admin sections, so the shortcut is only for tablets. */}
+        {isAdmin && (
+          <span className="contents lg:hidden">
+            <AdminTopLink />
+          </span>
+        )}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
