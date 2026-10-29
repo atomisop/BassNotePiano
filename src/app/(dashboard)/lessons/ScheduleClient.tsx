@@ -184,7 +184,7 @@ export function ScheduleClient({
               const confirming = confirmSkipId === booking.id;
               const busy = skippingId === booking.id;
               return (
-                <div key={booking.id} className="rounded-lg bg-neu-base px-3.5 py-2.5 shadow-raised-low">
+                <div key={booking.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
@@ -194,7 +194,7 @@ export function ScheduleClient({
                     </div>
                     <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
                   </div>
-                  <div className="mt-2.5 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {booking.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
                     {hoursUntil <= 0.5 && hoursUntil > -1 && !booking.inPerson && (
                       <DiscordLink
@@ -214,13 +214,33 @@ export function ScheduleClient({
                         Add to calendar
                       </a>
                     )}
+                    {canChange && !confirming && (
+                      <>
+                        {canReschedule && (
+                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                            Move this week
+                          </Link>
+                        )}
+                        {canCancel && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSkipError(null);
+                              setConfirmSkipId(booking.id);
+                            }}
+                            className={buttonVariants({ variant: "secondary", size: "sm" })}
+                          >
+                            Skip this class
+                          </button>
+                        )}
+                      </>
+                    )}
+                    <MessageSupportButton bookingId={booking.id} className={buttonVariants({ variant: "ghost", size: "sm" })} />
                   </div>
                   {canChange ? (
-                    confirming ? (
-                      <div className="mt-2.5 rounded-lg bg-neu-base px-3 py-2.5 shadow-pressed-low">
-                        <p className="text-small text-slate-300">
-                          Skip this class? It stays on your account.
-                        </p>
+                    confirming && (
+                      <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
+                        <p className="text-small text-slate-300">Skip this class? It stays on your account.</p>
                         <div className="mt-2 flex gap-2">
                           <button
                             type="button"
@@ -241,35 +261,12 @@ export function ScheduleClient({
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {canReschedule && (
-                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                            Move this week
-                          </Link>
-                        )}
-                        {canCancel && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSkipError(null);
-                            setConfirmSkipId(booking.id);
-                          }}
-                          className={buttonVariants({ variant: "secondary", size: "sm" })}
-                        >
-                          Skip this class
-                        </button>
-                        )}
-                      </div>
                     )
                   ) : (
                     <p className="mt-2 text-small text-slate-500">
                       {insideCutoff ? `Starts within ${cancellationCutoffHours} hours, so changes now go through the team.` : "Changes to this class go through the team."}
                     </p>
                   )}
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <MessageSupportButton bookingId={booking.id} />
-                  </div>
                 </div>
               );
             })}
