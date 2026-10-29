@@ -2042,7 +2042,8 @@ html[data-theme-fade] *::after {
 @media (prefers-reduced-motion: no-preference) {
   [data-lg-press] {
     scale: 1.07 !important;
-    filter: brightness(1.22) saturate(1.25) drop-shadow(0 0 10px rgb(255 255 255 / 0.32));
+    /* Brighter glass, through the lens itself: a filter on the button would wall its glass off from the page. */
+    --lg-bright: 1.32;
     transition-duration: 130ms !important;
     transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1) !important;
   }
@@ -2053,21 +2054,18 @@ html[data-theme-fade] *::after {
 @keyframes lg-release {
   0% {
     transform: scale(1.04, 0.95);
-    filter: brightness(1.22) drop-shadow(0 0 10px rgb(255 255 255 / 0.32));
   }
   22% {
     transform: scale(0.965, 1.05);
   }
   45% {
     transform: scale(1.025, 0.985);
-    filter: brightness(1.08) drop-shadow(0 0 5px rgb(255 255 255 / 0.15));
   }
   68% {
     transform: scale(0.992, 1.006);
   }
   100% {
     transform: scale(1, 1);
-    filter: none;
   }
 }
 
@@ -2189,4 +2187,56 @@ html[data-theme-fade] *::after {
 }
 [data-mode="light"] {
   --lg-sheet-tint: rgb(250 250 253 / 0.8);
+}
+
+/* ---------------------------------------------------------------------------
+   The real lens on every glass button (GlassButtons.tsx picks them and sets --lg-filter, shared by size). The button itself becomes
+   clear (no painted gradient or sheen) and carries no backdrop or filter of its own, because either would wall its glass off from the
+   page; the lens is its ::after, under its label, refracting what is behind it. Hover and press brighten the glass through the lens.
+   --------------------------------------------------------------------------- */
+.lg-glass {
+  isolation: isolate;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  --lg-bright: 1.08;
+}
+:where(.lg-glass:not(.absolute):not(.fixed):not(.sticky)) {
+  position: relative;
+}
+.lg-glass:not(.liquid-signal) {
+  background: transparent !important;
+  box-shadow: 0 6px 16px -10px var(--lg-drop) !important;
+}
+.lg-glass.liquid-signal {
+  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
+  box-shadow: 0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.6) !important;
+}
+@media (hover: hover) {
+  .lg-glass:hover {
+    --lg-bright: 1.18;
+  }
+}
+.lg-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: none;
+  transform: none;
+  opacity: 1;
+  transition: none;
+  -webkit-backdrop-filter: var(--lg-filter) blur(var(--lg-blur, 1.5px)) saturate(1.7) brightness(var(--lg-bright, 1.08));
+  backdrop-filter: var(--lg-filter) blur(var(--lg-blur, 1.5px)) saturate(1.7) brightness(var(--lg-bright, 1.08));
+  clip-path: inset(0 round var(--lg-r, 9999px));
+}
+
+/* The floating top bar's glass: clear enough to see the page bend through it, with a little body so its icons stay readable. */
+:root {
+  --lg-bar-tint: rgb(18 18 20 / 0.32);
+}
+[data-mode="light"] {
+  --lg-bar-tint: rgb(255 255 255 / 0.4);
 }

@@ -6,7 +6,7 @@ const CLICKABLE = 'button, a[href], [role="button"], [role="switch"], [role="tab
 
 /** A control that is a pane of Liquid Glass: it blurs what is behind it, is the main orange glass action, or sits on a glass surface (data-glass, like the dock). */
 function isGlass(el: HTMLElement): boolean {
-  if (el.matches(".liquid-signal") || el.closest("[data-glass]")) return true;
+  if (el.matches(".liquid-signal, .lg-glass") || el.closest("[data-glass]")) return true;
   const style = getComputedStyle(el);
   const blur = style.backdropFilter || (style as CSSStyleDeclaration & { webkitBackdropFilter?: string }).webkitBackdropFilter || "";
   return blur !== "" && blur !== "none";

@@ -111,7 +111,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px here by sitting in flow. This padding reserves that same
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
-      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col pt-12 lg:pl-52">
+      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col pt-[3.75rem] lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
@@ -121,7 +121,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:mb-3 lg:mr-3 lg:rounded-3xl lg:border lg:border-(--neu-edge) lg:bg-neu-base lg:px-8 lg:pb-8 lg:pt-6"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:px-8 lg:pb-8 lg:pt-6"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
       <SwipeBack />
       <AutoRefresh />

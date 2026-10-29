@@ -142,7 +142,10 @@ export function GlassLens({
               <feDistantLight ref={light} azimuth={225} elevation={32} />
             </feSpecularLighting>
             <feComposite in="glint" in2="surface" operator="in" result="glintOnGlass" />
-            <feBlend in="glintOnGlass" in2="refracted" mode="screen" />
+            {/* Soft inner shadow: darker where the glass curves down to its edge. */}
+            <feColorMatrix in="surface" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.24 0.24" result="rimShadow" />
+            <feComposite in="rimShadow" in2="refracted" operator="over" result="shaded" />
+            <feBlend in="glintOnGlass" in2="shaded" mode="screen" />
           </filter>
         </svg>
       )}

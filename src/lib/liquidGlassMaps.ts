@@ -103,11 +103,16 @@ export function glassPixel(px: number, py: number, shape: GlassShape, maxRefract
 
 const cache = new Map<string, GlassMaps>();
 
-export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
+/**
+ * `specular: false` skips the baked rim-light image (browsers that light the glass live in the filter do not need it). The refraction
+ * curve is read from a 256-step table, so a map costs one cheap pass over its pixels.
+ */
+export function buildGlassMaps(shape: GlassShape, opts: { specular?: boolean } = {}): GlassMaps | null {
+  const wantSpecular = opts.specular !== false;
   if (typeof document === "undefined") return null;
   const w = Math.max(2, Math.round(shape.width));
   const h = Math.max(2, Math.round(shape.height));
-  const key = `${w}x${h}:${Math.round(shape.radius)}:${Math.round(shape.bezel)}:${shape.strength}:${shape.magnify ?? 0.4}`;
+  const key = `${w}x${h}:${Math.round(shape.radius)}:${Math.round(shape.bezel)}:${shape.strength}:${shape.magnify ?? 0.4}:${wantSpecular ? 1 : 0}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -118,15 +123,31 @@ export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
   const dctx = disp.getContext("2d");
   const SPEC = 2; // the rim is drawn at twice the resolution so it stays crisp
   const spec = document.createElement("canvas");
-  spec.width = w * SPEC;
-  spec.height = h * SPEC;
+  spec.width = wantSpecular ? w * SPEC : 1;
+  spec.height = wantSpecular ? h * SPEC : 1;
   const sctx = spec.getContext("2d");
   if (!dctx || !sctx) return null;
 
   const d = dctx.createImageData(w, h);
+  const lut = new Float32Array(257);
+  for (let i = 0; i <= 256; i++) lut[i] = Math.min(1, refractionAt(i / 256) / maxRefraction);
+  const k = (shape.magnify ?? 0.4) * 0.5;
+  const r = Math.min(shape.radius, Math.min(w, h) / 2);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const { vx, vy } = glassPixel(x + 0.5, y + 0.5, { ...shape, width: w, height: h }, maxRefraction);
+      const px = x + 0.5;
+      const py = y + 0.5;
+      const { depth, nx, ny } = edgeInfo(px, py, w, h, r);
+      let vx = 0;
+      let vy = 0;
+      if (depth >= shape.bezel) {
+        vx = (-(px - w / 2) / (w / 2)) * k;
+        vy = (-(py - h / 2) / (h / 2)) * k;
+      } else if (depth >= 0) {
+        const m = lut[Math.min(256, Math.round((depth / shape.bezel) * 256))];
+        vx = -nx * m;
+        vy = -ny * m;
+      }
       const i = (y * w + x) * 4;
       d.data[i] = Math.round(128 + vx * 127);
       d.data[i + 1] = Math.round(128 + vy * 127);
@@ -136,11 +157,11 @@ export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
   }
   dctx.putImageData(d, 0, 0);
 
-  const sw = w * SPEC;
-  const sh = h * SPEC;
+  const sw = wantSpecular ? w * SPEC : 1;
+  const sh = wantSpecular ? h * SPEC : 1;
   const s = sctx.createImageData(sw, sh);
   const scaled: GlassShape = { width: sw, height: sh, radius: shape.radius * SPEC, bezel: shape.bezel * SPEC, strength: shape.strength, magnify: shape.magnify };
-  for (let y = 0; y < sh; y++) {
+  for (let y = 0; wantSpecular && y < sh; y++) {
     for (let x = 0; x < sw; x++) {
       const { spec: a, shade } = glassPixel(x + 0.5, y + 0.5, scaled, maxRefraction);
       const i = (y * sw + x) * 4;
@@ -177,7 +198,7 @@ export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
     height = hc.toDataURL("image/png");
   }
 
-  const maps: GlassMaps = { displacement: disp.toDataURL("image/png"), height, specular: spec.toDataURL("image/png"), scale: shape.strength * 2 };
+  const maps: GlassMaps = { displacement: disp.toDataURL("image/png"), height, specular: wantSpecular ? spec.toDataURL("image/png") : "", scale: shape.strength * 2 };
   if (cache.size > 60) cache.clear();
   cache.set(key, maps);
   return maps;
