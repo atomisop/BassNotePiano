@@ -22,7 +22,7 @@ export function Card({ interactive, selected, muted, padded = true, className, .
     <div
       className={cn(
         "relative rounded-card bg-neu-base shadow-raised-mid",
-        padded && "p-(--space-card) md:p-4",
+        padded && "p-(--space-card) md:p-5",
         interactive &&
           "press-soft hover:shadow-raised-high active:shadow-pressed-mid",
         selected && "shadow-pressed-mid ring-1 ring-signal",
