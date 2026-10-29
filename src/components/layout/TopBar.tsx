@@ -10,6 +10,7 @@ import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { CreditsBadge } from "./CreditsBadge";
+import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
 import { SidebarToggle } from "./SidebarToggle";
 
@@ -88,6 +89,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
             menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted
             (md:contents just removes their wrapper from the layout), so their panels still open from the menu and keep counting. */}
+        <StreakBadge />
         <CreditsBadge />
         <AskAiButton />
         {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}

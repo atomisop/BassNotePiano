@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
 import { cookies } from "next/headers";
 import { SCALE_VIEW_COOKIE, parseScaleView } from "@/lib/scaleView";
-import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
@@ -237,16 +236,6 @@ export default async function DashboardPage() {
     );
   };
 
-  const weekCard = () => (
-    <Card>
-      <Eyebrow>This week</Eyebrow>
-      <StreakDots currentStreak={streak} />
-      <p className="mt-3 text-small text-slate-400">
-        {streak > 0 ? `${streak} day streak` : "Practice today to start a streak"}
-      </p>
-    </Card>
-  );
-
   const progressCard = () => (
     <Card>
       <Eyebrow>Progress</Eyebrow>
@@ -262,7 +251,7 @@ export default async function DashboardPage() {
         <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-3">
           <Stat value={`${progress.completedScales}/${progress.totalScales}`} label="Scales" />
           <Stat value={`${earnedBadgeCodes.length}`} label="Badges" />
-          <Stat value={`${streak}`} label="Day streak" />
+          <Stat value={`${practice.streak}`} label="Day streak" />
           <Stat value={formatCredits(storedToCredits(user?.classCredits ?? 0))} label="Credits" />
         </div>
       </div>
@@ -311,13 +300,12 @@ export default async function DashboardPage() {
         <CardDeck
           className="md:hidden"
           label="Your home cards"
-          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
+          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "Progress"]}
         >
           {showGettingStarted && gettingStartedCard()}
           {nextStepCard()}
           {practiceCard()}
           {nextClassCard()}
-          {weekCard()}
           {progressCard()}
         </CardDeck>
 
@@ -329,9 +317,8 @@ export default async function DashboardPage() {
             <div className="md:col-span-2">{nextStepCard()}</div>
             <div className="md:col-span-2">{practiceCard()}</div>
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-3 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
             <div>{nextClassCard()}</div>
-            <div>{weekCard()}</div>
             <div>{progressCard()}</div>
           </div>
         </div>
