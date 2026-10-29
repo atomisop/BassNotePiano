@@ -17,7 +17,6 @@ import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { Chip, HeroCard, MiniStats, StatusStrip } from "@/components/dashboard/FinanceCards";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
@@ -300,51 +299,6 @@ export default async function DashboardPage() {
 
   // Wide screens: the left column in the finance-mockup style (hero card, three mini stats, a thick progress bar, a dark card and an
   // orange card). Phones keep the swipeable card deck above; every action here is one the deck has too.
-  const financeColumn = () => (
-    <div className="grid min-w-0 gap-4">
-      <HeroCard
-        eyebrow="Your next step"
-        title={nextStep.action}
-        detail={nextStep.detail}
-        chip={nextStep.scale && nextStep.kind !== "buy-curriculum" ? <Chip tone="orange">{nextStep.scale.scaleGroup.code}</Chip> : undefined}
-        primary={{ href: nextStep.href, label: nextStep.cta }}
-        secondary={nextStep.secondary ? { href: nextStep.secondary.href, label: nextStep.secondary.cta } : { href: "/practice", label: practice.completedToday ? "Practice more" : "Practice" }}
-        primaryQuiet={joinNow}
-      />
-      <StatusStrip
-        items={[
-          {
-            label: "Next class",
-            value: nextClass ? formatEtDateTime(nextClass.scheduledAt).replace(/ ET$/, "") : "None booked",
-            sub: nextClass ? `${untilLabel(nextClass.scheduledAt)}${nextClass.inPerson ? " · In person" : ""}` : undefined,
-            action:
-              nextClass && joinNow
-                ? { href: nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL, label: "Join on Discord", external: true }
-                : nextClass
-                  ? { href: "/lessons", label: "My classes" }
-                  : { href: "/lessons", label: "Book a class" },
-          },
-          { label: "Credits", value: `${formatCredits(storedToCredits(user?.classCredits ?? 0))} credits`, sub: "One credit is one class", action: { href: "/billing/plans", label: "Plans" } },
-          {
-            label: "Finger practice today",
-            value: `${Math.floor(practice.todaySeconds / 60)} of ${Math.round(DAILY_GOAL_SECONDS / 60)} min`,
-            fraction: practice.todaySeconds / DAILY_GOAL_SECONDS,
-            action: { href: "/practice", label: practice.completedToday ? "Practice more" : "Practice" },
-          },
-        ]}
-      />
-      <MiniStats
-        title="Your numbers"
-        note={`${progress.completedScales} of ${progress.totalScales} scales done`}
-        items={[
-          { label: "Scales", value: `${progress.completedScales}/${progress.totalScales}`, status: progress.completedScales > 0 ? "Moving" : "Starting", on: progress.completedScales > 0 },
-          { label: "Badges", value: String(earnedBadgeCodes.length), status: earnedBadgeCodes.length > 0 ? "Earned" : "None yet", on: earnedBadgeCodes.length > 0 },
-          { label: "Day streak", value: String(streak), status: streak > 0 ? "Active" : "Start today", on: streak > 0 },
-        ]}
-      />
-    </div>
-  );
-
   return (
     <WideLayout>
       {/* grid-cols-1, not an automatic column: an automatic one grows to its widest unbreakable content, and the one-line scale titles in List view made the whole page wider than the phone. */}
@@ -354,10 +308,10 @@ export default async function DashboardPage() {
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 
-        {/* ---- Phones: the cards as one swipeable deck. Finger practice is
+        {/* ---- The cards as one swipeable deck, on phones and computers alike. Finger practice is
             first: it is the thing to do today, and it unlocks the scales. --- */}
         <CardDeck
-          className="md:hidden"
+          className="mx-auto w-full max-w-2xl"
           label="Your home cards"
           labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
         >
@@ -368,19 +322,6 @@ export default async function DashboardPage() {
           {weekCard()}
           {progressCard()}
         </CardDeck>
-
-        {/* ---- Desktop: what to do on the left, what is coming on the right (like the reference's main area and side panel).
-            Below xl it is one band of cards. From xl the next class, the week and progress stack in a right column. ---- */}
-        <div className="hidden md:block xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:items-start xl:gap-6">
-          <div className="grid min-w-0 gap-4">
-            {showGettingStarted && gettingStartedCard()}
-            {financeColumn()}
-          </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
-            <div>{weekCard()}</div>
-            <div>{progressCard()}</div>
-          </div>
-        </div>
 
         <TeacherNotesCard studentId={session.user.id} />
 
