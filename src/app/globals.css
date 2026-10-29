@@ -366,17 +366,6 @@
   border-top: 1px solid var(--surface-border);
 }
 
-@utility chip-accent {
-  /* The small token chips, spelled notes, transposition cells, badges.
-     Accent-tinted again, by direct instruction bringing signal green back
-     as the one accent (see themes.css's own "Accent" comment), badges
-     being exactly this utility's own job. Diverged back out from
-     `.chip-neutral` below. amber-300 is this ramp's own byte-exact green
-     (--c-a-300), safely inside AA even at low opacity. */
-  border: 1px solid rgb(var(--c-a-300) / 0.35);
-  background: rgb(var(--c-a-300) / 0.1);
-}
-
 @utility chip-neutral {
   border: 1px solid rgb(var(--c-s-50) / 0.08);
   background: rgb(var(--c-s-50) / 0.04);
@@ -480,7 +469,7 @@
 
 /* Both glows neutral now, not accent-tinted, a soft white/black ambient
    bloom instead of a colour wash, same "accent only on true CTAs"
-   instruction as `.chip-accent`/`.eyebrow` above. */
+   instruction as `.eyebrow` above. */
 @utility backdrop-glow-smoke-top {
   background: radial-gradient(
     60% 80% at 50% 0%,
@@ -830,8 +819,6 @@
     letter-spacing: -0.008em;
   }
   /* Body sits at 0, the default, and only the smallest sizes open up. */
-  .text-xs,
-  .text-\[11px\],
   .text-\[10px\] {
     letter-spacing: 0.006em;
   }
@@ -986,14 +973,6 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
-  /* The bright top edge is light catching the lip of the material, a
-   theme-aware highlight (`--c-ink` flips dark-on-light/white-on-dark per
-   theme) rather than a hardcoded white line, since Editorial Paper's own
-   chrome is now translucent too and a literal white edge would vanish
-   against its light ground. */
-  .chrome-top-edge {
-    border-top: 1px solid rgb(var(--c-ink) / 0.12);
-  }
 
   /* ==========================================================================
    Accessibility preferences beyond reduced-motion
@@ -1043,10 +1022,8 @@
     --space-section: 3rem;
     --space-group: 1rem;
     --space-card: 1rem;
-    --space-inline: 0.75rem;
 
     /* Layering for the three planes plus app chrome. */
-    --z-back: 0;
     --z-mid: 10;
     --z-front: 20;
     --z-chrome: 40;
@@ -1070,7 +1047,6 @@
     --neu-hi: rgb(255 255 255 / 0.04);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
-    --flat-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.12);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1098,7 +1074,6 @@
     --neu-hi: rgb(255 255 255 / 0.95);
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
-    --flat-lo: rgb(0 0 0 / 0.14);
     --neu-edge: rgb(0 0 0 / 0.08);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1981,49 +1956,12 @@ input[type="radio"],
     0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
 }
 
-/* A thin rainbow along the rim, painted in the border only (the mask cuts out the middle). */
-@utility liquid-rim {
-  position: relative;
-}
-.liquid-rim::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: conic-gradient(from 200deg, #ff6b6b, #ffd166, #7bed9f, #5ec8ff, #b388ff, #ff6bd6, #ff6b6b);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: 0.6;
-}
-
-/* The dock: thicker glass that bends what is behind it. The SVG lens works where backdrop-filter accepts a filter (Chrome); elsewhere
-   the plain blur above it stays. */
-@utility liquid-dock {
-  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
-  -webkit-backdrop-filter: blur(16px) saturate(2) brightness(1.1);
-  backdrop-filter: blur(16px) saturate(2) brightness(1.1);
-  box-shadow:
-    inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 255 255 / 0.12),
-    inset 0 -10px 16px -12px var(--lg-glow),
-    -1px 0 0 rgb(255 70 110 / 0.28),
-    1px 0 0 rgb(70 170 255 / 0.28),
-    0 14px 30px -12px var(--lg-drop);
-}
-@supports (backdrop-filter: url(#lg-lens)) {
-  .liquid-dock {
-    backdrop-filter: url(#lg-lens) blur(12px) saturate(2) brightness(1.1);
-  }
-}
-
-/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). */
-button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-red"]):not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-8"]:not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
+/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). A
+   control with its own solid fill keeps it (GlassButtons.tsx skips the same ones). */
+button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-8"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]) {
   background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
   -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
   backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
@@ -2036,7 +1974,6 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
 
 @media (prefers-reduced-transparency: reduce) {
   .liquid,
-  .liquid-dock,
   button[class*="shadow-raised-low"],
   a[class*="shadow-raised-low"] {
     -webkit-backdrop-filter: none;
@@ -2281,14 +2218,6 @@ html[data-theme-fade] *::after {
   -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
   backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
   clip-path: inset(0 round var(--lg-r, 9999px));
-}
-
-/* The floating top bar's glass: clear enough to see the page bend through it, with a little body so its icons stay readable. */
-:root {
-  --lg-bar-tint: rgb(18 18 20 / 0.32);
-}
-[data-mode="light"] {
-  --lg-bar-tint: rgb(255 255 255 / 0.4);
 }
 
 /* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
