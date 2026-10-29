@@ -12,6 +12,7 @@ import { getHoldChoices } from "@/lib/contacts";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
+import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview } from "@/lib/planBuilder";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -152,6 +153,50 @@ export async function settleLatePaymentAction(planId: string, input: LateSettlem
       }
     },
     { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } as { ok: boolean; error: string | null; newDueDate?: string } },
+  );
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
+}
+
+/** Owner only: what the plan builder starts from for this student (their plan if any, the free weekly times, the lengths on offer). */
+export async function planBuilderContextAction(userId: string): Promise<{ ok: true; context: PlanBuilderContext } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can use the plan builder." };
+  try {
+    return { ok: true, context: await getPlanBuilderContext(userId) };
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+  }
+}
+
+/** Owner only: the whole timeline the plan builder would make, without changing anything. */
+export async function planBuilderPreviewAction(input: PlanBuilderInput): Promise<{ ok: true; preview: PlanBuilderPreview } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can use the plan builder." };
+  try {
+    return { ok: true, preview: await previewPlanBuilder(input) };
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+  }
+}
+
+/** Owner only: sets up or re-anchors the plan from the chosen start date, in one step. */
+export async function planBuilderApplyAction(input: PlanBuilderInput, key?: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can use the plan builder." };
+  const result = await runOnce(
+    admin.id,
+    `plan-builder:${input.userId}`,
+    key,
+    async () => {
+      try {
+        await applyPlanBuilder(admin.id, input);
+        return { ok: true, error: null as string | null };
+      } catch (err) {
+        return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again." };
+      }
+    },
+    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." as string | null } },
   );
   if (result.ok) revalidatePath("/", "layout");
   return result;

@@ -131,7 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
-      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} account={{ name: session.user.name ?? session.user.email ?? "You", role: isAdmin ? "Teacher" : "Student", image: session.user.image ?? null }} />
+      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

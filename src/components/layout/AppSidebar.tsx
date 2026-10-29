@@ -1,13 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, type LucideIcon } from "lucide-react";
+import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
 import { Kbd } from "@/components/ui/Kbd";
-import { goKeysFor } from "@/lib/shortcuts";
+import { goKeysFor, OPEN_COMMAND_EVENT } from "@/lib/shortcuts";
+import { themeMode } from "@/lib/themes";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
 
@@ -45,9 +48,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
  * AppDock; this takes its place on wide screens so nothing floats over the
  * content and every destination has a label. Sits under the fixed TopBar.
  */
-export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, account }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean; account?: { name: string; role: string; image: string | null } }) {
+export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean }) {
   const pathname = usePathname();
   const unread = useUnreadMessages(initial);
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = themeMode(resolvedTheme) === "dark";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <nav
@@ -116,27 +123,28 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, accoun
         <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
       </div>
 
-      {/* Who is signed in, at the bottom, like the account block in the reference. Links to Settings. */}
-      {account && (
-        <Link
-          href="/account"
-          title={account.name}
-          className="sb-item sticky bottom-0 mt-auto flex items-center gap-3 rounded-xl bg-ground p-2 hover:bg-slate-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      {/* Search (opens the command menu) next to the light/dark switch. */}
+      <div className="sb-tools sticky bottom-0 mt-auto flex items-center gap-2 bg-ground pt-1">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_EVENT))}
+          title="Search and commands"
+          className="sb-item press-soft flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neu-lift text-small font-semibold text-slate-100 shadow-raised-low">
-            {account.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={account.image} alt="" className="h-full w-full object-cover" />
-            ) : (
-              account.name.charAt(0).toUpperCase()
-            )}
-          </span>
-          <span className="sb-label min-w-0">
-            <span className="block truncate text-small font-medium text-slate-100">{account.name}</span>
-            <span className="block truncate text-small text-slate-500">{account.role}</span>
-          </span>
-        </Link>
-      )}
+          <Search className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+          <span className="sb-label truncate">Search</span>
+          <Kbd keys={["Mod", "K"]} className="sb-label ml-auto" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setTheme(dark ? "paper" : "ink")}
+          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+          title={dark ? "Light theme" : "Dark theme"}
+          className="press-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {mounted && (dark ? <Sun className="h-4 w-4" strokeWidth={1.75} aria-hidden /> : <Moon className="h-4 w-4" strokeWidth={1.75} aria-hidden />)}
+        </button>
+      </div>
     </nav>
   );
 }
