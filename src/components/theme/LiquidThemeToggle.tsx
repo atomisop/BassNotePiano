@@ -29,7 +29,7 @@ export function LiquidThemeToggle({ className = "" }: { className?: string }) {
       </span>
       <span
         aria-hidden
-        className="liquid-rim absolute left-0 top-0 flex h-14 w-[4.25rem] items-center justify-center rounded-full transition-transform duration-500 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
+        className="absolute left-0 top-0 flex h-14 w-[4.25rem] items-center justify-center rounded-full transition-transform duration-500 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
         style={{ transform: dark ? "translateX(5.75rem)" : "translateX(0)" }}
       >
         <GlassLens radius="full" bezel={20} strength={22} blur={1} />

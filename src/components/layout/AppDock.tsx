@@ -171,7 +171,8 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         animate={{ scale: compact ? 0.82 : 1, y: compact ? 8 : 0 }}
         transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 17, mass: 0.8 }}
         style={{ transformOrigin: "50% 100%" }}
-        className="liquid-rim pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1 shadow-[0_14px_30px_-12px_rgb(0_0_0/0.45)]"
+        data-glass=""
+        className="pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1 shadow-[0_14px_30px_-12px_rgb(0_0_0/0.45)]"
       >
         <GlassLens radius="full" bezel={26} strength={26} magnify={0.55} blur={1.2} />
         {NAV_ITEMS.map((item) => {
@@ -207,7 +208,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 15, mass: 0.9 }}
                   className="pointer-events-none absolute left-1/2 top-0 h-full w-[4.7rem] -translate-x-1/2 rounded-full"
                 >
-                  <GlassLens radius="full" bezel={14} strength={11} tint="linear-gradient(180deg, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.1))" blur={1} />
+                  <GlassLens radius="full" bezel={16} strength={14} magnify={0.85} blur={0.6} />
                 </motion.span>
               )}
               <motion.span
@@ -215,7 +216,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 whileTap={{ scale: 0.82 }}
                 animate={{ scale: active && !reduceMotion ? 1.14 : 1 }}
                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 14, mass: 0.7 }}
-                className="relative flex h-[22px] w-[22px] items-center justify-center"
+                className="relative flex h-[22px] w-[22px] items-center justify-center [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.55))]"
               >
                 <Icon
                   aria-hidden

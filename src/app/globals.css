@@ -1768,9 +1768,8 @@ input[type="radio"],
 .app-sidebar {
   view-transition-name: app-sidebar;
 }
-[aria-label="Primary"][role="navigation"] {
-  view-transition-name: app-dock;
-}
+/* The dock is deliberately NOT given a view-transition-name: an element with one becomes a "backdrop root", which stops the glass in the
+   dock from seeing the page behind it, so it could neither blur nor bend anything. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
@@ -2091,7 +2090,8 @@ html[data-theme-fade] *::after {
   transform-origin: center center;
 }
 .cmd-window[data-state="open"] {
-  animation: cmd-max 460ms cubic-bezier(0.22, 1.08, 0.36, 1) both;
+  /* "backwards", not "both": a filter left on the window after it opens (even blur(0)) would wall its glass off from the page. */
+  animation: cmd-max 460ms cubic-bezier(0.22, 1.08, 0.36, 1) backwards;
 }
 .cmd-window[data-state="closed"] {
   animation: cmd-min 300ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
@@ -2107,8 +2107,8 @@ html[data-theme-fade] *::after {
   }
   100% {
     opacity: 1;
-    transform: translate(0, 0) scale(1, 1);
-    filter: blur(0);
+    transform: none;
+    filter: none;
   }
 }
 @keyframes cmd-min {

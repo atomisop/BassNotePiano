@@ -23,7 +23,7 @@ export function GlassLens({
   bezel = 14,
   strength = 16,
   magnify = 0.4,
-  tint = "linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.04))",
+  tint = "transparent",
   blur = 1.5,
   className = "",
 }: {
@@ -48,6 +48,34 @@ export function GlassLens({
   const [refract, setRefract] = useState(false);
 
   const [tokens, setTokens] = useState({ refraction: 1, dispersion: 1, blur: 1.5 });
+  const light = useRef<SVGFEDistantLightElement>(null);
+
+  // The light comes from wherever the pointer (or finger) is, so the rim lights up on the side facing it and follows as it moves.
+  useEffect(() => {
+    if (!refract) return;
+    let frame = 0;
+    let last: PointerEvent | null = null;
+    const aim = () => {
+      frame = 0;
+      const el = host.current;
+      const l = light.current;
+      if (!el || !l || !last) return;
+      const r = el.getBoundingClientRect();
+      const angle = (Math.atan2(last.clientY - (r.top + r.height / 2), last.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+      l.setAttribute("azimuth", String(Math.round(angle)));
+    };
+    const onMove = (e: PointerEvent) => {
+      last = e;
+      if (!frame) frame = requestAnimationFrame(aim);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [refract]);
   useEffect(() => {
     setRefract(refractionSupported());
     // The look is set in one place (the --lg-* variables in globals.css, and "reduce transparency" switches the bending off).
@@ -107,12 +135,23 @@ export function GlassLens({
             <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale * (1 + 0.075 * split)} xChannelSelector="R" yChannelSelector="G" result="db" />
             <feColorMatrix in="db" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b" />
             <feBlend in="r" in2="g" mode="screen" result="rg" />
-            <feBlend in="rg" in2="b" mode="screen" />
+            <feBlend in="rg" in2="b" mode="screen" result="refracted" />
+            {/* Real light on the curved glass: a specular pass over the surface's own height, lit from the pointer's side. */}
+            <feImage href={maps.height} x={0} y={0} width={size.w} height={size.h} preserveAspectRatio="none" result="surface" />
+            <feSpecularLighting in="surface" surfaceScale={Math.max(2, bz * 0.45)} specularConstant={0.85} specularExponent={26} lightingColor="#ffffff" result="glint">
+              <feDistantLight ref={light} azimuth={225} elevation={32} />
+            </feSpecularLighting>
+            <feComposite in="glint" in2="surface" operator="in" result="glintOnGlass" />
+            <feBlend in="glintOnGlass" in2="refracted" mode="screen" />
           </filter>
         </svg>
       )}
-      <div className="absolute inset-0" style={{ borderRadius: r || undefined, background: tint, WebkitBackdropFilter: body, backdropFilter: body }} />
-      {maps && (
+      <div
+        className="absolute inset-0"
+        // With an SVG filter in it, Chrome stops rounding the backdrop to the border radius, so the clip-path keeps the glass its shape.
+        style={{ borderRadius: r || undefined, clipPath: r ? `inset(0 round ${r}px)` : undefined, background: tint, WebkitBackdropFilter: body, backdropFilter: body }}
+      />
+      {maps && !(refract && tokens.refraction > 0) && (
         <div
           className="absolute inset-0"
           style={{ borderRadius: r || undefined, backgroundImage: `url(${maps.specular})`, backgroundSize: "100% 100%", opacity: 0.95 }}

@@ -24,7 +24,7 @@ describe("liquid glass physics", () => {
     expect(edgeInfo(100, 25, 200, 50, 25).depth).toBeCloseTo(25, 5);
   });
 
-  it("shifts nothing in the middle and pushes the edge outward, and lights the upper-left rim most", () => {
+  it("shifts nothing at the exact middle, pulls the rim from inside, and lights the upper-left rim most", () => {
     const shape = { width: 200, height: 50, radius: 25, bezel: 16, strength: 16 };
     const max = refractionAt(0.001);
     const middle = glassPixel(100, 25, shape, max);
@@ -35,7 +35,7 @@ describe("liquid glass physics", () => {
     expect(glassPixel(160, 25, shape, max).vx).toBeLessThan(0);
     expect(glassPixel(40, 25, shape, max).vx).toBeGreaterThan(0);
     const edge = glassPixel(1.5, 25, shape, max);
-    expect(edge.vx).toBeLessThan(0); // the left edge samples from further left
+    expect(edge.vx).toBeGreaterThan(0); // the left edge samples from inside the glass (to its right), so it never reaches past the glass
     const upperLeft = glassPixel(8, 8, shape, max).spec;
     const lowerRight = glassPixel(192, 42, shape, max).spec;
     expect(upperLeft).toBeGreaterThan(lowerRight);
