@@ -25,8 +25,9 @@ const MAP =
 const HOUSE = "M3.5 10.4 12 3.6l8.5 6.8V19a1.75 1.75 0 0 1-1.75 1.75H15v-5a1.25 1.25 0 0 0-1.25-1.25h-3.5A1.25 1.25 0 0 0 9 15.75v5H5.25A1.75 1.75 0 0 1 3.5 19z";
 const BUBBLE =
   "M12 3.6c4.8 0 8.6 3.4 8.6 7.7S16.8 19 12 19c-1.1 0-2.15-.18-3.12-.5L4.4 20.2l1.25-3.65C4.3 15.2 3.4 13.35 3.4 11.3 3.4 7 7.2 3.6 12 3.6z";
-// The owner's Admin tab: four rounded squares, a dashboard.
-const ADMIN_GRID = "M5.35 3.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM15.35 3.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM5.35 13.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM15.35 13.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6z";
+// The owner's Admin tab: a shield with a check (the usual sign for "admin"), so it is not mistaken for an overview grid.
+const SHIELD = "M12 3.25 19.25 6v5.6c0 4.45-3 8.2-7.25 9.65C7.75 19.8 4.75 16.05 4.75 11.6V6z";
+const SHIELD_CHECK = "M8.9 12.1l2.15 2.15 4.05-4.05";
 const DOCK_GLYPHS: Record<string, DockGlyph> = {
   home: { outline: [HOUSE], fill: HOUSE },
   roadmap: {
@@ -41,7 +42,7 @@ const DOCK_GLYPHS: Record<string, DockGlyph> = {
     rings: "M8 3v3.5M16 3v3.5",
   },
   messages: { outline: [BUBBLE], fill: BUBBLE },
-  admin: { outline: [ADMIN_GRID], fill: ADMIN_GRID },
+  admin: { outline: [SHIELD, SHIELD_CHECK], fill: SHIELD, cut: SHIELD_CHECK },
   settings: { outline: [GEAR, "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"], fill: GEAR, cut: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", cutSolid: true },
 };
 
