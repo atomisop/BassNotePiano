@@ -10,7 +10,7 @@ import { namesMatch } from "@/lib/personNames";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { assertEveryoneAccepted, FamilyInviteError, spendInvites } from "@/lib/familyInvites";
 import { getPricingConfig } from "@/lib/pricing";
-import { PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
+import { duplicateWeeklyTime, PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
   chunksForSchedule,
@@ -1680,8 +1680,8 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
 // Each child gets their own PaymentPlan, all started together by ONE combined payment from the parent's own bank account (the same
 // FAMILY_PLAN_START payment a group plan uses, on a group of kind PARENT). The parent is a member only if they choose to learn too
 // ("I'm learning too", allowed while they have no plan of their own); they are never forced into a plan to pay for a child, and leaving
-// their own plan never ends the children's. The weekly time goes to the first child; the others (and the parent) book with credits.
-// One child is priced like a solo plan; two or more people get the group rate.
+// their own plan never ends the children's. Every person on it gets their own weekly time (they each pay the full per-person price), and
+// no two of them can share one. One child is priced like a solo plan; two or more people get the group rate.
 // ---------------------------------------------------------------------------
 
 export interface CreateParentPlansInput {
@@ -1689,13 +1689,19 @@ export interface CreateParentPlansInput {
   cadence: PaymentPlanCadence;
   term: PaymentPlanTerm;
   zelleHandle: string;
-  reservedScheduleId: string;
-  reservedChunkIndex: number;
-  /** The linked children's account emails. The first one holds the weekly time. */
-  childEmails: string[];
+  /** The linked children's account emails, each with the weekly time that child will hold. */
+  children: ({ email: string } & ParentPlanSlot)[];
   /** The parent learns too, on a plan of their own at the same price. Needs the parent to have no active plan. */
   includeSelf: boolean;
+  /** The parent's own weekly time. Required when they learn too. */
+  selfSlot?: ParentPlanSlot | null;
   expectedFirstPaymentCents?: number;
+}
+
+/** One weekly time: a class schedule and which 45-minute part of it. */
+export interface ParentPlanSlot {
+  scheduleId: string;
+  chunkIndex: number;
 }
 
 /** What one person pays per 28 days when `people` are on a parent-paid plan: solo price for one, the group rate for two or more. */
@@ -1714,15 +1720,19 @@ export async function createParentPlans(input: CreateParentPlansInput) {
   if (!payer || payer.bannedAt || payer.role !== "STUDENT") throw new PaymentPlanError("Your account cannot start a plan.");
   if (includeSelf && !hasFirstAndLastName(payer.name)) throw new PaymentPlanError("Your account needs a first and last name on it before you can be on a plan.");
 
-  const typed = Array.from(new Set(input.childEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))).filter((e) => e !== payer.email.toLowerCase());
+  const asked = input.children
+    .map((c) => ({ email: c.email.trim().toLowerCase(), scheduleId: c.scheduleId, chunkIndex: c.chunkIndex }))
+    .filter((c) => c.email && c.email !== payer.email.toLowerCase());
+  if (new Set(asked.map((c) => c.email)).size !== asked.length) throw new PaymentPlanError("An account is listed twice. Each child needs their own account.");
+  const typed = asked.map((c) => c.email);
   if (typed.length < 1) throw new PaymentPlanError("Add at least one child's account.");
+  if (includeSelf && !input.selfSlot) throw new PaymentPlanError("Pick a weekly time for yourself too.");
   const people = typed.length + (includeSelf ? 1 : 0);
   if (people > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
 
   const kids = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   const missing = typed.filter((email) => !kids.some((u) => u.email.toLowerCase() === email));
   if (missing.length > 0) throw new PaymentPlanError(`These emails do not have a Bass Note Piano account yet: ${missing.join(", ")}`);
-  // Children first, in the order typed, so the first one holds the weekly time.
   const orderedKids = typed.map((email) => kids.find((k) => k.email.toLowerCase() === email)!);
   for (const kid of orderedKids) {
     if (kid.bannedAt || kid.role !== "STUDENT") throw new PaymentPlanError(`${kid.email} cannot start a plan.`);
@@ -1737,7 +1747,14 @@ export async function createParentPlans(input: CreateParentPlansInput) {
     }
   }
 
-  const holder = orderedKids[0];
+  // Each person's own weekly time, and never the same one twice.
+  const slotFor = new Map<string, ParentPlanSlot>(orderedKids.map((kid, i) => [kid.id, { scheduleId: asked[i].scheduleId, chunkIndex: asked[i].chunkIndex }]));
+  if (includeSelf && input.selfSlot) slotFor.set(payer.id, { scheduleId: input.selfSlot.scheduleId, chunkIndex: input.selfSlot.chunkIndex });
+  for (const slot of slotFor.values()) {
+    if (typeof slot.scheduleId !== "string" || !slot.scheduleId || !Number.isInteger(slot.chunkIndex) || slot.chunkIndex < 0) throw new PaymentPlanError("Pick a weekly time for everyone on the plan.");
+  }
+  if (duplicateWeeklyTime([...slotFor.values()])) throw new PaymentPlanError("Two people picked the same weekly time. Each person needs their own.");
+
   const pricing = await getPricingConfig();
   const perMemberCents = parentPlanPerPersonCents(cadence, term, members.length, pricing);
   if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
@@ -1761,7 +1778,7 @@ export async function createParentPlans(input: CreateParentPlansInput) {
           const mine = await tx.paymentPlan.findFirst({ where: { userId: payerId, status: "ACTIVE" }, select: { id: true } });
           if (mine) throw new PaymentPlanError("You already have your own plan. Turn off \"I'm learning too\", or cancel your plan first.");
         }
-        await assertSlotReservable(tx, input.reservedScheduleId, input.reservedChunkIndex, creditsPerWeek, [], []);
+        for (const [memberId, slot] of slotFor) await assertSlotReservable(tx, slot.scheduleId, slot.chunkIndex, creditsPerWeek, [memberId], []);
 
         const group = await tx.familyPlanGroup.create({ data: { payerId, kind: "PARENT" } });
         const plans: PaymentPlan[] = [];
@@ -1776,8 +1793,8 @@ export async function createParentPlans(input: CreateParentPlansInput) {
                 creditsPerInstallment: rate.creditsPerInstallment,
                 termMonths: rate.termMonths,
                 nextDueDate: new Date(),
-                reservedScheduleId: member.id === holder.id ? input.reservedScheduleId : null,
-                reservedChunkIndex: member.id === holder.id ? input.reservedChunkIndex : null,
+                reservedScheduleId: slotFor.get(member.id)!.scheduleId,
+                reservedChunkIndex: slotFor.get(member.id)!.chunkIndex,
                 familyGroupId: group.id,
               },
             }),
@@ -1796,13 +1813,13 @@ export async function createParentPlans(input: CreateParentPlansInput) {
     await noticePlanUpdated({
       userId: payerId,
       title: "Your plan is set up",
-      body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? holder.name ?? holder.email : `${members.length} accounts`} is set up. Send the first payment (${money(created.startPayment.amountCents)}) from your own bank account to start the classes. You pay every 28-day bill from the Parent mode page.`,
+      body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? members[0].name ?? members[0].email : `${members.length} accounts`} is set up. Send the first payment (${money(created.startPayment.amountCents)}) from your own bank account to start the classes. You pay every 28-day bill from the Parent mode page.`,
     });
     for (const kid of orderedKids) {
       await noticePlanUpdated({
         userId: kid.id,
         title: "A plan was set up for you",
-        body: `${payer.name ?? payer.email} set up your plan. When their first payment arrives your class credits appear${kid.id === holder.id ? " and your weekly class is booked" : ""}. They pay your bills, and they can see your progress and help with your class times.`,
+        body: `${payer.name ?? payer.email} set up your plan. When their first payment arrives your class credits appear and your weekly class is booked. They pay your bills, and they can see your progress and help with your class times.`,
       }).catch((err) => console.error("Parent plan child notice failed (non-blocking):", err));
     }
     return created;

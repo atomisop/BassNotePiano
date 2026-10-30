@@ -236,20 +236,32 @@ export interface EnrollParentPlanResult {
   error: string | null;
 }
 
-/** Parent mode: a parent starts plans for the children they are linked to (and, if they choose, themselves), paying one combined first payment. */
+/** One weekly time as the browser sends it. */
+export interface WeeklyTimeChoice {
+  scheduleId: string;
+  chunkIndex: number;
+}
+
+function isWeeklyTime(value: unknown): value is WeeklyTimeChoice {
+  const v = value as WeeklyTimeChoice | null;
+  return Boolean(v) && typeof v!.scheduleId === "string" && v!.scheduleId.length > 0 && v!.scheduleId.length < 100 && Number.isInteger(v!.chunkIndex) && v!.chunkIndex >= 0;
+}
+
+/** Parent mode: a parent starts plans for the children they are linked to (and, if they choose, themselves), paying one combined first
+ *  payment. Every person gets their own weekly time. */
 export async function enrollParentPlanAction(
   term: PaymentPlanTerm,
-  reservedScheduleId: string,
-  reservedChunkIndex: number,
-  childEmails: string[],
+  children: ({ email: string } & WeeklyTimeChoice)[],
   includeSelf: boolean,
+  selfSlot: WeeklyTimeChoice | null,
   expectedFirstPaymentCents?: number,
 ): Promise<EnrollParentPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
-  if (!Array.isArray(childEmails) || childEmails.length > 10 || childEmails.some((e) => typeof e !== "string")) {
-    return { ok: false, startPaymentId: null, amountCents: null, error: "Check the email addresses and try again." };
+  if (!Array.isArray(children) || children.length > 10 || children.some((c) => !c || typeof c.email !== "string" || c.email.length > 320 || !isWeeklyTime(c))) {
+    return { ok: false, startPaymentId: null, amountCents: null, error: "Check the email addresses and weekly times and try again." };
   }
+  if (includeSelf && !isWeeklyTime(selfSlot)) return { ok: false, startPaymentId: null, amountCents: null, error: "Pick a weekly time for yourself too." };
   try {
     await consumeRateLimit(prisma, `parent-plan:${session.user.id}`, { windowMinutes: 60, max: 10, message: "Too many tries. Please wait a while and try again." });
   } catch (error) {
@@ -262,10 +274,9 @@ export async function enrollParentPlanAction(
       cadence: OFFERED_PLAN_CADENCE,
       term,
       zelleHandle: process.env.ZELLE_HANDLE ?? "payments@yourplatform.com",
-      reservedScheduleId,
-      reservedChunkIndex,
-      childEmails,
+      children: children.map((c) => ({ email: c.email, scheduleId: c.scheduleId, chunkIndex: c.chunkIndex })),
       includeSelf: Boolean(includeSelf),
+      selfSlot: includeSelf && selfSlot ? { scheduleId: selfSlot.scheduleId, chunkIndex: selfSlot.chunkIndex } : null,
       expectedFirstPaymentCents: typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined,
     });
     revalidatePath("/", "layout");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PRICING, MAX_FAMILY_MEMBERS, MIN_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
-import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parseAudience, parseParentMode } from "@/lib/planCheckout";
+import { checkoutTotals, duplicateWeeklyTime, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, parseAudience, parseParentMode } from "@/lib/planCheckout";
 import { DAY_ORDER, formatTimeLabel, formatTimeRange } from "@/lib/weeklyTimeLabels";
 
 const base = { cadence: OFFERED_PLAN_CADENCE, pricing: DEFAULT_PRICING, memberRows: [] as string[] };
@@ -161,5 +161,22 @@ describe("parent mode", () => {
     expect(parseParentMode("family")).toBe(false);
     expect(parseAudience("parent")).toBe("FAMILY");
     expect(parseAudience("group")).toBe("FAMILY");
+  });
+});
+
+describe("parent mode weekly times", () => {
+  it("needs a time for every filled-in child once, then the parent when they learn too", () => {
+    expect(parentTimeHolders(["Kid@Example.com", "", "kid@example.com", "two@example.com"], false)).toEqual([
+      { key: "kid@example.com", label: "Kid@Example.com" },
+      { key: "two@example.com", label: "two@example.com" },
+    ]);
+    expect(parentTimeHolders(["kid@example.com"], true).map((h) => h.key)).toEqual(["kid@example.com", "self"]);
+    expect(parentTimeHolders([""], true)).toEqual([{ key: "self", label: "You" }]);
+  });
+
+  it("spots the same weekly time picked twice", () => {
+    expect(duplicateWeeklyTime([{ scheduleId: "a", chunkIndex: 0 }, { scheduleId: "a", chunkIndex: 1 }])).toBe(false);
+    expect(duplicateWeeklyTime([{ scheduleId: "a", chunkIndex: 0 }, { scheduleId: "b", chunkIndex: 0 }, { scheduleId: "a", chunkIndex: 0 }])).toBe(true);
+    expect(duplicateWeeklyTime([])).toBe(false);
   });
 });

@@ -33,8 +33,19 @@ async function linked(childName = "Kiddo Tester") {
   await respondToParentLink(child.id, link.id, true);
   return { parent, child };
 }
-const startPlan = (parentId: string, childEmails: string[], includeSelf: boolean, slotId: string, term: "MONTHLY" | "TERM_3" = "MONTHLY") =>
-  createParentPlans({ payerId: parentId, cadence: OFFERED_PLAN_CADENCE, term, zelleHandle: "pay@example.com", reservedScheduleId: slotId, reservedChunkIndex: 0, childEmails, includeSelf });
+/** Starts a parent plan. `slotIds[i]` is child i's weekly time; with `includeSelf` the next one is the parent's. */
+const startPlan = (parentId: string, childEmails: string[], includeSelf: boolean, slotIds: string | string[], term: "MONTHLY" | "TERM_3" = "MONTHLY") => {
+  const ids = Array.isArray(slotIds) ? slotIds : [slotIds];
+  return createParentPlans({
+    payerId: parentId,
+    cadence: OFFERED_PLAN_CADENCE,
+    term,
+    zelleHandle: "pay@example.com",
+    children: childEmails.map((email, i) => ({ email, scheduleId: ids[i], chunkIndex: 0 })),
+    includeSelf,
+    selfSlot: includeSelf ? { scheduleId: ids[childEmails.length], chunkIndex: 0 } : null,
+  });
+};
 
 afterAll(async () => {
   await prisma.parentLink.deleteMany({ where: { OR: [{ parentId: { in: userIds } }, { childId: { in: userIds } }] } });
@@ -126,15 +137,52 @@ describe("a parent paying for a child only", () => {
     const second = await account("two", "Child Two");
     await sendParentLink(parent.id, second.email);
     await respondToParentLink(second.id, (await prisma.parentLink.findFirstOrThrow({ where: { parentId: parent.id, childId: second.id } })).id, true);
-    const two = await startPlan(parent.id, [child.email, second.email], false, await slot(3));
+    const [a, b] = [await slot(3), await slot(3, "13:00")];
+    const two = await startPlan(parent.id, [child.email, second.email], false, [a, b]);
     const each = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, "MONTHLY", 2).perStudentMonthlyCents;
     expect(two.startPayment.amountCents).toBe(each * 2);
-    expect(two.plans.filter((p) => p.reservedScheduleId !== null).map((p) => p.userId)).toEqual([child.id]);
+    // Every child holds their own weekly time.
+    expect(Object.fromEntries(two.plans.map((p) => [p.userId, p.reservedScheduleId]))).toEqual({ [child.id]: a, [second.id]: b });
 
     const { parent: p3, child: c3 } = await linked("Child Three");
-    const withSelf = await startPlan(p3.id, [c3.email], true, await slot(4));
+    const withSelf = await startPlan(p3.id, [c3.email], true, [await slot(4), await slot(4, "13:00")]);
     expect(withSelf.plans.map((p) => p.userId).sort()).toEqual([p3.id, c3.id].sort());
     expect(withSelf.startPayment.amountCents).toBe(each * 2);
+    // The parent learning too has a weekly time of their own as well.
+    expect(withSelf.plans.every((p) => p.reservedScheduleId !== null)).toBe(true);
+  });
+
+  it("each person needs their own time: two on one time, a parent learning too with no time, or a time another plan holds are refused, and nothing is created", async () => {
+    const { parent, child } = await linked("Child Four");
+    const second = await account("dup", "Child Five");
+    await sendParentLink(parent.id, second.email);
+    await respondToParentLink(second.id, (await prisma.parentLink.findFirstOrThrow({ where: { parentId: parent.id, childId: second.id } })).id, true);
+    const shared = await slot(5, "15:00");
+    await expect(startPlan(parent.id, [child.email, second.email], false, [shared, shared])).rejects.toThrow(/same weekly time/);
+    await expect(
+      createParentPlans({ payerId: parent.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", zelleHandle: "pay@example.com", children: [{ email: child.email, scheduleId: shared, chunkIndex: 0 }], includeSelf: true, selfSlot: null }),
+    ).rejects.toThrow(/weekly time for yourself/);
+    await expect(startPlan(parent.id, [child.email, child.email], false, [shared, await slot(5, "16:00")])).rejects.toThrow(/listed twice/);
+
+    // A time someone else's plan already holds.
+    const other = await account("hold", "Holder Tester");
+    await prisma.paymentPlan.create({
+      data: { userId: other.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", installmentAmountCents: 5500, creditsPerInstallment: 8, termMonths: 1, installmentsPaid: 1, nextDueDate: new Date(Date.now() + 20 * 86_400_000), reservedScheduleId: shared, reservedChunkIndex: 0 },
+    });
+    await expect(startPlan(parent.id, [child.email, second.email], false, [await slot(6, "15:00"), shared])).rejects.toThrow(/just taken/);
+    expect(await prisma.paymentPlan.count({ where: { userId: { in: [parent.id, child.id, second.id] } } })).toBe(0);
+  });
+
+  it("the one first payment books every person's weekly class", async () => {
+    const { parent, child } = await linked("Child Six");
+    const [a, b] = [await slot(2, "16:00"), await slot(3, "16:00")];
+    const { plans, startPayment } = await startPlan(parent.id, [child.email], true, [a, b]);
+    await submitZellePaymentReference(parent.id, startPayment.id, { senderName: "Parent Tester" });
+    await approveZellePayment(startPayment.id, null);
+    for (const plan of plans) {
+      const booked = await prisma.classBooking.count({ where: { studentId: plan.userId, scheduleId: plan.reservedScheduleId!, status: "SCHEDULED" } });
+      expect(booked).toBeGreaterThan(0);
+    }
   });
 
   it("a parent who already has a plan of their own can still pay for a child, but cannot also add themselves", async () => {
@@ -142,7 +190,7 @@ describe("a parent paying for a child only", () => {
     await prisma.paymentPlan.create({
       data: { userId: parent.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", installmentAmountCents: 5500, creditsPerInstallment: 8, termMonths: 1, installmentsPaid: 1, nextDueDate: new Date(Date.now() + 20 * 86_400_000) },
     });
-    await expect(startPlan(parent.id, [child.email], true, await slot(5))).rejects.toThrow(/already have your own plan/);
+    await expect(startPlan(parent.id, [child.email], true, [await slot(5), await slot(5, "12:00")])).rejects.toThrow(/already have your own plan/);
     await expect(startPlan(parent.id, [child.email], false, await slot(5))).resolves.toBeDefined();
   });
 
@@ -166,7 +214,7 @@ describe("a parent paying for a child only", () => {
 
   it("a parent who learns too can leave their own plan and the child's plan keeps running", async () => {
     const { parent, child } = await linked();
-    const { plans, startPayment } = await startPlan(parent.id, [child.email], true, await slot(2, "13:00"), "TERM_3");
+    const { plans, startPayment } = await startPlan(parent.id, [child.email], true, [await slot(2, "13:00"), await slot(2, "14:00")], "TERM_3");
     await submitZellePaymentReference(parent.id, startPayment.id, { senderName: "Parent Tester" });
     await approveZellePayment(startPayment.id, null);
     const mine = plans.find((p) => p.userId === parent.id)!;

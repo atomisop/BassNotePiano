@@ -81,7 +81,7 @@ describe("abusing a plan a parent pays for", () => {
     const { parent, child } = await linked(label);
     const slot = await prisma.classSchedule.create({ data: { dayOfWeek: 3, startTime: "10:00", durationMin: 45, creditCost: 2, label: `${tag} ${label}` } });
     slotIds.push(slot.id);
-    const { startPayment } = await createParentPlans({ payerId: parent.id, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3", zelleHandle: "pay@example.com", reservedScheduleId: slot.id, reservedChunkIndex: 0, childEmails: [child.email], includeSelf: false });
+    const { startPayment } = await createParentPlans({ payerId: parent.id, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3", zelleHandle: "pay@example.com", children: [{ email: child.email, scheduleId: slot.id, chunkIndex: 0 }], includeSelf: false });
     await submitZellePaymentReference(parent.id, startPayment.id, { senderName: "Parent Tester" });
     await approveZellePayment(startPayment.id, null);
     return { parent, child };
