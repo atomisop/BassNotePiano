@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Checklist, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
 import { ArrowRight } from "@/components/ui/appIcons";
+import { ScaleArt } from "@/components/progression/ScaleArt";
 
 const gridContainer = {
   hidden: {},
@@ -25,6 +26,8 @@ export interface ScaleCardGridProps {
   onCardClick: (scale: ScaleAccessState) => void;
   /** On phones, cards from this position on are hidden (the roadmap's "Show all" button reveals them). */
   phoneHiddenFrom?: number;
+  /** Where the scale pictures live, or null for plain cards. */
+  artBase?: string | null;
 }
 
 /**
@@ -37,7 +40,7 @@ export interface ScaleCardGridProps {
  * The section's one green button is "Continue" in the next-step card above,
  * so card actions here stay quiet text.
  */
-export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFrom }: ScaleCardGridProps) {
+export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFrom, artBase = null }: ScaleCardGridProps) {
   return (
     <motion.ol
       variants={gridContainer}
@@ -57,11 +60,12 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "group press-soft flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "scroll-card group press-soft relative isolate flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isCurrent && "shadow-pressed-mid ring-1 ring-signal",
                 locked && "shadow-pressed-low",
               )}
             >
+              {artBase && <ScaleArt src={`${artBase}/${scale.scaleGroup.slug}.jpg`} locked={locked} />}
               <div className="flex items-center justify-between gap-2">
                 <p className="text-small font-semibold uppercase tracking-caps text-slate-400">
                   {scale.scaleGroup.code}

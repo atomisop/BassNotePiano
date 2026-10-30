@@ -22,6 +22,8 @@ export interface ScaleRoadmapProps {
   earnedBadgeCodes: BadgeCode[];
   /** The layout they last chose, read from the cookie on the server so the first paint is already right. */
   initialView?: ScaleView;
+  /** Where the scale pictures live (the public R2 bucket's scale-art folder), or null for plain cards. */
+  artBase?: string | null;
 }
 
 /**
@@ -32,7 +34,7 @@ export interface ScaleRoadmapProps {
 /** Scales shown at first on a phone. */
 const PHONE_VISIBLE = 4;
 
-export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid" }: ScaleRoadmapProps) {
+export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid", artBase = null }: ScaleRoadmapProps) {
   const router = useRouter();
   const [tab, setTab] = useState<HomeTab>("progress");
   // Phones: the path is fifteen cards long. Show the scale you are on and the next few; the rest open on request.
@@ -134,7 +136,7 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid" }
             title={tab === "completed" ? "No finished scales yet" : "Every scale is finished"}
           />
         ) : view === "grid" ? (
-          <ScaleCardGrid roadmap={shown} currentSlug={currentSlug} onCardClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} />
+          <ScaleCardGrid roadmap={shown} currentSlug={currentSlug} onCardClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} artBase={artBase} />
         ) : (
           <ScaleListRows roadmap={shown} currentSlug={currentSlug} onRowClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} />
         )}

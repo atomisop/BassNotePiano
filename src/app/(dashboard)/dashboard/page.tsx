@@ -15,7 +15,8 @@ import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
 import { cn } from "@/lib/utils";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
-import { Card, Eyebrow } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Card";
+import { ColorCard } from "@/components/home/ColorCard";
 import { buttonVariants } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { DiscordLink } from "@/components/ui/DiscordLink";
@@ -56,7 +57,7 @@ export default async function HomePage() {
       <WideLayout>
         <div className="grid grid-cols-1 gap-3 md:max-w-3xl">
           {greeting}
-          <Card className="overflow-hidden p-5 md:p-7">
+          <ColorCard color="sunset" className="p-5 md:p-7">
             <Eyebrow>Start here</Eyebrow>
             <p className="mt-2 text-headline font-bold leading-tight text-slate-50 md:text-headline">{data.nextStep.action}</p>
             <p className="mt-2 max-w-xl text-body text-slate-300">{data.nextStep.detail}</p>
@@ -71,15 +72,15 @@ export default async function HomePage() {
                 </Link>
               )}
             </div>
-          </Card>
-          <Card className="p-5 md:p-6">
+          </ColorCard>
+          <ColorCard color="ocean" className="p-5 md:p-6">
             <Eyebrow>How it works</Eyebrow>
             <ul className="mt-4 grid gap-4">
               <HowRow icon={<Video className="h-5 w-5" />} title="Live classes on Discord" body="A real teacher every week, at a time you pick." />
               <HowRow icon={<Map className="h-5 w-5" />} title="Your roadmap" body="Scales one at a time, opened by your teacher as you go." />
               <HowRow icon={<Flame className="h-5 w-5" />} title="10 minutes a day" body="Daily finger practice builds your streak and your hands." />
             </ul>
-          </Card>
+          </ColorCard>
           <TipCard tip={data.tip} />
         </div>
       </WideLayout>
@@ -105,7 +106,7 @@ export default async function HomePage() {
             {/* Today's one thing. */}
             {data.gettingStarted.length > 0 && <GettingStartedCard items={data.gettingStarted} className="order-1" />}
 
-            <Card className="order-2 p-5 md:p-6">
+            <ColorCard color="sunset" className="order-2 p-5 md:p-6">
               <Eyebrow>Today</Eyebrow>
               <p className="mt-2 text-title font-semibold leading-snug text-slate-50">{data.nextStep.action}</p>
               <p className="mt-1 text-body text-slate-300">{data.nextStep.detail}</p>
@@ -126,7 +127,7 @@ export default async function HomePage() {
                   </Link>
                 )}
               </div>
-            </Card>
+            </ColorCard>
 
             <div className="order-3">
             <RoadmapCard
@@ -139,7 +140,7 @@ export default async function HomePage() {
             />
             </div>
 
-            <div className="order-8 empty:hidden">
+            <div className="scroll-card order-8 empty:hidden">
               <TeacherNotesCard studentId={session.user.id} />
             </div>
 
@@ -147,7 +148,7 @@ export default async function HomePage() {
           </div>
 
           <div className="contents min-w-0 lg:grid lg:gap-3">
-            <Card className="order-4 p-5">
+            <ColorCard color="ocean" className="order-4 p-5">
               <Eyebrow>Next class</Eyebrow>
               {nextClass ? (
                 <>
@@ -173,9 +174,9 @@ export default async function HomePage() {
                   </Link>
                 </>
               )}
-            </Card>
+            </ColorCard>
 
-            <Card className="order-5 p-5">
+            <ColorCard color="rose" className="order-5 p-5">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <Eyebrow>Practice</Eyebrow>
@@ -207,9 +208,9 @@ export default async function HomePage() {
                   {practice.todaySeconds > 0 ? "Continue practice" : "Start practice"}
                 </Link>
               )}
-            </Card>
+            </ColorCard>
 
-            <Card className="order-6 p-5">
+            <ColorCard color="forest" className="order-6 p-5">
               <Eyebrow>Progress</Eyebrow>
               <div className="mt-3 flex items-center gap-5">
                 <ProgressRing
@@ -227,9 +228,9 @@ export default async function HomePage() {
                   <Stat value={formatCredits(data.credits)} label="Credits" />
                 </div>
               </div>
-            </Card>
+            </ColorCard>
 
-            <Card className="order-7 p-5">
+            <ColorCard color="gold" className="order-7 p-5">
               <div className="flex items-center justify-between gap-3">
                 <Eyebrow>Leaderboard this week</Eyebrow>
                 <Trophy aria-hidden className="h-4 w-4 text-slate-400" />
@@ -244,9 +245,9 @@ export default async function HomePage() {
               <Link href="/leaderboard" className="tap mt-3 inline-flex items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
                 See the whole board
               </Link>
-            </Card>
+            </ColorCard>
 
-            <Card className="order-10 p-5">
+            <ColorCard color="plum" className="order-10 p-5">
               <Eyebrow>Friends</Eyebrow>
               {data.friendsPracticing.length > 0 ? (
                 <p className="mt-2 text-body text-slate-100">
@@ -264,7 +265,7 @@ export default async function HomePage() {
                 <Users aria-hidden className="h-4 w-4" />
                 {data.friendCount > 0 ? "See friends" : "Find friends"}
               </Link>
-            </Card>
+            </ColorCard>
           </div>
         </div>
       </div>
@@ -288,14 +289,14 @@ function HowRow({ icon, title, body }: { icon: React.ReactNode; title: string; b
 
 function TipCard({ tip, className }: { tip: { title: string; body: string }; className?: string }) {
   return (
-    <Card className={cn("p-5", className)}>
+    <ColorCard color="teal" className={cn("p-5", className)}>
       <div className="flex items-center gap-2 text-slate-400">
         <Lightbulb aria-hidden className="h-4 w-4" />
         <Eyebrow className="text-slate-400">Tip of the day</Eyebrow>
       </div>
       <p className="mt-2 text-body font-semibold text-slate-50">{tip.title}</p>
       <p className="mt-1 text-body text-slate-300">{tip.body}</p>
-    </Card>
+    </ColorCard>
   );
 }
 
@@ -312,7 +313,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 /** First-week checklist: each row ticks itself when the real thing happens, and the card is gone once all are done. */
 function GettingStartedCard({ items, className }: { items: { done: boolean; label: string; detail: string; href: string; external: boolean }[]; className?: string }) {
   return (
-    <Card className={cn("p-5", className)}>
+    <ColorCard color="indigo" className={cn("p-5", className)}>
       <Eyebrow>
         Get started · {items.filter((g) => g.done).length} of {items.length}
       </Eyebrow>
@@ -348,6 +349,6 @@ function GettingStartedCard({ items, className }: { items: { done: boolean; labe
           );
         })}
       </ul>
-    </Card>
+    </ColorCard>
   );
 }
