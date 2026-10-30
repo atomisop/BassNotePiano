@@ -21,6 +21,7 @@ import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCommands";
 import { buttonVariants } from "@/components/ui/button";
 import { BackLink } from "@/components/ui/BackLink";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -206,7 +207,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 {resolving ? "Resolving…" : "Mark resolved"}
               </button>
             ) : (
-              <span className="rounded-full bg-slate-50/15 px-2.5 py-1 text-small font-medium text-slate-100">Resolved</span>
+              <StatusDot tone="success">Resolved</StatusDot>
             )}
             <button
               type="button"

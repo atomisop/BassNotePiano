@@ -11,6 +11,9 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CreditCard } from "@/components/ui/appIcons";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
@@ -32,10 +35,10 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELED: "Canceled",
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  ACTIVE: "bg-emerald-400/15 text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.45)]",
-  COMPLETED: "bg-slate-50/15 text-slate-100",
-  CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
+const STATUS_TONE: Record<string, "success" | "neutral"> = {
+  ACTIVE: "success",
+  COMPLETED: "neutral",
+  CANCELED: "neutral",
 };
 
 function receivedCents(plan: AdminPaymentPlan): number {
@@ -117,7 +120,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   }
 
   if (plans.length === 0) {
-    return <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>;
+    return <EmptyState icon={<CreditCard />} title={emptyMessage.replace(/\.$/, "")} description="Plans appear here as students start them." />;
   }
 
   return (
@@ -146,11 +149,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">
               {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) ? null : (
-                <span
-                  className={`inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[plan.status]}`}
-                >
-                  {STATUS_LABEL[plan.status]}
-                </span>
+                <StatusDot tone={STATUS_TONE[plan.status] ?? "neutral"}>{STATUS_LABEL[plan.status]}</StatusDot>
               )}
               {plan.status === "ACTIVE" && (
                 <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-slate-50 underline underline-offset-4">
@@ -158,9 +157,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </Link>
               )}
               {plan.isOverdue && (
-                <span className="inline-block rounded-full bg-red-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-red-300">
-                  Overdue
-                </span>
+                <StatusDot tone="danger">Overdue</StatusDot>
               )}
             </div>
           </div>

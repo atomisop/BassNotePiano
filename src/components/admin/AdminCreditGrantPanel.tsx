@@ -8,6 +8,8 @@ import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjus
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Coins } from "@/components/ui/appIcons";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -295,7 +297,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               ) : (
                 <button
                   type="submit"
-                  className={buttonVariants({ variant: "primary", className: "w-full" })}
+                  className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}
                 >
                   {mode === "grant" ? "Review grant" : "Review revoke"}
                 </button>
@@ -330,7 +332,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         <p className="text-small font-medium uppercase tracking-wide text-slate-500">Recent activity</p>
         <div className="mt-2 space-y-2">
           {recentAdjustments.length === 0 && (
-            <div className="glass-surface p-6 text-center text-small text-slate-500">No adjustments yet.</div>
+            <EmptyState icon={<Coins />} title="No adjustments yet" description="Credits you add or take away by hand are listed here." />
           )}
           {recentAdjustments.map((row) => (
             <div key={row.id} className="glass-surface p-4">

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Mail } from "@/components/ui/appIcons";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface UnmatchedEmailRow {
   id: string;
@@ -76,7 +79,7 @@ export function UnmatchedEmailList({
   }
 
   if (rows.length === 0) {
-    return <div className="glass-surface p-8 text-center text-small text-slate-500">No payment emails are waiting to be matched.</div>;
+    return <EmptyState icon={<Mail />} title="All bank emails are matched" description="An email that cannot find its payment by itself waits here for you." />;
   }
 
   return (
@@ -106,9 +109,9 @@ export function UnmatchedEmailList({
                   <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neu-base px-3 py-2 shadow-pressed-low">
                     <span className="min-w-0 text-small text-slate-200">
                       {who} <span className="text-slate-500">· {STATUS_LABEL[c.status] ?? c.status.toLowerCase()}, started {ago(c.createdAtMs)}</span>
-                      {c.phoneMatch && <span className="ml-2 rounded-full bg-signal/16 px-2 py-0.5 text-small font-medium text-signal-fg">Phone matches</span>}
+                      {c.phoneMatch && <StatusDot tone="accent" className="ml-2">Phone matches</StatusDot>}
                       {c.id === row.candidates[0]?.id && row.confidence !== "weak" && (
-                        <span className="ml-2 rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium text-emerald-300">{row.confidence === "strong" ? "Best match" : "Likely"}</span>
+                        <StatusDot tone="success" className="ml-2">{row.confidence === "strong" ? "Best match" : "Likely"}</StatusDot>
                       )}
                       {c.reasons.length > 0 && <span className="mt-0.5 block text-small text-slate-500">{c.reasons.join(" · ")}</span>}
                     </span>

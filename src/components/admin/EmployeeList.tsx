@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EmployeeRow } from "@/lib/admin";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface EmployeeListProps {
   employees: EmployeeRow[];
@@ -53,9 +55,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 {employee.isOwner && (
-                  <span className="rounded-full bg-slate-50/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-50">
-                    Owner
-                  </span>
+                  <StatusDot tone="accent">Owner</StatusDot>
                 )}
                 {employee.id === currentUserId && (
                   <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400 shadow-pressed-low">
@@ -92,11 +92,11 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                   </div>
                 </div>
               ) : (
-                <div className="mt-4">
+                <div className="mt-4 flex justify-end">
                   <button
                     type="button"
                     onClick={() => setConfirmingId(employee.id)}
-                    className="tap w-full rounded-full py-2 text-small font-medium text-red-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
                   >
                     Revoke admin
                   </button>

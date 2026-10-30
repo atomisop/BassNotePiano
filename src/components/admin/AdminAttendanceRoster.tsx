@@ -8,6 +8,8 @@ import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
 import { CalendarCog } from "@/components/ui/appIcons";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ClipboardCheck } from "@/components/ui/appIcons";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -135,7 +137,7 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
 
 export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAttendance, onSetInPerson }: AdminAttendanceRosterProps) {
   if (occurrences.length === 0) {
-    return <div className="glass-surface p-8 text-center text-small text-slate-500">No bookings in the last 60 days.</div>;
+    return <EmptyState icon={<ClipboardCheck />} title="No classes to mark" description="Classes from the last 60 days show up here for attendance." />;
   }
   const buckets: Record<Bucket, OccurrenceGroup[]> = { needs: [], upcoming: [], done: [] };
   for (const occ of occurrences) buckets[bucketOf(occ)].push(occ);

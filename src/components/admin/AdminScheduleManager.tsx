@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CalendarPlus } from "@/components/ui/appIcons";
 
 interface ScheduleRow {
   id: string;
@@ -203,7 +205,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
   return (
     <div className="space-y-4">
       {byDay.length === 0 && (
-        <p className="glass-surface p-6 text-center text-small text-slate-500">No weekly slots yet.</p>
+        <EmptyState icon={<CalendarPlus />} title="No weekly times yet" description="Add the days and hours you teach, and students can book them." />
       )}
 
       {grouped

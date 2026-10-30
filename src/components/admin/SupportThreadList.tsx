@@ -7,6 +7,9 @@ import { getSupportThreadsAction, type AdminThreadSummary } from "@/app/(dashboa
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LifeBuoy } from "@/components/ui/appIcons";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 const LIST_POLL_MS = 15_000;
 
@@ -46,7 +49,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
           <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
-          {isEmail && <span className="rounded-full bg-slate-50/10 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-300">Email</span>}
+          {isEmail && <StatusDot>Email</StatusDot>}
           <span className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
             {thread.status === "OPEN" ? "Open" : "Resolved"}
           </span>
@@ -107,7 +110,7 @@ export function SupportThreadList({ initialThreads, source, filter, currentAdmin
         />
       )}
       {threads.length === 0 ? (
-        <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>
+        <EmptyState icon={<LifeBuoy />} title={emptyMessage.replace(/\.$/, "")} description="New chats and emails from students land here." />
       ) : (
         <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
           <ViewMore items={threads} initial={12} step={20}>
