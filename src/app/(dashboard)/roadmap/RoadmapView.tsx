@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { getRoadmap } from "@/lib/access";
-import { prisma } from "@/lib/prisma";
 import { SCALE_VIEW_COOKIE, parseScaleView } from "@/lib/scaleView";
 import { roadmapsForViewer } from "@/lib/roadmaps";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
@@ -20,11 +19,7 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/roadmap");
 
-  const [allScales, roadmapList, badgeRows] = await Promise.all([
-    getRoadmap(session.user.id),
-    roadmapsForViewer(session.user.role === "ADMIN"),
-    prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
-  ]);
+  const [allScales, roadmapList] = await Promise.all([getRoadmap(session.user.id), roadmapsForViewer(session.user.role === "ADMIN")]);
 
   // The roadmap on screen: the one asked for (?roadmap=slug), else the one the student is on now.
   const { byId: roadmapSummaries, currentId } = summarizeRoadmaps(
@@ -64,7 +59,6 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
           <h2 className="sr-only">Your scales</h2>
           <ScaleRoadmap
             roadmap={roadmap}
-            earnedBadgeCodes={badgeRows.map((b) => b.code)}
             artBase={process.env.R2_PUBLIC_URL ? `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/scale-art` : null}
             initialView={parseScaleView((await cookies()).get(SCALE_VIEW_COOKIE)?.value) ?? "grid"}
           />

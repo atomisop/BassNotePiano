@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Check, Flame, Lightbulb, Map, Trophy, Users, Video } from "@/components/ui/appIcons";
+import { ArrowRight, Check, Flame, Lightbulb, Map, Medal, Trophy, Users, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";
@@ -22,6 +22,8 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { RoadmapCard } from "@/components/home/RoadmapCard";
 import { CelebrationCard } from "@/components/home/CelebrationCard";
+import { BadgeGrid } from "@/components/gamification/BadgeGrid";
+import { BADGES } from "@/lib/badges";
 
 export const metadata = { title: "Home" };
 
@@ -246,6 +248,27 @@ export default async function HomePage() {
               <Link href="/leaderboard" className="tap mt-3 inline-flex items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
                 See the whole board
               </Link>
+            </ColorCard>
+
+            {/* Badges moved here from the Roadmap (2026-10-30), so the scales page has room for its tabs and toggle. */}
+            <ColorCard color="violet" className="order-11 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <Eyebrow>Badges</Eyebrow>
+                <Medal aria-hidden className="h-4 w-4 text-slate-400" />
+              </div>
+              <p className="mt-2 text-title font-semibold text-slate-50">
+                {data.earnedBadgeCodes.length} of {BADGES.length} earned
+              </p>
+              {/* The whole grid is long, so it opens on request. */}
+              <details className="group mt-3">
+                <summary className="tap inline-flex cursor-pointer list-none items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">Show all badges</span>
+                  <span className="hidden group-open:inline">Hide badges</span>
+                </summary>
+                <div className="mt-3">
+                  <BadgeGrid earnedCodes={new Set(data.earnedBadgeCodes)} />
+                </div>
+              </details>
             </ColorCard>
 
             <ColorCard color="plum" className="order-10 p-5">

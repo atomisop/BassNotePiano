@@ -44,12 +44,17 @@ export function DeckStack() {
       // little above that so the first tip tucks right under the bar.
       const padTop = parseFloat(getComputedStyle(main).paddingTop) || 0;
       const floor = main.clientHeight - DOCK_SPACE - padTop;
-      // A page heading that stays put (Home's greeting): it sticks first, and the deck starts just under it.
-      const header = main.querySelector<HTMLElement>("[data-deck-header]");
+      // Headings that stay put (Home's greeting; the Scales heading and its tabs row): each sticks under the one before, and the
+      // deck starts just under the last.
+      const headers = [...main.querySelectorAll<HTMLElement>("[data-deck-header]")].filter((h) => h.offsetHeight > 0);
       let start = START;
-      if (header) {
-        header.style.setProperty("--deck-top", `${HEADER_TOP}px`);
-        start = HEADER_TOP + header.offsetHeight + 4;
+      if (headers.length > 0) {
+        let edge = HEADER_TOP;
+        headers.forEach((h) => {
+          h.style.setProperty("--deck-top", `${edge}px`);
+          edge += h.offsetHeight;
+        });
+        start = edge + 4;
       }
       ordered.forEach(({ card }, i) => {
         const top = Math.min(start + Math.min(i, MAX_TIPS) * TIP, floor - card.offsetHeight);
