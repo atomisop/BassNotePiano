@@ -2357,29 +2357,28 @@ body:has([data-surface="app"]) .glass-surface-modal {
 [data-mode="light"] .app-dock-active {
   background: rgb(0 0 0 / 0.07);
 }
-/* The dock (a copy of Instagram's tab bar): the lens (GlassLens) frosts and bends the page, so the pill itself only adds a smoky dark or
-   milky white tint, a hairline rim and a soft shadow, and carries no blur of its own (a backdrop-filter here would wall the lens off). */
+/* The dock (a copy of Instagram's tab bar), made of the same 3D glass as the cards around it so it belongs to the page: the card color
+   as a frosted tint, the cards' lift, rim and sheen, and the tab you are on pressed into it the way a pressed control sinks into a card.
+   The lens (GlassLens) frosts and bends the page under it, so the pill carries no blur of its own (that would wall the lens off). */
 .app-dock.app-dock-lens {
-  background: rgb(38 38 41 / 0.74);
+  background-color: rgb(var(--neu-base) / 0.8);
+  background-image: var(--glass-sheen);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 28px -10px rgb(0 0 0 / 0.7);
+  box-shadow: var(--glass-edge3d), inset 0 0 0 1px var(--card-line), -4px -4px 12px var(--glass-hi), 8px 10px 26px var(--glass-lo);
 }
 [data-mode="light"] .app-dock.app-dock-lens {
-  background: rgb(252 252 253 / 0.8);
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+  background-color: rgb(var(--neu-base) / 0.82);
 }
 .app-dock-lens .app-dock-active {
-  background: rgb(255 255 255 / 0.16);
+  background: rgb(var(--neu-base));
+  box-shadow: var(--neu-pressed-mid);
 }
-[data-mode="light"] .app-dock-lens .app-dock-active {
-  background: rgb(0 0 0 / 0.07);
-}
-/* The filled icon's cut-out details take the capsule's look over the pill. */
+/* The filled icon's cut-out details take the pressed capsule's color. */
 .app-dock-lens .dock-icon {
-  --dock-cut: rgb(78 78 81);
+  --dock-cut: rgb(20 19 19);
 }
 [data-mode="light"] .app-dock-lens .dock-icon {
-  --dock-cut: rgb(232 232 234);
+  --dock-cut: rgb(240 240 243);
 }
 
