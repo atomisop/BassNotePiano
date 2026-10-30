@@ -492,6 +492,13 @@ custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `tex
 solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
 matching CSS rule); add any new solid fill there too, or the lens paints over it.
 
+## Card deck on computers (added 2026-10-30)
+
+The phone card deck (cards stacking under a heading that stays put, `DeckStack.tsx`, `.deck-card` / `.deck-header` in globals.css) also runs
+on a computer on the screens whose `WideLayout` has `deckDesktop` (Home, Streak, Leaderboard). There each column is its own stack (cards
+grouped by left edge), and the columns run the full height (`content-start`, no `items-start`) so a stack stays pinned to the end of the page.
+Card grids (Roadmap's scales, the admin overview) keep normal scrolling on a computer.
+
 ## Workflow this session (and prior Claude sessions in this repo) actually follow
 
 1. Branch per unit of work, PR against `main`, `subscribe_pr_activity`,

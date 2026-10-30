@@ -20,8 +20,13 @@ type LayoutProps = {
   className?: string;
 };
 
-export function WideLayout({ children, className = "" }: LayoutProps) {
-  return <div className={`mx-auto w-full max-w-wide ${className}`}>{children}</div>;
+/** `deckDesktop`: keep the card deck (cards stacking under a heading that stays put, see DeckStack) on a computer too. */
+export function WideLayout({ children, className = "", deckDesktop = false }: LayoutProps & { deckDesktop?: boolean }) {
+  return (
+    <div className={`mx-auto w-full max-w-wide ${className}`} data-deck-desktop={deckDesktop ? "" : undefined}>
+      {children}
+    </div>
+  );
 }
 
 /**

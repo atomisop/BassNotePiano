@@ -44,14 +44,14 @@ export default async function StreakPage() {
       : `Practice ${goalMinutes} minutes today to start a streak.`;
 
   return (
-    <WideLayout>
+    <WideLayout deckDesktop>
       <div data-deck-header className="deck-header pt-4 md:pt-6">
         <Eyebrow>Practice</Eyebrow>
         <h1 className="mt-1 text-hero font-semibold text-slate-50">Your streak</h1>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-        <div className="grid min-w-0 gap-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid min-w-0 content-start gap-3">
           {/* The streak itself: the flame, the number, and what to do today. */}
           <Card className="deck-card overflow-hidden p-5 md:p-6">
             <div className="flex items-center gap-5">
@@ -137,7 +137,7 @@ export default async function StreakPage() {
           </Card>
         </div>
 
-        <div className="grid min-w-0 gap-3">
+        <div className="grid min-w-0 content-start gap-3">
           <Card className="deck-card grid grid-cols-3 gap-2 p-4 md:p-5">
             <Fact icon={<Trophy aria-hidden className="h-4 w-4" />} value={best} label="Best streak" />
             <Fact icon={<CalendarDays aria-hidden className="h-4 w-4" />} value={practicedThisMonth(days, today)} label="This month" />

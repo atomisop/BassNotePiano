@@ -18,7 +18,7 @@ export default async function LeaderboardPage() {
   const mine = board.rows.find((r) => r.userId === session.user.id);
 
   return (
-    <WideLayout>
+    <WideLayout deckDesktop>
       <div className="mx-auto grid max-w-2xl gap-3">
         <div data-deck-header className="deck-header pt-4 md:pt-6">
           <Eyebrow>Studio</Eyebrow>
