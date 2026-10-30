@@ -12,6 +12,7 @@ import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
@@ -182,6 +183,8 @@ export function CustomerProfile({
   const [creditConfirming, setCreditConfirming] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
+  const [confirmingUnban, setConfirmingUnban] = useState(false);
+  const [confirmingClearPhone, setConfirmingClearPhone] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banSummary, setBanSummary] = useState<string | null>(null);
   // Role, curriculum-access, and clear-history all used to fire on a single
@@ -260,6 +263,7 @@ export function CustomerProfile({
     const result = await onUnban(user.id);
     setBusy(false);
     if (!result.ok) return setError(result.error);
+    setConfirmingUnban(false);
     router.refresh();
   }
 
@@ -267,9 +271,8 @@ export function CustomerProfile({
     <button
       type="button"
       disabled={busy}
-      onClick={() => {
-        if (window.confirm("Lift this ban? They will be able to sign in again.")) void handleUnban();
-      }}
+      onClick={() => setConfirmingUnban((o) => !o)}
+      aria-expanded={confirmingUnban}
       className={buttonVariants({ variant: "secondary", size: "sm" })}
     >
       Lift ban
@@ -306,6 +309,18 @@ export function CustomerProfile({
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
               </div>
+            )}
+            {confirmingUnban && user.bannedAt && (
+              <InlineConfirm
+                className="mb-4"
+                question="Lift this ban?"
+                detail="They will be able to sign in again. The plans and classes the ban canceled stay canceled."
+                confirmLabel="Yes, lift the ban"
+                busyLabel="Lifting…"
+                busy={busy}
+                onCancel={() => setConfirmingUnban(false)}
+                onConfirm={() => void handleUnban()}
+              />
             )}
             {confirmingBan && !user.bannedAt && (
               <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
@@ -348,15 +363,27 @@ export function CustomerProfile({
                   {user.phone && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm("Clear this phone number? It frees the number so its real owner can add it to their own account.")) void withBusy(() => onClearPhone(user.id));
-                      }}
+                      onClick={() => setConfirmingClearPhone((o) => !o)}
+                      aria-expanded={confirmingClearPhone}
                       className="tap ml-2 text-slate-50 underline hover:opacity-70"
                     >
                       Clear
                     </button>
                   )}
                 </p>
+                {confirmingClearPhone && user.phone && (
+                  <InlineConfirm
+                    className="mt-2"
+                    danger
+                    question="Clear this phone number?"
+                    detail="It frees the number so its real owner can add it to their own account."
+                    confirmLabel="Yes, clear it"
+                    busyLabel="Clearing…"
+                    busy={busy}
+                    onCancel={() => setConfirmingClearPhone(false)}
+                    onConfirm={() => void withBusy(() => onClearPhone(user.id)).then(() => setConfirmingClearPhone(false))}
+                  />
+                )}
                 <p className="mt-1 text-small text-slate-500">
                   {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
                 </p>

@@ -2088,6 +2088,33 @@ html[data-theme-fade] *::after {
 }
 
 /* ---------------------------------------------------------------------------
+   A PhoneAccordion section (the admin overview's dropdowns, mostly) unfolds in 220ms when opened instead of appearing at once and
+   shoving the page down. The clip lives only in the keyframes, so once open nothing is clipped and sticky deck cards inside keep
+   working (overflow: hidden would break them). Radix skips this on first paint, so a section that starts open does not animate.
+   Closing stays instant.
+   --------------------------------------------------------------------------- */
+.phone-section[data-state="open"] {
+  animation: phone-section-open 220ms var(--ease-ios);
+}
+@keyframes phone-section-open {
+  from {
+    height: 0;
+    opacity: 0;
+    clip-path: inset(0);
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-section[data-state="open"] {
+    animation-name: page-enter-fade;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    The search window. Opened by a click, it grows a little out of the button that opened it (the transform-origin is that button, the
    offsets come from command.tsx) in 200ms, and leaves faster than it came. Opened or closed from the keyboard (Cmd/Ctrl-K, "/", Escape)
    it does not animate at all (`data-kb-motion`, lib/keyboardMotion.ts): a shortcut used many times a day should feel instant.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { ChevronDown } from "@/components/ui/appIcons";
 
 /**
@@ -12,8 +13,11 @@ export function ViewMore<T>({
   initial = 5,
   step = 10,
   children,
+  animateRemovals = false,
 }: {
   items: T[];
+  /** Let a row that leaves the list (approved, deleted) play its own `exit` animation; each row must then be a keyed motion element. */
+  animateRemovals?: boolean;
   initial?: number;
   /** How many more rows each tap reveals. */
   step?: number;
@@ -24,7 +28,7 @@ export function ViewMore<T>({
   const left = items.length - visible.length;
   return (
     <>
-      {visible.map((item, i) => children(item, i))}
+      {animateRemovals ? <AnimatePresence initial={false}>{visible.map((item, i) => children(item, i))}</AnimatePresence> : visible.map((item, i) => children(item, i))}
       {(left > 0 || shown > initial) && (
         <div className="flex justify-center gap-2 pt-1">
           {left > 0 && (
