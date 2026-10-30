@@ -78,11 +78,32 @@ export function DeckStack() {
     phone.addEventListener("change", schedule);
     watch();
 
+    // A heading that stays put is marked `data-stuck` while it is pinned, so globals.css can fill the strip above it (under the
+    // see-through top bar) only then. Filled all the time, it would cover whatever sits above the heading before you scroll.
+    let stuckFrame = 0;
+    const markStuck = () => {
+      stuckFrame = 0;
+      const top = main.getBoundingClientRect().top + (parseFloat(getComputedStyle(main).paddingTop) || 0);
+      main.querySelectorAll<HTMLElement>("[data-deck-header]").forEach((h) => {
+        const stop = parseFloat(h.style.getPropertyValue("--deck-top")) || HEADER_TOP;
+        const pinned = phone.matches && main.scrollTop > 0 && h.getBoundingClientRect().top <= top + stop + 1;
+        if (pinned) h.dataset.stuck = "";
+        else delete h.dataset.stuck;
+      });
+    };
+    const onScroll = () => {
+      if (!stuckFrame) stuckFrame = requestAnimationFrame(markStuck);
+    };
+    main.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
     return () => {
       sizes.disconnect();
       added.disconnect();
       phone.removeEventListener("change", schedule);
+      main.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
+      if (stuckFrame) cancelAnimationFrame(stuckFrame);
     };
   }, [pathname]);
 
