@@ -363,6 +363,10 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
   notice (what Atom is, that words go to Google, 30-day history, shared with the team on handoff) behind the "i" next to it, in `AssistantWidget.tsx`; keep it
   in step with `PrivacyContent.tsx` and the privacy summary in `assistant.ts`. Opened from the sidebar's Ask AI on a computer, the window sits above that
   button with a pointer (`openAtom(anchor)`).
+- **Email record** (`EmailLog`, `src/lib/emailLog.ts`): every email `sendEmail` sends, fails or skips (staging, no key in dev) and every one a
+  person's switch or a ban stops (`maybeSendEmail`) gets a row: address, subject, status, reason, never the body. Resend's signed webhook
+  (`/api/webhooks/resend`, `RESEND_WEBHOOK_SECRET`, `verifyResendSignature`) moves it to delivered, opened, clicked, bounced or spam
+  (`nextEmailStatus` never moves backward). Shown as the Email channel on Admin > Inbox > Sent; the daily `credit-expiry` job removes rows after 180 days.
 - **Admin alerts**: an admin's sidebar holds the admin sections, so their spotlight cards (Discord, stopped jobs, waiting counts, today's classes) live in the
   alerts button by the profile picture (`AdminAlertsButton`, `SidebarSpotlight mode="list"`); students keep the cards at the foot of the sidebar.
 - **Accessibility**: run axe-core (WCAG 2.2 AA + best-practice) against the signed-out pages, Home, Lessons, Settings, Billing and the admin screens after UI changes.

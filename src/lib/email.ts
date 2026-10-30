@@ -6,6 +6,7 @@ import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 import type { EmailCategory } from "@/lib/emailPreferences";
 import { unsubscribeLinks } from "@/lib/unsubscribe";
+import { recordEmail } from "@/lib/emailLog";
 
 // Falls back to the actual verified Resend sending domain (a subdomain, not
 // the root domain; see the deployment notes) so a missing env var fails
@@ -75,6 +76,7 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
   // (bodies carry sign-in codes).
   if (isStaging() && (!client || !stagingMayEmail(to))) {
     console.log(`[staging] email to ${to} not sent: ${subject}`);
+    await recordEmail({ to, subject, status: "SKIPPED", detail: "Staging copy: only test addresses get email" });
     return;
   }
 
@@ -98,6 +100,7 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
         "",
       ].join("\n"),
     );
+    await recordEmail({ to, subject, status: "SKIPPED", detail: "Development: no email key, printed to the server log" });
     return;
   }
 
@@ -112,8 +115,11 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
     result = await client.emails.send({ from: next, to, subject, html, text, replyTo: EMAIL_REPLY_TO, headers });
   }
   if (result.error) {
+    await recordEmail({ to, subject, status: "FAILED", detail: result.error.message });
     throw new Error(`Resend failed to send to ${to}: ${result.error.message}`);
   }
+  // Resend's id for this email: its webhook reports delivered, opened and bounced against it.
+  await recordEmail({ to, subject, status: "SENT", resendId: result.data?.id ?? null });
 }
 
 // One light, clean layout for every designed email: a white card on a soft grey page, the brand

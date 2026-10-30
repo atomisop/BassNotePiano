@@ -984,6 +984,7 @@ model User {
   badges             UserBadge[]
   fingerPracticeDays FingerPracticeDay[]
   mailMessages       MailMessage[]       @relation("MailRecipient")
+  emailLogs          EmailLog[]
 
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
@@ -1917,6 +1918,40 @@ enum MailKind {
   ADMIN_MESSAGE
   PAYMENT
   BILLING
+}
+
+// One row per email the app tried to send: sent through Resend, skipped (the person switched that kind off, a banned account, the
+// staging copy) or failed. Resend's webhook then moves a sent email on to delivered, opened, clicked, bounced or marked as spam. Shown on
+// Admin > Inbox > Sent. Only the address and subject are kept, never the body (sign-in emails carry codes). Purged after 180 days.
+model EmailLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  to          String
+  subject     String
+  status      EmailStatus
+  detail      String?
+  resendId    String?     @unique
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  bouncedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+enum EmailStatus {
+  SENT
+  SKIPPED
+  FAILED
+  DELAYED
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
 }
 
 model MailMessage {
