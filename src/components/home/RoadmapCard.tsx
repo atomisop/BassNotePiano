@@ -27,7 +27,7 @@ export function RoadmapCard({
     <Link
       href="/roadmap"
       aria-label={`Open your roadmap, ${name}. ${percent}% done.`}
-      className="scroll-card group relative block overflow-hidden rounded-card text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+      className="group relative block overflow-hidden rounded-card text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
     >
       <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 42%, ${a.to} 100%)` }} />
       <RoadmapKeys />

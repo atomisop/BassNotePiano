@@ -129,7 +129,7 @@ export default async function HomePage() {
               </div>
             </ColorCard>
 
-            <div className="order-3">
+            <div className="deck-card order-3">
             <RoadmapCard
               name={data.roadmap.name}
               artwork={data.roadmap.artwork}
@@ -140,7 +140,7 @@ export default async function HomePage() {
             />
             </div>
 
-            <div className="scroll-card order-8 empty:hidden">
+            <div className="deck-card order-8 empty:hidden">
               <TeacherNotesCard studentId={session.user.id} />
             </div>
 

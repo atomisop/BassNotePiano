@@ -23,7 +23,7 @@ export function ColorCard({ color, className, style, ...props }: HTMLAttributes<
   const c = TILE_COLORS[color];
   return (
     <Card
-      className={cn("color-tile scroll-card overflow-hidden", className)}
+      className={cn("color-tile deck-card overflow-hidden", className)}
       style={{ ...style, ["--tile-from" as string]: c.from, ["--tile-via" as string]: c.via, ["--tile-to" as string]: c.to }}
       {...props}
     />

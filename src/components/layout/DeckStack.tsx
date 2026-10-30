@@ -1,0 +1,76 @@
+"use client";
+
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
+/** How much of each earlier card stays showing above the next one. */
+const TIP = 12;
+/** At most this many tips stack up; later cards stop at the last place, so a long list never squeezes the card being read. */
+const MAX_TIPS = 5;
+/** Where the first card stops, against the scroll area's top padding (just under the top bar). */
+const START = -8;
+/** Room kept clear above the dock. */
+const DOCK_SPACE = 104;
+
+/**
+ * The card deck on phones and tablets (Home, Roadmap, the admin overview): every `.deck-card` slides up and stops under the top bar,
+ * the next one is drawn over it, and the earlier cards' top edges stay showing as a stack of tips (globals.css makes them sticky).
+ * This works out where each card stops: its tip's place in the stack, or, for a card too tall to fit, low enough that its bottom is
+ * seen before it stops. Cards are taken in the order they appear on screen (Home reorders them with CSS `order`).
+ */
+export function DeckStack() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const main = document.getElementById("app-scroll");
+    if (!main) return;
+    const phone = window.matchMedia("(max-width: 1023px)");
+    let frame = 0;
+
+    const layout = () => {
+      frame = 0;
+      const cards = [...main.querySelectorAll<HTMLElement>(".deck-card")];
+      if (!phone.matches) {
+        cards.forEach((c) => c.style.removeProperty("--deck-top"));
+        return;
+      }
+      const ordered = cards
+        .filter((card) => card.offsetHeight > 0)
+        .map((card, index) => ({ card, index, order: Number(getComputedStyle(card).order) || 0 }))
+        .sort((a, b) => a.order - b.order || a.index - b.index);
+      // A sticky `top` counts from the inside of the scroll area's top padding, which already clears the top bar; start the stack a
+      // little above that so the first tip tucks right under the bar.
+      const padTop = parseFloat(getComputedStyle(main).paddingTop) || 0;
+      const floor = main.clientHeight - DOCK_SPACE - padTop;
+      ordered.forEach(({ card }, i) => {
+        const top = Math.min(START + Math.min(i, MAX_TIPS) * TIP, floor - card.offsetHeight);
+        card.style.setProperty("--deck-top", `${Math.round(top)}px`);
+      });
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(layout);
+    };
+
+    const sizes = new ResizeObserver(schedule);
+    const watch = () => {
+      sizes.disconnect();
+      sizes.observe(main);
+      main.querySelectorAll(".deck-card").forEach((c) => sizes.observe(c));
+      schedule();
+    };
+    // Cards stream in (and lists grow) after the first paint: pick them up as they arrive.
+    const added = new MutationObserver(watch);
+    added.observe(main, { childList: true, subtree: true });
+    phone.addEventListener("change", schedule);
+    watch();
+
+    return () => {
+      sizes.disconnect();
+      added.disconnect();
+      phone.removeEventListener("change", schedule);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pathname]);
+
+  return null;
+}

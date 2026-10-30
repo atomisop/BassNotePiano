@@ -1,6 +1,7 @@
 import { practiceBannerAllowed } from "@/lib/emailPreferences";
 import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
 import { ScrollAssist } from "@/components/layout/ScrollAssist";
+import { DeckStack } from "@/components/layout/DeckStack";
 import { AutoRefresh } from "@/components/layout/AutoRefresh";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -128,6 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Suspense fallback={null}>
         <ScrollAssist />
       </Suspense>
+      <DeckStack />
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
