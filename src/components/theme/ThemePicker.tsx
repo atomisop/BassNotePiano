@@ -82,7 +82,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
                     ? "border-amber-400/70 bg-neu-base shadow-pressed-low"
-                    : "border-transparent hover:border-[rgb(var(--c-s-50)/0.4)] bg-neu-base shadow-raised-low"
+                    : "border-transparent hover:border-slate-50/40 bg-neu-base shadow-raised-low"
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">

@@ -36,7 +36,7 @@ export function InviteToRegisterButton({ email }: { email: string }) {
       type="button"
       onClick={() => void send()}
       aria-busy={state === "sending"}
-      className="tap inline-flex h-7 items-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-100 shadow-raised-low transition hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="tap inline-flex h-7 items-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-100 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {state === "sending" ? <MorphingSquare size={12} className="shrink-0" /> : <Send aria-hidden className="h-3.5 w-3.5" />}
       Invite

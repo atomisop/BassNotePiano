@@ -55,7 +55,7 @@ export function BrandMark() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -14, scale: 0.85 }}
               transition={{ duration: reducedMotion ? 0.15 : 0.28, ease: EASE_IOS }}
-              className="inline-block whitespace-nowrap text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]"
+              className="inline-block whitespace-nowrap text-small font-bold lowercase tracking-tight text-slate-50"
             >
               Bass Note Piano
             </motion.span>

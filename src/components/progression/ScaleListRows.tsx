@@ -50,11 +50,11 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
               type="button"
               onClick={() => onRowClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
-              className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--c-s-50)/0.7)] ${
-                isCurrent ? "bg-[rgb(var(--signal)/0.06)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
+              className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-50/70 ${
+                isCurrent ? "bg-signal/6 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
               }`}
             >
-              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-[0.15em]">
+              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-caps">
                 {scale.scaleGroup.code.replace("Scale ", "#")}
               </span>
 
@@ -75,7 +75,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
                     <span
                       key={i}
                       className={`h-1.5 w-2.5 rounded-full sm:w-4 ${
-                        i < doneCount ? "bg-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low"
+                        i < doneCount ? "bg-slate-50" : "bg-neu-base shadow-pressed-low"
                       }`}
                     />
                   ))}

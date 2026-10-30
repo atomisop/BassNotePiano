@@ -324,15 +324,15 @@ export function ZellePaymentModal({
             className="glass-surface-modal relative !bg-neu-base max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-b-none pb-[env(safe-area-inset-bottom)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-[inherit] sm:pb-0"
           >
             {step === "pending" && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
+            <div className="h-1 w-full bg-gradient-to-r from-slate-300/40 via-slate-50 to-slate-300/40" />
 
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+                  <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                     {scaleCode} · {eyebrowLabel}
                   </p>
-                  <h2 id="zelle-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
+                  <h2 id="zelle-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
                     {scaleTitle}
                   </h2>
                 </div>
@@ -374,7 +374,7 @@ export function ZellePaymentModal({
                             onChange={(e) => setPhoneInput(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
                             placeholder="(555) 123-4567"
-                            className="w-full glass-surface-subtle py-2 pl-3 pr-12 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                            className="w-full glass-surface-subtle py-2 pl-3 pr-12 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                           />
                           {phoneOk && (
                             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
@@ -412,7 +412,7 @@ export function ZellePaymentModal({
                             onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
                             placeholder="Type it again"
                             aria-invalid={confirmDigits >= 10 && !confirmMatches}
-                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                           />
                           {confirmDigits >= 10 && !confirmMatches && (
                             <p role="status" className="mt-1.5 text-small text-red-400">These don&apos;t match yet.</p>
@@ -472,7 +472,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={handleCopyHandle}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copied ? "Copied" : "Copy"}
                       </button>
@@ -486,7 +486,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copiedWhat === "amount" ? "Copied" : "Copy"}
                       </button>
@@ -501,7 +501,7 @@ export function ZellePaymentModal({
                         <button
                           type="button"
                           onClick={() => handleCopy("code", reference)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                         >
                           {copiedWhat === "code" ? "Copied" : "Copy"}
                         </button>
@@ -510,14 +510,14 @@ export function ZellePaymentModal({
 
                     <ol className="mt-5 space-y-2.5 text-small text-slate-300">
                       <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">1</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">1</span>
                         {method === "VENMO"
                           ? `Send exactly ${formatUsd(amountCents)} on Venmo, set to Private. Leave the note as it is.`
                           : `Open your bank's Zelle transfer and send exactly ${formatUsd(amountCents)} to the handle above.`}
                       </li>
                       {reference && method === "ZELLE" && (
                         <li className="flex gap-2.5">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">2</span>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">2</span>
                           Type {reference} in the message box. That is how we find your payment, even if someone else sends it for you.
                         </li>
                       )}
@@ -550,7 +550,7 @@ export function ZellePaymentModal({
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
-                          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                         />
                       </div>
                       <div>
@@ -560,7 +560,7 @@ export function ZellePaymentModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
                           placeholder="Anything that helps us match the transfer"
-                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                         />
                       </div>
 
@@ -609,17 +609,17 @@ export function ZellePaymentModal({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ ...SPRING.lively, delay: 0.05 }}
-                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/10"
                     >
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--c-s-50))]" aria-hidden>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-50" aria-hidden>
                         <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Payment received</h3>
+                    <h3 className="text-title text-slate-50">Payment received</h3>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>
@@ -632,7 +632,7 @@ export function ZellePaymentModal({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ ...SPRING.lively, delay: 0.05 }}
-                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/10"
                     >
                       <motion.svg
                         width="26"
@@ -641,7 +641,7 @@ export function ZellePaymentModal({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-[rgb(var(--c-s-50))]"
+                        className="text-slate-50"
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: 1 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
@@ -650,14 +650,14 @@ export function ZellePaymentModal({
                         <circle cx="12" cy="12" r="9" />
                       </motion.svg>
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Confirmation received</h3>
+                    <h3 className="text-title text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
                       We&apos;re verifying your transfer.
                     </p>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>

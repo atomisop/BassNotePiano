@@ -30,7 +30,7 @@ export function PlanHistoryButton({ plans }: { plans: PastPlanRow[] }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={plans.length > 0 ? `Plan history, ${plans.length} earlier ${plans.length === 1 ? "plan" : "plans"}` : "Plan history"}
-        className="tap relative flex h-11 w-11 items-center justify-center rounded-full bg-neu-base text-slate-200 shadow-raised-low transition hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="tap relative flex h-11 w-11 items-center justify-center rounded-full bg-neu-base text-slate-200 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Clock aria-hidden className="h-5 w-5" strokeWidth={1.75} />
         {plans.length > 0 && <span aria-hidden className="absolute right-2 top-2 h-2 w-2 rounded-full bg-signal" />}

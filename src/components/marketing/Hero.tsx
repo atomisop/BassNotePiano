@@ -90,14 +90,14 @@ export function Hero() {
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/75" />
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-16 text-center md:pb-24">
-          <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-[#E1E0CC]">
+          <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-display text-cream">
             <WordsPullUp text="Bass Note Piano" className="justify-center" />
           </h1>
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
-            className="mt-5 max-w-xl text-lg leading-snug text-[#E1E0CC]/75 md:text-xl"
+            className="mt-5 max-w-xl text-lg leading-snug text-cream/75 md:text-xl"
           >
             Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
           </motion.p>

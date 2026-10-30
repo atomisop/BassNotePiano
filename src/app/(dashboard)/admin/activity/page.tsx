@@ -15,7 +15,7 @@ const DAYS = [
   { value: "all", label: "All time" },
 ];
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
-const field = "h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
+const field = "h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
 export default async function AdminActivityPage(props: { searchParams: Promise<{ q?: string; kind?: string; days?: string; user?: string; page?: string }> }) {
   const sp = await props.searchParams;
@@ -59,7 +59,7 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
       <p className="mt-2 text-small text-slate-500">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</p>
 

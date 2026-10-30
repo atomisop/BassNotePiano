@@ -34,7 +34,7 @@ function when(iso: string): string {
 function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { href?: string; icon: LucideIcon; label: string; tone?: "signal" | "warn"; children: ReactNode; cta?: string }) {
   const body = (
     <>
-      <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-caps text-slate-500">
         <Icon className={`h-3.5 w-3.5 ${tone === "warn" ? "text-red-300" : "text-signal-fg"}`} aria-hidden />
         {label}
       </span>
@@ -75,12 +75,12 @@ function DiscordCard() {
       href="/api/discord/connect"
       className="press-soft block overflow-hidden rounded-card bg-neu-lift shadow-raised-low hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-[rgb(var(--c-s-950))]">
+      <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-slate-950">
         <span className="link-star left-[14%] top-[22%]" />
         <span className="link-star left-[82%] top-[30%] [animation-delay:0.7s]" />
         <span className="link-star left-[26%] top-[78%] [animation-delay:1.3s]" />
         <span className="link-star left-[70%] top-[80%] [animation-delay:0.3s]" />
-        <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-[#5865F2] text-white shadow-raised-mid">
+        <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-xl bg-[#5865F2] text-white shadow-raised-mid">
           <DiscordIcon size={24} />
         </span>
         <span className="flex items-center gap-1">
@@ -89,7 +89,7 @@ function DiscordCard() {
           <span className="link-dot [animation-delay:0.3s]" />
           <span className="link-dot [animation-delay:0.45s]" />
         </span>
-        <span className="link-tile link-tile-b flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-neu-lift shadow-raised-mid">
+        <span className="link-tile link-tile-b flex h-11 w-11 items-center justify-center rounded-xl bg-neu-lift shadow-raised-mid">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg" />
         </span>
@@ -242,7 +242,7 @@ function rawSlotFor(card: SidebarCard): Slot {
                 <li key={item.href + item.label}>
                   <Link href={item.href} prefetch className="tap flex items-center justify-between gap-2 rounded-control px-1.5 py-1 text-small text-slate-200 hover:bg-slate-800/50">
                     <span className="truncate">{item.label}</span>
-                    <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2 font-semibold tabular-nums text-signal-fg">{item.count}</span>
+                    <span className="rounded-full bg-signal/14 px-2 font-semibold tabular-nums text-signal-fg">{item.count}</span>
                   </Link>
                 </li>
               ))}
@@ -405,7 +405,7 @@ export function SidebarSpotlight({
               ) : null}
             </>
           );
-          const cls = "tap press-soft relative flex h-10 w-10 items-center justify-center rounded-xl bg-neu-base shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+          const cls = "tap press-soft relative flex h-10 w-10 items-center justify-center rounded-full bg-neu-base shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
           return s.rail.href.startsWith("/api/") ? (
             <a key={s.id} href={s.rail.href} title={s.rail.label} aria-label={s.rail.label} className={cls}>
               {body}

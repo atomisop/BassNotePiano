@@ -23,7 +23,7 @@ export async function MyPlanSummary({ userId }: { userId: string }) {
     <section className="glass-surface mb-4 p-4" aria-label="My plan">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">My plan</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">My plan</p>
           <p className="mt-1 text-body font-semibold text-slate-50">{describePaymentPlan(plan.cadence, plan.term)}</p>
         </div>
         <dl className="flex flex-wrap gap-x-8 gap-y-2 text-small">

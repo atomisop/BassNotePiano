@@ -46,7 +46,7 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
           onClick={() => onSelect(tab.id)}
           className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
             activeTab === tab.id
-              ? "border-[rgb(var(--c-s-50)/0.4)] bg-slate-800 text-slate-50"
+              ? "border-slate-50/40 bg-slate-800 text-slate-50"
               : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
           }`}
         >
@@ -80,7 +80,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function AboutTab() {
   return (
     <div className="glass-surface p-6">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Bass Note Piano</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Bass Note Piano</p>
       <p className="mt-1 text-body text-slate-50 font-semibold">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-small text-slate-400">
         An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye, and Mixolydian
@@ -97,14 +97,14 @@ function UpdatesTab() {
       {CHANGELOG.map((entry) => (
         <div key={entry.version} className="glass-surface p-6">
           <div className="flex items-baseline justify-between gap-4">
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">v{entry.version}</p>
+            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">v{entry.version}</p>
             <p className="text-small text-slate-500">{entry.date}</p>
           </div>
-          <h2 className="mt-1.5 text-body text-slate-50 font-semibold">{entry.title}</h2>
+          <h2 className="mt-1.5 text-title text-slate-50 font-semibold">{entry.title}</h2>
           <ul className="mt-3 space-y-1.5">
             {entry.items.map((item) => (
               <li key={item} className="flex gap-2.5 text-small text-slate-300">
-                <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-s-50))]" />
+                <CheckIcon className="mt-1 shrink-0 text-slate-50" />
                 {item}
               </li>
             ))}
@@ -119,7 +119,7 @@ function TermsTab() {
   return (
     <div className="glass-surface space-y-6 p-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Legal</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Legal</p>
         <p className="mt-1 text-body text-slate-50 font-semibold">Terms &amp; refund policy</p>
         <p className="mt-2 text-small text-slate-500">
           Last updated {TERMS_LAST_UPDATED}.
@@ -134,7 +134,7 @@ function PrivacyTab() {
   return (
     <div className="glass-surface space-y-6 p-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Legal</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Legal</p>
         <p className="mt-1 text-body text-slate-50 font-semibold">Privacy policy</p>
         <p className="mt-2 text-small text-slate-500">
           Last updated {PRIVACY_LAST_UPDATED}.
@@ -187,7 +187,7 @@ function AboutClientInner() {
         Back
       </BackLink>
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Info</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Info</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>
       </div>
 

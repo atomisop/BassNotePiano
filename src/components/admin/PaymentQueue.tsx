@@ -106,7 +106,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
-  PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  PENDING_REVIEW: "bg-slate-50/15 text-slate-50",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
@@ -250,7 +250,7 @@ export function PaymentQueue({
         <label className="tap flex items-center gap-2 text-small text-slate-400">
           <input
             type="checkbox"
-            className="h-4 w-4 accent-[rgb(var(--signal))]"
+            className="h-4 w-4 accent-signal"
             checked={shown.filter(canTick).every((p) => picked.has(p.id))}
             onChange={(e) => setPicked(e.target.checked ? new Set(shown.filter(canTick).map((p) => p.id)) : new Set())}
           />
@@ -283,8 +283,8 @@ export function PaymentQueue({
             <div className="flex items-start gap-2">
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
               <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
-              <h2 className="mt-1 text-body text-slate-50 font-semibold">{title}</h2>
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{title}</h2>
               <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
               {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
                 <p className="mt-1 text-small text-slate-500">
@@ -294,7 +294,7 @@ export function PaymentQueue({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-body text-[rgb(var(--c-s-50))] font-semibold">{formatUsd(payment.amountCents)}</p>
+              <p className="text-body text-slate-50 font-semibold">{formatUsd(payment.amountCents)}</p>
               <span
                 className={`mt-1 inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
               >
@@ -382,7 +382,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -390,7 +390,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleReject(payment.id)}
                   disabled={busyId === payment.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
@@ -410,7 +410,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -431,7 +431,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Reject
               </button>
@@ -458,15 +458,15 @@ export function PaymentQueue({
                     onChange={(e) => setRefundNote(e.target.value)}
                     placeholder="Reason"
                     maxLength={200}
-                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                   />
                   <label className="flex items-center gap-2 text-small text-slate-300">
-                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                     Take back the credits it gave
                   </label>
                   {payment.paymentPlanId && (
                     <label className="flex items-center gap-2 text-small text-slate-300">
-                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                       Cancel the plan too
                     </label>
                   )}
@@ -476,7 +476,7 @@ export function PaymentQueue({
                       type="button"
                       onClick={() => setRefundingId(null)}
                       disabled={busyId === payment.id}
-                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Back
                     </button>
@@ -517,7 +517,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busyId === payment.id}
-                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Keep
                   </button>
@@ -525,7 +525,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => handleDelete(payment.id)}
                     disabled={busyId === payment.id}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === payment.id ? "Deleting…" : "Delete payment"}

@@ -28,7 +28,7 @@ function Count({ count, className = "" }: { count: number; className?: string })
   if (count <= 0) return null;
   return (
     <span
-      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
+      className={`rounded-full bg-signal/18 px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
       aria-label={`${count} waiting`}
     >
       {count > 99 ? "99+" : count}

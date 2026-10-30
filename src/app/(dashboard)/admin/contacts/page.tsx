@@ -17,7 +17,7 @@ const FILTERS: { label: string; value: PersonKind | "ALL" }[] = [
 ];
 
 const KIND_TAG: Record<PersonKind, { label: string; className: string }> = {
-  ACCOUNT: { label: "Account", className: "bg-[rgb(var(--signal)/0.16)] text-signal-fg" },
+  ACCOUNT: { label: "Account", className: "bg-signal/16 text-signal-fg" },
   APPLICATION: { label: "Applied", className: "bg-slate-700/40 text-slate-200" },
   ADDED: { label: "Added", className: "bg-slate-700/40 text-slate-200" },
 };

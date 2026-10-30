@@ -35,7 +35,7 @@ interface Props {
 }
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-const inputClass = "h-11 rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
+const inputClass = "h-11 rounded-lg bg-neu-base px-3 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELDS: { key: keyof PricingFormValues; label: string; unit: "$" | "%"; min: number; max: number; help: string }[] = [
   { key: "pricing.monthlyPlanDollars", label: "1 Month plan price", unit: "$", min: 20, max: 2000, help: "Per 28-day payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
@@ -58,7 +58,7 @@ function toConfig(v: PricingFormValues): PricingConfig {
 function Card({ title, blurb, children }: { title: string; blurb?: string; children: React.ReactNode }) {
   return (
     <section className="glass-surface p-5">
-      <h2 className="text-body font-semibold text-slate-50">{title}</h2>
+      <h2 className="text-title font-semibold text-slate-50">{title}</h2>
       {blurb && <p className="mt-1 text-small text-slate-400">{blurb}</p>}
       <div className="mt-4">{children}</div>
     </section>

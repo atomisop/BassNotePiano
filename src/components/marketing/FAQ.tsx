@@ -44,30 +44,30 @@ export function FAQ({ extraClassCents = EXTRA_CLASS_PRICE_CENTS }: { extraClassC
   const FAQS = faqs(extraClassCents);
   return (
     <section className="px-2 sm:px-3">
-      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-[2rem] md:px-14 md:py-28">
+      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-3xl md:px-14 md:py-28">
         <ScrollReveal className="grid grid-cols-1 gap-12 md:grid-cols-12">
           <div className="min-w-0 md:col-span-5">
             <WordsPullUp
               text="Before you commit to anything."
-              className="max-w-[12ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
+              className="max-w-[12ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-display text-cream"
             />
           </div>
 
           <div className="min-w-0 md:col-span-7">
             <Accordion type="single" collapsible>
               {FAQS.map((item, i) => (
-                <AccordionItem key={item.q} value={`item-${i}`} className="border-[#E1E0CC]/15">
-                  <AccordionTrigger className="text-left text-body font-medium text-[#E1E0CC] no-underline hover:no-underline">{item.q}</AccordionTrigger>
-                  <AccordionContent className="text-small leading-relaxed text-[#E1E0CC]/60">{item.a}</AccordionContent>
+                <AccordionItem key={item.q} value={`item-${i}`} className="border-cream/15">
+                  <AccordionTrigger className="text-left text-body font-medium text-cream no-underline hover:no-underline">{item.q}</AccordionTrigger>
+                  <AccordionContent className="text-small leading-relaxed text-cream/60">{item.a}</AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-1 text-small">
-              <Link href="/pricing" className="tap inline-flex items-center text-[#E1E0CC]/70 transition hover:text-[#E1E0CC]">
+              <Link href="/pricing" className="tap inline-flex items-center text-cream/70 transition hover:text-cream">
                 Full pricing
               </Link>
-              <Link href="/terms" className="tap inline-flex items-center text-[#E1E0CC]/70 transition hover:text-[#E1E0CC]">
+              <Link href="/terms" className="tap inline-flex items-center text-cream/70 transition hover:text-cream">
                 Terms &amp; refund policy
               </Link>
             </div>

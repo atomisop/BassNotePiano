@@ -295,7 +295,7 @@ function MessagesInner({
   if (conversations.length === 0 && groups.length === 0 && !support) {
     return (
       <WideLayout>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Messages</h1>
         <StartState
           className="mt-6"

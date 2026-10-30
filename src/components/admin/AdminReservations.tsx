@@ -90,7 +90,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
   return (
     <div className="grid items-start gap-6 lg:grid-cols-2">
       <form onSubmit={reserve} className="space-y-4 rounded-2xl bg-neu-base p-5 shadow-raised-low">
-        <h2 className="text-body font-semibold text-slate-50">Keep a day for a customer</h2>
+        <h2 className="text-title font-semibold text-slate-50">Keep a day for a customer</h2>
         <label className="block text-small text-slate-400">
           Day
           <input type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className={`${field} mt-1.5`} />
@@ -127,7 +127,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                               return next;
                             })
                           }
-                          className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-[rgb(var(--c-s-50)/0.06)] text-slate-300 hover:text-slate-50"}`}
+                          className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-slate-50/6 text-slate-300 hover:text-slate-50"}`}
                         >
                           {h.time}
                         </button>
@@ -164,7 +164,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
       </form>
 
       <section className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
-        <h2 className="text-body font-semibold text-slate-50">Kept for customers</h2>
+        <h2 className="text-title font-semibold text-slate-50">Kept for customers</h2>
         {reservations.length === 0 ? (
           <p className="mt-3 text-small text-slate-500">Nothing is reserved.</p>
         ) : (
@@ -175,7 +175,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                   <p className="text-small font-medium text-slate-100">
                     {r.dayLabel} <span className="font-normal text-slate-400">· {r.what}</span>
                   </p>
-                  <p className="mt-0.5 text-[11px] uppercase tracking-wide text-signal-fg">
+                  <p className="mt-0.5 text-caption uppercase tracking-wide text-signal-fg">
                     {r.booked
                       ? "Booked by the customer"
                       : r.account === "verified"

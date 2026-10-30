@@ -295,7 +295,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
@@ -304,7 +304,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             </svg>
           </button>
         </div>
-        <h2 className="mt-1.5 text-body text-slate-50 font-semibold">{step.title}</h2>
+        <h2 className="mt-1.5 text-title text-slate-50 font-semibold">{step.title}</h2>
         <p className="mt-2 text-small text-slate-400">{step.body}</p>
 
         <div className="mt-5 flex items-center justify-between gap-3">

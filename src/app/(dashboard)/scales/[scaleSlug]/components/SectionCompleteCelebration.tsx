@@ -30,7 +30,7 @@ export function SectionCompleteCelebration({
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...SPRING.lively, delay: 0.05 }}
-        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.08)]"
+        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/8"
       >
         <motion.svg
           width="26"
@@ -47,7 +47,7 @@ export function SectionCompleteCelebration({
           <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
         </motion.svg>
       </motion.div>
-      <h3 className="relative text-body font-semibold text-slate-50">Lesson complete</h3>
+      <h3 className="relative text-title font-semibold text-slate-50">Lesson complete</h3>
       <p className="relative mx-auto mt-1 max-w-xs text-small text-slate-400">Saved to your progress.</p>
       <div className="relative mt-6 flex gap-2">
         <button

@@ -168,7 +168,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}
         {process.env.NEXT_PUBLIC_APP_ENV === "staging" && (
-          <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 z-[90] -translate-x-1/2 rounded-b-md bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-950">
+          <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 z-[90] -translate-x-1/2 rounded-b-md bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-caps text-slate-950">
             Staging
           </div>
         )}

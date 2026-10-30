@@ -243,7 +243,7 @@ export function LoginForm({
                   type="button"
                   disabled={resendIn > 0 || submitting}
                   onClick={() => void handleSendCode()}
-                  className="tap text-slate-400 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap text-slate-400 transition hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {resendIn > 0 ? `Send again in ${resendIn}s` : "Send a new code"}
                 </button>
@@ -254,7 +254,7 @@ export function LoginForm({
                     setCode("");
                     setError(null);
                   }}
-                  className="tap text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+                  className="tap text-slate-400 transition hover:text-slate-50"
                 >
                   Different email
                 </button>
@@ -269,14 +269,14 @@ export function LoginForm({
             setMethod("password");
             setError(null);
           }}
-          className="tap mt-5 block w-full text-center text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+          className="tap mt-5 block w-full text-center text-small text-slate-400 transition hover:text-slate-50"
         >
           Use my password instead
         </button>
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
+          <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
             Create an account
           </Link>
         </p>
@@ -315,7 +315,7 @@ export function LoginForm({
             <Link
               href="/forgot-password"
               onClick={onNavigateAway}
-              className="tap inline-flex items-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+              className="tap inline-flex items-center text-small text-slate-500 transition hover:text-slate-50"
             >
               Forgot?
             </Link>
@@ -373,14 +373,14 @@ export function LoginForm({
           setCodeSent(false);
           setError(null);
         }}
-        className="tap mt-3 block w-full text-center text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+        className="tap mt-3 block w-full text-center text-small text-slate-400 transition hover:text-slate-50"
       >
         Email me a code instead
       </button>
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
+        <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Create an account
         </Link>
       </p>

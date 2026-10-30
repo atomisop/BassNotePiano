@@ -34,7 +34,7 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
       >
         <motion.h1
           variants={item}
-          className="text-balance font-serif text-hero leading-[1.02] tracking-[-0.025em] text-slate-50 sm:text-hero"
+          className="text-balance font-serif text-hero leading-[1.02] tracking-tight text-slate-50 sm:text-hero"
         >
           Learn Live with us on discord.
         </motion.h1>
@@ -49,7 +49,7 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly classes</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly classes</p>
           <h2 className="mt-1.5 font-serif text-body text-slate-50">Live one-on-one coaching on Discord</h2>
         </div>
 

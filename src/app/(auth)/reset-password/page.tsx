@@ -105,7 +105,7 @@ function ResetPasswordForm() {
       >
         <p className="text-small text-slate-400">
           Missing email.{" "}
-          <Link href="/forgot-password" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+          <Link href="/forgot-password" className="text-slate-50 transition hover:opacity-70">
             Start over
           </Link>
           .
@@ -135,7 +135,7 @@ function ResetPasswordForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Reset password</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Choose a new password</h1>
       <p className="mt-1.5 text-small text-slate-500 sm:mt-2">
         Code sent to <span className="text-slate-300">{email}</span>.
@@ -241,7 +241,7 @@ function ResetPasswordForm() {
       </button>
       {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
         <p className="mt-3 text-center text-small text-slate-500">
-          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
         </p>
       )}
     </motion.div>

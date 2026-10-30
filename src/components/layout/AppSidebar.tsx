@@ -167,7 +167,12 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminB
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                     <span className="sb-label truncate">{item.label}</span>
-                    {goKeysFor(item.href) && badge === 0 && <Kbd keys={goKeysFor(item.href) ?? []} className="sb-label ml-auto opacity-0 transition-opacity group-hover/sb:opacity-100 group-focus-visible/sb:opacity-100" />}
+                    {goKeysFor(item.href) && badge === 0 && (
+                      // The label wrapper carries `sb-label` (the rail's own opacity rule); the hint inside shows only on hover or focus.
+                      <span className="sb-label ml-auto">
+                        <Kbd keys={goKeysFor(item.href) ?? []} className="opacity-0 transition-opacity group-hover/sb:opacity-100 group-focus-visible/sb:opacity-100" />
+                      </span>
+                    )}
                     {badge > 0 && (
                       <span className="sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
                         {badge > 9 ? "9+" : badge}

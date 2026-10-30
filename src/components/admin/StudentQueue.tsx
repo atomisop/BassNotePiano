@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  PENDING: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  PENDING: "bg-slate-50/15 text-slate-50",
   APPROVED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
 };
@@ -85,7 +85,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             <div className="flex items-start gap-3">
               <Avatar image={reg.user?.image} name={reg.fullName} />
               <div>
-                <h2 className="text-body text-slate-50 font-semibold">{reg.fullName}</h2>
+                <h2 className="text-title text-slate-50 font-semibold">{reg.fullName}</h2>
                 <p className="mt-0.5 text-small text-slate-500">
                   {INSTRUMENT_LABEL[reg.instrument]} · {SKILL_LABEL[reg.skillLevel]}
                   {reg.user?.username && <> · @{reg.user.username}</>}
@@ -140,7 +140,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                     setReason("");
                   }}
                   disabled={busyId === reg.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -148,7 +148,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                   type="button"
                   onClick={() => handleReject(reg.id)}
                   disabled={busyId === reg.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   {busyId === reg.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === reg.id ? "Rejecting…" : "Confirm reject"}
@@ -163,7 +163,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === reg.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -184,7 +184,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 type="button"
                 onClick={() => setRejectingId(reg.id)}
                 disabled={busyId === reg.id}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Reject
               </button>

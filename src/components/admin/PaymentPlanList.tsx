@@ -130,10 +130,10 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
         <div key={plan.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                 {describePaymentPlan(plan.cadence, plan.term)}
               </p>
-              <h2 className="mt-1 text-body text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
               {plan.familyGroup && (
                 <p className="mt-1 text-small text-slate-400">
                   Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}
@@ -153,7 +153,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </span>
               )}
               {plan.status === "ACTIVE" && (
-                <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-[rgb(var(--c-s-50))] underline underline-offset-4">
+                <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-slate-50 underline underline-offset-4">
                   Scheduler
                 </Link>
               )}
@@ -201,7 +201,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => setRecordingId(null)}
                       disabled={busyId === plan.id}
-                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Back
                     </button>
@@ -253,7 +253,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       setNote("");
                     }}
                     disabled={busyId === plan.id}
-                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Back
                   </button>
@@ -261,7 +261,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                     type="button"
                     onClick={() => handleCancel(plan.id)}
                     disabled={busyId === plan.id || !note.trim()}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === plan.id ? "Canceling…" : "Confirm cancel"}
@@ -287,7 +287,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className="tap w-full rounded-lg py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap w-full rounded-full py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel plan
                 </button>

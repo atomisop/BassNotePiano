@@ -115,8 +115,8 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
               <button type="button" onClick={later} aria-label="Close" className="tap absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:text-slate-100">
                 <X className="h-5 w-5" aria-hidden />
               </button>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Make it an app</p>
-              <h2 id="a2hs-title" className="mt-1.5 text-body font-semibold text-slate-50">
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Make it an app</p>
+              <h2 id="a2hs-title" className="mt-1.5 text-title font-semibold text-slate-50">
                 Add Bass Note Piano to your Home Screen
               </h2>
               <p className="mt-2 text-small text-slate-400">It opens full screen with its own icon, just like an app from the store, and class reminders work better. It takes about 20 seconds.</p>
@@ -139,7 +139,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
 
       {note && (
         <div role="status" className="kb-hide fixed inset-x-0 bottom-24 z-[55] flex justify-center px-5">
-          <div className="flex max-w-[26rem] items-center gap-3 rounded-2xl border border-[rgb(var(--c-s-50)/0.1)] bg-white/95 px-4 py-3 text-small text-slate-100 shadow-[0_8px_28px_rgb(0_0_0/0.2)] dark:bg-[rgb(var(--c-s-900)/0.97)]">
+          <div className="flex max-w-[26rem] items-center gap-3 rounded-2xl border border-slate-50/10 bg-white/95 px-4 py-3 text-small text-slate-100 shadow-[0_8px_28px_rgb(0_0_0/0.2)] dark:bg-slate-900/97">
             <span>No problem. The steps are in Settings, under Tutorials, whenever you want them.</span>
             <Link href="/account?tab=tutorials" onClick={() => setNote(false)} className="tap shrink-0 font-medium underline underline-offset-4">
               Open

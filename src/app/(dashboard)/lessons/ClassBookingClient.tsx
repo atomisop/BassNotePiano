@@ -81,7 +81,7 @@ const STATUS_LABEL: Record<BookingRow["status"], string> = {
 
 const STATUS_STYLE: Record<BookingRow["status"], string> = {
   SCHEDULED: "text-slate-50 bg-neu-base shadow-raised-low",
-  COMPLETED: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-200",
+  COMPLETED: "bg-slate-50/8 text-slate-200",
   CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
@@ -201,7 +201,7 @@ function BookingCard({
           <span className="text-small font-medium uppercase tracking-wide text-slate-500">
             {start.toLocaleDateString(undefined, { weekday: "short" })}
           </span>
-          <span className="text-xl font-bold leading-none text-slate-50">{start.getDate()}</span>
+          <span className="text-title font-bold leading-none text-slate-50">{start.getDate()}</span>
           <span className="text-small text-slate-500">{start.toLocaleDateString(undefined, { month: "short" })}</span>
         </div>
         <div className="min-w-0 flex-1">
@@ -260,7 +260,7 @@ function BookingCard({
               disabled={canceling}
               className={`tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 isBeingRescheduled
-                  ? "bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] shadow-pressed-low"
+                  ? "bg-slate-50/10 text-slate-50 shadow-pressed-low"
                   : "bg-neu-base text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               }`}
             >
@@ -408,7 +408,7 @@ function AttendeeEmailRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="student@email.com"
-        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
       />
       <span className="shrink-0 text-small">
         {value.trim() === "" ? null : status?.checking ? (
@@ -892,14 +892,14 @@ export function ClassBookingClient({
   }
 
   const actionClass =
-    "tap flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
+    "tap flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-slate-50";
   const bookingBarVisible = tab === "book" && mode === "SOLO" && !reschedulingBooking && selectedKeys.size > 0 && !extraPayment;
 
   return (
     <WideLayout>
       {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         {extraMode ? "Extra sessions" : "Live Lessons"}
       </p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
@@ -1120,7 +1120,7 @@ export function ClassBookingClient({
                         disabled={!onClick}
                         aria-pressed={onClick ? isSelected : undefined}
                         className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed bg-neu-base ${
-                          isSelected ? "shadow-pressed-low ring-1 ring-[rgb(var(--signal)/0.5)]" : "shadow-raised-low hover:shadow-raised-mid"
+                          isSelected ? "shadow-pressed-low ring-1 ring-signal/50" : "shadow-raised-low hover:shadow-raised-mid"
                         } ${extra}`}
                       >
                         {children}
@@ -1212,7 +1212,7 @@ export function ClassBookingClient({
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
                           {!isSelected && <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>}
-                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>
                         </span>

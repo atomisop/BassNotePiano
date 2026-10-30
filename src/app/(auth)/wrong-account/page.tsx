@@ -23,7 +23,7 @@ export default async function WrongAccountPage(props: { searchParams: Promise<{ 
 
   return (
     <Card className="mx-auto max-w-md">
-      <h1 className="text-body font-semibold text-slate-50">Sign in with the right account to open this page</h1>
+      <h1 className="text-title font-semibold text-slate-50">Sign in with the right account to open this page</h1>
       <p className="mt-2 text-small text-slate-300">
         This link was sent to <span className="font-medium text-slate-100">{shown || "another account"}</span>. You are signed in as{" "}
         <span className="font-medium text-slate-100">{session.user.email}</span>, so we did not open it. Sign in as the person it was

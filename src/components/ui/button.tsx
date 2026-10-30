@@ -42,12 +42,12 @@ const buttonVariants = cva(
         secondary: cn("liquid text-slate-50 hover:text-white", lift),
         outline: cn("liquid text-slate-100", lift),
         ghost: cn("text-slate-300 hover:text-slate-50 hover:liquid", lift),
-        destructive: cn("liquid text-[rgb(var(--c-rd-300))]", lift),
+        destructive: cn("liquid text-red-300", lift),
         // Inline text link: tappable, so it carries the signal color.
         // Solid red: only for the final, irreversible step of a destructive flow.
         danger: cn("liquid-signal relative bg-red-600 text-white font-semibold [--cta-bg:220_38_38] hover:brightness-110 active:brightness-95", lift),
         link: "text-signal-fg underline-offset-4 hover:underline",
-        glass: cn("liquid text-[rgb(var(--c-s-50))] hover:brightness-110", lift),
+        glass: cn("liquid text-slate-50 hover:brightness-110", lift),
       },
       size: {
         default: "h-9 px-4",

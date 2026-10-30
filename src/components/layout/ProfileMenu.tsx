@@ -95,14 +95,14 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         } ${triggerClassName ?? ""}`}
       >
-        <span className="block h-full w-full overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.1)] shadow-pressed-low">
+        <span className="block h-full w-full overflow-hidden rounded-full bg-slate-50/10 shadow-pressed-low">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
             // The letter is drawn by CSS (not text in the page): the button already has a name ("Your account"), and a one-letter avatar
             // is decoration that would otherwise count as visible text the name must contain.
-            <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))] after:content-[attr(data-char)]" />
+            <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-slate-50 after:content-[attr(data-char)]" />
           )}
         </span>
         {isOwner && <OwnerStarBadge />}
@@ -131,12 +131,12 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
+                <div className="flex h-full w-full items-center justify-center text-small text-slate-50">
                   {initial}
                 </div>
               )}

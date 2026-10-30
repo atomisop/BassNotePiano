@@ -62,15 +62,15 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
             exit="exit"
             className="glass-surface-modal relative max-h-[88dvh] w-full max-w-sm overflow-y-auto overscroll-contain p-6"
           >
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">What&apos;s new · v{entry.version}</p>
-            <h2 id="whats-new-title" className="mt-1.5 text-body text-slate-50 font-semibold">
+            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">What&apos;s new · v{entry.version}</p>
+            <h2 id="whats-new-title" className="mt-1.5 text-title text-slate-50 font-semibold">
               {entry.title}
             </h2>
 
             <ul className="mt-4 space-y-2">
               {entry.items.map((item) => (
                 <li key={item} className="flex gap-2.5 text-small text-slate-300">
-                  <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-s-50))]" />
+                  <CheckIcon className="mt-1 shrink-0 text-slate-50" />
                   {item}
                 </li>
               ))}
@@ -80,7 +80,7 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
               <Link
                 href="/about?tab=updates"
                 onClick={handleClose}
-                className="tap inline-flex items-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+                className="tap inline-flex items-center text-small text-slate-500 transition hover:text-slate-50"
               >
                 Full update history
               </Link>

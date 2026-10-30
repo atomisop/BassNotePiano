@@ -13,7 +13,7 @@ import { DiscordConnectLink } from "@/components/ui/DiscordLink";
  */
 export type BannerCloseReason = "timeout" | "dismissed" | "tapped";
 
-const TAP_CLASS = "block rounded-[26px] px-4 pb-5 pt-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal";
+const TAP_CLASS = "block rounded-3xl px-4 pb-5 pt-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal";
 
 /** A normal link inside the app, a plain one for the /api routes (they redirect off the site, so they must not be prefetched). */
 function Tap({ href, onClick, children }: { href: string; onClick: () => void; children: React.ReactNode }) {
@@ -114,7 +114,7 @@ export function IosBanner({
           startY.current = null;
           setDrag(0);
         }}
-        className="pointer-events-auto relative w-[min(26rem,calc(100vw-1rem))] touch-pan-x select-none rounded-[26px] border border-white/30 bg-[rgb(var(--neu-base)/0.8)] shadow-[0_12px_40px_rgb(0_0_0/0.28)] backdrop-blur-2xl backdrop-saturate-150 motion-reduce:transition-none"
+        className="pointer-events-auto relative w-[min(26rem,calc(100vw-1rem))] touch-pan-x select-none rounded-3xl border border-white/30 bg-neu-base/80 shadow-[0_12px_40px_rgb(0_0_0/0.28)] backdrop-blur-2xl backdrop-saturate-150 motion-reduce:transition-none"
         style={{
           transform: shown ? `translateY(${drag}px)` : "translateY(-140%)",
           opacity: shown ? 1 : 0,
@@ -124,12 +124,12 @@ export function IosBanner({
         <Tap href={href} onClick={() => close("tapped")}>
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded-[6px] object-cover" />
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-slate-400">Bass Note Piano</span>
-            <span className="ml-auto text-[12px] text-slate-500 [@media(hover:hover)]:mr-7">now</span>
+            <img src="/logo-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded-sm object-cover" />
+            <span className="text-caption font-semibold uppercase tracking-wide text-slate-400">Bass Note Piano</span>
+            <span className="ml-auto text-caption text-slate-500 [@media(hover:hover)]:mr-7">now</span>
           </div>
-          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-slate-100">{title}</p>
-          <p className="text-[15px] leading-snug text-slate-300">{body}</p>
+          <p className="mt-1.5 text-body font-semibold leading-snug text-slate-100">{title}</p>
+          <p className="text-small text-slate-300">{body}</p>
         </Tap>
         {/* The grab bar, like the one under a banner on an iPhone. */}
         <span aria-hidden className="pointer-events-none absolute bottom-1.5 left-1/2 h-[5px] w-9 -translate-x-1/2 rounded-full bg-slate-500/50" />

@@ -200,7 +200,7 @@ function RegisterForm() {
             />
             <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
             <label className="mt-2 flex cursor-pointer items-center gap-2 text-small text-slate-400">
-              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-[rgb(var(--c-s-50))]" />
+              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-slate-50" />
               I do not have my own phone number
             </label>
           </div>
@@ -258,15 +258,15 @@ function RegisterForm() {
               setAgreedToTerms(e.target.checked);
               setError(null);
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
+            <Link href="/terms" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
               Terms &amp; refund policy
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
+            <Link href="/privacy" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
               Privacy policy
             </Link>
             .
@@ -288,7 +288,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
+        <Link href="/login" className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Log in
         </Link>
       </p>

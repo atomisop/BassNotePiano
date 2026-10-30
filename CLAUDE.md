@@ -479,6 +479,15 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   standing, explicit brand rule from `PRODUCT.md`, this repo's own
   history includes a dedicated cleanup commit for stray ones).
 
+## Design system (added 2026-10-29, `DESIGN.md`)
+
+`DESIGN.md` at the repo root is the design system every screen follows: type scale (`text-caption` 12, `text-small` 13, `text-body` 16,
+`text-title` 20, `text-headline` 24, `text-hero`, `text-figure`), corners (8 small, 12 controls and rows, 16 cards, 24 sheets, pills for
+buttons), one orange accent. Tailwind's own size and radius names land on the same steps (`@theme` in `globals.css`), and `cn()` knows the
+custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `text-[rgb(var(--c-s-50))]` or a px size. A control with its own
+solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
+matching CSS rule); add any new solid fill there too, or the lens paints over it.
+
 ## Workflow this session (and prior Claude sessions in this repo) actually follow
 
 1. Branch per unit of work, PR against `main`, `subscribe_pr_activity`,

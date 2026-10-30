@@ -85,7 +85,7 @@ function ScheduleForm({
             value={dayOfWeek}
             onChange={(e) => setDayOfWeek(Number(e.target.value))}
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
           >
             {DAY_LABELS.map((d, i) => (
               <option key={i} value={i}>
@@ -102,7 +102,7 @@ function ScheduleForm({
             onChange={(e) => setStartTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
           />
         </label>
         <label className="text-small text-slate-500">
@@ -113,7 +113,7 @@ function ScheduleForm({
             onChange={(e) => setEndTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
           />
         </label>
       </div>
@@ -125,7 +125,7 @@ function ScheduleForm({
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Monday class"
           disabled={submitting}
-          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-slate-50/60 disabled:opacity-60"
         />
       </label>
       {error && <p className="text-small text-red-400">{error}</p>}
@@ -135,7 +135,7 @@ function ScheduleForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Cancel
           </button>
@@ -210,11 +210,11 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         .filter((g) => g.rows.length > 0)
         .map((group) => (
           <div key={group.day} className="glass-surface p-5">
-            <h2 className="text-body text-slate-50 font-semibold">{group.label}</h2>
+            <h2 className="text-title text-slate-50 font-semibold">{group.label}</h2>
             <div className="mt-3 space-y-2">
               {group.rows.map((row) =>
                 editingId === row.id ? (
-                  <div key={row.id} className="rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low p-3">
+                  <div key={row.id} className="rounded-xl border border-slate-50/30 bg-neu-base shadow-pressed-low p-3">
                     <ScheduleForm
                       initial={{
                         dayOfWeek: row.dayOfWeek,
@@ -301,7 +301,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
 
       {adding ? (
         <div className="glass-surface p-5">
-          <h2 className="mb-3 text-body text-slate-50 font-semibold">New weekly slot</h2>
+          <h2 className="mb-3 text-title text-slate-50 font-semibold">New weekly slot</h2>
           <ScheduleForm
             initial={{ dayOfWeek: 1, startTime: "11:00", endTime: "13:00", label: null }}
             submitting={submitting}
@@ -317,7 +317,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-slate-50/40 hover:text-slate-50 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
         >
           + Add a weekly slot
         </button>

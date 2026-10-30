@@ -66,7 +66,7 @@ function SectionCard({
 }) {
   return (
     <div id={id} className="glass-surface scroll-mt-24 p-6">
-      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
       {description && <p className="mt-1 text-small text-slate-500">{description}</p>}
       <div className="mt-4">{children}</div>
     </div>
@@ -183,7 +183,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
     return (
       <WideLayout className="space-y-6">
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first">
@@ -203,7 +203,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
       mobile="stack"
       header={
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
           <p className="mt-1 text-small text-slate-500">
             You&apos;re <span className="text-slate-300">@{username}</span>.
@@ -260,7 +260,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                           onClick={() => setBlockingId(friend.id)}
                           aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
                           title="Block"
-                          className="tap flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap flex h-9 w-9 items-center justify-center rounded-full text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           <Ban size={18} strokeWidth={1.75} aria-hidden />
                         </button>
@@ -285,7 +285,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       type="button"
                       onClick={() => handleUnblock(entry.user.id)}
                       disabled={action.pending}
-                      className={`tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                      className={`tap flex shrink-0 items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                     >
                       {action.isPending(`unblock:${entry.user.id}`) && spin}
                       Unblock
@@ -306,7 +306,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search @username"
-                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
               <button
                 type="submit"
@@ -366,7 +366,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                         type="button"
                         onClick={() => handleRespond(req.id, false)}
                         disabled={action.pending}
-                        className={`tap flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                        className={`tap flex items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                       >
                         {action.isPending(`reject:${req.id}`) && spin}
                         Reject

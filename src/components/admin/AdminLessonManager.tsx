@@ -238,7 +238,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -248,7 +248,7 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -287,7 +287,7 @@ export function AdminLessonManager({
             <div key={lesson.id} className="flex items-center gap-3 py-3.5">
               <span className="w-5 shrink-0 text-center text-small font-semibold text-slate-500">{index + 1}</span>
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-body text-slate-50">{lesson.title}</h2>
+                <h2 className="truncate text-title text-slate-50">{lesson.title}</h2>
                 <p className="truncate text-small text-slate-500">
                   {lesson.type === "VIDEO" ? "Video" : "PDF"}
                   {lesson.fileSizeBytes != null && ` · ${formatBytes(lesson.fileSizeBytes)}`}

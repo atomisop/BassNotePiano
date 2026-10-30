@@ -213,11 +213,11 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
     notification.read
       ? "border-transparent bg-neu-base shadow-raised-low"
-      : "border-l-[3px] border-y border-r border-y-[rgb(var(--signal)/0.3)] border-r-[rgb(var(--signal)/0.3)] border-l-[rgb(var(--signal))] bg-[rgb(var(--signal)/0.14)] hover:bg-[rgb(var(--signal)/0.2)]"
+      : "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
   }`;
   const inner = (
     <>
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--signal))]"}`} />
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-signal"}`} />
       <span className="min-w-0 flex-1">
         <span className="block text-small font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
@@ -281,11 +281,11 @@ function NotificationGroup({
           aria-expanded={expanded}
           className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
             hasUnread
-              ? "border-l-[3px] border-y border-r border-y-[rgb(var(--signal)/0.3)] border-r-[rgb(var(--signal)/0.3)] border-l-[rgb(var(--signal))] bg-[rgb(var(--signal)/0.14)] hover:bg-[rgb(var(--signal)/0.2)]"
+              ? "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
               : "border-transparent bg-neu-base shadow-raised-low"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--signal)/0.15)] text-[rgb(var(--signal))]">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -295,7 +295,7 @@ function NotificationGroup({
             <span className="flex items-center gap-2">
               <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
               <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
-              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--signal))]" aria-hidden />}
+              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-signal" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
             <span className="mt-1.5 block text-small text-slate-500">{relativeTime(latest.createdAt)}</span>
@@ -543,7 +543,7 @@ export function NotificationBell() {
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Back"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
@@ -552,7 +552,7 @@ export function NotificationBell() {
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto inline-flex items-center gap-1.5 text-small text-[rgb(var(--signal))] transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal transition hover:opacity-70"
                     >
                       <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
@@ -590,7 +590,7 @@ export function NotificationBell() {
                         <Link
                           href="/account?tab=notifications"
                           onClick={() => setOpen(false)}
-                          className="text-small text-[rgb(var(--signal))] transition hover:opacity-70"
+                          className="text-small text-signal transition hover:opacity-70"
                         >
                           Notification settings
                         </Link>
@@ -605,7 +605,7 @@ export function NotificationBell() {
                     <div className="space-y-5">
                       {groupNotifications(shown).map((section) => (
                         <div key={section.label}>
-                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-500">{section.label}</p>
+                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-caps text-slate-500">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (

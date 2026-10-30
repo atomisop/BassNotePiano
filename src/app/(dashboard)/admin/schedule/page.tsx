@@ -57,7 +57,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
     const [hours, reservations] = await Promise.all([getReservableHours(), listOwnerReservations()]);
     return (
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
         {viewSwitcher}
@@ -74,7 +74,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
     return (
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
         {viewSwitcher}
@@ -105,7 +105,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
       {viewSwitcher}

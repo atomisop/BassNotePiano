@@ -256,7 +256,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             type="button"
             onClick={() => setOutlineOpen(false)}
             aria-label="Hide outline"
-            className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-50/6 hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -375,7 +375,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         className={cn(
           "relative flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           layout === "rail" ? "h-14 w-14" : "h-14 min-w-14 flex-1 px-2",
-          active ? "bg-[rgb(var(--signal)/0.14)] text-signal-fg shadow-plane-front" : "text-slate-300 hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50",
+          active ? "bg-signal/14 text-signal-fg shadow-plane-front" : "text-slate-300 hover:bg-slate-50/6 hover:text-slate-50",
         )}
       >
         <t.Icon className="h-5 w-5" aria-hidden />
@@ -474,7 +474,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       {lesson && celebrating === null && selection.kind === "lesson" && (
         <div className={cn("mt-4", lesson.type === "VIDEO" && "mx-auto lg:max-w-[calc(52svh*16/9)]")}>
           {actionError && (
-            <p role="alert" className="mb-3 text-small text-[rgb(var(--c-rd-300))]">
+            <p role="alert" className="mb-3 text-small text-red-300">
               {actionError}
             </p>
           )}
@@ -558,7 +558,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
                     type="button"
                     onClick={() => setTool(null)}
                     aria-label={`Close ${toolTitle}`}
-                    className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-50/6 hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -632,7 +632,7 @@ function OutlineItem({
       title={disabled ? lockedReason : undefined}
       className={cn(
         "flex min-h-9 w-full items-start gap-3 rounded-control px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed",
-        active ? "bg-[rgb(var(--signal)/0.1)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-[rgb(var(--c-s-50)/0.05)] disabled:hover:bg-transparent",
+        active ? "bg-signal/10 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-slate-50/5 disabled:hover:bg-transparent",
       )}
     >
       <span

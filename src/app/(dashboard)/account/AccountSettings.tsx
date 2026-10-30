@@ -42,6 +42,7 @@ import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 
@@ -151,7 +152,7 @@ function SectionCard({ title, hint, advanced = false, children }: { title: strin
   }
   return (
     <div className="glass-surface p-6">
-      <h2 className="flex items-center gap-1 text-body text-slate-50 font-semibold">
+      <h2 className="flex items-center gap-1 text-title text-slate-50 font-semibold">
         {title}
         {hint && <Hint>{hint}</Hint>}
       </h2>
@@ -166,11 +167,16 @@ function SectionCard({ title, hint, advanced = false, children }: { title: strin
 // existing `/about` page, which is its own substantial tabbed page
 // (About/Update notes/Terms). Styled to match the tab buttons above it so
 // it reads as part of the same list.
+// Every row in the desktop settings menu (tabs, Shop, About, Sign out) is the same shape; only the current one is filled.
+const NAV_ROW =
+  "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
+const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
+
 function ShopLink({ back }: { back: string }) {
   return (
     <Link
       href={`/shop?back=${encodeURIComponent(back)}`}
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
       <TabIcon path={TAB_ICONS.shop} />
       Shop
@@ -182,7 +188,7 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
       <TabIcon path={TAB_ICONS.about} />
       About
@@ -200,7 +206,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
         startNavigation();
         void signOut({ callbackUrl: "/" });
       }}
-      className={`tap flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low ${className}`}
+      className={cn(NAV_ROW, className)}
     >
       <TabIcon path={TAB_ICONS.logout} />
       Sign out
@@ -215,7 +221,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
 function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
   return (
     <p
-      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] text-slate-500 ${isFirst ? "" : "mt-3"}`}
+      className={`px-3 pb-1 text-small font-semibold uppercase tracking-caps text-slate-500 ${isFirst ? "" : "mt-3"}`}
     >
       {category}
     </p>
@@ -240,11 +246,8 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 key={tab.id}
                 type="button"
                 onClick={() => onSelect(tab.id)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
-                  activeTab === tab.id
-                    ? "border-transparent bg-neu-base text-signal-fg shadow-pressed-low"
-                    : "border-transparent text-slate-400 hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
-                }`}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={activeTab === tab.id ? NAV_ROW_ACTIVE : NAV_ROW}
               >
                 <TabIcon path={tab.icon} />
                 {tab.label}
@@ -279,7 +282,7 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       {groupedTabs().map((group) => (
         <section key={group.category}>
           <p
-            className="px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] text-slate-500"
+            className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500"
           >
             {group.category}
           </p>
@@ -349,7 +352,7 @@ function AccountGroup({ id, title, blurb, danger, children }: { id: string; titl
   return (
     <section data-account-group={id} className="scroll-mt-4 space-y-4">
       <div>
-        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}`}>{title}</h2>
+        <h2 className={`text-small font-semibold uppercase tracking-caps ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
         {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
       </div>
       {children}
@@ -368,7 +371,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 
 function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
-    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
   );
 }
 
@@ -528,7 +531,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
           )}
         </div>
         <p className="mt-3 text-small text-slate-500">
-          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
+          <Link href="/privacy" className="underline underline-offset-2 text-slate-50 hover:opacity-70">
             Privacy policy
           </Link>
         </p>
@@ -540,7 +543,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
 function AppearanceSection() {
   return (
     <section>
-      <h2 className="text-body text-slate-50 font-semibold">Themes &amp; appearance</h2>
+      <h2 className="text-title text-slate-50 font-semibold">Themes &amp; appearance</h2>
       <div className="mt-6">
         <ThemePicker />
       </div>
@@ -649,7 +652,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
       <SectionCard title="Membership & purchases">
         <Link
           href="/billing/plans"
-          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment plan
           <span className="text-slate-500">→</span>
@@ -657,7 +660,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
 
         <Link
           href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment history
           <span className="text-slate-500">→</span>
@@ -820,7 +823,7 @@ function PasswordSection() {
               type="button"
               onClick={cancelCode}
               disabled={submitting}
-              className="tap flex w-full items-center justify-center rounded-lg bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
+              className="tap flex w-full items-center justify-center rounded-full bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
             >
               Cancel
             </button>
@@ -878,7 +881,7 @@ function ReferralCard() {
         Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
-      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
         <span className="text-small text-slate-400">
@@ -1067,7 +1070,7 @@ function CalendarFeedCard() {
             <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
           </div>
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
-          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           {!confirmReset ? (
             <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
           ) : (
@@ -1275,14 +1278,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
@@ -1325,14 +1328,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}

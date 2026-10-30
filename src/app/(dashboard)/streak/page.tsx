@@ -58,7 +58,7 @@ export default async function StreakPage() {
               <div
                 className={cn(
                   "flex h-20 w-20 shrink-0 items-center justify-center rounded-full md:h-24 md:w-24",
-                  status.completedToday ? "bg-[rgb(var(--signal)/0.16)]" : "bg-neu-base shadow-pressed-low",
+                  status.completedToday ? "bg-signal/16" : "bg-neu-base shadow-pressed-low",
                 )}
               >
                 <Flame
@@ -69,7 +69,7 @@ export default async function StreakPage() {
                 />
               </div>
               <div className="min-w-0">
-                <p className="text-[3.25rem] font-bold leading-none tabular-nums text-slate-50 md:text-[4rem]">{status.streak}</p>
+                <p className="text-figure font-bold tabular-nums text-slate-50">{status.streak}</p>
                 <p className="mt-1 text-body font-semibold text-slate-200">day streak</p>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default async function StreakPage() {
                 aria-valuenow={status.todaySeconds}
                 aria-label="Practice today"
               >
-                <div className="h-full rounded-full bg-[rgb(var(--signal))]" style={{ width: `${Math.round((status.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
+                <div className="h-full rounded-full bg-signal" style={{ width: `${Math.round((status.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
               </div>
             </div>
             {!status.completedToday && (
@@ -125,7 +125,7 @@ export default async function StreakPage() {
                         title={cell.future ? undefined : `${cell.day}: ${cell.practiced ? "practiced" : "not practiced"}`}
                         className={cn(
                           "block h-4 w-4 rounded-[0.25rem] md:h-5 md:w-5",
-                          cell.future ? "bg-transparent" : cell.practiced ? "bg-[rgb(var(--signal))]" : "bg-neu-base shadow-pressed-low",
+                          cell.future ? "bg-transparent" : cell.practiced ? "bg-signal" : "bg-neu-base shadow-pressed-low",
                           cell.isToday && "ring-[1.5px] ring-inset ring-slate-300",
                         )}
                       />
@@ -152,7 +152,7 @@ export default async function StreakPage() {
                   {goal} days in a row <span className="font-normal text-slate-400">({goal - status.streak} to go)</span>
                 </p>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low">
-                  <div className="h-full rounded-full bg-[rgb(var(--signal))]" style={{ width: `${Math.round((status.streak / goal) * 100)}%` }} />
+                  <div className="h-full rounded-full bg-signal" style={{ width: `${Math.round((status.streak / goal) * 100)}%` }} />
                 </div>
               </>
             ) : (
@@ -166,7 +166,7 @@ export default async function StreakPage() {
                     key={g}
                     className={cn(
                       "inline-flex h-8 items-center gap-1 rounded-full px-3 text-small font-semibold tabular-nums",
-                      reached ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low",
+                      reached ? "bg-signal/16 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low",
                     )}
                   >
                     {reached && <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={3} />}
@@ -187,7 +187,7 @@ function Fact({ icon, value, label }: { icon: React.ReactNode; value: number; la
   return (
     <div className="flex flex-col items-center text-center">
       <span className="text-slate-400">{icon}</span>
-      <span className="mt-1.5 text-[1.5rem] font-bold leading-none tabular-nums text-slate-50">{value}</span>
+      <span className="mt-1.5 text-headline font-bold leading-none tabular-nums text-slate-50">{value}</span>
       <span className="mt-1 text-small text-slate-400">{label}</span>
     </div>
   );

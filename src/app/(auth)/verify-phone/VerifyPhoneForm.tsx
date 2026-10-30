@@ -70,7 +70,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Last step</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Last step</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your phone</h1>
 
       {step === "number" && (
@@ -150,7 +150,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           </button>
           {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
             <p className="mt-3 text-center text-small text-slate-500">
-              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
             </p>
           )}
         </>

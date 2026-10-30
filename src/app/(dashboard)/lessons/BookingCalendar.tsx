@@ -189,7 +189,7 @@ export function BookingCalendar({
                 isSelected
                   ? "bg-signal font-semibold text-slate-950"
                   : clickable
-                    ? "bg-[rgb(var(--signal)/0.14)] font-semibold text-slate-50 ring-1 ring-inset ring-[rgb(var(--signal)/0.45)] hover:bg-[rgb(var(--signal)/0.24)]"
+                    ? "bg-signal/14 font-semibold text-slate-50 ring-1 ring-inset ring-signal/45 hover:bg-signal/24"
                     : isFull
                       ? "text-slate-500 line-through decoration-slate-600/60"
                       : isToday

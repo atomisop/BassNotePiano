@@ -95,18 +95,51 @@
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
 
+  /* The type scale (DESIGN.md): caption 12, small 13, body 16, title 20, headline 24, hero 28 to 44, plus one display figure
+     for big counters. Tailwind's own size names land on the same steps, so nothing can sit between them. */
   --text-hero: clamp(1.75rem, 1.2rem + 1.7vw, 2.75rem);
   --text-hero--line-height: 1.02;
   --text-hero--letter-spacing: -0.03em;
+  --text-figure: clamp(3.25rem, 2.6rem + 2vw, 4rem);
+  --text-figure--line-height: 1;
+  --text-headline: 1.5rem;
+  --text-headline--line-height: 1.2;
+  --text-headline--letter-spacing: -0.015em;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.3;
+  --text-title--letter-spacing: -0.01em;
   --text-body: 1rem;
   --text-body--line-height: 1.6;
   --text-small: 0.8125rem;
   --text-small--line-height: 1.4;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.35;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
 
-  /* Soft iOS-style corners: controls, cards, sheets. Pills stay rounded-full. */
+  /* Letter spacing: uppercase eyebrows, and tight display titles. */
+  --tracking-caps: 0.16em;
+  --tracking-display: -0.035em;
+
+  /* One radius personality, soft: 8 small, 12 controls and rows, 16 cards, 24 sheets, full for pills. */
+  --radius: 0.5rem;
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
   --radius-control: 0.75rem;
-  --radius-card: 1.25rem;
-  --radius-sheet: 1.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+
+  /* The marketing pages' warm cream text (one colour; it was typed as a hex 17 times). */
+  --color-cream: #e1e0cc;
 
   /* Depth planes. Values come from per-mode variables below so a light
      page gets lighter shadows than a dark one. */
@@ -149,10 +182,6 @@
   --container-settings: 72rem;
   --container-narrow: 27.5rem;
   --container-pane: 21.25rem;
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
 
   --shadow-card: var(--surface-shadow);
   --shadow-card-lifted: var(--elev-shadow);
@@ -337,17 +366,6 @@
   border-top: 1px solid var(--surface-border);
 }
 
-@utility chip-accent {
-  /* The small token chips, spelled notes, transposition cells, badges.
-     Accent-tinted again, by direct instruction bringing signal green back
-     as the one accent (see themes.css's own "Accent" comment), badges
-     being exactly this utility's own job. Diverged back out from
-     `.chip-neutral` below. amber-300 is this ramp's own byte-exact green
-     (--c-a-300), safely inside AA even at low opacity. */
-  border: 1px solid rgb(var(--c-a-300) / 0.35);
-  background: rgb(var(--c-a-300) / 0.1);
-}
-
 @utility chip-neutral {
   border: 1px solid rgb(var(--c-s-50) / 0.08);
   background: rgb(var(--c-s-50) / 0.04);
@@ -451,7 +469,7 @@
 
 /* Both glows neutral now, not accent-tinted, a soft white/black ambient
    bloom instead of a colour wash, same "accent only on true CTAs"
-   instruction as `.chip-accent`/`.eyebrow` above. */
+   instruction as `.eyebrow` above. */
 @utility backdrop-glow-smoke-top {
   background: radial-gradient(
     60% 80% at 50% 0%,
@@ -687,7 +705,7 @@
 
     /* Corner radius follows the active theme's own card radius rather than
      shadcn's fixed 0.5rem, so a Button matches the panels beside it. */
-    --radius: var(--surface-radius, 0.75rem);
+    --radius: 0.5rem;
   }
 
   body {
@@ -801,8 +819,6 @@
     letter-spacing: -0.008em;
   }
   /* Body sits at 0, the default, and only the smallest sizes open up. */
-  .text-xs,
-  .text-\[11px\],
   .text-\[10px\] {
     letter-spacing: 0.006em;
   }
@@ -957,14 +973,6 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
-  /* The bright top edge is light catching the lip of the material, a
-   theme-aware highlight (`--c-ink` flips dark-on-light/white-on-dark per
-   theme) rather than a hardcoded white line, since Editorial Paper's own
-   chrome is now translucent too and a literal white edge would vanish
-   against its light ground. */
-  .chrome-top-edge {
-    border-top: 1px solid rgb(var(--c-ink) / 0.12);
-  }
 
   /* ==========================================================================
    Accessibility preferences beyond reduced-motion
@@ -1014,10 +1022,8 @@
     --space-section: 3rem;
     --space-group: 1rem;
     --space-card: 1rem;
-    --space-inline: 0.75rem;
 
     /* Layering for the three planes plus app chrome. */
-    --z-back: 0;
     --z-mid: 10;
     --z-front: 20;
     --z-chrome: 40;
@@ -1041,7 +1047,6 @@
     --neu-hi: rgb(255 255 255 / 0.04);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
-    --flat-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.12);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1069,7 +1074,6 @@
     --neu-hi: rgb(255 255 255 / 0.95);
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
-    --flat-lo: rgb(0 0 0 / 0.14);
     --neu-edge: rgb(0 0 0 / 0.08);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1157,7 +1161,7 @@
     --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);
     --surface-blur: 0px;
-    --surface-radius: 1.25rem;
+    --surface-radius: 1rem;
     /* Level-1 "wells" (inputs, chips, minor inline surfaces) are pressed in. */
     --subtle-bg: rgb(var(--neu-base));
     --subtle-border: var(--neu-edge);
@@ -1570,14 +1574,17 @@
    and cleans up the type: the system font like native iOS apps, small labels
    in sentence case instead of wide-tracked capitals.
    ========================================================================== */
-[data-surface="app"] .uppercase {
+/* `body:has(...)` also reaches sheets and dialogs, which are portalled to <body> outside the app area: without it the payment sheet
+   showed wide-tracked capitals in the public pages' font. */
+:is([data-surface="app"], body:has([data-surface="app"])) .uppercase {
   text-transform: none;
   font-weight: 500;
 }
-[data-surface="app"] [class*="tracking-"] {
+:is([data-surface="app"], body:has([data-surface="app"])) [class*="tracking-"] {
   letter-spacing: normal;
 }
-[data-surface="app"] {
+[data-surface="app"],
+body:has([data-surface="app"]) {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -1949,49 +1956,12 @@ input[type="radio"],
     0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
 }
 
-/* A thin rainbow along the rim, painted in the border only (the mask cuts out the middle). */
-@utility liquid-rim {
-  position: relative;
-}
-.liquid-rim::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: conic-gradient(from 200deg, #ff6b6b, #ffd166, #7bed9f, #5ec8ff, #b388ff, #ff6bd6, #ff6b6b);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: 0.6;
-}
-
-/* The dock: thicker glass that bends what is behind it. The SVG lens works where backdrop-filter accepts a filter (Chrome); elsewhere
-   the plain blur above it stays. */
-@utility liquid-dock {
-  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
-  -webkit-backdrop-filter: blur(16px) saturate(2) brightness(1.1);
-  backdrop-filter: blur(16px) saturate(2) brightness(1.1);
-  box-shadow:
-    inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 255 255 / 0.12),
-    inset 0 -10px 16px -12px var(--lg-glow),
-    -1px 0 0 rgb(255 70 110 / 0.28),
-    1px 0 0 rgb(70 170 255 / 0.28),
-    0 14px 30px -12px var(--lg-drop);
-}
-@supports (backdrop-filter: url(#lg-lens)) {
-  .liquid-dock {
-    backdrop-filter: url(#lg-lens) blur(12px) saturate(2) brightness(1.1);
-  }
-}
-
-/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). */
-button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-red"]):not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-8"]:not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
+/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). A
+   control with its own solid fill keeps it (GlassButtons.tsx skips the same ones). */
+button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-8"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]) {
   background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
   -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
   backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
@@ -2004,13 +1974,22 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
 
 @media (prefers-reduced-transparency: reduce) {
   .liquid,
-  .liquid-dock,
   button[class*="shadow-raised-low"],
   a[class*="shadow-raised-low"] {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: rgb(var(--neu-base));
   }
+}
+
+/* A main action that cannot be used yet goes neutral instead of a faded orange (half-transparent orange on the dark page read as a
+   muddy brown "something is wrong" colour). Doubled class to win over the lens rules further down. */
+.liquid-signal.liquid-signal:is(:disabled, [aria-disabled="true"]),
+button.bg-signal:disabled {
+  background: rgb(var(--c-s-800)) !important;
+  color: rgb(var(--c-s-400)) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2239,14 +2218,6 @@ html[data-theme-fade] *::after {
   -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
   backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
   clip-path: inset(0 round var(--lg-r, 9999px));
-}
-
-/* The floating top bar's glass: clear enough to see the page bend through it, with a little body so its icons stay readable. */
-:root {
-  --lg-bar-tint: rgb(18 18 20 / 0.32);
-}
-[data-mode="light"] {
-  --lg-bar-tint: rgb(255 255 255 / 0.4);
 }
 
 /* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */

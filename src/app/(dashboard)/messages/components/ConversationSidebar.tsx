@@ -48,7 +48,7 @@ export function ConversationSidebar({
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto md:w-[350px] md:shrink-0 md:neu-groove-r">
       <div className="px-4 pb-3 pt-4">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Messages</h1>
         <input
           type="search"
@@ -76,7 +76,7 @@ export function ConversationSidebar({
             <span className="block truncate text-small text-slate-500">{support.preview ?? "Message the Bass Note Piano team"}</span>
           </span>
           {support.unread > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-signal px-1.5 text-[11px] font-semibold text-slate-950">{support.unread}</span>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-signal px-1.5 text-caption font-semibold text-slate-950">{support.unread}</span>
           )}
         </button>
       )}

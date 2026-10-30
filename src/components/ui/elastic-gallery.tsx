@@ -57,7 +57,7 @@ export function ElasticGallery({ items, className }: { items: ElasticItem[]; cla
               </div>
 
               <div className={cn("absolute bottom-5 left-1/2 -translate-x-1/2 transition-all duration-500 md:bottom-8", active ? "scale-50 opacity-0" : "opacity-100 delay-500")}>
-                <span className="hidden whitespace-nowrap text-xl font-bold text-white [writing-mode:vertical-rl] md:block">{item.title}</span>
+                <span className="hidden whitespace-nowrap text-title font-bold text-white [writing-mode:vertical-rl] md:block">{item.title}</span>
                 <span className="block text-small font-bold text-white md:hidden">{item.title}</span>
               </div>
             </div>

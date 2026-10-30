@@ -58,7 +58,7 @@ export default async function HomePage() {
           {greeting}
           <Card className="overflow-hidden p-5 md:p-7">
             <Eyebrow>Start here</Eyebrow>
-            <p className="mt-2 text-[1.5rem] font-bold leading-tight text-slate-50 md:text-[1.75rem]">{data.nextStep.action}</p>
+            <p className="mt-2 text-headline font-bold leading-tight text-slate-50 md:text-headline">{data.nextStep.action}</p>
             <p className="mt-2 max-w-xl text-body text-slate-300">{data.nextStep.detail}</p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link href={data.nextStep.href} className={buttonVariants()}>
@@ -107,7 +107,7 @@ export default async function HomePage() {
 
             <Card className="order-2 p-5 md:p-6">
               <Eyebrow>Today</Eyebrow>
-              <p className="mt-2 text-[1.25rem] font-semibold leading-snug text-slate-50">{data.nextStep.action}</p>
+              <p className="mt-2 text-title font-semibold leading-snug text-slate-50">{data.nextStep.action}</p>
               <p className="mt-1 text-body text-slate-300">{data.nextStep.detail}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {joinNow && nextClass ? (

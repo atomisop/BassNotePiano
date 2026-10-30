@@ -54,9 +54,9 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
       <div
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
           isVisitor
-            ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+            ? "bg-slate-50 text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low text-slate-100"
+              ? "border border-slate-50/30 bg-neu-base shadow-pressed-low text-slate-100"
               : "text-slate-300 bg-neu-base shadow-raised-low"
         }`}
       >
@@ -189,7 +189,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
               {thread.user && <> · has an account{thread.user.username ? ` (@${thread.user.username})` : ""}</>}
             </p>
             {thread.assignedTo && (
-              <p className="mt-0.5 truncate text-small font-medium text-[rgb(var(--c-s-50))]">
+              <p className="mt-0.5 truncate text-small font-medium text-slate-50">
                 {thread.assignedTo.id === currentAdminId ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
               </p>
             )}
@@ -230,7 +230,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
                 disabled={deleting}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Never mind
               </button>
@@ -238,7 +238,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Delete permanently"}
@@ -268,7 +268,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </p>
         )}
         {notice && !error && (
-          <p role="status" className="border-t border-ink/10 bg-[rgb(var(--c-s-50)/0.08)] px-4 py-2 text-small text-slate-200">
+          <p role="status" className="border-t border-ink/10 bg-slate-50/8 px-4 py-2 text-small text-slate-200">
             {notice}
           </p>
         )}

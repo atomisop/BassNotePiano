@@ -35,7 +35,7 @@ export default function NotFound() {
         </Link>
         <Link
           href="/dashboard"
-          className="rounded-full border border-[rgb(var(--c-s-50)/0.4)] px-5 py-2.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+          className="rounded-full border border-slate-50/40 px-5 py-2.5 text-small font-medium text-slate-50 transition hover:border-slate-50 hover:bg-slate-50/10"
         >
           Go to my dashboard
         </Link>
@@ -43,7 +43,7 @@ export default function NotFound() {
 
       <p className="mt-10 text-small text-slate-500">
         Looking for the curriculum?{" "}
-        <Link href="/pricing" className="text-[rgb(var(--c-s-50))] underline underline-offset-4">
+        <Link href="/pricing" className="text-slate-50 underline underline-offset-4">
           See what&apos;s included
         </Link>
         .

@@ -33,7 +33,7 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
       <BackLink href="/parent" className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Parent mode</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Parent mode</p>
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>
         <ChildSwitcher currentId={childId} kids={kids} />

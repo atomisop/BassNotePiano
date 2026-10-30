@@ -65,7 +65,7 @@ export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; 
                 const on = picked?.scheduleId === c.scheduleId && picked.chunkIndex === c.chunkIndex;
                 return (
                   <li key={`${c.scheduleId}:${c.chunkIndex}`}>
-                    <button type="button" role="option" aria-selected={on} onClick={() => setPicked(c)} className={`tap flex w-full items-center justify-between rounded-control px-4 py-2.5 text-left text-small transition ${on ? "bg-[rgb(var(--signal)/0.16)] text-slate-50 ring-1 ring-signal" : "bg-neu-base text-slate-200 shadow-raised-low hover:text-slate-50"}`}>
+                    <button type="button" role="option" aria-selected={on} onClick={() => setPicked(c)} className={`tap flex w-full items-center justify-between rounded-control px-4 py-2.5 text-left text-small transition ${on ? "bg-signal/16 text-slate-50 ring-1 ring-signal" : "bg-neu-base text-slate-200 shadow-raised-low hover:text-slate-50"}`}>
                       {c.label}
                       {on && <Check aria-hidden className="h-4 w-4 text-signal-fg" />}
                     </button>

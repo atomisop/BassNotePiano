@@ -41,7 +41,7 @@ export function ProgressRing({
   const circumference = 2 * Math.PI * radius;
   const filled = circumference * fraction;
 
-  const arcClass = tone === "success" ? "text-slate-50" : "text-[rgb(var(--c-s-50))]";
+  const arcClass = tone === "success" ? "text-slate-50" : "text-slate-50";
 
   return (
     <div className="inline-flex flex-col items-center">
@@ -81,7 +81,7 @@ export function ProgressRing({
         </span>
       </div>
       {caption && (
-        <span className="mt-2 text-small uppercase tracking-[0.14em] text-slate-400">
+        <span className="mt-2 text-small uppercase tracking-caps text-slate-400">
           {caption}
         </span>
       )}

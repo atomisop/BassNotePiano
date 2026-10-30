@@ -33,7 +33,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       aria-pressed={active}
       className={`tap shrink-0 rounded-full px-4 py-2 text-small font-medium transition ${
-        active ? "bg-[rgb(var(--c-a-400))] text-black shadow-pressed-low" : "neu-btn !text-[#E1E0CC]/80 hover:!text-[#E1E0CC]"
+        active ? "bg-amber-400 text-black shadow-pressed-low" : "neu-btn !text-cream/80 hover:!text-cream"
       }`}
     >
       {children}
@@ -53,11 +53,11 @@ function ProductCard({ product }: { product: ShopProduct }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3 pt-5">
-        <p className="text-small uppercase tracking-[0.18em] text-[#E1E0CC]/60">{product.brand}</p>
-        <h2 className="text-balance text-body font-medium leading-snug tracking-[-0.01em] text-[#E1E0CC]">{product.name}</h2>
-        <p className="text-small leading-relaxed text-[#E1E0CC]/60">{product.blurb}</p>
+        <p className="text-small uppercase tracking-caps text-cream/60">{product.brand}</p>
+        <h2 className="text-balance text-body font-medium leading-snug tracking-tight text-cream">{product.name}</h2>
+        <p className="text-small leading-relaxed text-cream/60">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-          <span className="text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{formatUsd(product.priceCents)}</span>
+          <span className="text-xl font-medium tracking-tight text-cream">{formatUsd(product.priceCents)}</span>
           <PillCTA href={product.amazonUrl} external className="px-4 text-sm sm:px-5">
             View on Amazon
           </PillCTA>
@@ -94,7 +94,7 @@ export function ShopBrowser({ products }: { products: ShopProduct[] }) {
       </div>
 
       {shown.length === 0 ? (
-        <p className="mt-12 text-body text-[#E1E0CC]/60">Nothing matches those filters. Try another price range.</p>
+        <p className="mt-12 text-body text-cream/60">Nothing matches those filters. Try another price range.</p>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((product) => (

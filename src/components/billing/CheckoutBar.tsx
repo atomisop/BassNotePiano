@@ -54,7 +54,7 @@ export function CheckoutBar(props: {
 
 function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; total?: string | null; hint: string | null; actionLabel: string; onAction: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)] xl:flex-col xl:items-stretch xl:gap-4 xl:p-5">
+    <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-slate-50/10 xl:flex-col xl:items-stretch xl:gap-4 xl:p-5">
       <div className="min-w-0 flex-1" aria-live="polite">
         <p className="text-body font-semibold leading-tight text-slate-50">
           <NumberTicker value={priceCents} format={usd} /> <span className="text-small font-normal text-slate-400">{priceNote}</span>

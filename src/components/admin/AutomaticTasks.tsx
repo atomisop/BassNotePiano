@@ -86,7 +86,7 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
           onClick={refresh}
           disabled={checking}
           aria-busy={checking}
-          className="tap inline-flex min-h-9 items-center gap-2 rounded-lg bg-neu-base px-3 text-small font-medium text-slate-200 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low disabled:opacity-70"
+          className="tap inline-flex min-h-9 items-center gap-2 rounded-full bg-neu-base px-3 text-small font-medium text-slate-200 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low disabled:opacity-70"
         >
           <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} aria-hidden />
           {checking ? "Checking…" : "Refresh"}
@@ -126,7 +126,7 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                       aria-label={isPaused ? `Resume ${job.name}` : sure === job.name ? `Tap again to pause ${job.name}` : `Pause ${job.name}`}
                       title={isPaused ? "Resume this task" : sure === job.name ? "Tap again to pause" : "Pause this task"}
                       className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium shadow-raised-low transition active:shadow-pressed-low disabled:opacity-50 ${
-                        isPaused ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : sure === job.name ? "bg-red-500/90 text-white" : "bg-neu-base text-slate-300 hover:text-slate-50"
+                        isPaused ? "bg-signal/16 text-signal-fg" : sure === job.name ? "bg-red-500/90 text-white" : "bg-neu-base text-slate-300 hover:text-slate-50"
                       }`}
                     >
                       {isPaused ? <Play aria-hidden className="h-3.5 w-3.5" /> : <Pause aria-hidden className="h-3.5 w-3.5" />}

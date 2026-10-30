@@ -35,7 +35,7 @@ export default async function MailDetailPage(props: { params: Promise<{ mailId: 
         </BackLink>
         <Card>
           <Eyebrow>{KIND_LABEL[mail.kind]}</Eyebrow>
-          <h1 className="mt-2 text-body font-semibold text-slate-50">{mail.title}</h1>
+          <h1 className="mt-2 text-title font-semibold text-slate-50">{mail.title}</h1>
           <p className="mt-1 text-small text-slate-500">
             {mail.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })} ET
           </p>

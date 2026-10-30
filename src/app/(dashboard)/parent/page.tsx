@@ -21,12 +21,12 @@ export default async function ParentPage() {
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Account</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Account</p>
       <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Parent mode</h1>
 
       {bills.length > 0 && (
         <section className="mt-6 space-y-4" aria-label="Payments to make">
-          <h2 className="text-body font-semibold text-slate-50">To pay</h2>
+          <h2 className="text-title font-semibold text-slate-50">To pay</h2>
           {bills.map((bill) => (
             <ZelleUnlockGate
               key={bill.paymentId}
@@ -46,7 +46,7 @@ export default async function ParentPage() {
 
       <section className="mt-6" aria-label="Your children">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+          <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
             Your children
             <Hint>Open a child to see their progress and practice, change their class times and weekly time, and check their plan.</Hint>
           </h2>
@@ -95,7 +95,7 @@ export default async function ParentPage() {
       </section>
 
       <section className="mt-8 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Add or manage children">
-        <h2 className="mb-4 text-body font-semibold text-slate-50">Link an account</h2>
+        <h2 className="mb-4 text-title font-semibold text-slate-50">Link an account</h2>
         <ParentLinksPanel />
       </section>
     </WideLayout>

@@ -76,7 +76,7 @@ export function PausePlanCard({
               id="pause-weeks"
               value={weeks}
               onChange={(e) => setWeeks(Number(e.target.value))}
-              className="mt-1 block h-11 rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-1 block h-11 rounded-lg bg-neu-base px-3 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {Array.from({ length: PAUSE_MAX_WEEKS }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>{n} week{n === 1 ? "" : "s"}</option>

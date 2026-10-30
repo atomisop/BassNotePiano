@@ -22,8 +22,8 @@ export interface PhoneState {
 }
 
 const input = "w-full rounded-lg bg-neu-base px-3 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500";
-const primary = "tap inline-flex items-center gap-2 rounded-lg bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
-const plainBtn = "tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
+const primary = "tap inline-flex items-center gap-2 rounded-full bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
+const plainBtn = "tap rounded-full bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
 
 /** Add, confirm, change or remove the account's phone number. The number only counts once its text code is entered. */
 export function PhoneCard({ state }: { state: PhoneState }) {
@@ -124,12 +124,12 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   return (
     <div ref={ref} data-phone-card className="glass-surface p-6">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+        <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
           Phone number
           <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
         </h2>
         {mode === "view" && state.phone && (
-          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
             {state.verified ? "Verified" : "Saved"}
           </span>
         )}

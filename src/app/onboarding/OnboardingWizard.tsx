@@ -190,7 +190,7 @@ export function OnboardingWizard() {
         />
       </div>
 
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         Step {step + 1} of {STEP_TITLES.length}
         {optional ? " · optional" : ""}
       </p>
@@ -199,7 +199,7 @@ export function OnboardingWizard() {
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
+            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-slate-50/60">
               <span className="text-small text-slate-500">@</span>
               <input
                 type="text"

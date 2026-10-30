@@ -64,7 +64,7 @@ function CommandDialog({
           <DialogPrimitive.Description className="sr-only">
             Type to search scales and pages, then press Enter.
           </DialogPrimitive.Description>
-          <Command className="!bg-transparent [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
+          <Command className="!bg-transparent [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-caps [&_[cmdk-group-heading]]:text-slate-500">
             {children}
           </Command>
         </DialogPrimitive.Content>
@@ -142,7 +142,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-small text-slate-300 outline-none transition-colors data-[selected=true]:bg-[rgb(var(--c-s-50)/0.1)] data-[selected=true]:text-[rgb(var(--c-s-50))] data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+      "relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-small text-slate-300 outline-none transition-colors data-[selected=true]:bg-slate-50/10 data-[selected=true]:text-slate-50 data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}

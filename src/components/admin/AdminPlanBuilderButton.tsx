@@ -24,7 +24,7 @@ const todayEt = () => new Date().toLocaleDateString("en-CA", { timeZone: "Americ
 
 const STATE: Record<TimelineClassState, { label: string; cls: string }> = {
   taught: { label: "taught", cls: "bg-emerald-400/15 text-emerald-300" },
-  booked: { label: "booked", cls: "bg-[rgb(var(--signal)/0.16)] text-signal-fg" },
+  booked: { label: "booked", cls: "bg-signal/16 text-signal-fg" },
   missed: { label: "missed", cls: "bg-amber-400/15 text-amber-300" },
   unpaid: { label: "not paid yet", cls: "bg-neu-base text-slate-500 shadow-pressed-low" },
 };
@@ -129,7 +129,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     router.refresh();
   }
 
-  const field = "min-h-11 min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-base text-slate-100 shadow-pressed-low";
+  const field = "min-h-11 min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-body text-slate-100 shadow-pressed-low";
 
   return (
     <>
@@ -187,12 +187,12 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                 </label>
                 <div className="space-y-1.5 rounded-xl bg-neu-base p-3 shadow-pressed-low">
                   <label className="flex items-center gap-2 text-small text-slate-200">
-                    <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                    <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-signal" />
                     Spend 1 class credit for the class taught
                   </label>
                   {ctx.openPayment && (
                     <label className="flex items-center gap-2 text-small text-slate-200">
-                      <input type="checkbox" checked={recordPay} onChange={(e) => setRecordPay(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                      <input type="checkbox" checked={recordPay} onChange={(e) => setRecordPay(e.target.checked)} className="h-4 w-4 accent-signal" />
                       The bill is not marked paid yet: mark {usd(ctx.amountCents)} received
                     </label>
                   )}
@@ -248,9 +248,9 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   <div>
                     <span className="mb-1 block text-small font-medium text-slate-200">Bills paid</span>
                     <div className="flex items-center gap-2">
-                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-lg text-slate-200 shadow-raised-low">-</button>
+                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-11 w-11 rounded-full bg-neu-base text-title text-slate-200 shadow-raised-low">-</button>
                       <span className="min-w-10 text-center text-body font-semibold tabular-nums text-slate-50">{paid} of {cycles}</span>
-                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-lg text-slate-200 shadow-raised-low">+</button>
+                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-11 w-11 rounded-full bg-neu-base text-title text-slate-200 shadow-raised-low">+</button>
                     </div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                         setTaught((t) => [...t, taughtInput].sort());
                         setTaughtInput("");
                       }}
-                      className="tap inline-flex h-11 items-center gap-1 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
+                      className="tap inline-flex h-11 items-center gap-1 rounded-full bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
                     >
                       <Plus aria-hidden className="h-3.5 w-3.5" />
                       Add
@@ -284,7 +284,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   </div>
                   {taught.length > 0 && (
                     <label className="mt-2 flex items-center gap-2 text-small text-slate-300">
-                      <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                      <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-signal" />
                       Spend a class credit for each
                     </label>
                   )}
@@ -319,7 +319,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                         </p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {c.classes.map((k) => (
-                            <span key={k.date} className={`rounded-lg px-2 py-1 text-[0.8125rem] leading-tight ${STATE[k.state].cls}`} title={STATE[k.state].label}>
+                            <span key={k.date} className={`rounded-lg px-2 py-1 text-small leading-tight ${STATE[k.state].cls}`} title={STATE[k.state].label}>
                               {dateLabel(k.date)} · {STATE[k.state].label}
                             </span>
                           ))}

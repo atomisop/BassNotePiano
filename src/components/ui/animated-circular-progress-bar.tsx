@@ -35,7 +35,7 @@ export function AnimatedCircularProgressBar({
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
-      className={cn("relative size-40 text-2xl font-semibold", className)}
+      className={cn("relative size-40 text-headline font-semibold", className)}
       style={
         {
           "--circle-size": "100px",

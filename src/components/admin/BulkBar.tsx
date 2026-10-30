@@ -116,7 +116,7 @@ export function BulkBar({
 export function RowCheck({ checked, onChange, label }: { checked: boolean; onChange: (next: boolean) => void; label: string }) {
   return (
     <label className="tap flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} aria-label={label} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} aria-label={label} className="h-4 w-4 accent-signal" />
     </label>
   );
 }

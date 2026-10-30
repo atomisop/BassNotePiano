@@ -31,9 +31,9 @@ export function CelebrationCard({ win }: { win: { key: string; title: string; de
     setState("hidden");
   };
   return (
-    <div role="status" className="relative flex items-start gap-3 rounded-card bg-[rgb(var(--signal)/0.14)] p-4 md:p-5">
+    <div role="status" className="relative flex items-start gap-3 rounded-card bg-signal/14 p-4 md:p-5">
       <Celebrate />
-      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--signal)/0.2)] text-signal-fg">
+      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-signal/20 text-signal-fg">
         <PartyPopper className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
