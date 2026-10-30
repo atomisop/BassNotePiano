@@ -279,7 +279,7 @@ export function SnapCarousel({
               aria-current={i === car.index ? "true" : undefined}
               className="tap flex h-6 min-w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className={cn("block h-2 rounded-full transition-all duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none", i === car.shown ? "w-5 bg-signal" : "w-2 bg-slate-600")} />
+              <span className={cn("block h-2 rounded-full transition-[width,background-color] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none", i === car.shown ? "w-5 bg-signal" : "w-2 bg-slate-600")} />
             </button>
           ))}
         </div>

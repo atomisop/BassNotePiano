@@ -99,7 +99,7 @@ export function LimitCard({ title, done, goal, fraction, label }: { title: strin
     <section className="rounded-3xl bg-neu-base shadow-raised-mid p-5">
       <p className="text-small font-medium text-slate-100">{title}</p>
       <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-50/8" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label}>
-        <div className="h-full rounded-full bg-signal transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-full w-full rounded-full bg-signal transition-transform duration-(--dur-slow) ease-(--ease-ios)" style={{ transform: `translateX(${pct - 100}%)` }} />
       </div>
       <div className="mt-2 flex items-baseline justify-between text-small tabular-nums">
         <span className="text-slate-300">{done}</span>
@@ -187,7 +187,7 @@ export function StatusStrip({
             <p className="mt-1 truncate text-body font-semibold text-slate-50 sm:text-title">{it.value}</p>
             {it.fraction !== undefined && (
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, it.fraction) * 100)} aria-label={it.label}>
-                <div className="h-full rounded-full bg-signal transition-all" style={{ width: `${Math.max(0, Math.min(100, Math.round(it.fraction * 100)))}%` }} />
+                <div className="h-full w-full rounded-full bg-signal transition-transform duration-(--dur-slow) ease-(--ease-ios)" style={{ transform: `translateX(${Math.max(0, Math.min(100, Math.round(it.fraction * 100))) - 100}%)` }} />
               </div>
             )}
             {it.sub && <p className="mt-1.5 truncate text-small text-slate-500">{it.sub}</p>}

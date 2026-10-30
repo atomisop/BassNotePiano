@@ -36,9 +36,9 @@ function CommandDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  // The window opens out of the button that was pressed and folds back into it, like minimizing and maximizing a Mac window: the moment
-  // the panel is attached (before it is painted), work out how far, and which way, that button is from where the panel sits, and hand
-  // it to the CSS animation.
+  // The window grows a little out of the button that was pressed (opened from the keyboard it does not animate at all, see globals.css):
+  // the moment the panel is attached (before it is painted), work out how far, and which way, that button is from where the panel
+  // sits, and hand it to the CSS as the transform-origin.
   const place = React.useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
     const trigger = Array.from(document.querySelectorAll<HTMLElement>("[data-search-trigger]")).find((t) => t.getBoundingClientRect().width > 0);
