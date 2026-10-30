@@ -2326,11 +2326,33 @@ body:has([data-surface="app"]) {
   --card-wash: rgb(0 0 0 / 0.018);
   --card-shade: rgb(0 0 0 / 0.045);
   --card-line: rgb(0 0 0 / 0.07);
-  --glass-hi: rgb(255 255 255 / 0.95);
-  --glass-lo: rgb(120 120 145 / 0.3);
-  --glass-rim: rgb(255 255 255 / 1);
-  --glass-floor: rgb(0 0 0 / 0.05);
-  --glass-sheen: linear-gradient(158deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 40%, transparent 65%);
+  /* Light mode is flat (2026-10-30, owner: "too much glow"): no white highlight and no wide soft shadow around cards, buttons or the
+     dock; a hairline edge and a tight 1px shadow are all that separate them from the page. */
+  --glass-hi: transparent;
+  --glass-lo: rgb(0 0 0 / 0.06);
+  --glass-rim: rgb(255 255 255 / 0.6);
+  --glass-floor: rgb(0 0 0 / 0.04);
+  --glass-sheen: none;
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 3px var(--glass-lo);
+  --neu-float: 0 8px 24px -12px rgb(0 0 0 / 0.18);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --plane-mid-shadow: var(--neu-raised-mid);
+  --plane-front-shadow: var(--neu-raised-high);
+  --surface-shadow: var(--neu-raised-mid);
+  --subtle-shadow: var(--neu-pressed-low);
+  --elev-shadow: var(--neu-raised-high);
+}
+/* No glow under the main (orange or white) buttons in light mode either. */
+[data-mode="light"] .liquid-signal,
+[data-mode="light"] .lg-glass.liquid-signal {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06) !important;
+}
+[data-mode="light"] .liquid {
+  box-shadow: inset 0 0 0 1px var(--card-line, rgb(0 0 0 / 0.07));
 }
 /* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
    picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
@@ -2400,19 +2422,29 @@ body:has([data-surface="app"]) .glass-surface-modal {
 /* The dock (a copy of Instagram's tab bar), made of the same 3D glass as the cards around it so it belongs to the page: the card color
    as a frosted tint, the cards' lift, rim and sheen, and the tab you are on pressed into it the way a pressed control sinks into a card.
    The lens (GlassLens) frosts and bends the page under it, so the pill carries no blur of its own (that would wall the lens off). */
+/* Flat (2026-10-30, owner: "too rounded, like neumorphic"): a frosted fill with a fine grain, a hairline and one tight shadow; no 3D
+   rim, no light and shade. The grain is an SVG noise tile at low strength, so it reads as a matte surface, not a pattern. */
+:root {
+  --dock-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 .app-dock.app-dock-lens {
-  background-color: rgb(var(--neu-base) / 0.8);
-  background-image: var(--glass-sheen);
+  background-color: rgb(var(--neu-base) / 0.86);
+  background-image: var(--dock-grain);
+  background-size: 120px 120px;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: var(--glass-edge3d), inset 0 0 0 1px var(--card-line), -4px -4px 12px var(--glass-hi), 8px 10px 26px var(--glass-lo);
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 6px 18px -10px rgb(0 0 0 / 0.6);
 }
 [data-mode="light"] .app-dock.app-dock-lens {
-  background-color: rgb(var(--neu-base) / 0.82);
+  background-color: rgb(var(--neu-base) / 0.9);
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 1px 3px rgb(0 0 0 / 0.08);
 }
 .app-dock-lens .app-dock-active {
-  background: rgb(var(--neu-base));
-  box-shadow: var(--neu-pressed-mid);
+  background: rgb(var(--neu-lift));
+  box-shadow: inset 0 0 0 1px var(--card-line);
+}
+[data-mode="light"] .app-dock-lens .app-dock-active {
+  background: rgb(0 0 0 / 0.06);
 }
 /* The filled icon's cut-out details take the pressed capsule's color. */
 .app-dock-lens .dock-icon {
@@ -2499,11 +2531,11 @@ body {
   [data-deck-desktop] .deck-header {
     position: sticky;
     top: var(--deck-top, -16px);
-    z-index: 5;
+    z-index: 40;
     background: rgb(var(--ground));
   }
   [data-mode="light"] [data-deck-desktop] .deck-card {
-    filter: drop-shadow(0 -8px 12px rgb(40 40 60 / 0.16));
+    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
   }
 }
 @media (max-width: 1023px) {
@@ -2515,10 +2547,10 @@ body {
   .deck-header {
     position: sticky;
     top: var(--deck-top, -16px);
-    z-index: 5;
+    z-index: 40;
     background: rgb(var(--ground));
   }
   [data-mode="light"] .deck-card {
-    filter: drop-shadow(0 -8px 12px rgb(40 40 60 / 0.16));
+    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
   }
 }

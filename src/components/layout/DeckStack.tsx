@@ -35,7 +35,10 @@ export function DeckStack() {
       const all = [...main.querySelectorAll<HTMLElement>(".deck-card")];
       // On a computer only the screens that ask for it (`data-deck-desktop`) keep the deck; everywhere else scrolls normally.
       const cards = phone.matches ? all : all.filter((c) => c.closest("[data-deck-desktop]"));
-      all.filter((c) => !cards.includes(c)).forEach((c) => c.style.removeProperty("--deck-top"));
+      all.filter((c) => !cards.includes(c)).forEach((c) => {
+        c.style.removeProperty("--deck-top");
+        c.style.removeProperty("z-index");
+      });
       const headerEls = [...main.querySelectorAll<HTMLElement>("[data-deck-header]")];
       if (cards.length === 0) {
         headerEls.forEach((h) => h.style.removeProperty("--deck-top"));
@@ -63,7 +66,10 @@ export function DeckStack() {
       }
       // One stack per column: cards that start at the same left edge share a stack (a phone has just the one).
       const column = new Map<number, number>();
-      ordered.forEach(({ card }) => {
+      ordered.forEach(({ card }, n) => {
+        // A later card is drawn over an earlier one in the order they are SEEN: Home reorders its cards with CSS `order`, and a sticky
+        // card is otherwise painted in source order, which slid the tip card under the leaderboard.
+        card.style.zIndex = String(n + 1);
         const left = phone.matches ? 0 : Math.round(card.getBoundingClientRect().left);
         const i = column.get(left) ?? 0;
         column.set(left, i + 1);

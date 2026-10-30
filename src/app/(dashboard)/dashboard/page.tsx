@@ -22,7 +22,7 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { RoadmapCard } from "@/components/home/RoadmapCard";
 import { CelebrationCard } from "@/components/home/CelebrationCard";
-import { BadgeGrid } from "@/components/gamification/BadgeGrid";
+import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
 import { BADGES } from "@/lib/badges";
 
 export const metadata = { title: "Home" };
@@ -259,16 +259,8 @@ export default async function HomePage() {
               <p className="mt-2 text-title font-semibold text-slate-50">
                 {data.earnedBadgeCodes.length} of {BADGES.length} earned
               </p>
-              {/* The whole grid is long, so it opens on request. */}
-              <details className="group mt-3">
-                <summary className="tap inline-flex cursor-pointer list-none items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline [&::-webkit-details-marker]:hidden">
-                  <span className="group-open:hidden">Show all badges</span>
-                  <span className="hidden group-open:inline">Hide badges</span>
-                </summary>
-                <div className="mt-3">
-                  <BadgeGrid earnedCodes={new Set(data.earnedBadgeCodes)} />
-                </div>
-              </details>
+              {/* The whole grid is long, so it opens in a sheet; the card keeps its size in the deck. */}
+              <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} />
             </ColorCard>
 
             <ColorCard color="plum" className="order-10 p-5">
