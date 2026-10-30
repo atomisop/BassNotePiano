@@ -15,7 +15,7 @@ const HEADER_TOP = -16;
 const DOCK_SPACE = 104;
 
 /**
- * The card deck on phones and tablets (Home, Roadmap, the admin overview): every `.deck-card` slides up and stops under the top bar,
+ * The card deck on phones and tablets (Home, Roadmap): every `.deck-card` slides up and stops under the top bar,
  * the next one is drawn over it, and the earlier cards' top edges stay showing as a stack of tips (globals.css makes them sticky).
  * This works out where each card stops: its tip's place in the stack, or, for a card too tall to fit, low enough that its bottom is
  * seen before it stops. Cards are taken in the order they appear on screen (Home reorders them with CSS `order`).

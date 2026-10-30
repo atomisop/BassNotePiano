@@ -104,7 +104,7 @@ export default async function AdminOverviewPage() {
         </div>
 
         <div className="grid min-w-0 gap-6">
-          <section aria-label="Needs you now" className="deck-card rounded-2xl bg-neu-base shadow-raised-mid p-4">
+          <section aria-label="Needs you now" className="rounded-2xl bg-neu-base shadow-raised-mid p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-title font-semibold text-slate-50">Needs you now</h2>
               <p className="text-small text-slate-500">{attention.length === 0 ? "Nothing waiting" : `${attention.length} ${attention.length === 1 ? "item" : "items"}`}</p>
@@ -129,7 +129,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {waiting.payments.length > 0 && (
-        <section className="deck-card mt-4">
+        <section className="mt-4">
           <div className="mb-2 flex items-baseline justify-between gap-3">
             <h2 className="text-title font-semibold text-slate-50">Approve without leaving</h2>
             {waiting.total > 3 && (
@@ -143,7 +143,7 @@ export default async function AdminOverviewPage() {
       )}
 
       {followUps.length > 0 && (
-        <PhoneAccordion alwaysCollapsible title="People to follow up with" summary={`${followUps.length} to follow up`} className="deck-card mt-4 rounded-2xl bg-neu-base shadow-raised-low">
+        <PhoneAccordion alwaysCollapsible title="People to follow up with" summary={`${followUps.length} to follow up`} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
           <ul className="divide-y divide-slate-50/10">
             {followUps.map((f) => (
               <li key={f.key} className="py-2.5 text-small">
@@ -175,7 +175,7 @@ export default async function AdminOverviewPage() {
 
       {/* Two trend cards over the last six months, both from real rows (User.createdAt and VERIFIED payments). Flat stretches are real flat
           stretches, no smoothing, no seeded history. */}
-      <section aria-label="Trends" className="deck-card mt-6">
+      <section aria-label="Trends" className="mt-6">
         <h2 className="mb-3 text-title font-semibold text-slate-50">Trends, last 6 months</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <MetricCard label="Signups" value={stats.totalUsers.toLocaleString()} hint="All accounts" data={trends.signups} variant="bar" />
@@ -185,7 +185,7 @@ export default async function AdminOverviewPage() {
 
       {isOwner && (
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          <PhoneAccordion alwaysCollapsible title="Recent activity" summary={`${activity.length} changes`} className="deck-card glass-surface">
+          <PhoneAccordion alwaysCollapsible title="Recent activity" summary={`${activity.length} changes`} className="glass-surface">
             {activity.length === 0 ? (
               <p className="text-small text-slate-500">Nothing yet.</p>
             ) : (
@@ -204,7 +204,7 @@ export default async function AdminOverviewPage() {
               </ul>
             )}
           </PhoneAccordion>
-          <PhoneAccordion alwaysCollapsible title="Page views, last 7 days" summary={`${visits.reduce((n, v) => n + (v._sum.count ?? 0), 0).toLocaleString()} views`} className="deck-card glass-surface">
+          <PhoneAccordion alwaysCollapsible title="Page views, last 7 days" summary={`${visits.reduce((n, v) => n + (v._sum.count ?? 0), 0).toLocaleString()} views`} className="glass-surface">
             {visits.length === 0 ? (
               <p className="text-small text-slate-500">No views yet.</p>
             ) : (
@@ -224,7 +224,7 @@ export default async function AdminOverviewPage() {
             title="Automatic tasks"
             summary={jobs.filter((j) => isStopped(j.state)).length > 0 ? `${jobs.filter((j) => isStopped(j.state)).length} stopped` : jobs.some((j) => j.state === "paused") ? `${jobs.filter((j) => j.state === "paused").length} paused` : "All running"}
             warn={jobs.some((j) => isStopped(j.state))}
-            className="deck-card glass-surface scroll-mt-20"
+            className="glass-surface scroll-mt-20"
           >
             <AutomaticTasks
               jobs={jobs.map((j) => ({ name: j.name, state: j.state, lastRanAt: j.lastRanAt ? new Date(j.lastRanAt).toISOString() : null, note: j.note }))}

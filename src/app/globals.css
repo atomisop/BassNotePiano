@@ -2529,7 +2529,7 @@ body {
   }
 }
 
-/* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
+/* The card deck on phones and tablets (Home, Roadmap; not the admin overview, which scrolls as a plain list under its greeting): instead of a list that scrolls away, each `.deck-card`
    slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
    of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
    computer the page scrolls normally. */
