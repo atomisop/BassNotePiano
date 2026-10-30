@@ -10,49 +10,53 @@ import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
-import { ICON_PATHS } from "@/components/layout/navIcons";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
 
-// The app's own (BNP) icons, the hand-drawn set in navIcons.tsx, with a filled version for the tab you are on, the way Instagram's tab
-// bar fills the current icon. `fill` is the solid shape; `cut` is the inner detail drawn over it in the capsule's color (the calendar's
-// line and check, the gear's center), so the filled icon still reads; `line` is drawn in the icon color in both states.
-type DockGlyph = { outline: string; fill?: string; cut?: string; line?: string; /** The drawn size differs per icon; this evens them out. */ scale?: number };
+// The dock's own icon set: one 24pt grid, one 2pt rounded stroke, so the five read as a family the way Instagram's do. The tab you
+// are on is drawn filled: `fill` is the solid shape, `cut` is detail punched back out of it in the capsule's color (the map's folds,
+// the calendar's line and check, the gear's hole).
+type DockGlyph = { outline: string[]; fill?: string; cut?: string; /** The cut-out is a solid hole (the gear) rather than lines. */ cutSolid?: boolean; rings?: string };
+const GEAR =
+  "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z";
+const MAP =
+  "M14.1 5.55a2 2 0 0 0 1.8 0l3.65-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.55 2.27a2 2 0 0 1-1.8 0l-4.2-2.1a2 2 0 0 0-1.8 0l-3.65 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9L8.1 3.45a2 2 0 0 1 1.8 0z";
+const HOUSE = "M3.5 10.4 12 3.6l8.5 6.8V19a1.75 1.75 0 0 1-1.75 1.75H15v-5a1.25 1.25 0 0 0-1.25-1.25h-3.5A1.25 1.25 0 0 0 9 15.75v5H5.25A1.75 1.75 0 0 1 3.5 19z";
+const BUBBLE =
+  "M12 3.6c4.8 0 8.6 3.4 8.6 7.7S16.8 19 12 19c-1.1 0-2.15-.18-3.12-.5L4.4 20.2l1.25-3.65C4.3 15.2 3.4 13.35 3.4 11.3 3.4 7 7.2 3.6 12 3.6z";
 const DOCK_GLYPHS: Record<string, DockGlyph> = {
-  home: { outline: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z", fill: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z" },
-  roadmap: { outline: ICON_PATHS.roadmap },
+  home: { outline: [HOUSE], fill: HOUSE },
+  roadmap: {
+    outline: [MAP, "M9 3.5v14.6M15 5.9v14.6"],
+    fill: MAP,
+    cut: "M9 3.5v14.6M15 5.9v14.6",
+  },
   lessons: {
-    outline: ICON_PATHS.lessons,
-    fill: "M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z",
-    cut: "M4 9h16M9 14l2 2 4-4",
-    line: "M8 3v3M16 3v3",
+    outline: ["M6.75 4.75h10.5a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3H6.75a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3z", "M3.75 9.75h16.5M8 3v3.5M16 3v3.5M9.25 14.75l1.9 1.9 3.6-3.6"],
+    fill: "M6.75 4.75h10.5a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3H6.75a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3z",
+    cut: "M3.75 9.75h16.5M9.25 14.75l1.9 1.9 3.6-3.6",
+    rings: "M8 3v3.5M16 3v3.5",
   },
-  messages: { outline: ICON_PATHS.messages, fill: ICON_PATHS.messages },
-  settings: {
-    outline: `${ICON_PATHS.settings}M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z`,
-    fill: ICON_PATHS.settings,
-    cut: "M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z",
-    scale: 1.45,
-  },
+  messages: { outline: [BUBBLE], fill: BUBBLE },
+  settings: { outline: [GEAR, "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"], fill: GEAR, cut: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", cutSolid: true },
 };
 
 function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean }) {
-  const s = glyph.scale ?? 1;
-  const stroke = { stroke: "currentColor", strokeWidth: (active ? 2 : 1.75) / s, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const line = { stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const filled = active && glyph.fill;
   return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[23px] w-[23px]">
-      <g transform={s === 1 ? undefined : `translate(12 12) scale(${s}) translate(-12 -12)`}>
-      {active && glyph.fill ? (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[25px] w-[25px]">
+      {filled ? (
         <>
-          <path d={glyph.fill} fill="currentColor" {...stroke} />
-          {glyph.cut && <path d={glyph.cut} {...stroke} stroke="var(--dock-cut)" />}
-          {glyph.line && <path d={glyph.line} {...stroke} />}
+          <path d={glyph.fill} fill="currentColor" {...line} />
+          {glyph.cut && <path d={glyph.cut} {...line} stroke="var(--dock-cut)" fill={glyph.cutSolid ? "var(--dock-cut)" : "none"} />}
+          {/* The calendar's rings sit above the filled body and stay lines. */}
+          {glyph.rings && <path d={glyph.rings} {...line} />}
         </>
       ) : (
-        <path d={glyph.outline} {...stroke} strokeWidth={(active ? 2.4 : 1.75) / s} />
+        glyph.outline.map((d, i) => <path key={i} d={d} {...line} strokeWidth={active ? 2.4 : 2} />)
       )}
-      </g>
     </svg>
   );
 }
@@ -200,7 +204,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
         className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
       >
-        <GlassLens radius="full" bezel={24} strength={30} magnify={0.45} blur={7} />
+        <GlassLens radius="full" bezel={18} strength={12} magnify={0.08} blur={14} />
         {NAV_ITEMS.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
