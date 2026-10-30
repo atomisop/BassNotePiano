@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
-import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, type Audience } from "@/lib/planCheckout";
+import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
 import { useFamilyInvites, type FamilyInviteApi } from "@/components/billing/useFamilyInvites";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
@@ -39,7 +39,10 @@ export type StartPlanResult = { ok: true } | { ok: false; error: string };
 export interface StartPlanInput {
   audience: Audience;
   term: PaymentPlanTerm;
-  slot: ReservableSlot;
+  /** The weekly time for a solo or group plan (null in parent mode, where everyone has their own in `personSlots`). */
+  slot: ReservableSlot | null;
+  /** Parent mode: each person's own weekly time, keyed by their email (lowercased) or "self" for the parent. */
+  personSlots: { key: string; slot: ReservableSlot }[];
   /** Every group member's account email, in the order typed (empty for a solo plan). */
   memberEmails: string[];
   /** The first payment on screen when they pressed Start; the server refuses if the real price is different. */
@@ -61,8 +64,8 @@ export interface ParentModeConfig {
 }
 
 /**
- * Starting a plan: who it is for, how long, who is in the family, and the weekly time, in that order, with the price and the next step
- * pinned to the bottom of the screen the whole way. A plan the pricing page linked to arrives with its length and "just me" or "family"
+ * Starting a plan: who it is for, how long, who is in the family, and the weekly time, in that order, then the price and the Review
+ * button as the last thing on the page. On a tablet or computer the plan and people sit beside the weekly times. A plan the pricing page linked to arrives with its length and "just me" or "family"
  * already chosen, so the only thing left is the time. The server calls live in the parent (`onStart`, `loadSlots`), which keeps this
  * screen about the form and lets it be tried with made-up times.
  */
@@ -105,6 +108,9 @@ export function NewPlanForm({
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slot, setSlot] = useState<ReservableSlot | null>(null);
+  // Parent mode: every person on the plan picks their own weekly time.
+  const [personTimes, setPersonTimes] = useState<Record<string, ReservableSlot>>({});
+  const [activeHolder, setActiveHolder] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -236,9 +242,33 @@ export function NewPlanForm({
         : rowStates.some((st) => st !== null && !good(st))
           ? "Fix the marked email"
           : null;
+  // Parent mode: whose times are needed, which one is being picked, and which times the others already took (one person per time).
+  const holders = isParent ? parentTimeHolders(memberRows, includeSelf) : [];
+  const keyOf = (t: ReservableSlot) => `${t.scheduleId}:${t.chunkIndex}`;
+  const timeOf = (holderKey: string) => {
+    const t = personTimes[holderKey];
+    // A time that has since gone (taken by someone else, reloaded) no longer counts.
+    return t && slots.some((open) => keyOf(open) === keyOf(t)) ? t : null;
+  };
+  const current = holders.find((h) => h.key === activeHolder) ?? holders.find((h) => !timeOf(h.key)) ?? holders[0] ?? null;
+  const takenByOthers = new Set(holders.filter((h) => h.key !== current?.key).map((h) => timeOf(h.key)).filter((t): t is ReservableSlot => t !== null).map(keyOf));
+  const allTimesPicked = holders.length > 0 && holders.every((h) => timeOf(h.key) !== null);
+
+  function pickFor(holderKey: string, picked: ReservableSlot | null) {
+    setPersonTimes((prev) => {
+      const next = { ...prev };
+      if (picked) next[holderKey] = picked;
+      else delete next[holderKey];
+      return next;
+    });
+    // Straight on to the next person still without a time.
+    if (picked) setActiveHolder(holders.find((h) => h.key !== holderKey && !timeOf(h.key))?.key ?? holderKey);
+  }
+
   // In the order the page asks: the people, their yes, then the time.
-  const missing = missingForCheckout({ audience, memberRows, slotChosen: slot !== null, parent: isParent });
-  const hint = (missing !== "Pick a weekly time" ? missing : null) ?? accountHint ?? missing;
+  const missing = missingForCheckout({ audience, memberRows, slotChosen: isParent ? allTimesPicked : slot !== null, parent: isParent });
+  const timeMissing = missing === "Pick a weekly time" ? (isParent ? "Pick a weekly time for each person" : missing) : null;
+  const hint = (timeMissing ? null : missing) ?? accountHint ?? timeMissing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
   const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
@@ -248,10 +278,11 @@ export function NewPlanForm({
   const barTotal = totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
   async function start() {
-    if (!slot || hint !== null) return;
+    if (hint !== null || (!isParent && !slot)) return;
     setBusy(true);
     setError(null);
-    const result = await onStart({ audience, term, slot, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [], expectedFirstPaymentCents: totals.firstPaymentCents, mode: isParent ? "PARENT" : "GROUP", includeSelf: isParent && includeSelf }).catch(
+    const personSlots = isParent ? holders.map((h) => ({ key: h.key, slot: timeOf(h.key)! })) : [];
+    const result = await onStart({ audience, term, slot: isParent ? null : slot, personSlots, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [], expectedFirstPaymentCents: totals.firstPaymentCents, mode: isParent ? "PARENT" : "GROUP", includeSelf: isParent && includeSelf }).catch(
       (): StartPlanResult => ({ ok: false, error: "Something went wrong. Please try again." }),
     );
     setBusy(false);
@@ -259,9 +290,9 @@ export function NewPlanForm({
   }
 
   return (
-    <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start xl:gap-x-8 xl:gap-y-6 xl:space-y-0 xl:[&>*:not([data-summary])]:col-start-1">
+    <div className="space-y-6 md:space-y-8">
       {!parent?.only && (
-      <div className="lg:flex lg:justify-center">
+      <div className="flex justify-center md:justify-start">
       <Tabs
         label="Who is this plan for?"
         items={[
@@ -277,7 +308,8 @@ export function NewPlanForm({
       </div>
       )}
 
-      <div className="space-y-6">
+      {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
       <div className="space-y-6">
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
@@ -427,8 +459,37 @@ export function NewPlanForm({
       </div>
 
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly time for your first child" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
-        {slotsLoading ? (
+        <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        {isParent && (
+          <div className="mb-3 space-y-2" role="group" aria-label="Whose weekly time">
+            {holders.length === 0 ? (
+              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low">Add a child above, then pick a time for each person.</p>
+            ) : (
+              holders.map((h) => {
+                const t = timeOf(h.key);
+                const on = current?.key === h.key;
+                return (
+                  <button
+                    key={h.key}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setActiveHolder(h.key)}
+                    className={cn(
+                      "tap flex w-full items-center justify-between gap-3 rounded-control px-4 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      on ? "bg-neu-lift text-slate-50 ring-1 ring-signal" : "bg-neu-base text-slate-300 hover:bg-neu-lift",
+                    )}
+                  >
+                    <span className="min-w-0 truncate font-medium">{h.label}</span>
+                    <span className={cn("shrink-0 tabular-nums", t ? "text-slate-100" : "text-slate-500")}>
+                      {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)}` : on ? "Pick below" : "No time yet"}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+        {isParent && holders.length === 0 ? null : slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg bg-neu-base py-6 shadow-raised-low">
             <MorphingSquare size={16} />
           </div>
@@ -436,10 +497,11 @@ export function NewPlanForm({
           <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low">No open weekly times right now.</p>
         ) : (
           <>
+            {isParent && current && <p className="mb-2 text-small text-slate-400">Time for <span className="font-medium text-slate-100">{current.label}</span></p>}
             <WeekdayTimePicker
-              slots={slots}
-              selected={slot}
-              onSelect={setSlot}
+              slots={isParent ? slots.filter((open) => !takenByOthers.has(keyOf(open))) : slots}
+              selected={isParent ? (current ? timeOf(current.key) : null) : slot}
+              onSelect={isParent ? (picked) => current && pickFor(current.key, picked) : setSlot}
               taken={wait.taken}
               waiting={wait.mine}
               busyKey={waitBusy}
@@ -492,7 +554,16 @@ export function NewPlanForm({
               </Row>
             )
           )}
-          {timeLine && <Row label={isParent ? "First child's weekly time" : isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
+          {isParent
+            ? holders.map((h) => {
+                const t = timeOf(h.key);
+                return (
+                  <Row key={h.key} label={h.key === "self" ? "Your weekly time" : `${h.label}'s weekly time`}>
+                    {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)}` : "Not picked"}
+                  </Row>
+                );
+              })
+            : timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
           <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{usd(totals.perPaymentCents)}</Row>
           {!isFamily && personalDiscountPercent > 0 && (
             <Row label="Your discount">

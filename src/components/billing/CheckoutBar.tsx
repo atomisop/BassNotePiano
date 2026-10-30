@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
@@ -12,10 +10,8 @@ function usd(cents: number) {
 }
 
 /**
- * The price and the next step, always on screen while the rest of the form scrolls: on a phone or tablet it is pinned to the bottom
- * of the screen just above the dock (drawn into the page body, like the dock itself, so nothing about the page it sits in can move
- * it); from lg up, where there is no dock, it rests at the bottom of the content. When something is still missing it says what, and
- * the button waits.
+ * The price and the next step, as the last card on the plan form: everything above it is filled in first, then Review is the one thing
+ * left to press. When something is still missing the button looks off, and pressing it says what in a small popup.
  */
 export function CheckoutBar(props: {
   priceCents: number;
@@ -28,35 +24,18 @@ export function CheckoutBar(props: {
   actionLabel: string;
   onAction: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   return (
-    <>
-      {/* Phones and tablets: fixed above the dock. */}
-      {mounted &&
-        createPortal(
-          <div className="kb-hide pointer-events-none fixed inset-x-0 bottom-[calc(max(1.25rem,env(safe-area-inset-bottom,0px)-0.25rem)+4.25rem)] z-30 flex justify-center px-4 lg:hidden">
-            <div className="pointer-events-auto w-full max-w-xl">
-              <Bar {...props} />
-            </div>
-          </div>,
-          document.body,
-        )}
-      {/* lg and up: no dock, so it sticks near the bottom of the content. */}
-      <div data-summary className="sticky bottom-2 z-30 hidden lg:block xl:bottom-auto xl:top-4 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-start">
-        <Bar {...props} />
-      </div>
-      {/* Room at the end of the form so the last thing on the page can scroll up above the fixed bar. */}
-      <div aria-hidden className="h-24 lg:hidden" />
-    </>
+    <div data-summary>
+      <Bar {...props} />
+    </div>
   );
 }
 
 function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; total?: string | null; hint: string | null; actionLabel: string; onAction: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-slate-50/10 xl:flex-col xl:items-stretch xl:gap-4 xl:p-5">
+    <div className="flex items-center gap-3 rounded-card bg-neu-lift p-4 ring-1 ring-slate-50/10 md:gap-6 md:px-6 md:py-5">
       <div className="min-w-0 flex-1" aria-live="polite">
-        <p className="text-body font-semibold leading-tight text-slate-50">
+        <p className="text-body font-semibold leading-tight text-slate-50 md:text-title">
           <NumberTicker value={priceCents} format={usd} /> <span className="text-small font-normal text-slate-400">{priceNote}</span>
         </p>
         {total && <p className="mt-0.5 text-small leading-snug text-slate-400">{total}</p>}
@@ -72,7 +51,7 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
           }
           onAction();
         }}
-        className={buttonVariants({ variant: "primary", className: cn("shrink-0 xl:w-full", hint !== null && "cursor-not-allowed opacity-45 saturate-50") })}
+        className={buttonVariants({ variant: "primary", size: "lg", className: cn("shrink-0 md:min-w-40", hint !== null && "cursor-not-allowed") })}
       >
         {actionLabel}
       </button>

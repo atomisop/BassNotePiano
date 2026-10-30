@@ -96,6 +96,27 @@ export function checkoutTotals(input: {
   };
 }
 
+/** The same weekly time picked for two people on one plan (each person needs a time of their own), or false. */
+export function duplicateWeeklyTime(slots: { scheduleId: string; chunkIndex: number }[]): boolean {
+  const keys = slots.map((s) => `${s.scheduleId}:${s.chunkIndex}`);
+  return new Set(keys).size !== keys.length;
+}
+
+/** The people on a parent-paid plan who each need a weekly time: every filled-in child email (once), then the parent if they learn too.
+ *  The key is the lowercased email, or "self" for the parent. */
+export function parentTimeHolders(memberRows: string[], includeSelf: boolean): { key: string; label: string }[] {
+  const seen = new Set<string>();
+  const holders: { key: string; label: string }[] = [];
+  for (const row of memberRows) {
+    const email = row.trim().toLowerCase();
+    if (!email || seen.has(email)) continue;
+    seen.add(email);
+    holders.push({ key: email, label: row.trim() });
+  }
+  if (includeSelf) holders.push({ key: "self", label: "You" });
+  return holders;
+}
+
 /** What is still needed before the plan can start, in the order the page asks for it, or null when nothing is. */
 export function missingForCheckout(input: { audience: Audience; memberRows: string[]; slotChosen: boolean; parent?: boolean }): string | null {
   if (input.audience === "FAMILY") {

@@ -274,13 +274,20 @@ export function PaymentPlanEnrollmentFlow({
   const startKey = useRef(newIdempotencyKey());
 
   /** The form's server calls: start a solo or group plan, and move to the payment screen once it exists. */
-  async function startPlan({ audience, term, slot, memberEmails, expectedFirstPaymentCents, mode, includeSelf }: StartPlanInput): Promise<StartPlanResult> {
+  async function startPlan({ audience, term, slot, personSlots, memberEmails, expectedFirstPaymentCents, mode, includeSelf }: StartPlanInput): Promise<StartPlanResult> {
     const termPayments = calculatePaymentPlanRate(cadence, term, pricing).termMonths;
     if (audience === "FAMILY" && mode === "PARENT") {
       // A parent paying for linked children: no plan of their own is needed. The first payment waits on the Parent mode page.
       let result: Awaited<ReturnType<typeof enrollParentPlanAction>>;
       try {
-        result = await enrollParentPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, includeSelf, expectedFirstPaymentCents);
+        // Each child with their own weekly time, then the parent's own when they learn too.
+        const timeFor = (key: string) => personSlots.find((p) => p.key === key)?.slot ?? null;
+        const children = memberEmails.flatMap((email) => {
+          const t = timeFor(email.toLowerCase());
+          return t ? [{ email, scheduleId: t.scheduleId, chunkIndex: t.chunkIndex }] : [];
+        });
+        const mine = includeSelf ? timeFor("self") : null;
+        result = await enrollParentPlanAction(term, children, includeSelf, mine && { scheduleId: mine.scheduleId, chunkIndex: mine.chunkIndex }, expectedFirstPaymentCents);
       } catch {
         return { ok: false, error: "Something went wrong starting the plan. Please try again." };
       }
@@ -289,6 +296,7 @@ export function PaymentPlanEnrollmentFlow({
       router.push("/parent");
       return { ok: true };
     }
+    if (!slot) return { ok: false, error: "Pick a weekly time." };
     if (audience === "FAMILY") {
       let result: Awaited<ReturnType<typeof enrollFamilyPlanAction>>;
       try {

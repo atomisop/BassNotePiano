@@ -1986,8 +1986,8 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class
    muddy brown "something is wrong" colour). Doubled class to win over the lens rules further down. */
 .liquid-signal.liquid-signal:is(:disabled, [aria-disabled="true"]),
 button.bg-signal:disabled {
-  background: rgb(var(--c-s-800)) !important;
-  color: rgb(var(--c-s-400)) !important;
+  background: rgb(var(--c-s-700)) !important;
+  color: rgb(var(--c-s-200)) !important;
   box-shadow: none !important;
   opacity: 1 !important;
 }

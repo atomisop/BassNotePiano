@@ -128,9 +128,9 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
-  // One centered column: the title on top, the form below it. Everything stacks in that one column at every screen size.
+  // Phones: one column. Tablets and computers: the page is wide, so the plan form can sit in two columns (see NewPlanForm).
   return (
-    <div className="mx-auto w-full max-w-2xl xl:max-w-5xl">
+    <div className="mx-auto w-full max-w-2xl md:max-w-6xl">
       <div className="mb-4 flex items-center justify-between">
         <BackLink href="/lessons" className="tap flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
           <ArrowLeftIcon size={16} />
@@ -147,13 +147,13 @@ export default async function BillingPlansPage(
           }))}
         />
       </div>
-      <div className="text-center xl:text-left">
+      <div className="text-center md:text-left">
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
 
       <div className="mt-8">
-        <div className="mx-auto max-w-2xl xl:max-w-none">
+        <div className="mx-auto max-w-2xl md:max-w-none">
           <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
           {activePlan && <MyPlanSummary userId={session.user.id} />}
         </div>
