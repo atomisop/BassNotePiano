@@ -2485,41 +2485,38 @@ body {
   }
 }
 
-/* Cards that come in one after another as the page scrolls (Home, Roadmap, the admin overview): the dock and the top bar stay still
-   while each card rises and fades in at the bottom of the screen and fades back out as it slides away under the top. Tied to the
-   scroll position by the browser (a view timeline), so it follows the finger exactly and runs no script. Uses the separate
-   `translate`, `scale` and `opacity` properties so a card's own press or hover transform still works. Browsers without view
-   timelines, and anyone who asked for less motion, see still cards. */
+/* Cards on a turning wheel as the page scrolls (Home, Roadmap, the admin overview): the dock and the top bar stay still while each
+   card curls up into view from the bottom (tilted back, faded) and curls away over the top the same way, like the face of a drum or
+   an iPhone time picker. The insets keep the whole effect between the top bar (64px) and the dock (110px), where you can see it.
+   Tied to the scroll position by the browser (a view timeline), so it follows the finger exactly and runs no script. The tilt lives
+   in `transform`, leaving the `scale` property to the cards' own press effect. Browsers without view timelines, and anyone who asked
+   for less motion, see still cards. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .scroll-card {
-      animation: scroll-card-pass linear both;
-      /* The insets keep the whole effect in the part of the screen you can see: below the top bar (64px) and above the dock (110px). */
+      animation: scroll-card-wheel linear both;
       animation-timeline: view(block 64px 110px);
       animation-range: entry 0% exit 100%;
-      transform-origin: 50% 0%;
+      transform-origin: 50% 50%;
+      backface-visibility: hidden;
     }
   }
 }
-@keyframes scroll-card-pass {
+@keyframes scroll-card-wheel {
   entry 0% {
     opacity: 0;
-    translate: 0 70px;
-    scale: 0.86;
+    transform: perspective(1100px) translateY(36px) rotateX(-48deg);
   }
   entry 100% {
     opacity: 1;
-    translate: 0 0;
-    scale: 1;
+    transform: perspective(1100px) translateY(0) rotateX(0deg);
   }
   exit 0% {
     opacity: 1;
-    translate: 0 0;
-    scale: 1;
+    transform: perspective(1100px) translateY(0) rotateX(0deg);
   }
   exit 100% {
     opacity: 0;
-    translate: 0 -24px;
-    scale: 0.9;
+    transform: perspective(1100px) translateY(-36px) rotateX(48deg);
   }
 }
