@@ -128,7 +128,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           animate="visible"
           exit="exit"
           style={{ transformOrigin: "top right" }}
-          className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
+          className="glass-menu absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">

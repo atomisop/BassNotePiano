@@ -140,7 +140,7 @@ export default async function HomePage() {
             />
             </div>
 
-            <div className="order-8 empty:hidden">
+            <div className="scroll-card order-8 empty:hidden">
               <TeacherNotesCard studentId={session.user.id} />
             </div>
 

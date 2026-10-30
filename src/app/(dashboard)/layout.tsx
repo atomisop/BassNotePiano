@@ -112,6 +112,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} alertCards={isAdmin ? sidebarCards : []} />
         <AnnouncementBanner announcement={activeAnnouncement} />
+        {/* How far down the page you are, in place of a scrollbar (see .scroll-progress in globals.css). */}
+        <div aria-hidden className="scroll-progress scroll-progress-app" />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
             clearance is no longer a desktop-only concern. overscroll-contain

@@ -332,6 +332,19 @@
   box-shadow: var(--elev-shadow);
 }
 
+/* Shaded matte glass for menus that open over page text (the profile menu): mostly solid so the words under it never read
+   through (a blur alone fails inside a header that already blurs, which is where this menu sits on the public pages), a soft
+   frost where the browser can still apply one, and a faint light along the top. */
+@utility glass-menu {
+  background-color: rgb(var(--c-surface-solid) / 0.93);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 40%);
+  border: 1px solid var(--elev-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--elev-shadow);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+}
+
 /* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
    tap. Callers add their own padding and size. */
 @utility neu-btn {
@@ -2419,4 +2432,92 @@ body:has([data-surface="app"]) .glass-surface-modal {
 }
 .scale-art-fade-locked {
   background: rgb(var(--neu-base) / 0.7);
+}
+
+/* No scrollbars on the page itself (the owner's choice, 2026-10-30): the page and the signed-in app's scroll area hide theirs and
+   show how far down you are as a thin orange line across the top instead, filled by the browser's own scroll-driven animation (no
+   script runs while scrolling). Browsers without it simply show no line. Lists inside a page keep their own scrollbars. */
+html,
+#app-scroll {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+#app-scroll::-webkit-scrollbar {
+  display: none;
+}
+body {
+  timeline-scope: --app-scroll;
+}
+#app-scroll {
+  scroll-timeline: --app-scroll y;
+}
+.scroll-progress {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  height: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, rgb(var(--c-a-400) / 0.55), rgb(var(--c-a-400)));
+  box-shadow: 0 0 10px rgb(var(--c-a-400) / 0.55);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    animation: scroll-progress-fill linear both;
+  }
+  .scroll-progress-page {
+    animation-timeline: scroll(root block);
+  }
+  .scroll-progress-app {
+    animation-timeline: --app-scroll;
+  }
+}
+@keyframes scroll-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Cards that come in one after another as the page scrolls (Home, Roadmap, the admin overview): the dock and the top bar stay still
+   while each card rises and fades in at the bottom of the screen and fades back out as it slides away under the top. Tied to the
+   scroll position by the browser (a view timeline), so it follows the finger exactly and runs no script. Uses the separate
+   `translate`, `scale` and `opacity` properties so a card's own press or hover transform still works. Browsers without view
+   timelines, and anyone who asked for less motion, see still cards. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-card {
+      animation: scroll-card-pass linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+@keyframes scroll-card-pass {
+  entry 0% {
+    opacity: 0;
+    translate: 0 28px;
+    scale: 0.94;
+  }
+  entry 85% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+  exit 25% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+  exit 100% {
+    opacity: 0;
+    translate: 0 -10px;
+    scale: 0.96;
+  }
 }
