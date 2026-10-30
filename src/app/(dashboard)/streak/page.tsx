@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, Flame, Trophy, CalendarDays, Sparkles } from "lucide-react";
+import { Check, Flame, Trophy, CalendarDays, Sparkles } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatus } from "@/lib/fingerPractice";

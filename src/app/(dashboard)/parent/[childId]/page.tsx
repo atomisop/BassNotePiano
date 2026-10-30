@@ -6,7 +6,7 @@ import { ChildSwitcher } from "@/components/parent/ChildSwitcher";
 import { prisma } from "@/lib/prisma";
 import { ChildView } from "@/components/parent/ChildView";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/ui/appIcons";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { buttonVariants } from "@/components/ui/button";
 import { getChildView, listParentBills } from "@/lib/parentChildren";

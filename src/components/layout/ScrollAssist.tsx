@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowUp, List } from "lucide-react";
+import { ArrowUp, List } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import {
   SCROLL_POSITIONS_STORAGE_KEY,

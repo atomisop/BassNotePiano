@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Lock } from "lucide-react";
+import { Check, Lock } from "@/components/ui/appIcons";
 import { RoadmapArtwork } from "@/components/home/RoadmapArtwork";
 import type { RoadmapSummary } from "@/lib/roadmapRules";
 import { cn } from "@/lib/utils";

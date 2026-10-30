@@ -2,7 +2,7 @@
 
 import { GlassSlider } from "@/components/ui/GlassSlider";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, FileVideo, Minus, Plus } from "lucide-react";
+import { FileText, FileVideo, Minus, Plus } from "@/components/ui/appIcons";
 import type { CourseLessonWithProgress } from "@/lib/courseContent";
 import { SCALE_NOTE_MAX_LENGTH } from "@/lib/scaleNotes";
 import { cn } from "@/lib/utils";

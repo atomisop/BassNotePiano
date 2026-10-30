@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Check } from "lucide-react";
+import { CalendarClock, Check } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";

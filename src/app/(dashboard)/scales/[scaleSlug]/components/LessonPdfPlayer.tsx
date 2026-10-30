@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "@/components/ui/appIcons";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { buttonVariants } from "@/components/ui/button";

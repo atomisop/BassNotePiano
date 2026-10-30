@@ -18,6 +18,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { normalizePhone, PHONE_HELP, signupPhoneError, signupPhoneNote } from "@/lib/phone";
+import { UserPlus } from "@/components/ui/appIcons";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -135,15 +136,7 @@ function RegisterForm() {
       className="w-full glass-surface-elevated p-7"
     >
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-300 bg-neu-base shadow-raised-low">
-        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-          <path
-            d="M9 11a4 4 0 100-8 4 4 0 000 8zM3 21a6 6 0 0112 0M19 8v6M22 11h-6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <UserPlus className="h-6 w-6" />
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (

@@ -1,4 +1,4 @@
-import { Flame, Medal } from "lucide-react";
+import { Flame, Medal } from "@/components/ui/appIcons";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import type { LeaderboardRow } from "@/lib/leaderboard";

@@ -10,14 +10,15 @@ import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { BackLink } from "@/components/ui/BackLink";
+import { ChevronRight, Clock, FileText, Info, ShieldCheck, type AppIcon } from "@/components/ui/appIcons";
 
 const TAB_ICONS = {
-  about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
-  updates: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
-  terms: "M9 12h6M9 16h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z",
-  privacy: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  chevron: "M9 18l6-6-6-6",
-} as const;
+  about: Info,
+  updates: Clock,
+  terms: FileText,
+  privacy: ShieldCheck,
+  chevron: ChevronRight,
+} satisfies Record<string, AppIcon>;
 
 const TABS = [
   { id: "about", label: "About", icon: TAB_ICONS.about },
@@ -28,12 +29,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { icon: AppIcon; className?: string }) {
+  return <Icon className={className} />;
 }
 
 function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
@@ -50,7 +47,7 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
               : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
           }`}
         >
-          <TabIcon path={tab.icon} />
+          <TabIcon icon={tab.icon} />
           {tab.label}
         </button>
       ))}
@@ -68,9 +65,9 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
           onClick={() => onSelect(tab.id)}
           className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
         >
-          <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
+          <TabIcon icon={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
           <span className="flex-1 text-small text-slate-100">{tab.label}</span>
-          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+          <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
         </button>
       ))}
     </div>

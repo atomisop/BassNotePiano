@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "@/components/ui/appIcons";
 import { dayKey } from "./BookingCalendar";
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Moon, Search, Sun } from "lucide-react";
+import { Moon, Search, Sun } from "@/components/ui/appIcons";
 import { Kbd } from "@/components/ui/Kbd";
 import { OPEN_COMMAND_EVENT } from "@/lib/shortcuts";
 import { themeMode } from "@/lib/themes";

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Search } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { buttonVariants } from "@/components/ui/button";
 

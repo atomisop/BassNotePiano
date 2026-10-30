@@ -5,7 +5,7 @@
 // emoji" trigger.
 import * as React from "react";
 import { memo, type ReactNode } from "react";
-import { Paperclip, Plus } from "lucide-react";
+import { Paperclip, Plus } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 export type AttachmentButtonIcon = "plus" | "paperclip";

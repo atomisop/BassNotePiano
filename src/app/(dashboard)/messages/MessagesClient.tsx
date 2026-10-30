@@ -10,7 +10,7 @@ import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { EmptyState } from "@/components/messaging/EmptyState";
 import { EmptyState as StartState } from "@/components/ui/EmptyState";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/components/ui/appIcons";
 import type { SupportChat } from "@/lib/messagesSupport";
 import { SupportChatWindow } from "./components/SupportChatWindow";
 import { GroupChatWindow } from "./components/GroupChatWindow";

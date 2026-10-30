@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "@/components/ui/appIcons";
 
 /**
  * A child whose parent controls the schedule sees the screen with every button switched off and a plain line on top. The server refuses

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LifeBuoy } from "lucide-react";
+import { LifeBuoy } from "@/components/ui/appIcons";
 import type { ConversationSummary } from "@/lib/messages";
 import type { GroupSummary } from "@/lib/groupMessages";
 import { PinnedGrid } from "@/components/messaging/PinnedGrid";

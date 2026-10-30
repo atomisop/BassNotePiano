@@ -7,7 +7,6 @@ import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Laptop, Smartphone, Tablet } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
@@ -45,6 +44,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { Bell, ChevronRight, CreditCard, Info, KeyRound, Laptop, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Smartphone, Tablet, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -73,21 +73,19 @@ interface AccountSettingsProps {
 }
 
 const TAB_ICONS = {
-  account: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0",
-  notifications:
-    "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
-  membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
-  password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
-  tutorials: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
-  appearance:
-    "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
-  chevron: "M9 18l6-6-6-6",
-  shop: "M6 7h12l-1 12a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7zM9 7a3 3 0 016 0",
-  about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
-  logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
-  danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
-  privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
-} as const;
+  account: User,
+  notifications: Bell,
+  membership: CreditCard,
+  password: KeyRound,
+  tutorials: PlayCircle,
+  appearance: Palette,
+  chevron: ChevronRight,
+  shop: ShoppingBag,
+  about: Info,
+  logout: SignOut,
+  danger: Trash2,
+  privacy: ShieldCheck,
+} satisfies Record<string, AppIcon>;
 
 // Grouped into defined categories rather than one flat list, order here is
 // render order, so entries in the same category stay adjacent. "Danger
@@ -124,12 +122,8 @@ function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] 
   return groups;
 }
 
-function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { icon: AppIcon; className?: string }) {
+  return <Icon className={className} />;
 }
 
 /**
@@ -178,7 +172,7 @@ function ShopLink({ back }: { back: string }) {
       href={`/shop?back=${encodeURIComponent(back)}`}
       className={NAV_ROW}
     >
-      <TabIcon path={TAB_ICONS.shop} />
+      <TabIcon icon={TAB_ICONS.shop} />
       Shop
     </Link>
   );
@@ -190,7 +184,7 @@ function AboutLink() {
       href="/about"
       className={NAV_ROW}
     >
-      <TabIcon path={TAB_ICONS.about} />
+      <TabIcon icon={TAB_ICONS.about} />
       About
     </Link>
   );
@@ -208,7 +202,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
       }}
       className={cn(NAV_ROW, className)}
     >
-      <TabIcon path={TAB_ICONS.logout} />
+      <TabIcon icon={TAB_ICONS.logout} />
       Sign out
     </button>
   );
@@ -249,7 +243,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 aria-current={activeTab === tab.id ? "page" : undefined}
                 className={activeTab === tab.id ? NAV_ROW_ACTIVE : NAV_ROW}
               >
-                <TabIcon path={tab.icon} />
+                <TabIcon icon={tab.icon} />
                 {tab.label}
               </button>
             ))}
@@ -290,28 +284,28 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
             {group.tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => onSelect(tab.id)} className={row}>
                 <span className={`${well} `}>
-                  <TabIcon path={tab.icon} />
+                  <TabIcon icon={tab.icon} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">{tab.label}</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </button>
             ))}
             {group.category === "Help" && (
               <Link href={`/shop?back=${encodeURIComponent("/account")}`} className={row}>
                 <span className={well}>
-                  <TabIcon path={TAB_ICONS.shop} />
+                  <TabIcon icon={TAB_ICONS.shop} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">Shop</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
             {group.category === "Help" && (
               <Link href="/about" className={row}>
                 <span className={well}>
-                  <TabIcon path={TAB_ICONS.about} />
+                  <TabIcon icon={TAB_ICONS.about} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">About</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
           </div>

@@ -7,6 +7,7 @@ import { TOUR_STEPS } from "./tourSteps";
 import { markOnboardingTourSeenAction } from "@/app/(dashboard)/about/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { X } from "@/components/ui/appIcons";
 
 interface Rect {
   top: number;
@@ -299,9 +300,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-            </svg>
+            <X className="h-4 w-4" />
           </button>
         </div>
         <h2 className="mt-1.5 text-title text-slate-50 font-semibold">{step.title}</h2>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 /** The orange pill with a dark arrow circle, used for every primary call to action on the homepage. */

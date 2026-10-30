@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/ui/appIcons";
 
 /**
  * A long list that shows its first few rows and a "View N more" button for the rest, so a page never scrolls forever.

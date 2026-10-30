@@ -4,7 +4,7 @@ import { GlassLens } from "@/components/ui/GlassLens";
 import { useEffect, useState, type ReactNode } from "react";
 import { motion, useDragControls, useReducedMotion } from "framer-motion";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 /**

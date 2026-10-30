@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft } from "@/components/ui/appIcons";
 import { TOGGLE_SIDEBAR_EVENT } from "@/lib/shortcuts";
 
 const KEY = "bnp-sidebar-collapsed";

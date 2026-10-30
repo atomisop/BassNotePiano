@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Coins } from "lucide-react";
+import { Coins } from "@/components/ui/appIcons";
 import { UsageBadge } from "@/components/ui/bubble-button";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { MINUTES_PER_CREDIT, formatCredits } from "@/lib/classCreditPricing";

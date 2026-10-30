@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Info } from "lucide-react";
+import { Info } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 /**

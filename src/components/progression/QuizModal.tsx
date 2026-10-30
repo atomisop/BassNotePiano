@@ -10,6 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SPRING } from "@/lib/motionTokens";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { ChevronLeft, X } from "@/components/ui/appIcons";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -190,9 +191,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               aria-label="Back"
               className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ChevronLeft className="h-[18px] w-[18px]" />
             </button>
             <div>
               <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
@@ -314,9 +313,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                         </motion.svg>
                       ) : (
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
-                          <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                        </svg>
+                        <X className="text-slate-400" size={26} />
                       )}
                     </motion.div>
                     <h3 className="text-title text-slate-50">

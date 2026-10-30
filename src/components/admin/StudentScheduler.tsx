@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, CalendarPlus, X } from "lucide-react";
+import { ArrowRightLeft, CalendarPlus, X } from "@/components/ui/appIcons";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Button } from "@/components/ui/button";

@@ -7,12 +7,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, ClipboardCheck, NotebookPen, Shield, Users } from "lucide-react";
+import { Bell, ClipboardCheck, NotebookPen, Shield, Users } from "@/components/ui/appIcons";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
+import { SignOut } from "@/components/ui/appIcons";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
 // one logout icon across the app, not a second one invented here.
-const LOGOUT_ICON_PATH = "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9";
 
 export interface ProfileMenuProps {
   name: string | null;
@@ -203,9 +203,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             }}
             className="tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d={LOGOUT_ICON_PATH} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <SignOut size={15} />
             Log out
           </button>
         </motion.div>

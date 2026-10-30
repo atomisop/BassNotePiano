@@ -5,6 +5,7 @@ import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
+import { Search } from "@/components/ui/appIcons";
 
 /**
  * #3, Command primitive (cmdk), re-tokenised.
@@ -78,19 +79,7 @@ const CommandInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
   <div className="flex items-center gap-2 border-b border-ink/10 px-3">
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="shrink-0 text-slate-500"
-      aria-hidden
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-    </svg>
+    <Search className="shrink-0 text-slate-500" size={16} />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(

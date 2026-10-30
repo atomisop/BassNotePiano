@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Flame } from "lucide-react";
+import { Flame } from "@/components/ui/appIcons";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 
 /**

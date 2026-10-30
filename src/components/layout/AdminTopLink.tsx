@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield } from "lucide-react";
+import { Shield } from "@/components/ui/appIcons";
 
 /**
  * The Admin shortcut in the top bar. Client-side only so it can read the

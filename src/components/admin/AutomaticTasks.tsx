@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pause, Play, RefreshCw } from "lucide-react";
+import { Check, Pause, Play, RefreshCw } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toaster";

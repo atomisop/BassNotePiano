@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/ui/appIcons";
 import { artworkColors } from "@/components/home/RoadmapArtwork";
 
 /**

@@ -7,7 +7,7 @@ import { formatEtShort, formatEtEndTime } from "@/lib/classScheduleLabels";
 import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
-import { CalendarCog } from "lucide-react";
+import { CalendarCog } from "@/components/ui/appIcons";
 
 interface RosterFocus {
   scaleOrder: number | null;

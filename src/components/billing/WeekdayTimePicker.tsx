@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bell, Lock } from "lucide-react";
+import { Bell, Lock } from "@/components/ui/appIcons";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { DAY_NAMES, DAY_ORDER, DAY_SHORT, formatTimeLabel } from "@/lib/weeklyTimeLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";

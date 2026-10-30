@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/components/ui/appIcons";
 import { locateAdminPage } from "@/lib/adminNav";
 
 // Where you are, in the top bar of a wide screen: "Bass Note Piano > Lessons". Names come from this one list; an address

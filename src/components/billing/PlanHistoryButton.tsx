@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 
 export interface PastPlanRow {

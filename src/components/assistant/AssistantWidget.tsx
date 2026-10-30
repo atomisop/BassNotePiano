@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
@@ -15,6 +15,7 @@ import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent, type AtomAnchor } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
 import { Hint } from "@/components/ui/Hint";
+import { ThumbsDown, ThumbsUp, X } from "@/components/ui/appIcons";
 
 /**
  * Atom, the "ask me anything" assistant, floating on every page (mounted
@@ -174,14 +175,7 @@ function FeedbackButtons({
           rating === "UP" ? "text-amber-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
-        <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
-          <path
-            d="M7 22h11a2 2 0 002-2v-7a2 2 0 00-2-2h-3l1-5.5A1.5 1.5 0 0014.5 4L10 9H7v13zM3 22h2V9H3v13z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ThumbsUp className="h-3 w-3" />
       </button>
       <button
         type="button"
@@ -193,14 +187,7 @@ function FeedbackButtons({
           rating === "DOWN" ? "text-red-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
-        <svg viewBox="0 0 24 24" fill={rating === "DOWN" ? "currentColor" : "none"} className="h-3 w-3">
-          <path
-            d="M17 2H6a2 2 0 00-2 2v7a2 2 0 002 2h3l-1 5.5A1.5 1.5 0 0010.5 20L15 15h3V2zM21 2h-2v13h2V2z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ThumbsDown className="h-3 w-3" />
       </button>
     </div>
   );
@@ -874,9 +861,7 @@ export function AssistantWidget() {
                 aria-label="Close chat"
                 className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition hover:bg-border/40"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
+                <X className="h-4 w-4" />
               </button>
             </div>
 

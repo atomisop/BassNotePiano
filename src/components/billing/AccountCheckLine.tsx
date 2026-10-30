@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check } from "@/components/ui/appIcons";
 import { motion, useReducedMotion } from "framer-motion";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { MemberCheck } from "@/lib/familyMemberCheck";

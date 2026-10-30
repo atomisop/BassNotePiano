@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Check, Flame, Lightbulb, Map, Trophy, Users, Video } from "lucide-react";
+import { ArrowRight, Check, Flame, Lightbulb, Map, Trophy, Users, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";

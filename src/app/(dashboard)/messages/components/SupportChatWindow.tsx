@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ChevronLeft, LifeBuoy } from "lucide-react";
+import { ChevronLeft, LifeBuoy } from "@/components/ui/appIcons";
 import type { SupportChat } from "@/lib/messagesSupport";
 import { ComposerBar } from "@/components/messaging/threadUi";
 

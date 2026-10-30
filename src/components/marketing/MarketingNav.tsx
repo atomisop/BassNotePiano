@@ -15,6 +15,7 @@ import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { EASE_IOS } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
+import { X } from "@/components/ui/appIcons";
 
 /**
  * The homepage header.
@@ -368,9 +369,7 @@ export function MarketingNav() {
                 aria-label="Close menu"
                 className="-mr-3 flex h-11 w-11 items-center justify-center text-slate-50"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                  <path d="M5 5l14 14M19 5L5 19" strokeLinecap="round" />
-                </svg>
+                <X size={18} />
               </button>
             </div>
 
