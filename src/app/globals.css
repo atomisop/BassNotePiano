@@ -2503,27 +2503,29 @@ body {
   }
 }
 @keyframes scroll-card-wheel {
+  /* Seen from outside the drum: at the bottom a card's lower edge curves away from you (rotateX negative), at the top its upper
+     edge does (positive), and both are pulled a little toward the middle, the way the face of a cylinder bunches up at its ends. */
   0% {
     opacity: 0;
-    transform: perspective(900px) translateY(40px) translateZ(-140px) rotateX(62deg);
+    transform: perspective(900px) translateY(-34px) translateZ(-150px) rotateX(-64deg);
   }
   14% {
     opacity: 1;
   }
   30% {
-    transform: perspective(900px) translateY(6px) translateZ(-24px) rotateX(16deg);
+    transform: perspective(900px) translateY(-6px) translateZ(-26px) rotateX(-18deg);
   }
   50% {
     transform: perspective(900px) translateY(0) translateZ(0) rotateX(0deg);
   }
   70% {
-    transform: perspective(900px) translateY(-6px) translateZ(-24px) rotateX(-16deg);
+    transform: perspective(900px) translateY(6px) translateZ(-26px) rotateX(18deg);
   }
   86% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: perspective(900px) translateY(-40px) translateZ(-140px) rotateX(-62deg);
+    transform: perspective(900px) translateY(34px) translateZ(-150px) rotateX(64deg);
   }
 }
