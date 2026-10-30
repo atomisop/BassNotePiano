@@ -2485,38 +2485,45 @@ body {
   }
 }
 
-/* Cards on a turning wheel as the page scrolls (Home, Roadmap, the admin overview): the dock and the top bar stay still while each
-   card curls up into view from the bottom (tilted back, faded) and curls away over the top the same way, like the face of a drum or
-   an iPhone time picker. The insets keep the whole effect between the top bar (64px) and the dock (110px), where you can see it.
-   Tied to the scroll position by the browser (a view timeline), so it follows the finger exactly and runs no script. The tilt lives
-   in `transform`, leaving the `scale` property to the cards' own press effect. Browsers without view timelines, and anyone who asked
-   for less motion, see still cards. */
+/* Cards on a turning wheel as the page scrolls (Home, Roadmap, the admin overview). The dock and the top bar stay still; the cards sit
+   on the face of a drum between them: flat in the middle of the screen, leaning back more and more toward the top and the bottom
+   (farther away, so a little smaller), and fading out at both ends, the same way at the top as at the bottom, like an iPhone time
+   picker. The insets mark the drum's ends: just under the top bar and just above the dock. Tied to the scroll position by the
+   browser (a view timeline), so it follows the finger exactly and runs no script. The tilt lives in `transform`, leaving the `scale`
+   property to the cards' own press effect. Browsers without view timelines, and anyone who asked for less motion, see still cards. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .scroll-card {
       animation: scroll-card-wheel linear both;
-      animation-timeline: view(block 64px 110px);
-      animation-range: entry 0% exit 100%;
+      animation-timeline: view(block calc(env(safe-area-inset-top, 0px) + 56px) 104px);
+      animation-range: cover 0% cover 100%;
       transform-origin: 50% 50%;
       backface-visibility: hidden;
     }
   }
 }
 @keyframes scroll-card-wheel {
-  entry 0% {
+  0% {
     opacity: 0;
-    transform: perspective(1100px) translateY(36px) rotateX(-48deg);
+    transform: perspective(900px) translateY(40px) translateZ(-140px) rotateX(62deg);
   }
-  entry 100% {
+  14% {
     opacity: 1;
-    transform: perspective(1100px) translateY(0) rotateX(0deg);
   }
-  exit 0% {
+  30% {
+    transform: perspective(900px) translateY(6px) translateZ(-24px) rotateX(16deg);
+  }
+  50% {
+    transform: perspective(900px) translateY(0) translateZ(0) rotateX(0deg);
+  }
+  70% {
+    transform: perspective(900px) translateY(-6px) translateZ(-24px) rotateX(-16deg);
+  }
+  86% {
     opacity: 1;
-    transform: perspective(1100px) translateY(0) rotateX(0deg);
   }
-  exit 100% {
+  100% {
     opacity: 0;
-    transform: perspective(1100px) translateY(-36px) rotateX(48deg);
+    transform: perspective(900px) translateY(-40px) translateZ(-140px) rotateX(-62deg);
   }
 }
