@@ -25,6 +25,8 @@ const MAP =
 const HOUSE = "M3.5 10.4 12 3.6l8.5 6.8V19a1.75 1.75 0 0 1-1.75 1.75H15v-5a1.25 1.25 0 0 0-1.25-1.25h-3.5A1.25 1.25 0 0 0 9 15.75v5H5.25A1.75 1.75 0 0 1 3.5 19z";
 const BUBBLE =
   "M12 3.6c4.8 0 8.6 3.4 8.6 7.7S16.8 19 12 19c-1.1 0-2.15-.18-3.12-.5L4.4 20.2l1.25-3.65C4.3 15.2 3.4 13.35 3.4 11.3 3.4 7 7.2 3.6 12 3.6z";
+// The owner's Admin tab: four rounded squares, a dashboard.
+const ADMIN_GRID = "M5.35 3.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM15.35 3.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM5.35 13.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6zM15.35 13.75h3.3a1.6 1.6 0 0 1 1.6 1.6v3.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-3.3a1.6 1.6 0 0 1 1.6-1.6z";
 const DOCK_GLYPHS: Record<string, DockGlyph> = {
   home: { outline: [HOUSE], fill: HOUSE },
   roadmap: {
@@ -39,6 +41,7 @@ const DOCK_GLYPHS: Record<string, DockGlyph> = {
     rings: "M8 3v3.5M16 3v3.5",
   },
   messages: { outline: [BUBBLE], fill: BUBBLE },
+  admin: { outline: [ADMIN_GRID], fill: ADMIN_GRID },
   settings: { outline: [GEAR, "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"], fill: GEAR, cut: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", cutSolid: true },
 };
 
@@ -69,6 +72,8 @@ function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean })
 
 export interface AppDockProps {
   unreadMessageCount: number;
+  /** The owner's own dock (2026-10-30, by their request): Admin takes Messages' place. Messages is still in the sidebar and menu. */
+  ownerAdmin?: boolean;
 }
 
 // "About" and "Sign out" live inside Settings now, not as dock icons,
@@ -97,6 +102,7 @@ const NAV_ITEMS = [
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
+const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -136,7 +142,8 @@ const NAV_ITEMS = [
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
+export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAdmin = false }: AppDockProps) {
+  const items = ownerAdmin ? OWNER_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -145,8 +152,8 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
   useEffect(() => setPendingHref(null), [pathname]);
   // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
-    for (const item of NAV_ITEMS) router.prefetch(item.href);
-  }, [router]);
+    for (const item of items) router.prefetch(item.href);
+  }, [router, items]);
   // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
   // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
   const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
@@ -211,10 +218,11 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       >
         {/* A flat frosted pane: a pill like the dock, a thin edge and a gentle bend, so it reads as matte glass, not a bulge. */}
         <GlassLens radius="full" bezel={6} strength={4} magnify={0} blur={14} />
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
-          const active = at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/"));
+          const active =
+            at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
           const current = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
           const glyph = DOCK_GLYPHS[item.icon];
