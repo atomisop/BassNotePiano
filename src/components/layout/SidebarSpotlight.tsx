@@ -432,7 +432,7 @@ export function SidebarSpotlight({
               onClick={() => setIndex(i)}
               className="flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className={`block h-1.5 rounded-full transition-all ${s === current ? "w-4 bg-signal" : "w-1.5 bg-slate-600"}`} />
+              <span className={`block h-1.5 rounded-full transition-[width,background-color] duration-(--dur-base) ease-(--ease-ios) ${s === current ? "w-4 bg-signal" : "w-1.5 bg-slate-600"}`} />
             </button>
           ))}
         </div>

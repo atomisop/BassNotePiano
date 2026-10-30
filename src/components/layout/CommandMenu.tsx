@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/command";
 import { Dialog } from "@/components/ui/Dialog";
 import { Kbd } from "@/components/ui/Kbd";
+import { markKeyboardAction } from "@/lib/keyboardMotion";
 import {
   ACTION_SHORTCUTS,
   CHORD_WINDOW_MS,
@@ -70,8 +71,11 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
       window.clearTimeout(timer);
     };
     function onKeyDown(e: KeyboardEvent) {
+      // Escape closes the menu (and any sheet) from the keyboard, so it closes without the animation too.
+      if (e.key === "Escape") markKeyboardAction();
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
+        markKeyboardAction();
         setOpen((prev) => !prev);
         return;
       }
@@ -85,10 +89,12 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
       } else if (step.kind === "go") {
         e.preventDefault();
         clear();
+        markKeyboardAction();
         router.push(step.href);
       } else if (step.kind === "event") {
         e.preventDefault();
         clear();
+        markKeyboardAction();
         window.dispatchEvent(new Event(step.name));
       } else if (goPending) {
         clear();

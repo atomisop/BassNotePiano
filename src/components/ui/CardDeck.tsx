@@ -155,7 +155,7 @@ export function CardDeck({
           >
             <span
               className={cn(
-                "block h-2 rounded-full transition-all duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none",
+                "block h-2 rounded-full transition-[width,background-color] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none",
                 i === active ? "w-5 bg-signal" : "w-2 bg-slate-600",
               )}
             />
