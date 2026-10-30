@@ -4,21 +4,18 @@ import { useState } from "react";
 import type { BadgeCode } from "@prisma/client";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { Dialog } from "@/components/ui/Dialog";
+import { Medal } from "@/components/ui/appIcons";
+import { HOME_ROW_CLASS, HomeRowInner } from "@/components/home/HomeRow";
 
 /**
- * Home's Badges card opens the whole set in a sheet (a bottom sheet on phones) instead of growing in place: the card sits in the
- * stacked card deck, and a card that suddenly grows many screens tall pulled the deck apart.
+ * Home's Badges row opens the whole set in a sheet (a bottom sheet on phones) instead of growing in place, so the page never jumps.
  */
 export function BadgesSheetButton({ earnedCodes, total }: { earnedCodes: BadgeCode[]; total: number }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="tap mt-3 inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
-      >
-        Show all badges
+      <button type="button" onClick={() => setOpen(true)} className={HOME_ROW_CLASS} aria-haspopup="dialog">
+        <HomeRowInner icon={<Medal />} title="Badges" detail={`${earnedCodes.length} of ${total} earned`} />
       </button>
       <Dialog open={open} onOpenChange={setOpen} title="Your badges" description={`${earnedCodes.length} of ${total} earned`}>
         <BadgeGrid earnedCodes={new Set(earnedCodes)} />

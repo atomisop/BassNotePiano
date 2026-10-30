@@ -495,7 +495,7 @@ matching CSS rule); add any new solid fill there too, or the lens paints over it
 ## Card deck on computers (added 2026-10-30)
 
 The phone card deck (cards stacking under a heading that stays put, `DeckStack.tsx`, `.deck-card` / `.deck-header` in globals.css) also runs
-on a computer on the screens whose `WideLayout` has `deckDesktop` (Home, Streak, Leaderboard). There each column is its own stack (cards
+on a computer on the screens whose `WideLayout` has `deckDesktop` (Streak, Leaderboard). Home is no longer a deck (2026-10-30): one hero (`HomeHero`, the roadmap picture carrying today's step) and quiet rows with hairlines (`HomeRow` / `HomeRows`), colour only on the hero and the small icons. `docs/PREMIUM-AUDIT.md` ranks what is left. There each column is its own stack (cards
 grouped by left edge), and the columns run the full height (`content-start`, no `items-start`) so a stack stays pinned to the end of the page.
 Card grids (Roadmap's scales, the admin overview) keep normal scrolling on a computer.
 

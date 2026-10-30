@@ -2422,8 +2422,8 @@ body:has([data-surface="app"]) .glass-surface-modal {
 /* The dock (a copy of Instagram's tab bar), made of the same 3D glass as the cards around it so it belongs to the page: the card color
    as a frosted tint, the cards' lift, rim and sheen, and the tab you are on pressed into it the way a pressed control sinks into a card.
    The lens (GlassLens) frosts and bends the page under it, so the pill carries no blur of its own (that would wall the lens off). */
-/* Flat (2026-10-30, owner: "too rounded, like neumorphic"): a frosted fill with a fine grain, a hairline and one tight shadow; no 3D
-   rim, no light and shade. The grain is an SVG noise tile at low strength, so it reads as a matte surface, not a pattern. */
+/* Flat (2026-10-30, owner: "too rounded, like neumorphic", then "make the dock rounded too"): a pill again, but a frosted fill with a
+   fine grain, a hairline and one tight shadow; no 3D rim, no light and shade. The grain is an SVG noise tile at low strength, so it reads as a matte surface, not a pattern. */
 :root {
   --dock-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
 }
