@@ -65,6 +65,7 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
           <ScaleRoadmap
             roadmap={roadmap}
             earnedBadgeCodes={badgeRows.map((b) => b.code)}
+            artBase={process.env.R2_PUBLIC_URL ? `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/scale-art` : null}
             initialView={parseScaleView((await cookies()).get(SCALE_VIEW_COOKIE)?.value) ?? "grid"}
           />
         </div>

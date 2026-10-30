@@ -2409,3 +2409,14 @@ body:has([data-surface="app"]) .glass-surface-modal {
   --dock-cut: rgb(240 240 243);
 }
 
+
+/* The faded picture behind each scale card (ScaleArt): the card color over the photo, thinner toward the top right where the
+   photo's subject sits, thicker on the left and at the bottom where the text is. */
+.scale-art-fade {
+  background:
+    linear-gradient(90deg, rgb(var(--neu-base) / 0.9) 0%, rgb(var(--neu-base) / 0.62) 55%, rgb(var(--neu-base) / 0.45) 100%),
+    linear-gradient(180deg, transparent 40%, rgb(var(--neu-base) / 0.6) 100%);
+}
+.scale-art-fade-locked {
+  background: rgb(var(--neu-base) / 0.86);
+}
