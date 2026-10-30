@@ -2321,8 +2321,35 @@ body:has([data-surface="app"]) {
 }
 /* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
    picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
-[data-surface="app"] :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], .glass-surface, .glass-surface-elevated):not(.lg-glass):not([data-glass]):not([class*="bg-signal"]):not([class*="bg-gradient"]):not([class*="bg-["]):not([class*="bg-red"]):not([class*="bg-amber"]) {
+[data-surface="app"] :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], .glass-surface, .glass-surface-elevated):not(.lg-glass):not([data-glass]):not(.color-tile):not([class*="bg-signal"]):not([class*="bg-gradient"]):not([class*="bg-["]):not([class*="bg-red"]):not([class*="bg-amber"]) {
   background-image: var(--glass-sheen);
+}
+
+/* Home's colored cards (ColorCard): the card's own color, a soft light across the top left, and the same look in both themes. Inside,
+   the gray text ramp turns white, the accent turns white (buttons become white pills with dark ink, rings and ticks go white) and
+   wells and rows become a faint white tint, so everything reads on the color. */
+.color-tile {
+  background: linear-gradient(158deg, rgb(255 255 255 / 0.14) 0%, rgb(255 255 255 / 0.03) 40%, transparent 62%),
+    linear-gradient(150deg, var(--tile-from) 0%, var(--tile-via) 58%, var(--tile-to) 100%);
+  color: #fff;
+  --c-s-50: 255 255 255;
+  --c-s-100: 250 249 251;
+  --c-s-200: 242 240 244;
+  --c-s-300: 236 233 238;
+  --c-s-400: 222 218 226;
+  --c-s-500: 204 199 209;
+  --c-s-600: 186 181 192;
+  --c-s-800: 0 0 0;
+  --c-s-950: 24 20 28;
+  --c-ink: 255 255 255;
+  --signal: 255 255 255;
+  --signal-fg: 255 255 255;
+  --signal-ink: 24 20 28;
+  --cta-bg: 255 255 255;
+  --cta-ink: 24 20 28;
+  --lg-fill: rgb(255 255 255 / 0.16);
+  --neu-base: 255 255 255;
+  --neu-alpha: 0.13;
 }
 
 /* Dialogs and menus that open over the page get a soft border so they stand off what is under them. */
