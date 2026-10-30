@@ -2495,6 +2495,12 @@ body {
     top: var(--deck-top, 72px);
     filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
   }
+  .deck-header {
+    position: sticky;
+    top: var(--deck-top, -16px);
+    z-index: 5;
+    background: rgb(var(--ground));
+  }
   [data-mode="light"] .deck-card {
     filter: drop-shadow(0 -8px 12px rgb(40 40 60 / 0.16));
   }

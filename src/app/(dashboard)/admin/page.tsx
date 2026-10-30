@@ -51,8 +51,10 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
+      <div data-deck-header className="deck-header pt-4 lg:pt-0">
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
+      </div>
 
       {/* Left: the money story in four cards. Right: what needs you and who owes what this week. One column on phones. */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">

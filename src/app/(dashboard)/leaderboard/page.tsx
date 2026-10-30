@@ -20,13 +20,13 @@ export default async function LeaderboardPage() {
   return (
     <WideLayout>
       <div className="mx-auto grid max-w-2xl gap-3">
-        <div className="pt-4 md:pt-6">
+        <div data-deck-header className="deck-header pt-4 md:pt-6">
           <Eyebrow>Studio</Eyebrow>
           <h1 className="mt-1 text-hero font-semibold text-slate-50">Leaderboard</h1>
           <p className="mt-1 text-body text-slate-400">Practice minutes this week. A new week starts every Sunday.</p>
         </div>
 
-        <Card className="p-4 md:p-5">
+        <Card className="deck-card p-4 md:p-5">
           {board.rows.length > 0 ? (
             <LeaderboardRows rows={board.rows} viewerId={session.user.id} />
           ) : (
@@ -43,7 +43,7 @@ export default async function LeaderboardPage() {
         </Card>
 
         {session.user.role !== "ADMIN" && (
-          <Card className="p-4 md:p-5">
+          <Card className="deck-card p-4 md:p-5">
             {board.viewerIsLinkedChild ? (
               <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
             ) : (

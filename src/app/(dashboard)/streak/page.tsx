@@ -45,7 +45,7 @@ export default async function StreakPage() {
 
   return (
     <WideLayout>
-      <div className="pt-4 md:pt-6">
+      <div data-deck-header className="deck-header pt-4 md:pt-6">
         <Eyebrow>Practice</Eyebrow>
         <h1 className="mt-1 text-hero font-semibold text-slate-50">Your streak</h1>
       </div>
@@ -53,7 +53,7 @@ export default async function StreakPage() {
       <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="grid min-w-0 gap-3">
           {/* The streak itself: the flame, the number, and what to do today. */}
-          <Card className="overflow-hidden p-5 md:p-6">
+          <Card className="deck-card overflow-hidden p-5 md:p-6">
             <div className="flex items-center gap-5">
               <div
                 className={cn(
@@ -100,7 +100,7 @@ export default async function StreakPage() {
           </Card>
 
           {/* Every practiced day: a column per week, Sunday at the top, today ringed. */}
-          <Card className="p-5 md:p-6">
+          <Card className="deck-card p-5 md:p-6">
             <div className="flex items-center justify-between">
               <Eyebrow>Practice days</Eyebrow>
               <span className="text-small text-slate-400">
@@ -138,13 +138,13 @@ export default async function StreakPage() {
         </div>
 
         <div className="grid min-w-0 gap-3">
-          <Card className="grid grid-cols-3 gap-2 p-4 md:p-5">
+          <Card className="deck-card grid grid-cols-3 gap-2 p-4 md:p-5">
             <Fact icon={<Trophy aria-hidden className="h-4 w-4" />} value={best} label="Best streak" />
             <Fact icon={<CalendarDays aria-hidden className="h-4 w-4" />} value={practicedThisMonth(days, today)} label="This month" />
             <Fact icon={<Sparkles aria-hidden className="h-4 w-4" />} value={days.length} label="All time" />
           </Card>
 
-          <Card className="p-5">
+          <Card className="deck-card p-5">
             <Eyebrow>{goal ? "Next goal" : "Every goal reached"}</Eyebrow>
             {goal ? (
               <>

@@ -46,8 +46,9 @@ export default async function HomePage() {
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
   const data = await getHomeData({ id: session.user.id, role: session.user.role, email: session.user.email ?? null });
 
+  // On phones and tablets the greeting stays put under the top bar and the card deck stacks just below it (DeckStack).
   const greeting = (
-    <div className="pt-4 md:pt-6">
+    <div data-deck-header className="deck-header pt-4 md:pt-6">
       <TodayGreeting name={data.name} />
     </div>
   );

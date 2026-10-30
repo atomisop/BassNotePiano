@@ -39,7 +39,7 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
   return (
     <WideLayout>
       <div className="grid grid-cols-1 gap-y-(--space-group)">
-        <div className="pt-4 md:pt-6">
+        <div data-deck-header className="deck-header pt-4 md:pt-6">
           <Eyebrow>Roadmap</Eyebrow>
           <h1 className="mt-1 text-hero font-semibold text-slate-50">{selected?.name ?? "Scales"}</h1>
         </div>

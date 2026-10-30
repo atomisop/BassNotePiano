@@ -9,6 +9,8 @@ const TIP = 12;
 const MAX_TIPS = 5;
 /** Where the first card stops, against the scroll area's top padding (just under the top bar). */
 const START = -8;
+/** Where a page heading that stays put stops (its own top padding sits above the bar's edge). */
+const HEADER_TOP = -16;
 /** Room kept clear above the dock. */
 const DOCK_SPACE = 104;
 
@@ -42,8 +44,15 @@ export function DeckStack() {
       // little above that so the first tip tucks right under the bar.
       const padTop = parseFloat(getComputedStyle(main).paddingTop) || 0;
       const floor = main.clientHeight - DOCK_SPACE - padTop;
+      // A page heading that stays put (Home's greeting): it sticks first, and the deck starts just under it.
+      const header = main.querySelector<HTMLElement>("[data-deck-header]");
+      let start = START;
+      if (header) {
+        header.style.setProperty("--deck-top", `${HEADER_TOP}px`);
+        start = HEADER_TOP + header.offsetHeight + 4;
+      }
       ordered.forEach(({ card }, i) => {
-        const top = Math.min(START + Math.min(i, MAX_TIPS) * TIP, floor - card.offsetHeight);
+        const top = Math.min(start + Math.min(i, MAX_TIPS) * TIP, floor - card.offsetHeight);
         card.style.setProperty("--deck-top", `${Math.round(top)}px`);
       });
     };
