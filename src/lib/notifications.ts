@@ -7,6 +7,7 @@ import { notificationTarget, safeInAppHref } from "@/lib/notificationTargets";
 import { sendPushToUser } from "@/lib/webPush";
 import { categoryIsPushed } from "@/lib/pushRules";
 import { EMAIL_PREF_SELECT, isEmailEnabled, type EmailCategory } from "@/lib/emailPreferences";
+import { recordEmail } from "@/lib/emailLog";
 type EmailKind = "default" | "notice";
 
 export interface CreateNotificationParams {
@@ -155,6 +156,15 @@ async function maybePush(userId: string, category: EmailCategory, title: string,
   }
 }
 
+/** The names of the email switches as Settings shows them, for the "not sent" reason on Admin > Inbox > Sent. */
+const SWITCH_NAME: Record<EmailCategory, string> = {
+  payments: "Payments and invoices",
+  roleUpdates: "Account updates",
+  social: "Social",
+  reminders: "Practice and class reminders",
+  classes: "Class updates",
+};
+
 async function maybeSendEmail(
   userId: string,
   category: EmailCategory,
@@ -165,9 +175,15 @@ async function maybeSendEmail(
 ) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: EMAIL_PREF_SELECT });
   if (!user) return;
-  // A banned account is sent nothing, whatever its switches say.
-  if (user.bannedAt) return;
-  if (!isEmailEnabled(user, category) && !force) return;
+  // A banned account is sent nothing, whatever its switches say. Both kinds of "not sent" are recorded for Admin > Inbox > Sent.
+  if (user.bannedAt) {
+    await recordEmail({ to: user.email, subject: title, status: "SKIPPED", detail: "Banned account", userId });
+    return;
+  }
+  if (!isEmailEnabled(user, category) && !force) {
+    await recordEmail({ to: user.email, subject: title, status: "SKIPPED", detail: `They turned off "${SWITCH_NAME[category]}" emails`, userId });
+    return;
+  }
 
   // Every email a switch governs carries an "Unsubscribe" for that same switch.
   const unsubscribe = { userId, category };

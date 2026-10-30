@@ -4,6 +4,7 @@ import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
 import { expireTimedDiscounts } from "../../src/lib/referrals";
 import { purgeOldIdempotencyKeys } from "../../src/lib/idempotency";
+import { purgeOldEmailLogs } from "../../src/lib/emailLog";
 import { sendTrialNotices } from "../../src/lib/trialNotices";
 import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCreditPricing";
 
@@ -59,6 +60,9 @@ export const runCreditExpiry = () =>
 
   const keysPurged = await purgeOldIdempotencyKeys(now);
   console.log(`Old once-only keys removed: ${keysPurged}.`);
+
+  const emailLogsPurged = await purgeOldEmailLogs(now);
+  console.log(`Email records older than 180 days removed: ${emailLogsPurged}.`);
 
   const trials = await sendTrialNotices(now);
   console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);
