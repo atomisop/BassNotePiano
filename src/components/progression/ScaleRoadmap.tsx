@@ -2,12 +2,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { BadgeCode } from "@prisma/client";
 import type { ScaleAccessState } from "@/lib/access";
 import { ScaleViewToggle, SCALE_VIEW_STORAGE_KEY, type ScaleView } from "@/components/progression/ScaleViewToggle";
 import { ScaleCardGrid } from "@/components/progression/ScaleCardGrid";
 import { ScaleListRows } from "@/components/progression/ScaleListRows";
-import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { Tabs } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { scaleViewCookie } from "@/lib/scaleView";
@@ -15,11 +13,10 @@ import { scaleViewCookie } from "@/lib/scaleView";
 // useLayoutEffect warns during server rendering; the position fix only matters in the browser.
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-type HomeTab = "progress" | "completed" | "badges";
+type HomeTab = "progress" | "completed";
 
 export interface ScaleRoadmapProps {
   roadmap: ScaleAccessState[];
-  earnedBadgeCodes: BadgeCode[];
   /** The layout they last chose, read from the cookie on the server so the first paint is already right. */
   initialView?: ScaleView;
   /** Where the scale pictures live (the public R2 bucket's scale-art folder), or null for plain cards. */
@@ -27,14 +24,13 @@ export interface ScaleRoadmapProps {
 }
 
 /**
- * Home's learning area: one set of tabs keeps the path, finished scales,
- * and badges on the same screen instead of three stacked sections (STEP
- * 2B). The tabs only filter what the dashboard already loads; no new data.
+ * The Roadmap's scales: two tabs (Active, Done) and the cards/list toggle in one row that stays put, the scales below it as the
+ * card deck. Badges live on Home. The tabs only filter what the page already loaded; no new data.
  */
 /** Scales shown at first on a phone. */
 const PHONE_VISIBLE = 4;
 
-export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid", artBase = null }: ScaleRoadmapProps) {
+export function ScaleRoadmap({ roadmap, initialView = "grid", artBase = null }: ScaleRoadmapProps) {
   const router = useRouter();
   const [tab, setTab] = useState<HomeTab>("progress");
   // Phones: the path is fifteen cards long. Show the scale you are on and the next few; the rest open on request.
@@ -110,28 +106,27 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid", 
 
   return (
     <section ref={sectionRef} aria-label="Your learning">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Stays put with the page heading above it on phones (a second deck header); the scales below are the deck. */}
+      <div data-deck-header className="deck-header flex flex-nowrap items-center justify-between gap-2 py-2">
         <Tabs<HomeTab>
+          className="min-w-0"
           label="Your learning"
           value={tab}
           onChange={setTab}
           items={[
-            { id: "progress", label: "In progress", count: inProgress.length },
-            { id: "completed", label: "Completed", count: completed.length },
-            { id: "badges", label: "Badges", count: earnedBadgeCodes.length },
+            { id: "progress", label: "Active", count: inProgress.length },
+            { id: "completed", label: "Done", count: completed.length },
           ]}
         />
-        {tab !== "badges" && shown.length > 0 && (
+        {shown.length > 0 && (
           <div ref={toggleRef}>
             <ScaleViewToggle value={view} onChange={handleViewChange} />
           </div>
         )}
       </div>
 
-      <div className="mt-(--space-group)">
-        {tab === "badges" ? (
-          <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
-        ) : shown.length === 0 ? (
+      <div className="mt-2">
+        {shown.length === 0 ? (
           <EmptyState
             title={tab === "completed" ? "No finished scales yet" : "Every scale is finished"}
           />
@@ -140,7 +135,7 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes, initialView = "grid", 
         ) : (
           <ScaleListRows roadmap={shown} currentSlug={currentSlug} onRowClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} />
         )}
-        {tab !== "badges" && hiddenOnPhone > 0 && (
+        {hiddenOnPhone > 0 && (
           <button
             type="button"
             aria-expanded={showAllOnPhone}

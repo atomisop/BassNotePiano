@@ -1,3 +1,4 @@
+import type { BadgeCode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getRoadmap } from "@/lib/access";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
@@ -34,6 +35,8 @@ export interface HomeData {
   /** First-week checklist: Discord linked, a class booked, the first practice done. Empty once all three are done, and for the admin. */
   gettingStarted: { done: boolean; label: string; detail: string; href: string; external: boolean }[];
   badgeCount: number;
+  /** Every badge the student has earned, for the Badges card. */
+  earnedBadgeCodes: BadgeCode[];
   /** Credits on the account, in 45 minute classes. */
   credits: number;
 }
@@ -71,10 +74,10 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       select: { senderId: true, receiverId: true },
     }),
   ]);
-  const [everBooked, everPracticed, badgeCount] = await Promise.all([
+  const [everBooked, everPracticed, earnedBadges] = await Promise.all([
     prisma.classBooking.count({ where: { studentId: userId } }),
     prisma.fingerPracticeDay.count({ where: { userId, completedAt: { not: null } } }),
-    prisma.userBadge.count({ where: { userId } }),
+    prisma.userBadge.findMany({ where: { userId }, select: { code: true } }),
   ]);
   const checklist = [
     { done: Boolean(profile?.discordId), label: "Link your Discord", detail: "Your live class call opens there.", href: "/api/discord/connect", external: true },
@@ -144,7 +147,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     celebration: pickCelebration(wins, now),
     tip: tipOfTheDay(today),
     gettingStarted: showChecklist ? checklist : [],
-    badgeCount,
+    badgeCount: earnedBadges.length,
+    earnedBadgeCodes: earnedBadges.map((b) => b.code),
     credits: storedToCredits(profile?.classCredits ?? 0),
   };
 }

@@ -199,10 +199,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       {/* A copy of Instagram's floating tab bar: a 53pt glass pill 20pt from the edges, five icon slots with no names, and a lighter
           capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
           words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
-      <div
+      {/* Scrolling down shrinks the whole dock (both ways, toward the bottom) and scrolling back up grows it again, on a spring so it
+          overshoots a touch, like the dock first did. */}
+      <motion.div
         data-glass=""
-        style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
-        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
+        initial={false}
+        animate={{ scale: narrow ? 0.84 : 1, y: narrow ? 6 : 0 }}
+        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 22, mass: 0.9 }}
+        style={{ transformOrigin: "50% 100%" }}
+        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
       >
         <GlassLens radius="full" bezel={18} strength={12} magnify={0.08} blur={14} />
         {NAV_ITEMS.map((item) => {
@@ -254,7 +259,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
             </Link>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

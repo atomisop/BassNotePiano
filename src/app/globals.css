@@ -2485,38 +2485,23 @@ body {
   }
 }
 
-/* Cards on a turning wheel as the page scrolls (Home, Roadmap, the admin overview): the dock and the top bar stay still while each
-   card curls up into view from the bottom (tilted back, faded) and curls away over the top the same way, like the face of a drum or
-   an iPhone time picker. The insets keep the whole effect between the top bar (64px) and the dock (110px), where you can see it.
-   Tied to the scroll position by the browser (a view timeline), so it follows the finger exactly and runs no script. The tilt lives
-   in `transform`, leaving the `scale` property to the cards' own press effect. Browsers without view timelines, and anyone who asked
-   for less motion, see still cards. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .scroll-card {
-      animation: scroll-card-wheel linear both;
-      animation-timeline: view(block 64px 110px);
-      animation-range: entry 0% exit 100%;
-      transform-origin: 50% 50%;
-      backface-visibility: hidden;
-    }
+/* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
+   slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
+   of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
+   computer the page scrolls normally. */
+@media (max-width: 1023px) {
+  .deck-card {
+    position: sticky;
+    top: var(--deck-top, 72px);
+    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
   }
-}
-@keyframes scroll-card-wheel {
-  entry 0% {
-    opacity: 0;
-    transform: perspective(1100px) translateY(36px) rotateX(-48deg);
+  .deck-header {
+    position: sticky;
+    top: var(--deck-top, -16px);
+    z-index: 5;
+    background: rgb(var(--ground));
   }
-  entry 100% {
-    opacity: 1;
-    transform: perspective(1100px) translateY(0) rotateX(0deg);
-  }
-  exit 0% {
-    opacity: 1;
-    transform: perspective(1100px) translateY(0) rotateX(0deg);
-  }
-  exit 100% {
-    opacity: 0;
-    transform: perspective(1100px) translateY(-36px) rotateX(48deg);
+  [data-mode="light"] .deck-card {
+    filter: drop-shadow(0 -8px 12px rgb(40 40 60 / 0.16));
   }
 }

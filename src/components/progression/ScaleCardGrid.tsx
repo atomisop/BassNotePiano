@@ -54,13 +54,13 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
         const isCompleted = scale.status === "COMPLETED";
 
         return (
-          <motion.li key={scale.scaleGroup.slug} variants={gridItem} className={phoneHiddenFrom !== undefined && index >= phoneHiddenFrom ? "max-md:hidden" : undefined}>
+          <motion.li key={scale.scaleGroup.slug} variants={gridItem} className={cn("deck-card", phoneHiddenFrom !== undefined && index >= phoneHiddenFrom && "max-md:hidden")}>
             <button
               type="button"
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "scroll-card group press-soft relative isolate flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "group press-soft relative isolate flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isCurrent && "shadow-pressed-mid ring-1 ring-signal",
                 locked && "shadow-pressed-low",
               )}

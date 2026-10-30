@@ -16,6 +16,7 @@ export const TILE_COLORS = {
   teal: { from: "#24857f", via: "#1c615d", to: "#10201f" },
   plum: { from: "#9455a3", via: "#66357a", to: "#1c1424" },
   indigo: { from: "#5a5cc4", via: "#3f4091", to: "#16162a" },
+  violet: { from: "#7b54c9", via: "#523296", to: "#1a1430" },
 } as const;
 export type TileColor = keyof typeof TILE_COLORS;
 
@@ -23,7 +24,7 @@ export function ColorCard({ color, className, style, ...props }: HTMLAttributes<
   const c = TILE_COLORS[color];
   return (
     <Card
-      className={cn("color-tile scroll-card overflow-hidden", className)}
+      className={cn("color-tile deck-card overflow-hidden", className)}
       style={{ ...style, ["--tile-from" as string]: c.from, ["--tile-via" as string]: c.via, ["--tile-to" as string]: c.to }}
       {...props}
     />
