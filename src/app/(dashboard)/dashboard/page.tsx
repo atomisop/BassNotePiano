@@ -57,7 +57,7 @@ export default async function HomePage() {
 
   if (data.isNew) {
     return (
-      <WideLayout>
+      <WideLayout deckDesktop>
         <div className="grid grid-cols-1 gap-3 md:max-w-3xl">
           {greeting}
           <ColorCard color="sunset" className="p-5 md:p-7">
@@ -97,15 +97,15 @@ export default async function HomePage() {
   const classLength = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
 
   return (
-    <WideLayout>
+    <WideLayout deckDesktop>
       <div className="grid grid-cols-1 gap-3">
         {greeting}
         {data.celebration && <CelebrationCard win={data.celebration} />}
 
         {/* Phones get one column in the order below (the two column wrappers dissolve and `order` sorts the cards); from lg the
             left column holds today, the roadmap and the tip, the right one the class, practice and friends. */}
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          <div className="contents min-w-0 lg:grid lg:gap-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="contents min-w-0 lg:grid lg:content-start lg:gap-3">
             {/* Today's one thing. */}
             {data.gettingStarted.length > 0 && <GettingStartedCard items={data.gettingStarted} className="order-1" />}
 
@@ -150,7 +150,7 @@ export default async function HomePage() {
             <TipCard tip={data.tip} className="order-9" />
           </div>
 
-          <div className="contents min-w-0 lg:grid lg:gap-3">
+          <div className="contents min-w-0 lg:grid lg:content-start lg:gap-3">
             <ColorCard color="ocean" className="order-4 p-5">
               <Eyebrow>Next class</Eyebrow>
               {nextClass ? (

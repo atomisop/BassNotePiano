@@ -15,10 +15,11 @@ const HEADER_TOP = -16;
 const DOCK_SPACE = 104;
 
 /**
- * The card deck on phones and tablets (Home, Roadmap, the admin overview): every `.deck-card` slides up and stops under the top bar,
- * the next one is drawn over it, and the earlier cards' top edges stay showing as a stack of tips (globals.css makes them sticky).
- * This works out where each card stops: its tip's place in the stack, or, for a card too tall to fit, low enough that its bottom is
- * seen before it stops. Cards are taken in the order they appear on screen (Home reorders them with CSS `order`).
+ * The card deck (Home, Roadmap, the admin overview on phones and tablets; Home, Streak and Leaderboard on a computer too): every
+ * `.deck-card` slides up and stops under the top bar, the next one is drawn over it, and the earlier cards' top edges stay showing as a
+ * stack of tips (globals.css makes them sticky). This works out where each card stops: its tip's place in the stack, or, for a card
+ * too tall to fit, low enough that its bottom is seen before it stops. Cards are taken in the order they appear on screen (Home
+ * reorders them with CSS `order`). On a computer a screen can have two columns of cards; each column is its own stack.
  */
 export function DeckStack() {
   const pathname = usePathname();
@@ -31,9 +32,13 @@ export function DeckStack() {
 
     const layout = () => {
       frame = 0;
-      const cards = [...main.querySelectorAll<HTMLElement>(".deck-card")];
-      if (!phone.matches) {
-        cards.forEach((c) => c.style.removeProperty("--deck-top"));
+      const all = [...main.querySelectorAll<HTMLElement>(".deck-card")];
+      // On a computer only the screens that ask for it (`data-deck-desktop`) keep the deck; everywhere else scrolls normally.
+      const cards = phone.matches ? all : all.filter((c) => c.closest("[data-deck-desktop]"));
+      all.filter((c) => !cards.includes(c)).forEach((c) => c.style.removeProperty("--deck-top"));
+      const headerEls = [...main.querySelectorAll<HTMLElement>("[data-deck-header]")];
+      if (cards.length === 0) {
+        headerEls.forEach((h) => h.style.removeProperty("--deck-top"));
         return;
       }
       const ordered = cards
@@ -46,7 +51,7 @@ export function DeckStack() {
       const floor = main.clientHeight - DOCK_SPACE - padTop;
       // Headings that stay put (Home's greeting; the Scales heading and its tabs row): each sticks under the one before, and the
       // deck starts just under the last.
-      const headers = [...main.querySelectorAll<HTMLElement>("[data-deck-header]")].filter((h) => h.offsetHeight > 0);
+      const headers = headerEls.filter((h) => h.offsetHeight > 0);
       let start = START;
       if (headers.length > 0) {
         let edge = HEADER_TOP;
@@ -56,7 +61,12 @@ export function DeckStack() {
         });
         start = edge + 4;
       }
-      ordered.forEach(({ card }, i) => {
+      // One stack per column: cards that start at the same left edge share a stack (a phone has just the one).
+      const column = new Map<number, number>();
+      ordered.forEach(({ card }) => {
+        const left = phone.matches ? 0 : Math.round(card.getBoundingClientRect().left);
+        const i = column.get(left) ?? 0;
+        column.set(left, i + 1);
         const top = Math.min(start + Math.min(i, MAX_TIPS) * TIP, floor - card.offsetHeight);
         card.style.setProperty("--deck-top", `${Math.round(top)}px`);
       });

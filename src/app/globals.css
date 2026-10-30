@@ -2488,7 +2488,24 @@ body {
 /* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
    slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
    of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
-   computer the page scrolls normally. */
+   computer only the screens marked `data-deck-desktop` (Home, Streak, Leaderboard) keep the deck, one stack per column, with the
+   greeting staying put above it; card grids (Roadmap's scales, the admin overview) scroll normally there. */
+@media (min-width: 1024px) {
+  [data-deck-desktop] .deck-card {
+    position: sticky;
+    top: var(--deck-top, 72px);
+    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
+  }
+  [data-deck-desktop] .deck-header {
+    position: sticky;
+    top: var(--deck-top, -16px);
+    z-index: 5;
+    background: rgb(var(--ground));
+  }
+  [data-mode="light"] [data-deck-desktop] .deck-card {
+    filter: drop-shadow(0 -8px 12px rgb(40 40 60 / 0.16));
+  }
+}
 @media (max-width: 1023px) {
   .deck-card {
     position: sticky;
