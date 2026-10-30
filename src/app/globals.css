@@ -2187,7 +2187,9 @@ html[data-theme-fade] *::after {
 /* A faint body so a clear button still reads as a button on a plain page (the lens refracts it along with what is behind). */
 .lg-glass:not(.liquid-signal) {
   background: var(--lg-fill) !important;
-  box-shadow: inset 0 0 0 1px var(--lg-hairline), inset 0 1px 0 var(--lg-hairline) !important;
+  /* The same 3D lift as the cards (light top left, shade bottom right, a rim along the top), on top of the bending lens. */
+  box-shadow: inset 0 0 0 1px var(--lg-hairline), var(--glass-edge3d, inset 0 1px 0 var(--lg-hairline)), -2px -2px 5px var(--glass-hi, transparent),
+    3px 3px 8px var(--glass-lo, transparent) !important;
 }
 :root {
   --lg-fill: rgb(255 255 255 / 0.07);
@@ -2251,12 +2253,13 @@ html[data-theme-fade] *::after {
 }
 
 /* ---------------------------------------------------------------------------
-   The card material inside the app (replaces the old raised and pressed neumorphism): flat, solid cards on a plain page, the way a
-   modern phone app looks. No outlines, no bevel, no haze. Every card, panel, button and field still uses the same classes
+   The card material inside the app: 3D glass. Solid cards on a plain page, with the neumorphic depth the app started with (light from
+   the top left, shade to the bottom right) plus a glass rim and sheen. Every card, panel, button and field still uses the same classes
    (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*); only what those mean changes here:
      - the page is a soft near-black (dark) or light gray (light), cards are one solid step lighter (dark) or white (light);
-     - "raised" lays a faint wash over the fill, so a card inside a card is one more step lighter and still reads as its own box;
-     - "pressed" (fields, wells, a held control) lays a faint shade over the fill instead.
+     - "raised" lifts off the page (two soft shadows, a bright top rim, a faint dark bottom edge) and lays a faint wash over the fill,
+       so a card inside a card is one more step lighter and still reads as its own box;
+     - "pressed" (fields, wells, a held control) sinks in: a soft inner shadow and a faint shade over the fill.
    The washes are inset shadows wide enough to fill the box: they tint the background and never the content.
    --------------------------------------------------------------------------- */
 [data-surface="app"],
@@ -2270,15 +2273,24 @@ body:has([data-surface="app"]) {
   --card-wash: rgb(255 255 255 / 0.035);
   --card-shade: rgb(0 0 0 / 0.24);
   --card-line: rgb(255 255 255 / 0.07);
+  /* 3D glass (2026-10-30): the neumorphic light-and-shade the owner liked, on the glass. Light from the top left, shade to the
+     bottom right, a bright rim along the top edge and a faint dark one along the bottom (the thickness of the glass), and a soft
+     sheen across the face (--glass-sheen, see the rule below). */
+  --glass-hi: rgb(255 255 255 / 0.07);
+  --glass-lo: rgb(0 0 0 / 0.72);
+  --glass-rim: rgb(255 255 255 / 0.13);
+  --glass-floor: rgb(0 0 0 / 0.35);
+  --glass-sheen: linear-gradient(158deg, rgb(255 255 255 / 0.09) 0%, rgb(255 255 255 / 0.02) 38%, transparent 62%);
+  --glass-edge3d: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-floor);
   --neu-hi: var(--card-line);
   --neu-lo: var(--card-line);
-  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash);
-  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash);
-  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 18px 40px -18px rgb(0 0 0 / 0.6);
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -2px -2px 5px var(--glass-hi), 3px 3px 7px var(--glass-lo);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -4px -4px 11px var(--glass-hi), 6px 7px 16px var(--glass-lo);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -6px -6px 16px var(--glass-hi), 10px 12px 28px var(--glass-lo);
   --neu-float: var(--neu-raised-high);
-  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade);
-  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade);
-  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade), inset 2px 2px 5px var(--glass-lo), inset -1px -1px 3px var(--glass-hi);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade), inset 3px 3px 7px var(--glass-lo), inset -2px -2px 5px var(--glass-hi);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade), inset 4px 4px 10px var(--glass-lo), inset -2px -2px 6px var(--glass-hi);
   --plane-mid-shadow: var(--neu-raised-mid);
   --plane-front-shadow: var(--neu-raised-high);
   --surface-bg: rgb(var(--neu-base) / var(--neu-alpha));
@@ -2301,8 +2313,18 @@ body:has([data-surface="app"]) {
   --card-wash: rgb(0 0 0 / 0.018);
   --card-shade: rgb(0 0 0 / 0.045);
   --card-line: rgb(0 0 0 / 0.07);
-  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 16px 36px -18px rgb(30 30 60 / 0.25);
+  --glass-hi: rgb(255 255 255 / 0.95);
+  --glass-lo: rgb(120 120 145 / 0.3);
+  --glass-rim: rgb(255 255 255 / 1);
+  --glass-floor: rgb(0 0 0 / 0.05);
+  --glass-sheen: linear-gradient(158deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 40%, transparent 65%);
 }
+/* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
+   picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
+[data-surface="app"] :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], .glass-surface, .glass-surface-elevated):not(.lg-glass):not([data-glass]):not([class*="bg-signal"]):not([class*="bg-gradient"]):not([class*="bg-["]):not([class*="bg-red"]):not([class*="bg-amber"]) {
+  background-image: var(--glass-sheen);
+}
+
 /* Dialogs and menus that open over the page get a soft border so they stand off what is under them. */
 body:has([data-surface="app"]) .glass-surface-modal {
   border-color: var(--card-line);
