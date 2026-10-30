@@ -4,7 +4,8 @@ import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredi
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Hammer } from "@/components/ui/appIcons";
+import { CalendarPlus, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -293,6 +294,34 @@ export function CustomerProfile({
       {error && (
         <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
       )}
+
+      {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
+        <QuickMessageButton userId={user.id} name={user.name ?? user.email} />
+        <button
+          type="button"
+          onClick={() => {
+            chooseTab("classes");
+            window.setTimeout(() => {
+              const input = document.getElementById("cp-amount");
+              input?.scrollIntoView({ behavior: "smooth", block: "center" });
+              input?.focus({ preventScroll: true });
+            }, 60);
+          }}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+        >
+          <Coins aria-hidden className="h-4 w-4" />
+          Add credits
+        </button>
+        <button type="button" onClick={() => chooseTab("scheduler")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          <CalendarPlus aria-hidden className="h-4 w-4" />
+          Book a class
+        </button>
+        <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+          <CreditCard aria-hidden className="h-4 w-4" />
+          Payments
+        </button>
+      </div>
 
       <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
 

@@ -157,7 +157,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
           <input value={note} onChange={(e) => setNote(e.target.value)} className={`${field} mt-1.5`} maxLength={200} />
         </label>
 
-        <button type="submit" disabled={busy} aria-busy={busy} className={buttonVariants({ variant: "primary", className: "w-full" })}>
+        <button type="submit" disabled={busy} aria-busy={busy} className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}>
           {busy ? <MorphingSquare size={14} className="mr-2 shrink-0" /> : <CalendarCheck aria-hidden className="mr-2 h-4 w-4" />}
           Reserve
         </button>

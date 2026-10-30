@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { pausePlanAdminAction, resumePlanAdminAction } from "@/app/(dashboard)/admin/payment-plans/actions";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface PlanPauseState {
   /** The pause is running now. */
@@ -49,10 +50,9 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
   if (state.paused) {
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-amber-300">
-          <Pause aria-hidden className="h-3 w-3" />
+        <StatusDot tone="warning">
           {state.until ? `Paused until ${new Date(state.until).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Paused indefinitely"}
-        </span>
+        </StatusDot>
         <button type="button" onClick={() => void run("resume")} aria-busy={busy === "resume"} className={button}>
           {busy === "resume" ? <MorphingSquare size={12} className="mr-1.5 shrink-0" /> : <Play aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
           Resume

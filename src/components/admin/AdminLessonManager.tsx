@@ -9,6 +9,8 @@ import { Collapse } from "@/components/ui/Collapse";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { FileText } from "@/components/ui/appIcons";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -280,7 +282,7 @@ export function AdminLessonManager({
       </Collapse>
 
       {lessons.length === 0 ? (
-        <p className="glass-surface p-6 text-center text-small text-slate-500">No lessons for this scale yet.</p>
+        <EmptyState icon={<FileText />} title="No lessons for this scale yet" description="Upload a PDF or video and it appears in the scale's lesson list." />
       ) : (
         <div className="glass-surface divide-y divide-slate-50/10 px-4">
           {lessons.map((lesson, index) => (

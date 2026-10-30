@@ -9,6 +9,8 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Search } from "@/components/ui/appIcons";
 
 export interface UserListRow {
   id: string;
@@ -104,7 +106,7 @@ export function UserList({
       />
 
       {rows.length === 0 ? (
-        <p className="glass-surface p-8 text-center text-small text-slate-500">No one found.</p>
+        <EmptyState icon={<Search />} title="No one found" description="Try another name or email, or another tab." />
       ) : (
         <ul className="glass-surface divide-y divide-slate-50/10 px-4">
           <ViewMore items={rows} initial={15} step={20}>
