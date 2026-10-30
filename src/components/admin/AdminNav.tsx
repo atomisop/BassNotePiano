@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type AppIcon } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
 
@@ -15,7 +15,7 @@ import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId
  */
 export type { AdminNavBadges };
 
-export const HUB_ICON: Record<AdminHubId, LucideIcon> = {
+export const HUB_ICON: Record<AdminHubId, AppIcon> = {
   overview: LayoutDashboard,
   billing: CreditCard,
   people: Users,

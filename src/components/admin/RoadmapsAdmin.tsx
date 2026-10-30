@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Pencil, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, Pencil, Plus } from "@/components/ui/appIcons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/Card";
 import { ROADMAP_ARTWORKS, ROADMAP_INSTRUMENTS, ROADMAP_LEVELS } from "@/lib/roadmapRules";

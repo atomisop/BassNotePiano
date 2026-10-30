@@ -2,7 +2,7 @@
 
 import { Celebrate } from "@/components/ui/Celebrate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Pause, Play, Plus } from "lucide-react";
+import { Minus, Pause, Play, Plus } from "@/components/ui/appIcons";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Tabs } from "@/components/ui/Tabs";

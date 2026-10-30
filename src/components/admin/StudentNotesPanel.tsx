@@ -4,7 +4,7 @@ import { OPEN_STUDENT_NOTES, listen } from "@/lib/topBarEvents";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, NotebookPen, Search } from "lucide-react";
+import { ArrowLeft, NotebookPen, Search } from "@/components/ui/appIcons";
 import { getTodaysNotesRosterAction, searchStudentsForNotesAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { NotesRosterRow } from "@/lib/studentNotes";
 import type { BookableStudent } from "@/lib/admin";

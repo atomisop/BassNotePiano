@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PartyPopper, X } from "lucide-react";
+import { PartyPopper, X } from "@/components/ui/appIcons";
 import { Celebrate } from "@/components/ui/Celebrate";
 
 /**

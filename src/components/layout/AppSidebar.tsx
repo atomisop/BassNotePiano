@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, type AppIcon } from "@/components/ui/appIcons";
 import GenerateAIButton from "@/components/ui/button-33";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
@@ -15,7 +15,7 @@ import { HUB_ICON } from "@/components/admin/AdminNav";
 import { atomHiddenOn, openAtom } from "@/lib/atomTrigger";
 import { GlassLens } from "@/components/ui/GlassLens";
 
-type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
+type Item = { href: string; label: string; icon: AppIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
 
 // Same destinations as the phone dock, plus Practice and Profile, which have
 // room here. Grouped so a long list stays scannable.

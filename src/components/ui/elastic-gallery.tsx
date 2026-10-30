@@ -4,7 +4,7 @@
 // its panels as props, links each one, and uses the app's dark ground.
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 export interface ElasticItem {

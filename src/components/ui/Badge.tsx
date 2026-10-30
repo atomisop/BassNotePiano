@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Check, Lock, TriangleAlert, X } from "lucide-react";
+import { Check, Lock, TriangleAlert, X } from "@/components/ui/appIcons";
 
 /**
  * Status chips. Each tone pairs an icon with text, so status never relies on

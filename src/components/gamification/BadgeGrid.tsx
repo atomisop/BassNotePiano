@@ -2,9 +2,9 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import type { BadgeCode } from "@prisma/client";
-import { Medal } from "lucide-react";
 import { BADGES, type BadgeCategory } from "@/lib/badges";
 import { SPRING } from "@/lib/motionTokens";
+import { Lock, Medal } from "@/components/ui/appIcons";
 
 // Each finger level has its own metal or gem, so the seven badges are easy to tell apart at a glance.
 const FINGER_TIERS = [
@@ -37,19 +37,13 @@ interface BadgeGridProps {
 
 function AwardIcon() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-      <circle cx="12" cy="8" r="5" />
-      <path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <Medal className="shrink-0" size={26} />
   );
 }
 
 function LockIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-      <rect x="4" y="11" width="16" height="9" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-    </svg>
+    <Lock className="shrink-0" size={22} />
   );
 }
 

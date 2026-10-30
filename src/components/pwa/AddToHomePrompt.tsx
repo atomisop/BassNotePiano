@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";

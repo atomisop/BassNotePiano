@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useDismissDrag } from "@/lib/useDismissDrag";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";
+import { ChevronLeft } from "@/components/ui/appIcons";
 
 /**
  * Shared "push navigation" panel, full-screen on phones, a right-anchored
@@ -111,9 +112,7 @@ export function SlideOverPanel({
                 aria-label="Back"
                 className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                  <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <ChevronLeft className="h-[18px] w-[18px]" />
               </button>
               <h1 id={titleId} className="font-hero text-hero font-bold text-balance truncate text-slate-50">{title}</h1>
             </div>

@@ -7,6 +7,7 @@ import { Avatar } from "@/components/messaging/Avatar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { getFriendsListAction } from "../actions";
 import { buttonVariants } from "@/components/ui/button";
+import { Check } from "@/components/ui/appIcons";
 
 interface Friend {
   id: string;
@@ -95,7 +96,7 @@ export function NewGroupPanel({
                     disabled={!f.username}
                     onClick={() => toggle(f.username)}
                     className={`flex w-full items-center gap-2.5 tap rounded-2xl p-2.5 text-left transition ${
-                      checked ? "bg-neu-base shadow-pressed-low" : "hover:shadow-raised-low"
+                      checked ? "bg-signal/12" : "hover:bg-slate-800/40"
                     } disabled:opacity-40`}
                   >
                     <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-small" />
@@ -109,9 +110,7 @@ export function NewGroupPanel({
                       }`}
                     >
                       {checked && (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                          <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <Check className="h-3 w-3" />
                       )}
                     </div>
                   </button>

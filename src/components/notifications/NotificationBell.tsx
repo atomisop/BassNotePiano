@@ -21,7 +21,7 @@ import {
   Settings,
   Timer,
   Users,
-} from "lucide-react";
+} from "@/components/ui/appIcons";
 import {
   fetchNotificationsAction,
   markAllNotificationsReadAction,
@@ -68,9 +68,8 @@ function relativeTime(iso: string): string {
 // than a literal name.
 // ---------------------------------------------------------------------------
 
-// Same category set as before, restyled onto lucide-react (already this
-// app's icon library, see ScaleViewToggle/LessonVideoPlayer) instead of
-// hand-rolled inline SVG paths. The category-to-icon MAPPING below
+// Same category set as before, drawn with the app's shared icons
+// (components/ui/appIcons.tsx) instead of hand-rolled inline SVG paths. The category-to-icon MAPPING below
 // (TYPE_CATEGORY) is unchanged; only which icon component renders per key.
 const CATEGORY_ICONS = {
   billing: CreditCard,
@@ -82,7 +81,7 @@ const CATEGORY_ICONS = {
   announcements: Megaphone,
   support: Headset,
   // Added on main for the admin feedback inbox (PLAN_CANCELLATION_FEEDBACK),
-  // a hand-rolled SVG path there, swapped to lucide's MessageSquare here
+  // a hand-rolled SVG path there, swapped to the shared MessageSquare icon here
   // to match every other category icon in this restyle.
   feedback: MessageSquare,
   messages: Mail,

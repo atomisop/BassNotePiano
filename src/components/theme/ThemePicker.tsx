@@ -3,12 +3,11 @@
 import { THEMES, type ThemeChoice } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
 import { LiquidThemeToggle } from "./LiquidThemeToggle";
+import { Check } from "@/components/ui/appIcons";
 
 function CheckIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-      <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <Check size={12} />
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, EllipsisVertical, Share, SquarePlus, Smartphone } from "lucide-react";
+import { Download, EllipsisVertical, Share, SquarePlus, Smartphone } from "@/components/ui/appIcons";
 import { HOME_SCREEN_STEPS, detectPlatform, type HomeScreenPlatform } from "@/lib/addToHome";
 import { buttonVariants } from "@/components/ui/button";
 

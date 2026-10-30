@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "@/components/ui/appIcons";
 import { useMemo, useState } from "react";
 import { Switch as UiSwitch } from "@/components/ui/switch";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";

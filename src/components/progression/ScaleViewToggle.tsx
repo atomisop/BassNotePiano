@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List } from "@/components/ui/appIcons";
 import { Tabs } from "@/components/ui/Tabs";
 
 export type ScaleView = "grid" | "list";

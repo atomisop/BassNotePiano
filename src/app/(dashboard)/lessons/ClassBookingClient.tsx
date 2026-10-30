@@ -27,13 +27,14 @@ import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { Ticket } from "lucide-react";
+import { Ticket } from "@/components/ui/appIcons";
 import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { ChevronDown } from "@/components/ui/appIcons";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -321,13 +322,7 @@ function BookingCard({
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-180" : ""}`}
-    >
-      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-180" : ""}`} />
   );
 }
 

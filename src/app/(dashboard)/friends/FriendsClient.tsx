@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
-import { Ban } from "lucide-react";
+import { Ban } from "@/components/ui/appIcons";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";

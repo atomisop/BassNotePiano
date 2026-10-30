@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";

@@ -16,6 +16,7 @@ import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { toast } from "@/components/ui/Toaster";
+import { Check, X } from "@/components/ui/appIcons";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -343,9 +344,7 @@ export function ZellePaymentModal({
                   aria-label="Close"
                   className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
+                  <X size={18} />
                 </button>
               </div>
 
@@ -611,9 +610,7 @@ export function ZellePaymentModal({
                       transition={{ ...SPRING.lively, delay: 0.05 }}
                       className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/10"
                     >
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-50" aria-hidden>
-                        <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <Check className="text-slate-50" size={26} />
                     </motion.div>
                     <h3 className="text-title text-slate-50">Payment received</h3>
                     <button

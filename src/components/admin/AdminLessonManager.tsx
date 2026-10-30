@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "@/components/ui/appIcons";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { Collapse } from "@/components/ui/Collapse";

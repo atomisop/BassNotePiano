@@ -2361,23 +2361,3 @@ body:has([data-surface="app"]) .glass-surface-modal {
   --dock-cut: rgb(232 232 234);
 }
 
-/* The current tab's dock icon is filled. Where a filled shape would swallow its inner detail (the calendar's line and check, the
-   gear's center) that detail is cut out in the dock capsule's color instead. */
-.dock-icon-filled {
-  --dock-cut: rgb(30 30 30);
-}
-[data-mode="light"] .dock-icon-filled {
-  --dock-cut: rgb(236 236 238);
-}
-.dock-icon-filled.lucide-calendar-check > :nth-child(n + 4) {
-  fill: none;
-  stroke: var(--dock-cut);
-}
-.dock-icon-filled.lucide-settings > circle {
-  fill: var(--dock-cut);
-  stroke: var(--dock-cut);
-}
-.dock-icon-filled.lucide-map > :nth-child(n + 2) {
-  fill: none;
-  stroke: var(--dock-cut);
-}

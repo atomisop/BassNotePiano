@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users } from "lucide-react";
+import { Users } from "@/components/ui/appIcons";
 
 /** Friends in the top bar (it left the dock to make room for the Roadmap). Stays pressed in while you are on the friends pages. */
 export function FriendsTopLink() {

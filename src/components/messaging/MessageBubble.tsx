@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Reply } from "lucide-react";
+import { Reply } from "@/components/ui/appIcons";
 import { motion } from "framer-motion";
 import { REACTION_EMOJI } from "@/lib/reactions";
 import { AttachmentButton } from "@/components/ui/attachment-button";

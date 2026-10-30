@@ -4,7 +4,7 @@ import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredi
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Hammer } from "lucide-react";
+import { Hammer } from "@/components/ui/appIcons";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";

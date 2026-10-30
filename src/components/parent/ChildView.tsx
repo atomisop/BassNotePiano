@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Circle, Flame, Lock } from "lucide-react";
+import { Check, Circle, Flame, Lock } from "@/components/ui/appIcons";
 import { Tabs } from "@/components/ui/Tabs";
 import { ChildClasses } from "@/components/parent/ChildClasses";
 import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";

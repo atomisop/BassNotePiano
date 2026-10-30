@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, Flame, Hourglass, Inbox, PlayCircle, Plus, Sparkles, Ticket, Users, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, Flame, Hourglass, Inbox, PlayCircle, Plus, Sparkles, Ticket, Users, type AppIcon } from "@/components/ui/appIcons";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPracticeConstants";
@@ -31,7 +31,7 @@ function when(iso: string): string {
   return new Date(iso).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { href?: string; icon: LucideIcon; label: string; tone?: "signal" | "warn"; children: ReactNode; cta?: string }) {
+function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { href?: string; icon: AppIcon; label: string; tone?: "signal" | "warn"; children: ReactNode; cta?: string }) {
   const body = (
     <>
       <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-caps text-slate-500">
@@ -106,7 +106,7 @@ function DiscordCard() {
   );
 }
 
-type Rail = { icon: LucideIcon; label: string; href: string; count?: number; warn?: boolean; dot?: boolean };
+type Rail = { icon: AppIcon; label: string; href: string; count?: number; warn?: boolean; dot?: boolean };
 type Slot = { id: string; node: (now: number | null) => ReactNode; rail?: Rail };
 
 /** What matters most comes first: a stopped system, things waiting, today's classes, then the gentle nudges. The Discord invitation leads until it is linked. */

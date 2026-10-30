@@ -3,7 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Switch } from "@/components/ui/switch";
 import {

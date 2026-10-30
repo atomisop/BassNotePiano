@@ -617,7 +617,9 @@ that very time are cleared. Nothing is reserved for the person told: the time st
 once-only expiry (floored at the real balance, never touching credits a booked class holds), admin credit changes that can never go below zero, and the unmarked-class charge happening once. Settings in tests go through
 `saveSetting` / `resetSetting` (the raw table is cached for 10 seconds).
 
-Icons: use `lucide-react` only. The Tabler and Radix icon packages were removed (2026-10-21); do not add another icon library.
+Icons: import every icon from `@/components/ui/appIcons` (never from an icon package directly). It maps the names the screens use to
+Phosphor's duotone icons (soft, rounded, with a tinted fill; chosen by the owner 2026-10-30, replacing lucide), drawn solid when given a
+`fill`; change the whole look there. Hand-drawn brand marks (Discord and the like) stay in `@/components/ui/icons`. Do not add another icon library.
 
 Complimentary access (the `hasCurriculumAccess` flag) is visible and traceable: Admin > Accounts has a "Complimentary" tab and a badge on each such row, and every grant or removal is in the activity log (`access.grant` / `access.revoke`,
 naming the account), including the rare old curriculum payment that is approved late (`approveZellePayment`).

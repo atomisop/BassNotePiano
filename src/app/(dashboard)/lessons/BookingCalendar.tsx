@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
 
 /**
  * Adapted from a 21st.dev/shadcnblocks "cal.com-style" bento calendar demo,
@@ -142,9 +143,7 @@ export function BookingCalendar({
             aria-label="Previous month"
             className={buttonVariants({ variant: "secondary", size: "iconSm" })}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -153,9 +152,7 @@ export function BookingCalendar({
             aria-label="Next month"
             className={buttonVariants({ variant: "secondary", size: "iconSm" })}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

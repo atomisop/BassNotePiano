@@ -3,7 +3,7 @@
 import { GlassSlider } from "@/components/ui/GlassSlider";
 import { GlassBubbles } from "@/components/ui/GlassBubbles";
 import { useEffect, useRef, useState } from "react";
-import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "@/components/ui/appIcons";
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0:00";

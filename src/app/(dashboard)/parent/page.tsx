@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Flame, Plus } from "lucide-react";
+import { ArrowRight, Flame, Plus } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";

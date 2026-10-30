@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/ui/appIcons";
 import { listDirectory, type PersonKind } from "@/lib/contacts";
 import { INSTRUMENT_LABEL } from "@/lib/classRegistrationLabels";
 import { Card } from "@/components/ui/Card";

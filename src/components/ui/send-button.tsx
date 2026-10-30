@@ -3,7 +3,7 @@
 // From 21st.dev (serafimcloud/send-button). Only the colors are mapped to this
 // app's tokens, and it now renders inside a real <button> at the call site.
 import * as React from "react";
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp, Square } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 export type SendButtonProps = {

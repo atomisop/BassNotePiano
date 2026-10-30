@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Link2Off, Send, X } from "lucide-react";
+import { ArrowRight, Check, Link2Off, Send, X } from "@/components/ui/appIcons";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
 import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";

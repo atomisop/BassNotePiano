@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { PrimaryInstrument } from "@prisma/client";
-import { ArrowLeft, Check, Circle, KeyRound, Layers, ListChecks, Lock, NotebookPen, PanelLeftClose, PanelLeftOpen, Table2, Timer, FileText, X } from "lucide-react";
+import { ArrowLeft, Check, Circle, KeyRound, Layers, ListChecks, Lock, NotebookPen, PanelLeftClose, PanelLeftOpen, Table2, Timer, FileText, X } from "@/components/ui/appIcons";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
 import type { CourseLessonWithProgress } from "@/lib/courseContent";
 import type { RootKey } from "@/lib/music-theory";

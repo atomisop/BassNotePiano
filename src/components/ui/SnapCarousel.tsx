@@ -2,7 +2,7 @@
 
 import { Children, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 // Adapted from the "Snap Carousel" on 21st.dev by ddoemonn (the drag-and-snap hook and the spring settings). Changed for this

@@ -5,7 +5,7 @@ import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "@/components/ui/appIcons";
 import { getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
-import { EyeOff, Eye, Pencil, Trash2 } from "lucide-react";
+import { EyeOff, Eye, Pencil, Trash2 } from "@/components/ui/appIcons";
 import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";

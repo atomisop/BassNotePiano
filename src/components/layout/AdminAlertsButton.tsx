@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Siren } from "lucide-react";
+import { AlertTriangle } from "@/components/ui/appIcons";
 import type { SidebarCard } from "@/lib/sidebarCards";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 
@@ -46,7 +46,7 @@ export function AdminAlertsButton({ cards }: { cards: SidebarCard[] }) {
           open ? "text-signal-fg shadow-pressed-low" : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >
-        <Siren className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />
+        <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />
         {attention > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-[0.625rem] font-bold text-slate-950">
             {attention > 9 ? "9+" : attention}

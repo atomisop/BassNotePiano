@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/appIcons";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 
 /**

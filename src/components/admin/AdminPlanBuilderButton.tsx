@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Wrench, X } from "lucide-react";
+import { Plus, Wrench, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";

@@ -4,7 +4,7 @@ import { useWebOtp } from "@/lib/useWebOtp";
 import { Hint } from "@/components/ui/Hint";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Phone } from "lucide-react";
+import { Phone } from "@/components/ui/appIcons";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useResendCooldown } from "@/hooks/useResendCooldown";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, MapPin, Pencil, Undo2, Video, X } from "lucide-react";
+import { Check, MapPin, Pencil, Undo2, Video, X } from "@/components/ui/appIcons";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";

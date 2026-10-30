@@ -6,6 +6,7 @@ import { ctaLabel } from "@/lib/ctaLabel";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Checklist, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
+import { ArrowRight } from "@/components/ui/appIcons";
 
 const gridContainer = {
   hidden: {},
@@ -94,18 +95,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
                 {locked && <LockIcon />}
                 {ctaLabel(scale)}
                 {!locked && (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden
-                    className="transition-transform group-hover:translate-x-0.5"
-                  >
-                    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" size={14} />
                 )}
               </span>
             </button>

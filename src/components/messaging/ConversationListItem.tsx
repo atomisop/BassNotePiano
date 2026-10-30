@@ -29,7 +29,7 @@ export function ConversationListItem({
   return (
     <div
       className={`group flex items-center rounded-2xl transition ${
-        active ? "bg-neu-base shadow-pressed-low" : "hover:shadow-raised-low"
+        active ? "bg-signal/12" : "hover:bg-slate-800/40"
       }`}
     >
       <button type="button" onClick={onSelect} className="tap flex min-w-0 flex-1 items-center gap-3 p-3 text-left">

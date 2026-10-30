@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
@@ -340,13 +340,17 @@ export function NewPlanForm({
       {isFamily && (
         <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
           {parent && !parent.only && (
-            <div className="mb-4 flex gap-2" role="group" aria-label="Kind of plan">
-              <button type="button" aria-pressed={!parentMode} onClick={() => setParentMode(false)} className={buttonVariants({ variant: "secondary", size: "sm", className: !parentMode ? "shadow-pressed-low! text-signal-fg!" : "" })}>
-                Group
-              </button>
-              <button type="button" aria-pressed={parentMode} onClick={() => setParentMode(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: parentMode ? "shadow-pressed-low! text-signal-fg!" : "" })}>
-                Parent mode
-              </button>
+            <div className="mb-4 flex items-center gap-2">
+              {/* The same one-track switch as "Just me / Me and others": one highlight, so it is always clear which kind is on. */}
+              <Tabs
+                label="Kind of plan"
+                items={[
+                  { id: "GROUP", label: "Group" },
+                  { id: "PARENT", label: "Parent mode" },
+                ]}
+                value={parentMode ? "PARENT" : "GROUP"}
+                onChange={(next) => setParentMode(next === "PARENT")}
+              />
               <Hint>Group: you hold the one weekly class time, and everyone else books their own. Parent mode: the weekly time is your child&apos;s, and you can see and change their schedule from your account.</Hint>
             </div>
           )}
