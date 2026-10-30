@@ -187,7 +187,15 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
               {!isEmail && thread.subject ? `${thread.subject} · ` : ""}
               {isEmail && thread.contactName ? `${thread.contactName} · ` : ""}
               {thread.contactEmail}
-              {thread.user && <> · has an account{thread.user.username ? ` (@${thread.user.username})` : ""}</>}
+              {thread.user && (
+                <>
+                  {" · "}
+                  {/* Straight to their account (plan, credits, classes) without searching for them. */}
+                  <Link href={`/admin/users/${thread.user.id}`} className="font-medium text-slate-300 underline underline-offset-4 hover:text-slate-50">
+                    Open their account{thread.user.username ? ` (@${thread.user.username})` : ""}
+                  </Link>
+                </>
+              )}
             </p>
             {thread.assignedTo && (
               <p className="mt-0.5 truncate text-small font-medium text-slate-50">

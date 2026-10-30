@@ -9,6 +9,8 @@ export interface TodayStudent {
   studentId: string;
   name: string;
   status: string;
+  /** The mark already made for this class, if any. */
+  attendance: "PRESENT" | "NO_SHOW" | null;
   inPerson: boolean;
   firstClass: boolean;
   discord: { connected: boolean; name: string | null };
@@ -38,6 +40,7 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
       id: true,
       scheduledAt: true,
       status: true,
+      attendance: true,
       inPerson: true,
       schedule: { select: { label: true } },
       student: {
@@ -82,6 +85,7 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
       studentId: s.id,
       name: s.name ?? s.email,
       status: b.status,
+      attendance: b.attendance ?? null,
       inPerson: b.inPerson,
       firstClass: (done.get(s.id) ?? 0) === 0,
       discord: discordLinkState({ discordId: s.discordId, discordUsername: s.discordUsername }),

@@ -3,6 +3,8 @@ import { getTeachingDay } from "@/lib/teachingToday";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CalendarCheck } from "@/components/ui/appIcons";
+import { TodayAttendance } from "@/components/admin/TodayAttendance";
+import { markAttendanceAction, undoAttendanceAction } from "../schedule/actions";
 
 export const metadata = { title: "Admin: Today" };
 export const dynamic = "force-dynamic";
@@ -48,7 +50,8 @@ export default async function AdminTodayPage() {
                 </h2>
                 <ul className="glass-surface mt-2 divide-y divide-slate-50/10 px-4">
                   {slot.students.map((s) => (
-                    <li key={s.bookingId} className="py-3">
+                    <li key={s.bookingId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <Link href={`/admin/users/${s.studentId}`} className="text-body font-medium text-slate-50 underline-offset-4 hover:underline">{s.name}</Link>
                         {s.firstClass && <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-200 shadow-pressed-low">First class</span>}
@@ -77,6 +80,18 @@ export default async function AdminTodayPage() {
                           {s.note.body.length > 160 ? `${s.note.body.slice(0, 160)}…` : s.note.body}
                         </p>
                       )}
+                      </div>
+                      {/* Marked right here on a teaching day: no trip to Schedule > Attendance. */}
+                      <div className="shrink-0">
+                        <TodayAttendance
+                          bookingId={s.bookingId}
+                          name={s.name}
+                          attendance={s.attendance}
+                          started={slot.startsAt.getTime() <= now.getTime()}
+                          onMark={markAttendanceAction}
+                          onUndo={undoAttendanceAction}
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -87,8 +102,8 @@ export default async function AdminTodayPage() {
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link href="/admin/schedule?view=ATTENDANCE" className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Mark attendance</Link>
         <Link href="/admin/schedule" className={buttonVariants({ variant: "secondary", size: "sm" })}>Weekly schedule</Link>
+        <Link href="/admin/schedule?view=ATTENDANCE" className={buttonVariants({ variant: "ghost", size: "sm" })}>Earlier classes to mark</Link>
       </div>
     </div>
   );
