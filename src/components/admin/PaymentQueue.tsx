@@ -10,6 +10,8 @@ import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckCheck } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
@@ -236,9 +238,7 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <div className="glass-surface p-8 text-center text-small text-slate-500">
-        {emptyMessage}
-      </div>
+      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New payments show up here as soon as they come in." />
     );
   }
 

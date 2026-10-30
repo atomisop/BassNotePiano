@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import type { AdminClassRegistration } from "@/lib/classRegistration";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckCheck } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
 
@@ -71,7 +73,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   }
 
   if (registrations.length === 0) {
-    return <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>;
+    return <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New applications show up here as soon as they come in." />;
   }
 
   return (

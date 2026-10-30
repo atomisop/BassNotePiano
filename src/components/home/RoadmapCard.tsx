@@ -60,7 +60,7 @@ export function RoadmapCard({
 }
 
 /** A row of piano keys fading up from the bottom of the card, like a horizon. */
-function RoadmapKeys() {
+export function RoadmapKeys() {
   const white = 14;
   const blackAfter = [0, 1, 3, 4, 5, 7, 8, 10, 11, 12];
   return (

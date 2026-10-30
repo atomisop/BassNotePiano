@@ -269,25 +269,26 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </div>
               </div>
             ) : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                {/* Compact actions at the end of the plan, not full-width bars: Resend is the everyday one, Cancel stays quiet. */}
                 {onResendBill && (
                   <>
                     <button
                       type="button"
                       onClick={() => handleResend(plan.id)}
                       disabled={busyId === plan.id}
-                      className={buttonVariants({ variant: "secondary", className: "w-full" })}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                     >
                       {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}
                     </button>
-                    {billNote?.id === plan.id && <p className={`text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
+                    {billNote?.id === plan.id && <p className={`basis-full text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
                   </>
                 )}
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className="tap w-full rounded-full py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
                 >
                   Cancel plan
                 </button>

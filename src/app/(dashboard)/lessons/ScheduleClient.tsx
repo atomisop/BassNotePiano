@@ -172,11 +172,11 @@ export function ScheduleClient({
 
       {/* Your classes */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-small font-medium uppercase tracking-caps text-slate-400">Your classes</p>
+        <h2 className="text-title font-semibold text-slate-50">Your classes</h2>
         {upcomingBookings.length === 0 ? (
           <p className="mt-3 text-small text-slate-500">Nothing booked yet.</p>
         ) : (
-          <div className="mt-3 space-y-2.5">
+          <div className="mt-2 divide-y divide-slate-50/8">
             {upcomingBookings.map((booking) => {
               const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
               const insideCutoff = hoursUntil < cancellationCutoffHours;
@@ -184,7 +184,7 @@ export function ScheduleClient({
               const confirming = confirmSkipId === booking.id;
               const busy = skippingId === booking.id;
               return (
-                <div key={booking.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+                <div key={booking.id} className="py-4 first:pt-2 last:pb-1">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>

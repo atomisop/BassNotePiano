@@ -207,10 +207,10 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         animate={{ scale: narrow ? 0.84 : 1, y: narrow ? 6 : 0 }}
         transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 22, mass: 0.9 }}
         style={{ transformOrigin: "50% 100%" }}
-        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-2xl px-[5px] py-[5px]"
+        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
       >
-        {/* A flat frosted pane: square-ish corners to match the dock, a thin edge and a gentle bend, so it reads as matte glass, not a bulge. */}
-        <GlassLens radius={16} bezel={6} strength={4} magnify={0} blur={14} />
+        {/* A flat frosted pane: a pill like the dock, a thin edge and a gentle bend, so it reads as matte glass, not a bulge. */}
+        <GlassLens radius="full" bezel={6} strength={4} magnify={0} blur={14} />
         {NAV_ITEMS.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
@@ -238,13 +238,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     }
               }
               data-tour={"dataTour" in item ? item.dataTour : undefined}
-              className="tap relative flex h-full items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="tap relative flex h-full items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {active && (
                 <motion.span
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-xl"
+                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-full"
                 />
               )}
               <motion.span
