@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { ThemePicker } from "@/components/theme/ThemePicker";
+import { AppearanceTiles } from "@/components/theme/AppearanceTiles";
 import { Switch } from "@/components/ui/switch";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -112,6 +112,8 @@ type Category = (typeof TABS)[number]["category"];
 function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] {
   const groups: { category: Category; tabs: (typeof TABS)[number][] }[] = [];
   for (const tab of TABS) {
+    // Appearance is not a screen of its own any more: its three choices sit right in the menu (AppearanceTiles). The tab stays for old links.
+    if (tab.id === "appearance") continue;
     const last = groups[groups.length - 1];
     if (last && last.category === tab.category) {
       last.tabs.push(tab);
@@ -256,6 +258,12 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
           </div>
         </div>
       ))}
+      <div className="mt-3">
+        <p className="px-3 pb-1 text-small font-semibold uppercase tracking-caps text-slate-500">Appearance</p>
+        <div className="px-2 pt-1 pb-2">
+          <AppearanceTiles compact />
+        </div>
+      </div>
       <div className="my-1 h-px bg-ink/10" />
       <SignOutButton />
     </nav>
@@ -311,6 +319,13 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
           </div>
         </section>
       ))}
+      {/* Like the Claude app's settings: the look is chosen right here, three pictures, no screen of its own. */}
+      <section>
+        <p className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500">Appearance</p>
+        <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+          <AppearanceTiles />
+        </div>
+      </section>
       <div className="overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
         <SignOutButton className="w-full rounded-none px-4 py-3 hover:shadow-none active:shadow-pressed-low" />
       </div>
@@ -537,9 +552,9 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
 function AppearanceSection() {
   return (
     <section>
-      <h2 className="text-title text-slate-50 font-semibold">Themes &amp; appearance</h2>
-      <div className="mt-6">
-        <ThemePicker />
+      <h2 className="text-title text-slate-50 font-semibold">Appearance</h2>
+      <div className="mt-6 max-w-md">
+        <AppearanceTiles />
       </div>
     </section>
   );

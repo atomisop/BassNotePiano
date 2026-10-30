@@ -131,7 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </Suspense>
       <DeckStack />
       <div className="lg:hidden">
-        <AppDock unreadMessageCount={unreadMessageCount} />
+        <AppDock unreadMessageCount={unreadMessageCount} ownerAdmin={isOwner} />
       </div>
       <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
       <CommandMenu isAdmin={isAdmin} />
