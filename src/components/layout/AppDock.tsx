@@ -208,11 +208,12 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
           capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
           words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
       {/* Scrolling down shrinks the whole dock (both ways, toward the bottom) and scrolling back up grows it again, on a spring so it
-          overshoots a touch, like the dock first did. */}
+          overshoots a touch, like the dock first did. One full transform string, not the scale/y shortcuts: Framer Motion can hand a
+          whole transform to the browser's compositor, so the dock stays smooth while the page is busy scrolling. */}
       <motion.div
         data-glass=""
         initial={false}
-        animate={{ scale: narrow ? 0.84 : 1, y: narrow ? 6 : 0 }}
+        animate={{ transform: narrow ? "translateY(6px) scale(0.84)" : "translateY(0px) scale(1)" }}
         transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 22, mass: 0.9 }}
         style={{ transformOrigin: "50% 100%" }}
         className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
@@ -263,7 +264,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
                 className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
               >
                 <DockGlyphIcon glyph={glyph} active={active} />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040]" />}
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-unread" />}
               </motion.span>
 
             </Link>

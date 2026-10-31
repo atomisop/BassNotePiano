@@ -246,7 +246,8 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   const visibleIndex = TOUR_STEPS.slice(0, stepIndex + 1).filter((s) => !s.target || findVisibleTarget(s.target)).length;
   const visibleTotal = TOUR_STEPS.filter((s) => !s.target || findVisibleTarget(s.target)).length;
 
-  const transitionClass = reducedMotion ? "" : "transition-all duration-300 ease-out";
+  // Only what moves between steps (the spotlight and the card change place and size), so nothing else on them is ever animated by accident.
+  const transitionClass = reducedMotion ? "" : "transition-[top,left,right,bottom,width,height] duration-300 ease-(--ease-ios)";
 
   return createPortal(
     <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[60] outline-none" role="dialog" aria-modal="true" aria-label="App tour">

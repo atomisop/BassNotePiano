@@ -4,6 +4,7 @@ import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
@@ -274,11 +275,18 @@ export function PaymentQueue({
         ]}
         extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
       />
-      <ViewMore items={shown} initial={8}>
+      <ViewMore items={shown} initial={8} animateRemovals>
       {(payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
-        <div key={payment.id} className="glass-surface p-5">
+        // A row that leaves the list (approved, rejected or deleted, once the page refreshes) folds away in 200ms instead of vanishing,
+        // so the rows below slide up into its place rather than jump. A row that stays (its status just changed) does not move.
+        <motion.div
+          key={payment.id}
+          exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
+          transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          className="glass-surface p-5"
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-2">
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
@@ -542,7 +550,7 @@ export function PaymentQueue({
                 Delete
               </button>
             ))}
-        </div>
+        </motion.div>
         );
       }}
       </ViewMore>

@@ -34,7 +34,7 @@ export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; fla
     <div className="mx-auto mb-4 w-full max-w-wide rounded-2xl bg-neu-base px-4 py-3 shadow-raised-low">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <DiscordIcon size={22} className="shrink-0 text-[#5865F2]" />
+          <DiscordIcon size={22} className="shrink-0 text-discord" />
           <div className="min-w-0">
             <p className="text-small font-semibold text-slate-50">{link.connected ? `Discord: ${discordUsername}` : "Connect Discord"}</p>
           </div>

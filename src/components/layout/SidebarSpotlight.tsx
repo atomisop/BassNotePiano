@@ -80,7 +80,7 @@ function DiscordCard() {
         <span className="link-star left-[82%] top-[30%] [animation-delay:0.7s]" />
         <span className="link-star left-[26%] top-[78%] [animation-delay:1.3s]" />
         <span className="link-star left-[70%] top-[80%] [animation-delay:0.3s]" />
-        <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-xl bg-[#5865F2] text-white shadow-raised-mid">
+        <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-xl bg-discord text-white shadow-raised-mid">
           <DiscordIcon size={24} />
         </span>
         <span className="flex items-center gap-1">
@@ -432,7 +432,7 @@ export function SidebarSpotlight({
               onClick={() => setIndex(i)}
               className="flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className={`block h-1.5 rounded-full transition-all ${s === current ? "w-4 bg-signal" : "w-1.5 bg-slate-600"}`} />
+              <span className={`block h-1.5 rounded-full transition-[width,background-color] duration-(--dur-base) ease-(--ease-ios) ${s === current ? "w-4 bg-signal" : "w-1.5 bg-slate-600"}`} />
             </button>
           ))}
         </div>

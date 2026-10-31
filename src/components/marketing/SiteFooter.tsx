@@ -55,7 +55,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className="tap mt-4 inline-flex items-center gap-2 text-small text-slate-500 transition hover:text-slate-50"
             >
-              <DiscordIcon size={18} className="text-[#5865F2]" />
+              <DiscordIcon size={18} className="text-discord" />
               Join our Discord
             </a>
           </div>
