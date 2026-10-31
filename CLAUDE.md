@@ -670,7 +670,7 @@ The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
 grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
 its `::before` in globals.css; milky white with near-black icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
-current tab that slides, bold 26px BNP icons (filled on the current tab), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
+current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
 down narrows it sideways. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
