@@ -6,6 +6,7 @@ import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearc
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { PendingZellePayment } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { formatDateTime } from "@/lib/classScheduleLabels";
@@ -452,6 +453,12 @@ export function PaymentQueue({
                 Approve
               </button>
             </div>
+          )}
+
+          {payment.status === "VERIFIED" && (
+            <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center text-small font-medium text-signal-fg hover:underline">
+              Receipt
+            </Link>
           )}
 
           {onRefund && payment.status === "VERIFIED" && (
