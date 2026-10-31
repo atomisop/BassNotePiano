@@ -30,7 +30,7 @@ function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next:
       aria-label="Also send this announcement by email"
       onClick={() => onChange(!checked)}
       className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-        checked ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-700"
+        checked ? "bg-amber-400" : "bg-slate-700"
       }`}
     >
       <span
@@ -80,7 +80,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
 
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body text-slate-50 font-semibold">New announcement</h2>
+      <h2 className="text-title text-slate-50 font-semibold">New announcement</h2>
 
       <div className="mt-4 space-y-3">
         <input
@@ -89,7 +89,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title, e.g. New scale added: Bati"
           maxLength={120}
-          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
         <textarea
           value={body}
@@ -97,7 +97,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           placeholder="Message…"
           maxLength={1000}
           rows={3}
-          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
       </div>
 
@@ -126,7 +126,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => setConfirmingEmail(false)}
               disabled={submitting}
-              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -193,7 +193,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             </span>
           </div>
           <p className="mt-1 text-small text-slate-400">{announcement.body}</p>
-          <p className="mt-2 text-small text-slate-600">
+          <p className="mt-2 text-small text-slate-500">
             {relativeTime(announcement.createdAt)} · {announcement.dismissedCount} of {totalUsers} dismissed
           </p>
         </div>
@@ -207,7 +207,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={() => setDeleting(false)}
               disabled={busy}
-              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -215,7 +215,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+              className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
             >
               {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}
@@ -265,7 +265,7 @@ export function AnnouncementManager({
       <ComposeForm totalUsers={totalUsers} onPublished={refresh} />
 
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">History</h2>
+        <h2 className="text-title text-slate-50 font-semibold">History</h2>
 
         <div className="mt-4 space-y-3">
           {initialAnnouncements.length === 0 ? (

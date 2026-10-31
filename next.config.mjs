@@ -15,10 +15,11 @@ const nextConfig = {
   // unused optional dependency is simply never touched.
   serverExternalPackages: ["resend"],
   experimental: {
-    // Next keeps a visited page's data in the browser for 30 seconds and reuses it on the next click, which showed stale
-    // payment statuses, Discord buttons and balances after something changed. Pages that depend on who is signed in are
-    // fetched fresh on every visit now.
-    staleTimes: { dynamic: 0, static: 30 },
+    // A visited page is reused for 30 seconds, so going back to a screen you just left is instant instead of waiting on the
+    // server and database again (a zero here made every click a full round trip, and the loading skeleton flashed on
+    // pages already seen). Staleness is bounded: every server action calls revalidatePath, which empties this cache,
+    // `announceChange` / router.refresh() do the same, and AutoRefresh re-fetches the open page every 30 seconds.
+    staleTimes: { dynamic: 30, static: 30 },
   },
 
   // Old URLs that no longer have a page of their own. Kept as redirects (in
@@ -29,6 +30,8 @@ const nextConfig = {
       { source: "/billing/credits", destination: "/lessons?tab=extra", permanent: false },
       { source: "/billing/curriculum", destination: "/billing/plans", permanent: false },
       { source: "/billing/curriculum/family", destination: "/billing/plans", permanent: false },
+      // The old one-payment family bundle page: families start on the payment plan page now ("Me and others").
+      { source: "/billing/lessons", destination: "/billing/plans", permanent: false },
       { source: "/admin/progress", destination: "/admin/users?filter=approval", permanent: false },
       { source: "/admin/credits", destination: "/admin/payments?tab=credits", permanent: false },
       { source: "/admin/announcements", destination: "/admin/messages?tab=announcements", permanent: false },
@@ -178,6 +181,8 @@ const nextConfig = {
           // reconsider.
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Content-Security-Policy", value: csp },
+          // Lets Chrome prepare the pages a person is about to open (see app/speculation-rules.json/route.ts).
+          { key: "Speculation-Rules", value: '"/speculation-rules.json"' },
         ],
       },
     ];
@@ -207,7 +212,9 @@ const nextConfig = {
 // currently-documented option; an earlier version of this used the
 // now-deprecated `disableLogger` flag, which Sentry's own dev-server output
 // flagged directly.
+// `removeTracing` (2026-10-31 speed pass): performance tracing is switched off (tracesSampleRate 0 in instrumentation-client.ts), so its
+// code is left out of every page's JavaScript; error reports are unaffected.
 export default withSentryConfig(nextConfig, {
   silent: true,
-  webpack: { treeshake: { removeDebugLogging: true } },
+  webpack: { treeshake: { removeDebugLogging: true, removeTracing: true } },
 });

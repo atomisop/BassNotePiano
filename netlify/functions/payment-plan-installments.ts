@@ -1,12 +1,12 @@
 import type { PaymentPlan, ZellePayment } from "@prisma/client";
 import { schedule } from "@netlify/functions";
 import { runJob } from "../../src/lib/jobRun";
+import { addBillingCycles } from "../../src/lib/billingCycle";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { sendPaymentPlanInvoiceEmail, getAppUrl } from "../../src/lib/email";
 import {
   getOrCreateOpenInstallmentPayment,
-  addCalendarMonthsClamped,
   lapsePlanForNonPayment,
 } from "../../src/lib/paymentPlans";
 import { getNumberSetting } from "../../src/lib/siteSettings";
@@ -61,10 +61,11 @@ async function notifyInstallment(
     // Same value approveZellePayment computes for this installment's own
     // CreditGrant.expiresAt at approval time, knowable ahead of approval
     // since only approval itself ever advances nextDueDate.
-    cycleEndsAt: addCalendarMonthsClamped(plan.nextDueDate, 1),
+    cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay your installment", url: getAppUrl("/billing/plans") },
     overdueDays,
+    unsubscribe: { userId: plan.userId, category: "payments" },
   }).catch((err) => console.error(`Installment invoice email failed for user ${plan.userId} (non-blocking):`, err));
 }
 

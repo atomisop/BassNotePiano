@@ -51,6 +51,23 @@ export function Tabs<const T extends string>({
     measure();
   }, [measure]);
 
+  // On a narrow screen the row scrolls sideways; when the chosen tab changes (a tap, or a deep link), bring it into view.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const btn = refs.current[itemsRef.current.findIndex((item) => item.id === value)];
+    const track = containerRef.current;
+    // Only the row itself scrolls (scrollIntoView also moves every scrolling parent, which slid the whole page sideways).
+    if (btn && track && track.scrollWidth > track.clientWidth) {
+      track.scrollTo({ left: btn.offsetLeft - (track.clientWidth - btn.offsetWidth) / 2, behavior: "smooth" });
+    }
+  }, [value]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;
@@ -85,8 +102,8 @@ export function Tabs<const T extends string>({
       {thumb && (
         <span
           aria-hidden
-          className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-neu-base shadow-raised-low transition-[left,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
-          style={{ left: thumb.left, width: thumb.width }}
+          className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-neu-base shadow-raised-low transition-[transform,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
+          style={{ transform: `translateX(${thumb.left}px)`, width: thumb.width }}
         />
       )}
       {items.map((item, i) => {
@@ -106,7 +123,7 @@ export function Tabs<const T extends string>({
           >
             {item.label}
             {item.count !== undefined && item.count > 0 && (
-              <span className={cn("tabular-nums", active ? "text-signal" : "text-slate-500")}>{item.count > 9 ? "9+" : item.count}</span>
+              <span className={cn("tabular-nums", active ? "text-signal-fg" : "text-slate-500")}>{item.count > 9 ? "9+" : item.count}</span>
             )}
           </button>
         );

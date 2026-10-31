@@ -59,7 +59,7 @@ export async function createAnnouncement(adminId: string, title: string, body: s
     // Announcements are messages from the studio: a person who turned off "Social" (Settings > Notification settings) is not emailed.
     for (const u of users.filter((user) => user.notifyEmailSocial && !user.bannedAt)) {
       try {
-        await sendPersonalEmail(u.email, trimmedTitle, trimmedBody, { firstName: u.name?.trim().split(/\s+/)[0] });
+        await sendPersonalEmail(u.email, trimmedTitle, trimmedBody, { firstName: u.name?.trim().split(/\s+/)[0], unsubscribe: { userId: u.id, category: "social" } });
       } catch (err) {
         console.error(`Failed to email user ${u.id} of announcement ${announcement.id}:`, err);
       }

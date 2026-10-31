@@ -151,11 +151,11 @@ export function CardDeck({
             aria-selected={i === active}
             aria-label={name}
             onClick={() => go(i)}
-            className="tap flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+            className="tap flex h-6 min-w-6 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
           >
             <span
               className={cn(
-                "block h-2 rounded-full transition-all duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none",
+                "block h-2 rounded-full transition-[width,background-color] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none",
                 i === active ? "w-5 bg-signal" : "w-2 bg-slate-600",
               )}
             />

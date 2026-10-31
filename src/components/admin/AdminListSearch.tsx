@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search } from "@/components/ui/appIcons";
 
 /**
  * Client-side search for the admin lists (STEP 4). Filters only what the

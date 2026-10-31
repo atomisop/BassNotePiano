@@ -29,6 +29,11 @@ async function account(label: string, name: string) {
 async function family(term: "MONTHLY" | "TERM_3" = "MONTHLY", emails?: string[], payerId?: string, slotId?: string) {
   const payer = payerId ? { id: payerId } : await account(`payer${userIds.length}`, "Parent Tester");
   const kid = emails ? null : await account(`kid${userIds.length}`, "Child Tester");
+  // Nobody is put on a family without saying yes: whoever the test asks for has accepted.
+  const asked = await prisma.user.findMany({ where: { email: { in: emails ?? [kid!.email] } }, select: { id: true } });
+  for (const other of asked) {
+    await prisma.familyInvite.upsert({ where: { payerId_inviteeId: { payerId: payer.id, inviteeId: other.id } }, create: { payerId: payer.id, inviteeId: other.id, status: "ACCEPTED" }, update: { status: "ACCEPTED", createdAt: new Date() } });
+  }
   return createFamilyPlans({
     payerId: payer.id,
     cadence: OFFERED_PLAN_CADENCE,
@@ -41,6 +46,7 @@ async function family(term: "MONTHLY" | "TERM_3" = "MONTHLY", emails?: string[],
 }
 
 afterAll(async () => {
+  await prisma.familyInvite.deleteMany({ where: { OR: [{ payerId: { in: userIds } }, { inviteeId: { in: userIds } }] } });
   await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.classBooking.deleteMany({ where: { studentId: { in: userIds } } });
@@ -52,10 +58,12 @@ afterAll(async () => {
 });
 
 describe("starting a family plan", () => {
-  it("creates one plan per person on one weekly time, and ONE combined first payment from the payer", async () => {
+  it("creates one plan per person, a weekly time for the payer only, and ONE combined first payment from the payer", async () => {
     const { group, plans, startPayment } = await family();
     expect(plans).toHaveLength(2);
-    expect(new Set(plans.map((p) => `${p.reservedScheduleId}:${p.reservedChunkIndex}`)).size).toBe(1);
+    // The weekly time is the payer's own. The other member books their own classes with their credits.
+    expect(plans.filter((p) => p.reservedScheduleId !== null).map((p) => p.userId)).toEqual([group.payerId]);
+    expect(plans.find((p) => p.userId !== group.payerId)?.reservedScheduleId).toBeNull();
     expect(plans.every((p) => p.familyGroupId === group.id && p.installmentsPaid === 0)).toBe(true);
     const each = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, "MONTHLY", 2).perStudentMonthlyCents;
     expect(plans.every((p) => p.installmentAmountCents === each)).toBe(true);
@@ -158,22 +166,26 @@ describe("a family that never starts ends together", () => {
 describe("members cannot change a family plan on their own", () => {
   it("refuses a term change", async () => {
     const { plans } = await family();
-    await expect(changePaymentPlanTerm(plans[1].userId, "TERM_3")).rejects.toThrow(/family plan/i);
+    await expect(changePaymentPlanTerm(plans[1].userId, "TERM_3")).rejects.toThrow(/(family|group) plan/i);
   });
 });
 
-describe("everyone in a family is in the same class", () => {
-  it("books each member into the same weekly class as one party", async () => {
+describe("a family is not a group class", () => {
+  it("books only the payer's weekly class, and gives the other member credits that expire to book with", async () => {
     const { plans, startPayment, group } = await family();
     await submitZellePaymentReference(group.payerId, startPayment.id, { senderName: "Parent Tester" });
     await approveZellePayment(startPayment.id, null);
-    const bookings = await prisma.classBooking.findMany({ where: { studentId: { in: plans.map((p) => p.userId) }, status: "SCHEDULED" } });
-    expect(bookings.length).toBeGreaterThanOrEqual(2);
-    const first = bookings[0];
-    const sameClass = bookings.filter((b) => b.occurrenceDate.getTime() === first.occurrenceDate.getTime());
-    expect(new Set(sameClass.map((b) => b.studentId)).size).toBe(plans.length);
-    expect(new Set(sameClass.map((b) => b.familyBookingGroupId)).size).toBe(1);
-    expect(sameClass[0].familyBookingGroupId).toBe(group.id);
+    const member = plans.find((p) => p.userId !== group.payerId)!;
+    const payerBookings = await prisma.classBooking.count({ where: { studentId: group.payerId, status: "SCHEDULED" } });
+    expect(payerBookings).toBeGreaterThanOrEqual(1);
+    // Nothing is booked for the member: they pick their own times.
+    expect(await prisma.classBooking.count({ where: { studentId: member.userId } })).toBe(0);
+    const grant = await prisma.creditGrant.findFirstOrThrow({ where: { userId: member.userId } });
+    expect(grant.expiresAt).not.toBeNull();
+    // Payment notices go to the person's Mail.
+    const note = await prisma.mailMessage.findFirstOrThrow({ where: { userId: member.userId, title: "Your group plan started" } });
+    expect(note.body).toMatch(/expire/i);
+    expect(note.body).toMatch(/pick your own class times/i);
   });
 });
 
@@ -185,8 +197,13 @@ describe("switching from a plan of your own", () => {
     });
     return { adam, plan };
   }
-  const switchOf = (adamId: string, emails: string[], extra: Partial<Parameters<typeof createFamilyPlans>[0]> = {}) =>
-    createFamilyPlans({ payerId: adamId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", zelleHandle: "pay@example.com", memberEmails: emails, verifiedSwitch: true, ...extra });
+  const switchOf = async (adamId: string, emails: string[], extra: Partial<Parameters<typeof createFamilyPlans>[0]> = {}) => {
+    const asked = await prisma.user.findMany({ where: { email: { in: emails } }, select: { id: true } });
+    for (const other of asked) {
+      await prisma.familyInvite.upsert({ where: { payerId_inviteeId: { payerId: adamId, inviteeId: other.id } }, create: { payerId: adamId, inviteeId: other.id, status: "ACCEPTED" }, update: { status: "ACCEPTED", createdAt: new Date() } });
+    }
+    return createFamilyPlans({ payerId: adamId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", zelleHandle: "pay@example.com", memberEmails: emails, verifiedSwitch: true, ...extra });
+  };
 
   it("needs the password-and-code check, and leaves the old plan alone until the family's first payment is approved", async () => {
     const slot = await newSlot();
@@ -198,8 +215,8 @@ describe("switching from a plan of your own", () => {
     expect(group.replacesPlanId).toBe(plan.id);
     expect(plans).toHaveLength(1); // only Emma's plan exists now
     expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("ACTIVE");
-    // The old plan's weekly time is the family's weekly time, with no second plan for Adam yet.
-    expect(plans[0].reservedScheduleId).toBe(slot);
+    // The old plan's weekly time stays Adam's own; Emma's plan holds none (she books with her credits). No second plan for Adam yet.
+    expect(plans[0].reservedScheduleId).toBeNull();
     expect(await prisma.paymentPlan.count({ where: { userId: adam.id, status: "ACTIVE" } })).toBe(1);
 
     await submitZellePaymentReference(adam.id, startPayment.id, { senderName: "Adam Switcher" });

@@ -18,14 +18,25 @@ const MESSAGES: Record<string, { text: string; good: boolean }> = {
 export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; flag?: string }) {
   const message = flag ? MESSAGES[flag] : undefined;
   const discordUsername = link.name;
+  // Not connected: one button, nothing else to read. Connected: the name and a way to disconnect.
+  if (!link.connected) {
+    return (
+      <div className="mx-auto mb-4 w-full max-w-wide">
+        <DiscordConnectLink className={buttonVariants({ variant: "primary", size: "sm", className: "w-full gap-2 sm:w-auto" })}>
+          <DiscordIcon size={18} className="shrink-0" />
+          Connect Discord
+        </DiscordConnectLink>
+        {message && <p className={`mt-2 text-small ${message.good ? "text-slate-300" : "text-red-400"}`}>{message.text}</p>}
+      </div>
+    );
+  }
   return (
-    <div className="mx-auto mb-4 w-full max-w-wide rounded-2xl bg-neu-base p-4 shadow-raised-low">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <DiscordIcon size={22} className="mt-0.5 shrink-0 text-[#5865F2]" />
-          <div>
+    <div className="mx-auto mb-4 w-full max-w-wide rounded-2xl bg-neu-base px-4 py-3 shadow-raised-low">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <DiscordIcon size={22} className="shrink-0 text-discord" />
+          <div className="min-w-0">
             <p className="text-small font-semibold text-slate-50">{link.connected ? `Discord: ${discordUsername}` : "Connect Discord"}</p>
-            <p className="text-small text-slate-500">{link.connected ? "Your class call is made for you." : "Needed for your private class call. Joining the server by the invite alone does not connect you: press Connect Discord."}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">

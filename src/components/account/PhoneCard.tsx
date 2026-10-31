@@ -1,13 +1,16 @@
 "use client";
 
+import { useWebOtp } from "@/lib/useWebOtp";
+import { Hint } from "@/components/ui/Hint";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Phone } from "lucide-react";
+import { Phone } from "@/components/ui/appIcons";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useResendCooldown } from "@/hooks/useResendCooldown";
 import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, savePhoneAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
 import { announceChange } from "@/lib/liveEvents";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 export interface PhoneState {
   phone: string | null;
@@ -20,8 +23,8 @@ export interface PhoneState {
 }
 
 const input = "w-full rounded-lg bg-neu-base px-3 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500";
-const primary = "tap inline-flex items-center gap-2 rounded-lg bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
-const plainBtn = "tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
+const primary = "tap inline-flex items-center gap-2 rounded-full bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
+const plainBtn = "tap rounded-full bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
 
 /** Add, confirm, change or remove the account's phone number. The number only counts once its text code is entered. */
 export function PhoneCard({ state }: { state: PhoneState }) {
@@ -36,6 +39,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   const [number, setNumber] = useState(state.pendingPhone ?? (plain ? "" : state.phone ?? ""));
   const [pending, setPending] = useState(state.pendingPhone);
   const [code, setCode] = useState("");
+  useWebOtp(mode === "code", setCode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -121,23 +125,25 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   return (
     <div ref={ref} data-phone-card className="glass-surface p-6">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-body font-semibold text-slate-50">Phone number</h2>
+        <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
+          Phone number
+          <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
+        </h2>
         {mode === "view" && state.phone && (
-          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
             {state.verified ? "Verified" : "Saved"}
           </span>
         )}
       </div>
 
       <div className="mt-4 space-y-3">
-          {done && <p role="status" className="text-small text-signal">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
+          {done && <p role="status" className="text-small text-signal-fg">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
 
           {mode === "view" && (
             <>
               <p className="flex items-center gap-2 text-body text-slate-100">
                 <Phone className="h-4 w-4 text-slate-500" strokeWidth={1.5} /> {shown}
               </p>
-              {plain && <p className="text-small text-slate-500">We use it to help match your payments and reach you. It is never shared.</p>}
               <div className="flex flex-wrap gap-2">
                 <button type="button" className={plainBtn} onClick={() => { setDone(false); setNumber(""); setMode("number"); }}>
                   Change number
@@ -153,14 +159,6 @@ export function PhoneCard({ state }: { state: PhoneState }) {
 
           {mode === "number" && (
             <>
-              <p className="text-small text-slate-500">
-                {plain
-                  ? "Add the number you use for Zelle and calls. We use it to help match your payments."
-                  : state.verified
-                    ? "Enter your new number. Your current one stays until the new one is confirmed."
-                    : "Add a number and confirm it with a 6-digit text."}{" "}
-                {PHONE_HELP}
-              </p>
               <input
                 type="tel"
                 inputMode="tel"
@@ -193,10 +191,10 @@ export function PhoneCard({ state }: { state: PhoneState }) {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 aria-label="6-digit code"
                 placeholder="······"
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className={`${input} h-12 text-center font-mono tracking-[0.5em] font-semibold`}
               />

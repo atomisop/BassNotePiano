@@ -4,9 +4,9 @@ import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
-import { BackLink } from "@/components/ui/BackLink";
+import { PageBack } from "@/components/ui/BackLink";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
-  PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  PENDING_REVIEW: "bg-slate-50/15 text-slate-50",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
@@ -77,12 +77,11 @@ export default async function BillingHistoryPage() {
 
   return (
     <div>
-      <BackLink href="/account" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/account" />
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Billing</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
+      </div>
 
       {payments.length === 0 ? (
         <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">
@@ -96,9 +95,9 @@ export default async function BillingHistoryPage() {
             <div key={payment.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
+                  <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
-                  <p className="mt-1 text-small text-slate-600">
+                  <p className="mt-1 text-small text-slate-400">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
@@ -121,6 +120,12 @@ export default async function BillingHistoryPage() {
               )}
               {payment.referenceCode && (
                 <p className="mt-3 font-mono text-small text-slate-500">Ref: {payment.referenceCode}</p>
+              )}
+              {payment.status === "VERIFIED" && (
+                <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center gap-1 text-small font-medium text-signal-fg hover:underline">
+                  Receipt
+                  <ChevronRight aria-hidden className="h-4 w-4" />
+                </Link>
               )}
               {payment.status === "REJECTED" && payment.rejectionReason && (
                 <p className="mt-2 text-small text-red-400">Reason: {payment.rejectionReason}</p>

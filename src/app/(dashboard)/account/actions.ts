@@ -4,6 +4,8 @@ import { passwordRequirementError } from "@/lib/passwordRules";
 import { removeDiscordPresence } from "@/lib/discordCleanup";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
+import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
@@ -13,9 +15,11 @@ import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
+import { consumeRateLimit, RateLimitError as RateLimitErr } from "@/lib/rateLimit";
+import { TwoStepError, beginSetup, confirmSetup, disableTwoStep, regenerateBackupCodes } from "@/lib/adminTwoStep";
 import { sendPasswordChangedEmail } from "@/lib/email";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
+import { changePaymentPlanTerm, cancelPaymentPlanBySelf, pausePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 
 
 /** Every action here operates on the signed-in user only, never on an email passed by the client. */
@@ -137,8 +141,42 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 export async function signOutOtherDevicesAction() {
   const { id } = await requireSession();
   await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } } });
+  // The devices that were just signed out no longer belong in the list; this one stays. If one signs in again it is a new device.
+  const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
+  await prisma.knownDevice.deleteMany({ where: { userId: id, ...(mine ? { id: { not: mine } } : {}) } });
   await noticeAccountChange(id, { kind: "signed-out-everywhere", by: "you" });
   return { ok: true as const };
+}
+
+export interface SignedInDevice {
+  id: string;
+  label: string;
+  kind: "Phone" | "Tablet" | "Computer";
+  place: string | null;
+  signedInAt: string;
+  lastSeenAt: string;
+  active: boolean;
+  isThisDevice: boolean;
+}
+
+/** Where this account is signed in: device, rough place (never the IP), when it signed in, and whether it is open right now. */
+export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
+  const { id } = await requireSession();
+  const [rows, mine] = await Promise.all([
+    prisma.knownDevice.findMany({ where: { userId: id }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
+    currentDeviceId(id, (await headers()).get("user-agent")),
+  ]);
+  const now = Date.now();
+  return rows.map((d) => ({
+    id: d.id,
+    label: d.label,
+    kind: deviceKind(d.label),
+    place: placeLabel(d),
+    signedInAt: d.signedInAt.toISOString(),
+    lastSeenAt: d.lastSeenAt.toISOString(),
+    active: now - d.lastSeenAt.getTime() < DEVICE_ACTIVE_MS || d.id === mine,
+    isThisDevice: d.id === mine,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -224,9 +262,30 @@ export interface NotificationPreferencesInput {
 
 export async function updateNotificationPreferencesAction(input: NotificationPreferencesInput) {
   const { id } = await requireSession();
-  await prisma.user.update({ where: { id }, data: input });
+  // Named fields only, each forced to a boolean. A server action receives whatever object the browser posts (the
+  // interface above is not checked at runtime), so `data: input` once let a signed-in student also write `role`,
+  // `email`, `emailVerified` or any other column of their own row.
+  await prisma.user.update({
+    where: { id },
+    data: {
+      notifyEmailPayments: input?.notifyEmailPayments === true,
+      notifyEmailRoleUpdates: input?.notifyEmailRoleUpdates === true,
+      notifyEmailSocial: input?.notifyEmailSocial === true,
+      notifyEmailReminders: input?.notifyEmailReminders === true,
+      notifyEmailClasses: input?.notifyEmailClasses === true,
+    },
+  });
   // Practice reminders also decide the practice banner, and the shell is where the banners are decided.
   revalidatePath("/", "layout");
+  return { ok: true as const };
+}
+
+/** Settings > Privacy and the leaderboard screen: take yourself off (or put yourself back on) the studio leaderboard. */
+export async function setLeaderboardHiddenAction(hidden: boolean) {
+  const { id } = await requireSession();
+  await prisma.user.update({ where: { id }, data: { hideFromLeaderboard: hidden === true } });
+  revalidatePath("/leaderboard");
+  revalidatePath("/dashboard");
   return { ok: true as const };
 }
 
@@ -339,6 +398,7 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
         title: "A student deleted their account",
         body: `${target?.name ?? target?.email ?? "A student"} deleted their account, so ${upcomingClasses} upcoming class${upcomingClasses === 1 ? " was" : "es were"} removed from the schedule.`,
         emailCategory: "social",
+        href: "/admin/users",
       }).catch((err) => console.error("Account deletion alert failed (non-blocking):", err));
     }
 
@@ -376,6 +436,18 @@ export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
   }
 }
 
+export async function pausePaymentPlanAction(weeks: number) {
+  const { id } = await requireSession();
+  try {
+    const { resumesOn } = await pausePaymentPlan(id, Number(weeks));
+    revalidatePath("/", "layout");
+    return { ok: true as const, error: null, resumesOn: resumesOn.toISOString() };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message, resumesOn: null };
+    throw err;
+  }
+}
+
 export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReason, reasonNote: string | null) {
   const { id } = await requireSession();
   try {
@@ -386,4 +458,47 @@ export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReas
     if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
     throw err;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Admin two-step sign-in (authenticator app). Admin only; the library refuses anyone else.
+// ---------------------------------------------------------------------------
+
+export type TwoStepResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+
+async function twoStepCall<T extends object>(work: (userId: string) => Promise<T>): Promise<TwoStepResult<T>> {
+  try {
+    const { id } = await requireSession();
+    await consumeRateLimit(prisma, `admin-2fa:${id}`, { windowMinutes: 15, max: 12, message: "Too many tries. Wait a few minutes." });
+    return { ok: true, ...(await work(id)) };
+  } catch (err) {
+    if (err instanceof TwoStepError || err instanceof RateLimitError || err instanceof RateLimitErr) return { ok: false, error: err.message };
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("ADMIN_TOTP_ENCRYPTION_KEY")) return { ok: false, error: "Two-step sign-in is not set up on the server yet (the encryption key is missing)." };
+    console.error("Admin two-step action failed:", err);
+    return { ok: false, error: "Something went wrong. Try again." };
+  }
+}
+
+export async function twoStepBeginAction() {
+  return twoStepCall((id) => beginSetup(id));
+}
+
+export async function twoStepConfirmAction(code: string) {
+  const result = await twoStepCall(async (id) => ({ backupCodes: await confirmSetup(id, code) }));
+  if (result.ok) revalidatePath("/account");
+  return result;
+}
+
+export async function twoStepDisableAction(password: string, code: string) {
+  const result = await twoStepCall(async (id) => {
+    await disableTwoStep(id, password, code);
+    return {};
+  });
+  if (result.ok) revalidatePath("/account");
+  return result;
+}
+
+export async function twoStepRegenerateAction(code: string) {
+  return twoStepCall(async (id) => ({ backupCodes: await regenerateBackupCodes(id, code) }));
 }

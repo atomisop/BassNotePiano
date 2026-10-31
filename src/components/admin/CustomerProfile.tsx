@@ -1,10 +1,11 @@
 "use client";
 
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Hammer } from "lucide-react";
+import { CalendarPlus, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -12,15 +13,22 @@ import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
+import { Tabs } from "@/components/ui/Tabs";
+import { formatEtShort } from "@/lib/classScheduleLabels";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
+  /** Shown at the bottom of the Support tab (the changes admins made on this account). */
+  changeLog?: React.ReactNode;
+  /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
+  scheduler?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
   onSetRole: (userId: string, role: Role) => Promise<void>;
   onAdjustCredits: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
-  onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
   /** Frees this account's phone number (a number belongs to one account). */
@@ -39,14 +47,14 @@ function formatDate(d: Date | string) {
 }
 
 function formatDateTime(d: Date | string) {
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatEtShort(d, { weekday: false });
 }
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+        <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
         {action}
       </div>
       <div className="mt-4">{children}</div>
@@ -117,18 +125,29 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
   );
 }
 
+type ProfileTab = "overview" | "learning" | "classes" | "scheduler" | "money" | "support";
+const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "learning", label: "Learning" },
+  { id: "classes", label: "Classes" },
+  { id: "scheduler", label: "Scheduler" },
+  { id: "money", label: "Money" },
+  { id: "support", label: "Support" },
+];
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-small text-slate-500">{children}</p>;
 }
 
 export function CustomerProfile({
   profile,
+  changeLog,
+  scheduler,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
   onSetRole,
   onAdjustCredits,
-  onCancelBooking,
   onForceSignOut,
   onForgetPayerName,
   onClearPhone,
@@ -140,6 +159,22 @@ export function CustomerProfile({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which group of sections is showing. Every section stays mounted (hidden, not removed), so a half-typed credit amount or an
+  // open confirmation survives a change of tab. The tab is kept in the address (#money) so a link or a refresh returns to it.
+  const [tab, setTab] = useState<ProfileTab>("overview");
+  useEffect(() => {
+    const fromAddress = () => {
+      const match = PROFILE_TABS.find((t) => t.id === window.location.hash.replace("#", ""));
+      if (match) setTab(match.id);
+    };
+    fromAddress();
+    window.addEventListener("hashchange", fromAddress);
+    return () => window.removeEventListener("hashchange", fromAddress);
+  }, []);
+  function chooseTab(next: ProfileTab) {
+    setTab(next);
+    window.history.replaceState(null, "", `#${next}`);
+  }
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [creditSuccess, setCreditSuccess] = useState<string | null>(null);
@@ -147,10 +182,10 @@ export function CustomerProfile({
   // amount is easy to typo (wrong sign, extra digit) and was previously one
   // submit away from changing a real balance with nothing to double-check.
   const [creditConfirming, setCreditConfirming] = useState(false);
-  const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
+  const [confirmingUnban, setConfirmingUnban] = useState(false);
+  const [confirmingClearPhone, setConfirmingClearPhone] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banSummary, setBanSummary] = useState<string | null>(null);
   // Role, curriculum-access, and clear-history all used to fire on a single
@@ -211,21 +246,6 @@ export function CustomerProfile({
     router.refresh();
   }
 
-  async function handleCancelBooking(bookingId: string) {
-    setBusy(true);
-    setError(null);
-    const result = await onCancelBooking(bookingId, cancelReason.trim() || undefined);
-    if (!result.ok) {
-      setError(result.error);
-      setBusy(false);
-      return;
-    }
-    setCancelingBookingId(null);
-    setCancelReason("");
-    setBusy(false);
-    router.refresh();
-  }
-
   async function handleBan() {
     setBusy(true);
     setError(null);
@@ -244,6 +264,7 @@ export function CustomerProfile({
     const result = await onUnban(user.id);
     setBusy(false);
     if (!result.ok) return setError(result.error);
+    setConfirmingUnban(false);
     router.refresh();
   }
 
@@ -251,9 +272,8 @@ export function CustomerProfile({
     <button
       type="button"
       disabled={busy}
-      onClick={() => {
-        if (window.confirm("Lift this ban? They will be able to sign in again.")) void handleUnban();
-      }}
+      onClick={() => setConfirmingUnban((o) => !o)}
+      aria-expanded={confirmingUnban}
       className={buttonVariants({ variant: "secondary", size: "sm" })}
     >
       Lift ban
@@ -271,28 +291,68 @@ export function CustomerProfile({
     </button>
   );
 
-  const upcomingBookings = profile.bookings.filter((b) => b.status === "SCHEDULED");
-  const pastBookings = profile.bookings.filter((b) => b.status !== "SCHEDULED");
 
   return (
     <div className="space-y-5">
       {error && (
-        <div className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-small text-red-300">{error}</div>
+        <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
+      {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
+        <QuickMessageButton userId={user.id} name={user.name ?? user.email} />
+        <button
+          type="button"
+          onClick={() => {
+            chooseTab("classes");
+            window.setTimeout(() => {
+              const input = document.getElementById("cp-amount");
+              input?.scrollIntoView({ behavior: "smooth", block: "center" });
+              input?.focus({ preventScroll: true });
+            }, 60);
+          }}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+        >
+          <Coins aria-hidden className="h-4 w-4" />
+          Add credits
+        </button>
+        <button type="button" onClick={() => chooseTab("scheduler")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          <CalendarPlus aria-hidden className="h-4 w-4" />
+          Book a class
+        </button>
+        <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+          <CreditCard aria-hidden className="h-4 w-4" />
+          Payments
+        </button>
+      </div>
+
+      <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
+
+      <div className="space-y-5">
+        <div hidden={tab !== "overview"} className="space-y-5">
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-small text-red-300">
+              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
               </div>
             )}
+            {confirmingUnban && user.bannedAt && (
+              <InlineConfirm
+                className="mb-4"
+                question="Lift this ban?"
+                detail="They will be able to sign in again. The plans and classes the ban canceled stay canceled."
+                confirmLabel="Yes, lift the ban"
+                busyLabel="Lifting…"
+                busy={busy}
+                onCancel={() => setConfirmingUnban(false)}
+                onConfirm={() => void handleUnban()}
+              />
+            )}
             {confirmingBan && !user.bannedAt && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+              <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
                 <p className="mt-1 text-small text-slate-300">
                   This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
@@ -306,7 +366,7 @@ export function CustomerProfile({
                   onChange={(e) => setBanReason(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
+                  className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
                   placeholder="Why, so you remember"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -324,27 +384,39 @@ export function CustomerProfile({
               <div className="text-small text-slate-400">
                 <p>{user.email}</p>
                 {user.username && <p className="mt-0.5 text-slate-500">@{user.username}</p>}
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
                   {user.phone && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm("Clear this phone number? It frees the number so its real owner can add it to their own account.")) void withBusy(() => onClearPhone(user.id));
-                      }}
-                      className="tap ml-2 text-[rgb(var(--c-s-50))] underline hover:opacity-70"
+                      onClick={() => setConfirmingClearPhone((o) => !o)}
+                      aria-expanded={confirmingClearPhone}
+                      className="tap ml-2 text-slate-50 underline hover:opacity-70"
                     >
                       Clear
                     </button>
                   )}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                {confirmingClearPhone && user.phone && (
+                  <InlineConfirm
+                    className="mt-2"
+                    danger
+                    question="Clear this phone number?"
+                    detail="It frees the number so its real owner can add it to their own account."
+                    confirmLabel="Yes, clear it"
+                    busyLabel="Clearing…"
+                    busy={busy}
+                    onCancel={() => setConfirmingClearPhone(false)}
+                    onConfirm={() => void withBusy(() => onClearPhone(user.id)).then(() => setConfirmingClearPhone(false))}
+                  />
+                )}
+                <p className="mt-1 text-small text-slate-500">
                   {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
                   {user.currentStreak}-day streak
                 </p>
@@ -352,7 +424,7 @@ export function CustomerProfile({
               <div className="flex flex-wrap gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low text-slate-400"
+                    user.role === "ADMIN" ? "bg-slate-50/15 text-slate-50" : "bg-neu-base shadow-pressed-low text-slate-400"
                   }`}
                 >
                   {user.role}
@@ -369,7 +441,7 @@ export function CustomerProfile({
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
                     ? "Remove complimentary access?"
                     : "Give complimentary curriculum access?"}
@@ -398,7 +470,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account? They are signed out right away."
                     : "Make this account an admin? They will be able to manage payments, users and credits."}
@@ -427,7 +499,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "history" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Permanently delete this account&apos;s stored Atom history?
                   <button
                     type="button"
@@ -463,7 +535,7 @@ export function CustomerProfile({
                   Sign out everywhere
                 </button>
               ) : (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Sign out every device this account is logged into?
                   <button
                     type="button"
@@ -481,6 +553,9 @@ export function CustomerProfile({
             </div>
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "learning"} className="space-y-5">
           {/* Curriculum roadmap */}
           <SectionCard title="Daily practice">
             <PracticeStrip practice={profile.practice} />
@@ -510,7 +585,7 @@ export function CustomerProfile({
                     onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED"))}
                     className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
-                        ? "border-[rgb(var(--c-s-50)/0.3)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+                        ? "border-slate-50/30 text-slate-50 hover:bg-slate-50/10"
                         : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
                     }`}
                   >
@@ -523,6 +598,9 @@ export function CustomerProfile({
 
           <NotesSection studentId={user.id} />
 
+        </div>
+
+        <div hidden={tab !== "classes"} className="space-y-5">
           {/* Credits + bookings */}
           <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
@@ -538,7 +616,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
                   disabled={creditConfirming}
-                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
               <div className="flex-1">
@@ -552,7 +630,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditReason(e.target.value)}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
                   disabled={creditConfirming}
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
               {!creditConfirming && (
@@ -566,7 +644,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-2 text-small text-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
                   {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
@@ -587,100 +665,21 @@ export function CustomerProfile({
               </div>
             )}
             {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
-
-            <div className="mt-5 border-t border-ink/10 pt-4">
-              <p className="text-small font-medium uppercase tracking-wide text-slate-500">Upcoming bookings</p>
-              <div className="mt-2 space-y-2">
-                {upcomingBookings.length === 0 && <Empty>No upcoming bookings.</Empty>}
-                {upcomingBookings.map((b) => (
-                  <div key={b.id} className="rounded-xl p-3 bg-neu-base shadow-raised-low">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-small text-slate-100">{b.schedule.label ?? "Class"}</p>
-                        <p className="text-small text-slate-500">
-                          {formatDateTime(b.scheduledAt)} · {creditsLabelFromStored(b.creditsSpent)}
-                        </p>
-                      </div>
-                      {cancelingBookingId === b.id ? (
-                        <div className="flex w-full flex-col gap-2 border-t border-ink/10 pt-2">
-                          <input
-                            type="text"
-                            autoFocus
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            placeholder="Reason (optional, shown to the student)"
-                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelingBookingId(null);
-                                setCancelReason("");
-                              }}
-                              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                            >
-                              Never mind
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleCancelBooking(b.id)}
-                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-                            >
-                              Confirm cancel & refund
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setCancelingBookingId(b.id)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                        >
-                          Cancel booking
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {pastBookings.length > 0 && (
-              <div className="mt-5 border-t border-ink/10 pt-4">
-                <p className="text-small font-medium uppercase tracking-wide text-slate-500">Past bookings</p>
-                <div className="mt-2 space-y-1.5">
-                  {pastBookings.slice(0, 8).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between gap-2 text-small">
-                      <span className="text-slate-400">
-                        {b.schedule.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
-                      </span>
-                      <span
-                        className={
-                          b.status === "CANCELED"
-                            ? "text-red-400"
-                            : b.attendance === "PRESENT"
-                              ? "text-slate-50"
-                              : b.attendance === "NO_SHOW"
-                                ? "text-red-400"
-                                : "text-slate-500"
-                        }
-                      >
-                        {b.status === "CANCELED" ? "Canceled" : b.attendance ?? "Completed"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "scheduler"} className="space-y-5">
+          {scheduler}
+        </div>
+
+        <div hidden={tab !== "money"} className="space-y-5">
           {/* Payments */}
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             <div className="space-y-2">
-              {profile.payments.map((p) => (
+              <ViewMore items={profile.payments} initial={4}>
+              {(p) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
                   <div>
                     <p className="text-slate-100">
@@ -702,8 +701,14 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
+                  {p.status === "VERIFIED" && (
+                    <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
+                      Receipt
+                    </Link>
+                  )}
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
 
@@ -738,7 +743,7 @@ export function CustomerProfile({
           </SectionCard>
         </div>
 
-        <div className="space-y-5">
+        <div hidden={tab !== "support"} className="space-y-5">
           {/* Support history */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}
@@ -753,7 +758,7 @@ export function CustomerProfile({
                     <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-50/15 text-slate-100"
+                        t.status === "OPEN" ? "bg-slate-50/15 text-slate-50" : "bg-slate-50/15 text-slate-100"
                       }`}
                     >
                       {t.status === "OPEN" ? "Open" : "Resolved"}
@@ -768,16 +773,19 @@ export function CustomerProfile({
           {/* Activity timeline */}
           <SectionCard title="Activity">
             {profile.timeline.length === 0 && <Empty>Nothing recorded yet.</Empty>}
-            <div className="max-h-[36rem] space-y-3 overflow-y-auto pr-1">
-              {profile.timeline.map((event, i) => (
+            <div className="space-y-3">
+              <ViewMore items={profile.timeline} initial={6}>
+              {(event, i) => (
                 <div key={i} className="border-l-2 border-ink/10 pl-3">
-                  <p className="text-small text-slate-600">{formatDateTime(event.at)}</p>
+                  <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
                   <p className="text-small text-slate-200">{event.label}</p>
                   {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
+          {changeLog}
         </div>
       </div>
     </div>

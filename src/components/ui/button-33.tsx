@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/components/ui/appIcons";
 
 // From the 21st.dev "Generate AI Button" (shadcnspace/button-33). The animated
 // gradient border is split out as `AiBorder` so Atom's panel, bubbles and inputs

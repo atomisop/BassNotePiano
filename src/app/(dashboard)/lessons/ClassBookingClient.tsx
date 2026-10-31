@@ -3,6 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -13,22 +14,27 @@ import {
   cancelClassBookingAction,
   rescheduleClassBookingAction,
 } from "./actions";
+import { BookingAgenda, type AgendaRow } from "./BookingAgenda";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabelFromStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
-import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
+import { createExtraClassPaymentAction, createFifthClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
+import { toast } from "@/components/ui/Toaster";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { Ticket } from "@/components/ui/appIcons";
+import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { ChevronDown } from "@/components/ui/appIcons";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -42,6 +48,8 @@ interface OccurrenceRow {
   occurrenceDateMs: number;
   scheduledAt: string;
   isBooked: boolean;
+  /** The owner kept this time for this student: open to them, locked for everyone else. */
+  reservedForYou?: boolean;
 }
 
 interface BookingRow {
@@ -59,6 +67,8 @@ interface BookingRow {
   reserved?: boolean;
   /** The private Discord call for this class, once it exists. */
   discordUrl?: string | null;
+  /** Taught in person: there is no Discord call. */
+  inPerson?: boolean;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
@@ -72,7 +82,7 @@ const STATUS_LABEL: Record<BookingRow["status"], string> = {
 
 const STATUS_STYLE: Record<BookingRow["status"], string> = {
   SCHEDULED: "text-slate-50 bg-neu-base shadow-raised-low",
-  COMPLETED: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-200",
+  COMPLETED: "bg-slate-50/8 text-slate-200",
   CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
@@ -192,7 +202,7 @@ function BookingCard({
           <span className="text-small font-medium uppercase tracking-wide text-slate-500">
             {start.toLocaleDateString(undefined, { weekday: "short" })}
           </span>
-          <span className="text-xl font-bold leading-none text-slate-50">{start.getDate()}</span>
+          <span className="text-title font-bold leading-none text-slate-50">{start.getDate()}</span>
           <span className="text-small text-slate-500">{start.toLocaleDateString(undefined, { month: "short" })}</span>
         </div>
         <div className="min-w-0 flex-1">
@@ -233,7 +243,8 @@ function BookingCard({
 
       {scheduled && hoursUntil > -1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {hoursUntil <= 0.5 && (
+          {b.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
+          {hoursUntil <= 0.5 && !b.inPerson && (
             <DiscordLink
               href={b.discordUrl ?? DISCORD_INVITE_URL}
               target="_blank"
@@ -250,7 +261,7 @@ function BookingCard({
               disabled={canceling}
               className={`tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 isBeingRescheduled
-                  ? "bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] shadow-pressed-low"
+                  ? "bg-slate-50/10 text-slate-50 shadow-pressed-low"
                   : "bg-neu-base text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               }`}
             >
@@ -311,13 +322,7 @@ function BookingCard({
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-180" : ""}`}
-    >
-      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-180" : ""}`} />
   );
 }
 
@@ -398,9 +403,9 @@ function AttendeeEmailRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="student@email.com"
-        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
       />
-      <span className="w-28 shrink-0 text-small">
+      <span className="shrink-0 text-small">
         {value.trim() === "" ? null : status?.checking ? (
           <span className="text-slate-500">Checking…</span>
         ) : status?.verified ? (
@@ -411,7 +416,10 @@ function AttendeeEmailRow({
         ) : status?.found ? (
           <span className="text-red-400">Not verified</span>
         ) : status ? (
-          <span className="text-red-400">No account found</span>
+          <span className="flex items-center gap-1.5 text-red-400">
+            No account
+            <InviteToRegisterButton email={value.trim()} />
+          </span>
         ) : null}
       </span>
       {removable && (
@@ -441,7 +449,13 @@ export function ClassBookingClient({
   zelleHandle,
   extraMode = false,
   weeklyLimited = false,
+  fifthClassOffer = null,
+  extraClassCents = EXTRA_CLASS_PRICE_CENTS,
 }: {
+  /** What one extra class costs now (Admin > Pricing). */
+  extraClassCents?: number;
+  /** A Monthly subscriber's optional fifth class (their cycle holds five of their weekday): when it is, and the price. */
+  fifthClassOffer?: { scheduledAt: string; priceCents: number } | null;
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
   extraMode?: boolean;
   /** A subscriber: credits book one class a week, anything more that week is paid extra time. */
@@ -480,8 +494,13 @@ export function ClassBookingClient({
   const [reschedulingKey, setReschedulingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // Set by tapping a day on the calendar: the times for that day appear below it.
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  // Set by tapping a day on the calendar: the times for that day appear below it. It starts on the first day
+  // with an open time, so the list of open and taken times is on screen the moment the page opens.
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(() => {
+    const first = occurrences.filter((o) => !o.isBooked).sort((a, b) => a.occurrenceDateMs - b.occurrenceDateMs)[0];
+    return first ? dayKey(first.occurrenceDateMs) : null;
+  });
+  const firstDayRef = useRef(true);
   // Every time the student has tapped, across days. Keyed `scheduleId:occurrenceDateMs:chunkIndex`.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const timesRef = useRef<HTMLDivElement>(null);
@@ -524,6 +543,11 @@ export function ClassBookingClient({
 
   // Tapping a day jumps straight to that day's times.
   useEffect(() => {
+    // Not on the first paint: the page should open at the top, not jump down to the times.
+    if (firstDayRef.current) {
+      firstDayRef.current = false;
+      return;
+    }
     if (!selectedDateKey) return;
     scrollWithin(timesRef.current, "start");
   }, [selectedDateKey]);
@@ -557,6 +581,19 @@ export function ClassBookingClient({
       else next.add(key);
       return next;
     });
+  }
+
+  // The month agenda (wide screens): a tap picks the day, and in the plain just-me case also picks that time. In every other case
+  // (family, moving a class, a weekly limit) it only opens the day, where the cards with their own buttons are.
+  const agendaRows = useMemo<AgendaRow[]>(
+    () => rows.map((r) => ({ key: rowKey(r), occurrenceDateMs: r.occurrenceDateMs, scheduledAt: r.scheduledAt, durationMin: r.durationMin, isBooked: r.isBooked, reservedForYou: r.reservedForYou })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows],
+  );
+  function pickFromAgenda(key: string, day: string) {
+    setSelectedDateKey(day);
+    const row = rows.find((r) => rowKey(r) === key);
+    if (row && !row.isBooked && mode === "SOLO" && !reschedulingBooking && !weeklyLimited) toggleSelected(row);
   }
 
   const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(displayRows), [displayRows]);
@@ -733,7 +770,9 @@ export function ClassBookingClient({
       const result = await createExtraClassPaymentAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
       announceChange("booking");
       if (!result.ok || !result.id || !result.status || result.amountCents === null) {
-        setError(result.error ?? "Something went wrong. Please try again.");
+        const message = result.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        toast.error("Couldn't start that payment", { description: message, action: { label: "Retry", onClick: () => void startExtraPayment(row) } });
         return;
       }
       setExtraPayment({
@@ -744,6 +783,36 @@ export function ClassBookingClient({
       });
     } catch {
       setError(NETWORK_ERROR);
+      toast.error("Couldn't start that payment", { description: NETWORK_ERROR, action: { label: "Retry", onClick: () => void startExtraPayment(row) } });
+    } finally {
+      setPayBusyKey(null);
+    }
+  }
+
+  /** The optional fifth class: same pay screen as extra time, at the owner's price. */
+  async function startFifthClassPayment() {
+    if (!fifthClassOffer) return;
+    setError(null);
+    setSuccess(null);
+    setPayBusyKey("fifth");
+    try {
+      const result = await createFifthClassPaymentAction();
+      announceChange("booking");
+      if (!result.ok || !result.id || !result.status || result.amountCents === null) {
+        const message = result.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        toast.error("Couldn't start that payment", { description: message, action: { label: "Retry", onClick: () => void startFifthClassPayment() } });
+        return;
+      }
+      setExtraPayment({
+        id: result.id,
+        status: result.status as ZellePaymentStatus,
+        amountCents: result.amountCents,
+        when: `${formatOccurrenceDay(fifthClassOffer.scheduledAt)}, ${formatOccurrenceTime(fifthClassOffer.scheduledAt)}`,
+      });
+    } catch {
+      setError(NETWORK_ERROR);
+      toast.error("Couldn't start that payment", { description: NETWORK_ERROR, action: { label: "Retry", onClick: () => void startFifthClassPayment() } });
     } finally {
       setPayBusyKey(null);
     }
@@ -785,6 +854,9 @@ export function ClassBookingClient({
   const familyAllVerified =
     familyEmailsTrimmed.length >= familyMinAttendees && familyEmailsTrimmed.every((e) => familyChecks[e]?.verified);
 
+  // One key per attempt: a double tap or a retry books the class once. A new key once it worked.
+  const familyKey = useRef(newIdempotencyKey());
+
   async function handleBookFamily() {
     if (!familyRow || !familyAllVerified) return;
     setError(null);
@@ -792,7 +864,7 @@ export function ClassBookingClient({
     setFamilySubmitting(true);
     let result: Awaited<ReturnType<typeof bookFamilyClassAction>>;
     try {
-      result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
+      result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed, familyKey.current);
       announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
@@ -806,6 +878,7 @@ export function ClassBookingClient({
       return;
     }
 
+    familyKey.current = newIdempotencyKey();
     setRows((prev) => prev.map((r) => (rowKey(r) === rowKey(familyRow) ? { ...r, isBooked: true } : r)));
     setFamilyRowKey(null);
     setFamilyEmails(["", ""]);
@@ -814,17 +887,15 @@ export function ClassBookingClient({
   }
 
   const actionClass =
-    "tap flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
+    "tap flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-slate-50";
   const bookingBarVisible = tab === "book" && mode === "SOLO" && !reschedulingBooking && selectedKeys.size > 0 && !extraPayment;
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
-        {extraMode ? "Extra sessions" : "Live Lessons"}
-      </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
-        {extraMode ? "Book an extra class" : "Book a class"}
-      </h1>
+      {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
+      <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
+      {/* The page's own title ("Lessons") sits above this on the page; this names the section. */}
+      <h2 className="text-headline font-semibold text-balance text-slate-50">{extraMode ? "Book an extra class" : "Book a class"}</h2>
 
       <div className="mt-(--space-group)">
         <Tabs<TabId>
@@ -854,35 +925,46 @@ export function ClassBookingClient({
 
         {tab === "book" && (
           <div className="min-w-0">
-            {/* Credits: what a class costs and what the student has. No money here. */}
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
-              <p className="text-small text-slate-400">
-                Your credits <span className="ml-1 text-body font-semibold tabular-nums text-slate-50">{formatCredits(storedToCredits(credits))}</span>
-              </p>
-              <p className="text-small text-slate-400">
-                Each class costs <span className="font-semibold text-slate-100">{creditsLabel(CREDITS_PER_CLASS)}</span> · {CLASS_MINUTES} min
-              </p>
-            </div>
-            {weeklyLimited && (
-              <p className="mt-2 text-small text-slate-500">
-                Your plan covers one class a week. A second class in the same week is extra time, paid separately.
-              </p>
+            {fifthClassOffer && !extraPayment && (
+              <div className="glass-surface mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="text-body font-semibold text-slate-50">
+                    A fifth class this cycle: {formatOccurrenceDay(fifthClassOffer.scheduledAt)}, {formatOccurrenceTime(fifthClassOffer.scheduledAt)}
+                  </p>
+                  <p className="text-small text-slate-500">
+                    Your billing cycle holds five of your class day and your plan covers four. Add the last one for ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}, or skip it, nothing changes.
+                  </p>
+                </div>
+                <button type="button" onClick={startFifthClassPayment} disabled={payBusyKey !== null} className={actionClass}>
+                  {payBusyKey === "fifth" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                  Add it · ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}
+                </button>
+              </div>
             )}
 
-            <Tabs
-              className="mt-5"
-              label="Who is this class for?"
-              items={[
-                { id: "SOLO", label: "Just me" },
-                { id: "FAMILY", label: "Me and my family" },
-              ]}
-              value={mode}
-              onChange={(m) => {
-                setMode(m);
-                setSelectedKeys(new Set());
-                setFamilyRowKey(null);
-              }}
-            />
+            {/* One row: who the class is for, and the credits there are to spend. */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <Tabs
+                label="Who is this class for?"
+                items={[
+                  { id: "SOLO", label: "Just me" },
+                  { id: "FAMILY", label: "Me and my family" },
+                ]}
+                value={mode}
+                onChange={(m) => {
+                  setMode(m);
+                  setSelectedKeys(new Set());
+                  setFamilyRowKey(null);
+                }}
+              />
+              <p
+                className="flex items-center gap-2 rounded-full bg-neu-base px-3.5 py-2 text-small font-semibold tabular-nums text-slate-50 shadow-pressed-low"
+                aria-label={`${formatCredits(storedToCredits(credits))} credits to spend`}
+              >
+                <Ticket aria-hidden className="h-4 w-4 text-signal-fg" strokeWidth={1.75} />
+                {formatCredits(storedToCredits(credits))}
+              </p>
+            </div>
 
             {reschedulingBooking && (
               <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
@@ -896,15 +978,50 @@ export function ClassBookingClient({
               </div>
             )}
 
+            {/* The calendar and the day's times side by side from lg up, so picking a time needs no scrolling on a computer. */}
+            <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
+            <div className="space-y-4 lg:order-2 lg:sticky lg:top-0">
             {rows.length > 0 ? (
-              <div id="booking-calendar" className="mt-5 scroll-mt-20">
-                <p className="mb-3 text-small font-medium uppercase tracking-wide text-slate-500">Pick a day, then pick one or more times</p>
+              <div id="booking-calendar" className="scroll-mt-20">
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
               </div>
             ) : (
-              <p className="mt-5 text-small text-slate-500">No classes scheduled.</p>
+              <p className="text-small text-slate-500">No classes scheduled.</p>
             )}
+            {rows.length > 0 && (
+              <p className="hidden items-center gap-4 px-1 text-small text-slate-400 lg:flex">
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-signal" aria-hidden />Open {rows.filter((r) => !r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-500" aria-hidden />Taken {rows.filter((r) => r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[rgb(var(--tint-green-fg))]" aria-hidden />Picked {selectedKeys.size}</span>
+              </p>
+            )}
+            {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
+            {upcoming.length > 0 && (
+              <div className="hidden rounded-2xl bg-neu-base shadow-raised-mid p-4 lg:block">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-small font-semibold text-slate-50">Upcoming classes</p>
+                  <button type="button" onClick={() => setTab("upcoming")} className="text-small text-signal-fg hover:underline">
+                    See all
+                  </button>
+                </div>
+                <ul className="space-y-2">
+                  {upcoming.slice(0, 3).map((b, i) => (
+                    <li key={b.id} className={`${["tint-purple", "tint-peach", "tint-blue"][i % 3]} rounded-xl px-3 py-2.5`}>
+                      <p className="text-small font-semibold">{formatDateTime(b.scheduledAt)}</p>
+                      {b.label && <p className="text-small opacity-80">{b.label}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            </div>
 
+              <div className="min-w-0 lg:order-1">
+            {rows.length > 0 && (
+              <div className="mb-6 hidden lg:block">
+                <BookingAgenda rows={agendaRows} selectedDateKey={selectedDateKey} pickedKeys={selectedKeys} onPick={pickFromAgenda} />
+              </div>
+            )}
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">
@@ -966,7 +1083,7 @@ export function ClassBookingClient({
               </div>
             )}
 
-            {/* The day's times show as soon as a day is tapped. */}
+            {/* The day's times show as soon as a day is tapped: two to a row for plain pick-a-time cards, one per row for cards that carry their own button (family, moving a class, a second class in a week). */}
             <div ref={timesRef} className="mt-6 scroll-mt-20">
               {selectedDateKey && (
                 <p className="mb-3 text-body font-semibold text-slate-100">
@@ -976,7 +1093,7 @@ export function ClassBookingClient({
               {!selectedDateKey ? null : displayRows.length === 0 ? (
                 <p className="text-small text-slate-500">No open times on that day.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className={`grid gap-2 sm:gap-3 ${mode === "SOLO" && !reschedulingBooking && !weeklyLimited ? "grid-cols-2" : "grid-cols-1"}`}>
                   {occurrenceGroups.flatMap((group) => group.rows).map((row) => {
                     const key = rowKey(row);
                     const cost = creditsFor(row);
@@ -993,8 +1110,8 @@ export function ClassBookingClient({
                         onClick={onClick}
                         disabled={!onClick}
                         aria-pressed={onClick ? isSelected : undefined}
-                        className={`tap flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition disabled:cursor-not-allowed bg-neu-base ${
-                          isSelected ? "shadow-pressed-low ring-1 ring-[rgb(var(--signal)/0.5)]" : "shadow-raised-low hover:shadow-raised-mid"
+                        className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed bg-neu-base ${
+                          isSelected ? "shadow-pressed-low ring-1 ring-signal/50" : "shadow-raised-low hover:shadow-raised-mid"
                         } ${extra}`}
                       >
                         {children}
@@ -1002,10 +1119,14 @@ export function ClassBookingClient({
                     );
                     const time = (
                       <span className="min-w-0">
-                        <span className="block text-body font-semibold text-slate-50">
-                          {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, cost)}
+                        <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
+                        <span className="block text-small text-slate-500">
+                          to {formatEndTime(row.scheduledAt, cost)}
+                          {cost !== CREDITS_PER_CLASS && ` · ${creditsLabel(cost)}`}
                         </span>
-                        <span className="block text-small text-slate-500">{creditsLabel(cost)}</span>
+                        {row.reservedForYou && !row.isBooked && (
+                          <span className="mt-1 inline-block whitespace-nowrap rounded-full bg-signal/15 px-2 py-0.5 text-small font-medium text-signal-fg">Reserved for you</span>
+                        )}
                       </span>
                     );
 
@@ -1013,7 +1134,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small text-red-400">{isCurrentRescheduleSlot ? "Your time" : "Booked"}</span>
+                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : "Taken"}</span>
                         </>,
                         undefined,
                         "opacity-60",
@@ -1029,7 +1150,7 @@ export function ClassBookingClient({
                             type="button"
                             onClick={() => handleReschedule(row)}
                             disabled={tooPricey || reschedulingKey !== null}
-                            className={actionClass}
+                            className={`${actionClass} shrink-0`}
                           >
                             {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                             {reschedulingKey === key ? "Moving…" : tooPricey ? "Not enough credits" : "Move here"}
@@ -1042,13 +1163,13 @@ export function ClassBookingClient({
                       return (
                         <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
                           <span className="min-w-0">
-                            <span className="block text-body font-semibold text-slate-50">
-                              {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, familyCreditsPerStudent)}
+                            <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
+                            <span className="block text-small text-slate-500">
+                              to {formatEndTime(row.scheduledAt, familyCreditsPerStudent)} · {creditsLabel(familyCreditsPerStudent)} each
                             </span>
-                            <span className="block text-small text-slate-500">{creditsLabel(familyCreditsPerStudent)} per student</span>
                           </span>
-                          <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={actionClass}>
-                            Set up family
+                          <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={`${actionClass} shrink-0`}>
+                            Set up
                           </button>
                         </div>
                       );
@@ -1061,7 +1182,7 @@ export function ClassBookingClient({
                           {time}
                           <button type="button" onClick={() => startExtraPayment(row)} disabled={payBusyKey !== null} className={actionClass}>
                             {payBusyKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                            Buy extra · ${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}
+                            Buy extra · ${(extraClassCents / 100).toFixed(0)}
                           </button>
                         </div>
                       );
@@ -1080,8 +1201,11 @@ export function ClassBookingClient({
                     return card(
                       <>
                         {time}
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
-                          <CheckIcon size={12} />
+                        <span className="flex shrink-0 items-center gap-2">
+                          {!isSelected && <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>}
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
+                            <CheckIcon size={12} />
+                          </span>
                         </span>
                       </>,
                       () => toggleSelected(row),
@@ -1089,6 +1213,9 @@ export function ClassBookingClient({
                   })}
                 </div>
               )}
+            </div>
+
+              </div>
             </div>
 
             {/* The total, once anything is picked. Sticks to the bottom so it is always in reach. */}
@@ -1181,6 +1308,7 @@ export function ClassBookingClient({
             )}
           </div>
         )}
+      </div>
       </div>
     </WideLayout>
   );

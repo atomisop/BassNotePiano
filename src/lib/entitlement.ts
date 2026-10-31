@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { canonicalEmail } from "@/lib/canonicalEmail";
-import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
+import { addBillingCycles } from "@/lib/billingCycle";
 import { resolveEntitlement, type CurriculumEntitlement } from "@/lib/entitlementRules";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 
@@ -43,12 +43,12 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
   const paidUntilByUser = new Map<string, Date>();
   for (const plan of plans) {
     // An in-flight plan's nextDueDate has already been advanced to the end of
-    // the month just paid. A COMPLETED plan's final installment deliberately
+    // the cycle just paid. A COMPLETED plan's final installment deliberately
     // doesn't advance it (nothing further is due), so it still points at the
-    // START of the last paid month: that month ends one calendar month later.
+    // START of the last paid cycle: that cycle ends 28 days later.
     // Without this a Monthly plan, which completes on its first approval,
     // would count as already expired the moment it was paid.
-    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
     const current = paidUntilByUser.get(plan.userId);
     if (!current || paidUntil.getTime() > current.getTime()) paidUntilByUser.set(plan.userId, paidUntil);
   }

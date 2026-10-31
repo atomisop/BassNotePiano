@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { PrimaryInstrument } from "@prisma/client";
-import { ArrowLeft, Check, Circle, KeyRound, Layers, ListChecks, Lock, NotebookPen, PanelLeftClose, PanelLeftOpen, Table2, Timer, FileText, X } from "lucide-react";
+import { ArrowLeft, Check, Circle, KeyRound, Layers, ListChecks, Lock, NotebookPen, PanelLeftClose, PanelLeftOpen, Table2, Timer, FileText, X } from "@/components/ui/appIcons";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
 import type { CourseLessonWithProgress } from "@/lib/courseContent";
 import type { RootKey } from "@/lib/music-theory";
@@ -219,11 +219,18 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
     setMarkingPractice(true);
     setActionError(null);
     try {
-      await onMarkPracticeCompleted();
+      await toast.promise(onMarkPracticeCompleted(), {
+        loading: { title: "Logging practice" },
+        success: { title: "Practice logged", description: `${scaleGroup.code}: ${scaleGroup.title}` },
+        error: {
+          title: "Couldn't log that practice",
+          description: "Nothing was saved. Try again in a moment.",
+          button: { title: "Retry", onClick: () => void handlePractice() },
+        },
+      });
       router.refresh();
-      toast.success("Practice logged", { description: `${scaleGroup.code}: ${scaleGroup.title}` });
     } catch {
-      toast.error("Couldn't log that practice", { description: "Nothing was saved. Try again in a moment." });
+      // The error toast above already told them; nothing else to do.
     } finally {
       setMarkingPractice(false);
     }
@@ -249,7 +256,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             type="button"
             onClick={() => setOutlineOpen(false)}
             aria-label="Hide outline"
-            className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-50/6 hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -368,7 +375,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         className={cn(
           "relative flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           layout === "rail" ? "h-14 w-14" : "h-14 min-w-14 flex-1 px-2",
-          active ? "bg-[rgb(var(--signal)/0.14)] text-signal shadow-plane-front" : "text-slate-300 hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50",
+          active ? "bg-signal/14 text-signal-fg shadow-plane-front" : "text-slate-300 hover:bg-slate-50/6 hover:text-slate-50",
         )}
       >
         <t.Icon className="h-5 w-5" aria-hidden />
@@ -382,7 +389,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
   const center = (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <BackLink href="/dashboard" className="inline-flex min-h-9 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
+        <BackLink href="/roadmap" className="inline-flex min-h-9 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Back
         </BackLink>
@@ -467,7 +474,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       {lesson && celebrating === null && selection.kind === "lesson" && (
         <div className={cn("mt-4", lesson.type === "VIDEO" && "mx-auto lg:max-w-[calc(52svh*16/9)]")}>
           {actionError && (
-            <p role="alert" className="mb-3 text-small text-[rgb(var(--c-rd-300))]">
+            <p role="alert" className="mb-3 text-small text-red-300">
               {actionError}
             </p>
           )}
@@ -551,7 +558,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
                     type="button"
                     onClick={() => setTool(null)}
                     aria-label={`Close ${toolTitle}`}
-                    className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-50/6 hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -625,7 +632,7 @@ function OutlineItem({
       title={disabled ? lockedReason : undefined}
       className={cn(
         "flex min-h-9 w-full items-start gap-3 rounded-control px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed",
-        active ? "bg-[rgb(var(--signal)/0.1)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-[rgb(var(--c-s-50)/0.05)] disabled:hover:bg-transparent",
+        active ? "bg-signal/10 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-slate-50/5 disabled:hover:bg-transparent",
       )}
     >
       <span
@@ -638,7 +645,7 @@ function OutlineItem({
         <StatusIcon className="h-3 w-3" strokeWidth={3} />
       </span>
       <span className="min-w-0">
-        <span className={cn("block text-small font-semibold", active ? "text-signal" : disabled ? "text-slate-500" : "text-slate-50")}>{title}</span>
+        <span className={cn("block text-small font-semibold", active ? "text-signal-fg" : disabled ? "text-slate-500" : "text-slate-50")}>{title}</span>
         {meta && <span className="block text-small text-slate-400">{meta}</span>}
         {disabled && lockedReason && <span className="sr-only">{lockedReason}</span>}
       </span>

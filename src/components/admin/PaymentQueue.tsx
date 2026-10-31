@@ -4,13 +4,20 @@ import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { PendingZellePayment } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckCheck } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
+import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
+import { toast } from "@/components/ui/Toaster";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -103,7 +110,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
-  PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  PENDING_REVIEW: "bg-slate-50/15 text-slate-50",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
@@ -123,6 +130,19 @@ export function PaymentQueue({
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const toggle = (id: string, on: boolean) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  // Only what is waiting on you can be ticked: payments to approve, and auto-approved ones not yet checked.
+  const canTick = (p: PendingZellePayment) => p.status === "PENDING_REVIEW" || (!!onCheck && p.autoApproved && !p.checkedAt);
+  const pickedList = [...picked].filter((id) => payments.some((p) => p.id === id));
+  const pickedPending = pickedList.filter((id) => payments.find((p) => p.id === id)?.status === "PENDING_REVIEW");
+  const pickedUnchecked = pickedList.filter((id) => { const p = payments.find((x) => x.id === id); return !!p && p.autoApproved && !p.checkedAt; });
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   // Approve used to fire on a single click while Reject already required a
@@ -138,12 +158,25 @@ export function PaymentQueue({
   const [refundPlan, setRefundPlan] = useState(true);
   const [refundError, setRefundError] = useState<string | null>(null);
 
+  /** "Jordan Alemu, $55.00": who and how much, for the toast, so the admin can tell which row it was. */
+  function whoAndHow(id: string): string | undefined {
+    const p = payments.find((x) => x.id === id);
+    return p ? `${p.user.name ?? p.user.email}, ${formatUsd(p.amountCents)}` : undefined;
+  }
+
+  function failureText(err: unknown): string {
+    return err instanceof Error && err.message ? err.message : "It did not go through. Try again.";
+  }
+
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
       await onApprove(id);
+      toast.success("Payment approved", { description: whoAndHow(id) });
       router.refresh();
       setApprovingId(null);
+    } catch (err) {
+      toast.error("Couldn't approve that payment", { description: failureText(err), action: { label: "Retry", onClick: () => void handleApprove(id) } });
     } finally {
       setBusyId(null);
     }
@@ -157,13 +190,18 @@ export function PaymentQueue({
       const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan);
       if (!result.ok) {
         setRefundError(result.error);
+        toast.error("Couldn't refund that payment", { description: result.error ?? undefined });
         return;
       }
       setRefundingId(null);
       setRefundNote("");
       router.refresh();
-      // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now.
-      if (result.warning) window.alert(`Refunded, with a note: ${result.warning}`);
+      // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now,
+      // and keep the toast up until it is dismissed.
+      if (result.warning) toast.warning("Refunded, with a note", { description: result.warning, duration: null });
+      else toast.success("Payment refunded", { description: whoAndHow(id) });
+    } catch (err) {
+      toast.error("Couldn't refund that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
@@ -174,8 +212,11 @@ export function PaymentQueue({
     setBusyId(id);
     try {
       await onDelete(id);
+      toast.success("Payment record deleted", { description: whoAndHow(id) });
       router.refresh();
       setDeletingId(null);
+    } catch (err) {
+      toast.error("Couldn't delete that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
@@ -186,9 +227,12 @@ export function PaymentQueue({
     setBusyId(id);
     try {
       await onReject(id, reason.trim());
+      toast.success("Payment rejected", { description: whoAndHow(id) });
       router.refresh();
       setRejectingId(null);
       setReason("");
+    } catch (err) {
+      toast.error("Couldn't reject that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
@@ -196,9 +240,7 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <div className="glass-surface p-8 text-center text-small text-slate-500">
-        {emptyMessage}
-      </div>
+      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New payments show up here as soon as they come in." />
     );
   }
 
@@ -206,23 +248,62 @@ export function PaymentQueue({
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
-      {shown.map((payment) => {
+      {shown.filter(canTick).length > 1 && (
+        <label className="tap flex items-center gap-2 text-small text-slate-400">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-signal"
+            checked={shown.filter(canTick).every((p) => picked.has(p.id))}
+            onChange={(e) => setPicked(e.target.checked ? new Set(shown.filter(canTick).map((p) => p.id)) : new Set())}
+          />
+          Select all {shown.filter(canTick).length} waiting on you
+        </label>
+      )}
+      <BulkBar
+        ids={pickedList}
+        onClear={() => setPicked(new Set())}
+        onDone={(ok) => {
+          setPicked((prev) => new Set([...prev].filter((id) => !ok.includes(id))));
+          router.refresh();
+        }}
+        actions={[
+          ...(pickedPending.length === pickedList.length && pickedList.length > 0
+            ? [{ label: "Approve selected", question: `Approve ${pickedList.length} payment${pickedList.length === 1 ? "" : "s"}? Each one grants its credits or starts its plan right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApprove(id) }]
+            : []),
+          ...(onCheck && pickedUnchecked.length === pickedList.length && pickedList.length > 0
+            ? [{ label: "Mark selected checked", run: (id: string) => onCheck(id) }]
+            : []),
+        ]}
+        extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
+      />
+      <ViewMore items={shown} initial={8} animateRemovals>
+      {(payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
-        <div key={payment.id} className="glass-surface p-5">
+        // A row that leaves the list (approved, rejected or deleted, once the page refreshes) folds away in 200ms instead of vanishing,
+        // so the rows below slide up into its place rather than jump. A row that stays (its status just changed) does not move.
+        <motion.div
+          key={payment.id}
+          exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
+          transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          className="glass-surface p-5"
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
-              <h3 className="mt-1 text-body text-slate-50 font-semibold">{title}</h3>
+            <div className="flex items-start gap-2">
+              {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
+              <div>
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{title}</h2>
               <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
               {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
                 </p>
               )}
+              </div>
             </div>
             <div className="text-right">
-              <p className="text-body text-[rgb(var(--c-s-50))] font-semibold">{formatUsd(payment.amountCents)}</p>
+              <p className="text-body text-slate-50 font-semibold">{formatUsd(payment.amountCents)}</p>
               <span
                 className={`mt-1 inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
               >
@@ -233,27 +314,27 @@ export function PaymentQueue({
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
             <div>
-              <dt className="text-small text-slate-600">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
+              <dt className="text-small text-slate-500">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
               <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
             </div>
             {payment.matchedVia && (
               <div className="col-span-2">
-                <dt className="text-small text-slate-600">Cleared by the bank email through</dt>
+                <dt className="text-small text-slate-500">Cleared by the bank email through</dt>
                 <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "text-amber-300" : "text-slate-300"}>
                   {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
                 </dd>
               </div>
             )}
             <div>
-              <dt className="text-small text-slate-600">Paying from phone</dt>
+              <dt className="text-small text-slate-500">Paying from phone</dt>
               <dd className="text-slate-300">{payment.senderPhone ? formatPhone(payment.senderPhone) : "None given"}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Paid with</dt>
+              <dt className="text-small text-slate-500">Paid with</dt>
               <dd className="text-slate-300">{payment.method === "VENMO" ? "Venmo" : "Zelle"}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Submitted</dt>
+              <dt className="text-small text-slate-500">Submitted</dt>
               <dd className="text-slate-300">
                 {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "None"}
               </dd>
@@ -310,7 +391,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -318,7 +399,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleReject(payment.id)}
                   disabled={busyId === payment.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
@@ -338,7 +419,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -359,7 +440,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Reject
               </button>
@@ -374,6 +455,12 @@ export function PaymentQueue({
             </div>
           )}
 
+          {payment.status === "VERIFIED" && (
+            <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center text-small font-medium text-signal-fg hover:underline">
+              Receipt
+            </Link>
+          )}
+
           {onRefund && payment.status === "VERIFIED" && (
             <div className="mt-4 border-t border-slate-50/10 pt-3">
               {refundingId === payment.id ? (
@@ -386,15 +473,15 @@ export function PaymentQueue({
                     onChange={(e) => setRefundNote(e.target.value)}
                     placeholder="Reason"
                     maxLength={200}
-                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                   />
                   <label className="flex items-center gap-2 text-small text-slate-300">
-                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                     Take back the credits it gave
                   </label>
                   {payment.paymentPlanId && (
                     <label className="flex items-center gap-2 text-small text-slate-300">
-                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                       Cancel the plan too
                     </label>
                   )}
@@ -404,7 +491,7 @@ export function PaymentQueue({
                       type="button"
                       onClick={() => setRefundingId(null)}
                       disabled={busyId === payment.id}
-                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Back
                     </button>
@@ -445,7 +532,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busyId === payment.id}
-                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Keep
                   </button>
@@ -453,7 +540,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => handleDelete(payment.id)}
                     disabled={busyId === payment.id}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === payment.id ? "Deleting…" : "Delete payment"}
@@ -470,9 +557,10 @@ export function PaymentQueue({
                 Delete
               </button>
             ))}
-        </div>
+        </motion.div>
         );
-      })}
+      }}
+      </ViewMore>
     </div>
   );
 }

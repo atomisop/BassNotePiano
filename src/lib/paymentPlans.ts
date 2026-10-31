@@ -1,3 +1,4 @@
+import { addBillingCycles } from "@/lib/billingCycle";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
@@ -6,9 +7,16 @@ import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prism
 import { prisma } from "@/lib/prisma";
 import { hasFirstAndLastName } from "@/lib/studentName";
 import { namesMatch } from "@/lib/personNames";
-import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { assertEveryoneAccepted, FamilyInviteError, spendInvites } from "@/lib/familyInvites";
+import { getPricingConfig } from "@/lib/pricing";
+import { duplicateWeeklyTime, PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
+import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
   chunksForSchedule,
+  classesInWindow,
+  classStartsInWindow,
+  classOccurrencesInWindow,
   livePaymentPlanConditions,
   nextOccurrenceDates,
   computeScheduledAt,
@@ -16,8 +24,26 @@ import {
   getEffectiveClassCredits,
   OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
+import { grantCredits } from "@/lib/creditLedger";
+import { adminPauseBlockedReason, INDEFINITE_PAUSE_MS, isPausedNow, PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
+import { logAudit } from "@/lib/audit";
 
 export class PaymentPlanError extends Error {}
+
+
+/** How many plans one person may start and leave unpaid in a week before they must pay one or wait. Stops holding the best weekly times for free. */
+export const MAX_UNPAID_STARTS_PER_WEEK = 3;
+
+async function assertNotHoardingTimes(userId: string) {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [solo, families] = await Promise.all([
+    prisma.paymentPlan.count({ where: { userId, familyGroupId: null, installmentsPaid: 0, createdAt: { gte: since } } }),
+    prisma.familyPlanGroup.count({ where: { payerId: userId, createdAt: { gte: since }, plans: { none: { installmentsPaid: { gt: 0 } } } } }),
+  ]);
+  if (solo + families >= MAX_UNPAID_STARTS_PER_WEEK) {
+    throw new PaymentPlanError("You have started several plans this week without paying for one. Please pay one of them, or try again in a few days.");
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Enrollment
@@ -112,6 +138,8 @@ export async function createPaymentPlan(
   zelleHandle: string,
   reservedScheduleId: string,
   reservedChunkIndex: number,
+  /** The first payment the person was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number,
 ) {
   // A Server Action's params are only compile-time-typed, a raw request
   // against the same endpoint could send anything. Validate against the
@@ -129,11 +157,18 @@ export async function createPaymentPlan(
     throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(term)) {
-    throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+    throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
   }
 
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const pricing = await getPricingConfig();
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
+  // The owner's personal discount for this account (Admin > Pricing): the plan is created at the discounted price, and the price before
+  // it is kept so the discount can be changed or removed later.
+  const discountPercent = await getDiscountPercent(userId);
+  const installmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  if (expectedFirstPaymentCents !== undefined && expectedFirstPaymentCents !== installmentCents) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(userId);
 
   try {
     const created = await prisma.$transaction(
@@ -150,7 +185,8 @@ export async function createPaymentPlan(
             userId,
             cadence,
             term,
-            installmentAmountCents: rate.installmentAmountCents,
+            installmentAmountCents: installmentCents,
+            listAmountCents: discountPercent > 0 ? rate.installmentAmountCents : null,
             creditsPerInstallment: rate.creditsPerInstallment,
             termMonths: rate.termMonths,
             nextDueDate: new Date(),
@@ -161,7 +197,7 @@ export async function createPaymentPlan(
                 {
                   userId,
                   purpose: "PAYMENT_PLAN_INSTALLMENT",
-                  amountCents: rate.installmentAmountCents,
+                  amountCents: installmentCents,
                   zelleHandle,
                   lessonQuantity: rate.creditsPerInstallment,
                   installmentNumber: 1,
@@ -277,7 +313,7 @@ export async function getOrCreateOpenInstallmentPayment(
   // A family plan needs at least two paying people. Down to one, the person pays the solo price from this bill on.
   let amountCents = plan.installmentAmountCents;
   if (plan.familyGroupId && (await activeFamilySize(plan.familyGroupId)) < 2) {
-    amountCents = calculatePaymentPlanRate(plan.cadence, plan.term).installmentAmountCents;
+    amountCents = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig()).installmentAmountCents;
   }
 
   const payment = await prisma.zellePayment.create({
@@ -497,12 +533,15 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
   const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
   if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
-  if (plan.familyGroupId) throw new PaymentPlanError("A family plan's length is changed by the teacher. Message us and we will help.");
+  if (plan.familyGroupId) throw new PaymentPlanError("A group plan's length is changed by the teacher. Message us and we will help.");
   if (plan.term === newTerm) throw new PaymentPlanError("You're already on this term.");
 
   await assertNoOpenInstallment(plan.id);
 
-  const rate = calculatePaymentPlanRate(plan.cadence, newTerm);
+  const rate = calculatePaymentPlanRate(plan.cadence, newTerm, await getPricingConfig());
+  // The new term's price, then this account's personal discount on top (if the owner gave one).
+  const discountPercent = await getDiscountPercent(userId);
+  const newInstallmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   if (plan.installmentsPaid >= rate.termMonths) {
     throw new PaymentPlanError(
       "You've already paid enough installments that this term wouldn't ask for any more. If you want to stop here, cancel your plan instead.",
@@ -513,7 +552,8 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
     where: { id: plan.id },
     data: {
       term: newTerm,
-      installmentAmountCents: rate.installmentAmountCents,
+      installmentAmountCents: newInstallmentCents,
+      listAmountCents: discountPercent > 0 ? rate.installmentAmountCents : null,
       creditsPerInstallment: rate.creditsPerInstallment,
       termMonths: rate.termMonths,
     },
@@ -521,7 +561,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
   await noticePlanUpdated({
     userId,
     title: "Your plan term changed",
-    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(rate.installmentAmountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
+    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(newInstallmentCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
   });
 }
 
@@ -547,15 +587,18 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
  * so a student doesn't wait up to 24h to see their new day/time actually
  * reflected in their upcoming classes.
  */
-export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number) {
+export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number, options: { byAdmin?: boolean } = {}) {
+  const byAdmin = Boolean(options.byAdmin);
   const { plan, chunk, schedule } = await prisma.$transaction(
     async (tx) => {
       const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
       if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
-      if (plan.familyGroupId) throw new PaymentPlanError("A family plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
-      if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
-        throw new PaymentPlanError("Your plan doesn't have a reserved slot yet. Message us and we'll help.");
+      if (plan.familyGroupId && !byAdmin) {
+        // A parent-paid plan's child (or their parent, acting for them) can move their own weekly time; a group plan's is moved by the teacher so everyone stays together.
+        const kind = (await tx.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true } }))?.kind;
+        if (kind !== "PARENT") throw new PaymentPlanError("A group plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
       }
+      // A plan with no weekly time yet (a child on a parent's plan, say) can be given one here: every class in the paid period is then booked.
       if (plan.reservedScheduleId === newScheduleId && plan.reservedChunkIndex === newChunkIndex) {
         throw new PaymentPlanError("That's already your weekly time.");
       }
@@ -592,7 +635,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
       // Same cutoff as cancelling a class: a class that starts within the
       // cutoff has to be attended (or sorted out with support), so the standing
       // time cannot be moved out from under it.
-      const startingSoon = await tx.classBooking.findFirst({
+      const startingSoon = byAdmin ? null : await tx.classBooking.findFirst({
         where: {
           studentId: userId,
           reservedByPlanId: plan.id,
@@ -634,7 +677,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
     if (scheduledAt.getTime() <= Date.now()) continue;
     // Only classes inside the paid period, same rule as the daily job.
-    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
     if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
     try {
       await createReservedBookingIfAbsent({
@@ -655,7 +698,9 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     userId,
     type: "RESERVED_SLOT_CHANGED",
     title: "Your weekly class time changed",
-    body: "Your standing weekly class moved to a new day/time. Check Lessons for your updated schedule.",
+    body: byAdmin
+      ? "The studio moved your standing weekly class to a new day and time, and all your upcoming classes with it. Check Lessons for your updated schedule."
+      : "Your standing weekly class moved to a new day/time. Check Lessons for your updated schedule.",
     emailCategory: "payments",
   }).catch((err) => console.error("RESERVED_SLOT_CHANGED notification failed (non-blocking):", err));
 
@@ -680,6 +725,8 @@ export async function cancelPaymentPlanBySelf(
   userId: string,
   reason: PlanCancellationReason,
   reasonNote: string | null,
+  /** A linked parent ending their child's plan (the parent pays for it, so only they or the payer may end it). */
+  options: { byParentId?: string } = {},
 ): Promise<void> {
   if (!Object.values(PlanCancellationReason).includes(reason) || reason === "NON_PAYMENT") {
     throw new PaymentPlanError(`"${reason}" isn't a valid reason.`);
@@ -691,6 +738,13 @@ export async function cancelPaymentPlanBySelf(
 
   const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
   if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  // A plan a parent pays for is not the child's to cancel: only the parent who pays (or the payer, if it is their own plan) can end it.
+  if (plan.familyGroupId) {
+    const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } });
+    if (group?.kind === "PARENT" && group.payerId !== userId && group.payerId !== options.byParentId) {
+      throw new PaymentPlanError("Your parent pays for this plan, so they decide when it ends. Ask them to end it from Parent mode.");
+    }
+  }
 
   await assertNoOpenInstallment(plan.id);
 
@@ -743,6 +797,144 @@ export async function cancelPaymentPlanBySelf(
       }),
     ),
   );
+}
+
+/**
+ * Pauses a running plan for 1 to 4 weeks, starting now. The weekly slot stays theirs; the next payment date and the
+ * expiry of this plan's unused credits both move out by the same span, so the pause costs them nothing. Classes
+ * inside the pause are canceled with a reason, which the booking jobs read as "do not book this again".
+ */
+export async function pausePaymentPlan(userId: string, weeks: number): Promise<{ resumesOn: Date }> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+  if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  const blocked = pauseBlockedReason(plan, weeks, now);
+  if (blocked) throw new PaymentPlanError(blocked);
+  await assertNoOpenInstallment(plan.id);
+
+  const span = pauseSpanMs(weeks);
+  const resumesOn = new Date(now.getTime() + span);
+  await prisma.$transaction(async (tx) => {
+    // Re-check inside the transaction: a double click must not push the date twice.
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", nextDueDate: plan.nextDueDate, pausedAt: plan.pausedAt },
+      data: { pausedAt: now, pauseUntil: resumesOn, nextDueDate: new Date(plan.nextDueDate.getTime() + span) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("Your plan just changed. Refresh and try again.");
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + span), expiringSoonNotifiedAt: null } });
+    }
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: now, lt: resumesOn } },
+      data: { status: "CANCELED", refunded: true, canceledReason: PAUSE_REASON },
+    });
+  });
+
+  await logAudit({ actorId: userId, action: "plan.pause", targetType: "User", targetId: userId, detail: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}, back on ${resumesOn.toISOString().slice(0, 10)}` }).catch(() => undefined);
+  await createNotification({
+    userId,
+    type: "PAYMENT_PLAN_CANCELED",
+    title: "Plan paused",
+    body: `Your plan is paused for ${weeks} week${weeks === 1 ? "" : "s"}. Your weekly time is still yours and classes start again on ${resumesOn.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}. Your next payment moved back by the same time.`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Pause notice failed (non-blocking):", err));
+  await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
+    type: "ADMIN_ALERT",
+    title: "A student paused their plan",
+    body: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}. Their slot is held and the next payment moved back.`,
+    emailCategory: "social",
+    cta: { label: "See the plans", path: "/admin/payment-plans" },
+  }).catch((err) => console.error("Pause admin alert failed (non-blocking):", err));
+  return { resumesOn };
+}
+
+/**
+ * The studio pauses a student's plan (Admin > Billing > Plans, or the student's page): to a chosen date, or indefinitely (`until` null).
+ * The weekly time stays theirs. The next bill and the credits' expiry move out by the length of the pause, so nothing falls due or
+ * expires while it lasts, classes inside it are canceled and credited back, and an unpaid bill for the old date is closed. An
+ * indefinite pause moves them out by a fixed ten years and `adminResumePlan` brings them back by the time actually paused.
+ */
+export async function adminPausePlan(planId: string, adminId: string, until: Date | null): Promise<{ resumesOn: Date | null }> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new PaymentPlanError("That plan was not found.");
+  const blocked = adminPauseBlockedReason(plan, until, now);
+  if (blocked) throw new PaymentPlanError(blocked);
+  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: plan.id, status: "PENDING_REVIEW" }, select: { id: true } });
+  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it first.");
+
+  const span = until ? until.getTime() - now.getTime() : INDEFINITE_PAUSE_MS;
+  const pauseUntil = new Date(now.getTime() + span);
+  // A bill already overdue is not made worse by waiting: the new date counts from today.
+  const base = Math.max(plan.nextDueDate.getTime(), now.getTime());
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", nextDueDate: plan.nextDueDate, pausedAt: plan.pausedAt },
+      data: { pausedAt: now, pauseUntil, nextDueDate: new Date(base + span) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
+    await tx.zellePayment.updateMany({ where: { paymentPlanId: plan.id, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + span), expiringSoonNotifiedAt: null } });
+    }
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: now, lt: pauseUntil } },
+      data: { status: "CANCELED", refunded: true, canceledReason: PAUSE_REASON },
+    });
+  });
+
+  const when = until ? `until ${until.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}` : "until the studio resumes it";
+  await logAudit({ actorId: adminId, action: "plan.pause", targetType: "PaymentPlan", targetId: plan.id, detail: `Studio paused the plan ${when}` }).catch(() => undefined);
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_UPDATED",
+    title: "Your plan is paused",
+    body: `Your plan is paused ${when}. Your weekly time is still yours, classes stop for now, and your next payment and credits move back by the same time.`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Studio pause notice failed (non-blocking):", err));
+  return { resumesOn: until };
+}
+
+/** Ends a pause now (a date pause early, or an indefinite one): the due date and credits come back to exactly the time left when it began. */
+export async function adminResumePlan(planId: string, adminId: string): Promise<void> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan || plan.status !== "ACTIVE") throw new PaymentPlanError("Only a running plan can be resumed.");
+  if (!isPausedNow(plan, now) || !plan.pausedAt || !plan.pauseUntil) throw new PaymentPlanError("This plan is not paused.");
+
+  const span = plan.pauseUntil.getTime() - plan.pausedAt.getTime();
+  const delta = now.getTime() - plan.pausedAt.getTime() - span; // negative: the pause is cut short
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", pauseUntil: plan.pauseUntil },
+      data: { pauseUntil: now, nextDueDate: new Date(plan.nextDueDate.getTime() + delta) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + delta), expiringSoonNotifiedAt: null } });
+    }
+  });
+  await bookReservedWindowForPlan(plan.id);
+  await logAudit({ actorId: adminId, action: "plan.resume", targetType: "PaymentPlan", targetId: plan.id, detail: "Studio resumed the plan" }).catch(() => undefined);
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_UPDATED",
+    title: "Your plan is back on",
+    body: "Your plan is running again. Your weekly classes are back on the calendar and your next payment is due on the new date.",
+    emailCategory: "payments",
+  }).catch((err) => console.error("Studio resume notice failed (non-blocking):", err));
 }
 
 /** Days a plan may sit past due before the system cancels it. */
@@ -840,23 +1032,192 @@ export async function describeReservedSlot(planId: string): Promise<string | nul
   return `${DAY_NAMES[plan.reservedSchedule.dayOfWeek]} ${formatClock(addMinutesToHHmm(plan.reservedSchedule.startTime, chunk.offsetMin))}`;
 }
 
+/** The paid cycle this plan is in: from one billing date to the next (28 days, see lib/billingCycle.ts). */
+function paidMonthOf(plan: { status: PaymentPlanStatus; nextDueDate: Date }): { monthStart: Date; paidUntil: Date } {
+  const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
+  return { monthStart: addBillingCycles(paidUntil, -1), paidUntil };
+}
+
 /**
- * How many more weekly classes this plan may book inside the paid month. A
- * month pays for creditsPerInstallment / creditsPerClass classes (4 for the
- * 45-minute plan) no matter how many of that weekday fall inside it, so a
- * month with five Thursdays still gets four. Classes the student skipped or
- * canceled do not count against it.
+ * How many weekly classes the paid cycle holds: the four it is paid for (creditsPerInstallment / creditsPerClass). Billing cycles
+ * are exactly 28 days, so a cycle holds exactly four of any weekday and there is no fifth class to count. The one exception is a
+ * fifth class that was already given (a cycle paid for on the old calendar-month billing, marked in AppSetting): it stays honored.
  */
-export async function classesLeftInPaidMonth(plan: {
+export async function classesInPaidMonth(plan: {
   id: string;
+  term: PaymentPlanTerm;
   cadence: PaymentPlanCadence;
   status: PaymentPlanStatus;
   nextDueDate: Date;
   creditsPerInstallment: number;
+  reservedScheduleId?: string | null;
+  reservedChunkIndex?: number | null;
+}): Promise<{ allowed: number; base: number }> {
+  const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  if (!plan.reservedScheduleId || plan.reservedChunkIndex === null || plan.reservedChunkIndex === undefined) return { allowed: base, base };
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: plan.reservedScheduleId } });
+  const chunk = schedule ? chunksForSchedule(schedule)[plan.reservedChunkIndex] : undefined;
+  if (!schedule || !chunk) return { allowed: base, base };
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  // Only a fifth class that was already given (see above) raises the number; nothing given is ever taken back.
+  if (await fifthClassGiven(plan.id, monthStart)) return { allowed: Math.max(base, classesInWindow(schedule, chunk, monthStart, paidUntil)), base };
+  return { allowed: base, base };
+}
+
+/**
+ * The fifth-class offer and its free credit belonged to calendar-month billing, where a cycle held five of a weekday about four times
+ * a year. Billing is now 28 days, so they are switched off here (the code stays so a fifth class already given is still honored).
+ */
+const FIFTH_CLASS_RETIRED = true;
+
+/** 3-month and 6-month plans (and the retired yearly one) are commitments; Monthly is not. */
+export function isCommitmentTerm(term: PaymentPlanTerm): boolean {
+  return term !== "MONTHLY";
+}
+
+function fifthClassKey(planId: string, monthStart: Date): string {
+  return `plan-fifth-class:${planId}:${monthStart.toISOString().slice(0, 10)}`;
+}
+
+async function fifthClassGiven(planId: string, monthStart: Date): Promise<boolean> {
+  return Boolean(await prisma.appSetting.findUnique({ where: { key: fifthClassKey(planId, monthStart) }, select: { key: true } }));
+}
+
+/**
+ * The credit for a fifth class in a paid month. The installment grants four classes' worth; when the cycle holds a fifth of
+ * the student's weekday, this adds one class's credit, once per cycle (a marker row makes it safe to call again), good until
+ * the next billing date, so the fifth class books and is charged like any other. Returns true when the credit is there.
+ */
+export async function ensureFifthClassCredit(plan: { id: string; userId: string; status: PaymentPlanStatus; nextDueDate: Date }, creditsPerClass: number): Promise<void> {
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const key = fifthClassKey(plan.id, monthStart);
+  try {
+    await prisma.appSetting.create({ data: { key, value: "1" } });
+  } catch {
+    return; // already granted for this paid month
+  }
+  await grantCredits(plan.userId, creditsPerClass, { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, expiresAt: paidUntil });
+}
+
+/**
+ * For the payment receipt: when the cycle this installment just paid for holds five of the student's weekday, a 3-month or
+ * 6-month plan gets the fifth class free (its credit is added now, so the receipt tells the truth), and a Monthly plan is told
+ * it can add that class for the owner's price. Null for an ordinary four-class cycle. Never throws.
+ */
+export async function fifthClassReceiptNote(planId: string): Promise<{ text: string; offerPath: string | null } | null> {
+  // Retired with the 28-day billing cycle: a cycle never holds five of a weekday, so there is no fifth class to announce or sell.
+  if (FIFTH_CLASS_RETIRED) return null;
+  try {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
+    if (!plan || !plan.reservedSchedule || plan.reservedChunkIndex === null) return null;
+    const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+    if (!chunk) return null;
+    const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+    const { monthStart, paidUntil } = paidMonthOf(plan);
+    const starts = classStartsInWindow(plan.reservedSchedule, chunk, monthStart, paidUntil);
+    if (starts.length <= base) return null;
+
+    const day = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", ...opts });
+    const weekday = day(starts[0], { weekday: "long" });
+    const dates = starts.map((d) => day(d, { month: "short", day: "numeric" })).join(", ");
+    const lastDay = new Date(paidUntil.getTime() - 86_400_000);
+    const cycle = `${day(monthStart, { month: "short", day: "numeric" })} to ${day(lastDay, { month: "short", day: "numeric" })}`;
+
+    if (isCommitmentTerm(plan.term)) {
+      await ensureFifthClassCredit(plan, PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+      return {
+        text: `A free class: this billing cycle (${cycle}) has ${starts.length} ${weekday}s instead of 4 (${dates}). Because you are on a ${plan.term === "TERM_3" ? "3-month" : plan.term === "TERM_6" ? "6-month" : "long-term"} plan, one extra class credit was added to your account at no charge. All ${starts.length} classes are yours.`,
+        offerPath: null,
+      };
+    }
+    if (await fifthClassGiven(plan.id, monthStart)) return null; // the free credit already went out for this cycle
+    const price = (await getNumberSetting("payments.fifthClassPriceDollars")) * 100;
+    return {
+      text: `This billing cycle (${cycle}) has ${starts.length} ${weekday}s instead of 4 (${dates}). Your plan covers 4 classes. You can add the last one for ${formatUsdCents(price)} under Lessons, Extra sessions. It is optional, and nothing changes if you skip it. (3-month and 6-month plans include it free.)`,
+      offerPath: "/lessons?tab=extra",
+    };
+  } catch (err) {
+    console.error("Fifth class receipt note failed (non-blocking):", err);
+    return null;
+  }
+}
+
+function formatUsdCents(cents: number): string {
+  const dollars = cents / 100;
+  return `$${Number.isInteger(dollars) ? dollars : dollars.toFixed(2)}`;
+}
+
+export interface FifthClassOffer {
+  planId: string;
+  scheduleId: string;
+  chunkIndex: number;
+  occurrenceDate: Date;
+  scheduledAt: Date;
+  priceCents: number;
+}
+
+/**
+ * The optional fifth class a MONTHLY subscriber can add: their cycle holds five of their weekday, the plan covers four (all
+ * booked), the last one is still ahead and unbooked, and it was not already given free. Always worked out here from the
+ * plan, never from what the browser sends. Null when there is no offer.
+ */
+export async function getFifthClassOffer(userId: string): Promise<FifthClassOffer | null> {
+  if (FIFTH_CLASS_RETIRED) return null; // see fifthClassReceiptNote
+  const plan = await prisma.paymentPlan.findFirst({
+    where: { userId, term: "MONTHLY", reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+    include: { reservedSchedule: true },
+  });
+  if (!plan || !plan.reservedSchedule || !plan.reservedSchedule.active || plan.reservedChunkIndex === null) return null;
+  const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+  if (!chunk) return null;
+  const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const occurrences = classOccurrencesInWindow(plan.reservedSchedule, chunk, monthStart, paidUntil);
+  if (occurrences.length <= base) return null;
+  if (await fifthClassGiven(plan.id, monthStart)) return null;
+  if ((await classesLeftInPaidMonth(plan)) > 0) return null; // the plan's own four are not all booked yet
+
+  const last = occurrences[occurrences.length - 1];
+  if (last.scheduledAt.getTime() <= Date.now()) return null;
+  const booked = await prisma.classBooking.findFirst({
+    where: { studentId: userId, scheduleId: plan.reservedSchedule.id, occurrenceDate: last.occurrenceDate, status: { in: ["SCHEDULED", "COMPLETED"] } },
+    select: { id: true },
+  });
+  if (booked) return null;
+  const priceCents = Math.round((await getNumberSetting("payments.fifthClassPriceDollars")) * 100);
+  return { planId: plan.id, scheduleId: plan.reservedSchedule.id, chunkIndex: plan.reservedChunkIndex, occurrenceDate: last.occurrenceDate, scheduledAt: last.scheduledAt, priceCents };
+}
+
+/** Before a booking: when this would be the fifth class of the paid month, make sure its credit is there. */
+export async function topUpIfFifth(
+  plan: { id: string; userId: string; term: PaymentPlanTerm; cadence: PaymentPlanCadence; status: PaymentPlanStatus; nextDueDate: Date; creditsPerInstallment: number; reservedScheduleId?: string | null; reservedChunkIndex?: number | null },
+  creditsPerClass: number,
+): Promise<void> {
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const { allowed, base } = await classesInPaidMonth(plan);
+  if (allowed <= base) return;
+  const used = await prisma.classBooking.count({
+    where: { reservedByPlanId: plan.id, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: monthStart, lt: paidUntil } },
+  });
+  if (used >= base) await ensureFifthClassCredit(plan, creditsPerClass);
+}
+
+/**
+ * How many more weekly classes this plan may book inside the paid month: every one of the student's weekdays in the cycle
+ * they paid for (four or five, see classesInPaidMonth). Classes the student skipped or canceled do not count against it.
+ */
+export async function classesLeftInPaidMonth(plan: {
+  id: string;
+  term: PaymentPlanTerm;
+  cadence: PaymentPlanCadence;
+  status: PaymentPlanStatus;
+  nextDueDate: Date;
+  creditsPerInstallment: number;
+  reservedScheduleId?: string | null;
+  reservedChunkIndex?: number | null;
 }): Promise<number> {
-  const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
-  const monthStart = addCalendarMonthsClamped(paidUntil, -1);
-  const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const { allowed } = await classesInPaidMonth(plan);
   const used = await prisma.classBooking.count({
     where: {
       reservedByPlanId: plan.id,
@@ -879,16 +1240,19 @@ export async function bookReservedWindowForPlan(planId: string): Promise<void> {
   try {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
     if (!plan || plan.status === "CANCELED" || !plan.reservedSchedule || plan.reservedChunkIndex === null || !plan.reservedSchedule.active) return;
+    // A paused plan books nothing until it is resumed.
+    if (isPausedNow(plan, new Date())) return;
     const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) return;
     const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
-    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
 
     for (const occurrenceDate of nextOccurrenceDates(plan.reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const scheduledAt = computeScheduledAt(plan.reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now() || scheduledAt.getTime() >= paidUntil.getTime()) continue;
-      if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
       if ((await classesLeftInPaidMonth(plan)) <= 0) break;
+      await topUpIfFifth(plan, creditsPerClass);
+      if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
       await createReservedBookingIfAbsent({
         studentId: plan.userId,
         scheduleId: plan.reservedSchedule.id,
@@ -932,9 +1296,9 @@ export async function bookMissingReservedWindows(): Promise<void> {
     // a fifth in the same paid month: drop the extra, latest first, and refund it.
     const live = await prisma.paymentPlan.findMany({ where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() } });
     for (const plan of live) {
-      const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
-      const monthStart = addCalendarMonthsClamped(paidUntil, -1);
-      const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+      const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
+      const monthStart = addBillingCycles(paidUntil, -1);
+      const { allowed } = await classesInPaidMonth(plan);
       const inMonth = await prisma.classBooking.findMany({
         where: { reservedByPlanId: plan.id, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: monthStart, lt: paidUntil } },
         orderBy: { scheduledAt: "asc" },
@@ -1046,10 +1410,11 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
     installmentLabel: `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
     amountCents: payment.amountCents,
     dueDate: plan.nextDueDate,
-    cycleEndsAt: addCalendarMonthsClamped(plan.nextDueDate, 1),
+    cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay bill", url: getAppUrl("/billing/plans") },
     overdueDays,
+    unsubscribe: { userId: plan.userId, category: "payments" },
   });
   return "sent";
 }
@@ -1075,11 +1440,11 @@ async function noticeFamilyShrank(groupId: string): Promise<void> {
   });
   if (remaining.length !== 1) return;
   const [last] = remaining;
-  const solo = calculatePaymentPlanRate(last.cadence, last.term).installmentAmountCents;
+  const solo = calculatePaymentPlanRate(last.cadence, last.term, await getPricingConfig()).installmentAmountCents;
   await noticePlanUpdated({
     userId: last.userId,
-    title: "Your family is down to one person",
-    body: `A family plan needs at least two people. From your next bill the price is the solo price, ${money(solo)}, instead of ${money(last.installmentAmountCents)}. Your plan keeps its term and weekly time.`,
+    title: "Your group is down to one person",
+    body: `A group plan needs at least two people. From your next bill the price is the solo price, ${money(solo)}, instead of ${money(last.installmentAmountCents)}. Your plan keeps its term and weekly time.`,
   }).catch((err) => console.error("Family shrank notice failed (non-blocking):", err));
 }
 
@@ -1101,15 +1466,15 @@ async function endFamilyWhenPayerLeaves(groupId: string, leavingPlanId: string):
     await createNotification({
       userId: member.userId,
       type: "PAYMENT_PLAN_CANCELED",
-      title: "Your family plan is ending",
-      body: "The person who paid for your family plan left it, so it ends. The month already paid stays: your credits and booked classes run until then. You can start your own plan any time.",
+      title: "Your group plan is ending",
+      body: "The person who paid for your group plan left it, so it ends. The 28 days already paid stay: your credits and booked classes run until then. You can start your own plan any time.",
       emailCategory: "payments",
     }).catch((err) => console.error("Family ended notice failed (non-blocking):", err));
   }
   await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
     type: "ADMIN_ALERT",
     title: "A family plan ended: the payer left",
-    body: `${members.length} other member${members.length === 1 ? "" : "s"} lost the family plan because the one who paid left. They keep the month already paid.`,
+    body: `${members.length} other member${members.length === 1 ? "" : "s"} lost the family plan because the one who paid left. They keep the 28 days already paid.`,
     emailCategory: "social",
     cta: { label: "See the plans", path: "/admin/payment-plans?status=CANCELED" },
   }).catch((err) => console.error("Family ended alert failed (non-blocking):", err));
@@ -1118,16 +1483,17 @@ async function endFamilyWhenPayerLeaves(groupId: string, leavingPlanId: string):
 /** Call after any started family plan stops (cancelled by the person, by an admin, or lapsed). */
 async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGroupId: string | null; installmentsPaid: number }): Promise<void> {
   if (!plan.familyGroupId || plan.installmentsPaid < 1) return;
-  const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { payerId: true } });
+  const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { payerId: true, kind: true } });
   if (!group) return;
-  if (group.payerId === plan.userId) await endFamilyWhenPayerLeaves(plan.familyGroupId, plan.id);
+  // In parent mode the parent can leave their own plan and the children's plans carry on (the parent still pays them).
+  if (group.payerId === plan.userId && group.kind === "FAMILY") await endFamilyWhenPayerLeaves(plan.familyGroupId, plan.id);
   else await noticeFamilyShrank(plan.familyGroupId);
 }
 
 // ---------------------------------------------------------------------------
 // Family plans
 //
-// 2 to MAX_FAMILY_MEMBERS existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
+// 2 to MAX_FAMILY_MEMBERS (8) existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
 // Everything is created in ONE transaction: if any member cannot start (already on a plan, banned, a name that is not a real
 // first and last name, the same person typed twice, the time taken), nothing is created for anyone. The one payer is a member;
 // the first month is a single combined FAMILY_PLAN_START payment whose approval starts every member's plan at once
@@ -1135,8 +1501,7 @@ async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGr
 // their own bill, and only the payer's account can settle them (see familyPayerOf in paymentEmail.ts).
 // ---------------------------------------------------------------------------
 
-export const MIN_FAMILY_MEMBERS = 2;
-export const MAX_FAMILY_MEMBERS = 4;
+export { MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS };
 
 export interface CreateFamilyPlansInput {
   payerId: string;
@@ -1148,6 +1513,8 @@ export interface CreateFamilyPlansInput {
   reservedChunkIndex?: number;
   /** The other members' account emails (the payer is added automatically). */
   memberEmails: string[];
+  /** The first payment (everyone together) the payer was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number;
   /** Set only by the action that has just checked the payer's password and emailed code. Needed when the payer is on a plan now. */
   verifiedSwitch?: boolean;
 }
@@ -1157,14 +1524,14 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
   if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
-  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
 
   const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   if (!payer) throw new PaymentPlanError("Your account was not found.");
 
   const typed = Array.from(new Set(input.memberEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))).filter((e) => e !== payer.email.toLowerCase());
-  if (typed.length + 1 < MIN_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan needs at least ${MIN_FAMILY_MEMBERS} accounts, you and one more.`);
-  if (typed.length + 1 > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
+  if (typed.length + 1 < MIN_FAMILY_MEMBERS) throw new PaymentPlanError(`A group plan needs at least ${MIN_FAMILY_MEMBERS} accounts, you and one more.`);
+  if (typed.length + 1 > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A group plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
 
   const others = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   const missing = typed.filter((email) => !others.some((u) => u.email.toLowerCase() === email));
@@ -1174,15 +1541,14 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   const members = [payer, ...others];
   for (const member of members) {
     const who = member.id === payer.id ? "Your account" : member.email;
-    if (member.bannedAt) throw new PaymentPlanError(`${who} cannot start a plan.`);
-    if (member.role !== "STUDENT") throw new PaymentPlanError(`${who} is not a student account.`);
-    if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a family plan can start.`);
+    if (member.bannedAt || member.role !== "STUDENT") throw new PaymentPlanError(`${who} cannot start a plan.`);
+    if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a group plan can start.`);
   }
   // Each member has to be a different person, not one person with two accounts.
   for (let i = 0; i < members.length; i++) {
     for (let j = i + 1; j < members.length; j++) {
       if (namesMatch(members[i].name, members[j].name)) {
-        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. A family plan is for different people, each with their own account.`);
+        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. A group plan is for different people, each with their own account.`);
       }
     }
   }
@@ -1190,9 +1556,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   // A payer who is already subscribed switches: the old plan keeps running until the family's first payment is approved.
   const oldPlan = await prisma.paymentPlan.findFirst({ where: { userId: payerId, status: "ACTIVE" } });
   if (oldPlan) {
-    if (oldPlan.familyGroupId) throw new PaymentPlanError("You are already on a family plan.");
+    if (oldPlan.familyGroupId) throw new PaymentPlanError("You are already on a group plan.");
     if (!input.verifiedSwitch) throw new PaymentPlanError("Confirm the switch with your password and the code we email you first.");
-    if (oldPlan.installmentsPaid < 1) throw new PaymentPlanError("Pay or cancel your current plan first, then start the family plan.");
+    if (oldPlan.installmentsPaid < 1) throw new PaymentPlanError("Pay or cancel your current plan first, then start the group plan.");
     const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: oldPlan.id, status: "PENDING_REVIEW" }, select: { id: true } });
     if (inReview) throw new PaymentPlanError("Your last payment is still being confirmed. Try again in a few minutes.");
   }
@@ -1203,14 +1569,19 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
       where: { payerId, createdAt: { gte: new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000) }, plans: { some: { installmentsPaid: { gt: 0 } } } },
       select: { id: true },
     });
-    if (recent) throw new PaymentPlanError(`You started a family plan recently. A family plan can be changed once every ${cooldownDays} days.`);
+    if (recent) throw new PaymentPlanError(`You started a group plan recently. A group plan can be changed once every ${cooldownDays} days.`);
   }
-  const reservedScheduleId = input.reservedScheduleId ?? oldPlan?.reservedScheduleId ?? null;
-  const reservedChunkIndex = input.reservedChunkIndex ?? oldPlan?.reservedChunkIndex ?? null;
+  // The weekly time is the PAYER's own. Everyone else in the family gets credits and books their own class times with them.
+  // A payer switching in from a plan keeps the weekly time that plan already holds.
+  const reservedScheduleId = oldPlan ? oldPlan.reservedScheduleId : (input.reservedScheduleId ?? null);
+  const reservedChunkIndex = oldPlan ? oldPlan.reservedChunkIndex : (input.reservedChunkIndex ?? null);
   if (!reservedScheduleId || reservedChunkIndex === null) throw new PaymentPlanError("Pick the weekly time first.");
 
-  const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length).perStudentMonthlyCents;
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const pricing = await getPricingConfig();
+  const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length, pricing).perStudentMonthlyCents;
+  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(payerId);
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const memberIds = members.map((m) => m.id);
   // The members who get a plan row now. A switching payer's own plan is created only when the family starts.
@@ -1219,21 +1590,28 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   try {
     const created = await prisma.$transaction(
       async (tx) => {
+        // Nobody is put on a family without saying yes: every other member must have accepted this payer's invitation.
+        try {
+          await assertEveryoneAccepted(tx, payerId, others);
+        } catch (err) {
+          if (err instanceof FamilyInviteError) throw new PaymentPlanError(err.message);
+          throw err;
+        }
         // Every other member must be able to start: none may already be on a plan. (A subscribed sibling cancels their own plan first.)
         const busy = await tx.paymentPlan.findFirst({ where: { userId: { in: planMembers.map((m) => m.id) }, status: "ACTIVE" }, select: { userId: true } });
         if (busy) {
           // Another person's plan status is not told to the payer: only that someone cannot start.
           const who = busy.userId === payerId ? "You already have an active payment plan" : "One of the accounts cannot start a family plan right now";
-          throw new PaymentPlanError(`${who}. Nobody was signed up. Finish or cancel the plan first, then start the family plan.`);
+          throw new PaymentPlanError(`${who}. Nobody was signed up. Finish or cancel the plan first, then start the group plan.`);
         }
         if (oldPlan) {
           const still = await tx.paymentPlan.findFirst({ where: { id: oldPlan.id, status: "ACTIVE" }, select: { id: true } });
           if (!still) throw new PaymentPlanError("Your plan changed while we were setting this up. Try again.");
         }
         const payingAlready = await tx.familyPlanGroup.findFirst({ where: { payerId, plans: { some: { status: "ACTIVE" } } }, select: { id: true } });
-        if (payingAlready) throw new PaymentPlanError("You already pay for a family plan. One family plan per payer.");
+        if (payingAlready) throw new PaymentPlanError("You already pay for a group plan. One group plan per payer.");
 
-        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, memberIds, oldPlan ? [oldPlan.id] : []);
+        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, [payerId], oldPlan ? [oldPlan.id] : []);
 
         const group = await tx.familyPlanGroup.create({ data: { payerId, replacesPlanId: oldPlan?.id ?? null } });
         const plans: PaymentPlan[] = [];
@@ -1248,8 +1626,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
                 creditsPerInstallment: rate.creditsPerInstallment,
                 termMonths: rate.termMonths,
                 nextDueDate: new Date(),
-                reservedScheduleId,
-                reservedChunkIndex,
+                // Only the payer's plan holds a weekly time; the others book their own classes with their credits.
+                reservedScheduleId: member.id === payerId ? reservedScheduleId : null,
+                reservedChunkIndex: member.id === payerId ? reservedChunkIndex : null,
                 familyGroupId: group.id,
               },
             }),
@@ -1265,6 +1644,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
             status: "AWAITING_TRANSFER",
           },
         });
+        await spendInvites(tx, payerId, others.map((o) => o.id));
         return { group, plans, startPayment };
       },
       { isolationLevel: "Serializable" },
@@ -1274,17 +1654,173 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
     const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
     await noticePlanUpdated({
       userId: payerId,
-      title: "Your family plan is set up",
+      title: "Your group plan is set up",
       body: oldPlan
-        ? `${describePaymentPlan(cadence, term)} for ${members.length} accounts is ready. Your current plan keeps running until the combined first payment (${money(created.startPayment.amountCents)}, from your own bank account) is approved. Then it is replaced by the family plan, with the same weekly time.`
+        ? `${describePaymentPlan(cadence, term)} for ${members.length} accounts is ready. Your current plan keeps running until the combined first payment (${money(created.startPayment.amountCents)}, from your own bank account) is approved. Then it is replaced by the group plan, with the same weekly time.`
         : `${describePaymentPlan(cadence, term)} for ${members.length} accounts is set up. Send the combined first payment (${money(created.startPayment.amountCents)}) from your own bank account to start everyone's classes together.`,
     });
     for (const other of others) {
       await noticePlanUpdated({
         userId: other.id,
-        title: "You were added to a family plan",
-        body: `${payer.name ?? payer.email} set up a family plan that includes you. Your classes start when their first payment arrives, and they pay for your monthly bills.`,
+        title: "You were added to a group plan",
+        body: `${payer.name ?? payer.email} set up a group plan that includes you. When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
       }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
+    }
+    return created;
+  } catch (err) {
+    if (err instanceof PaymentPlanError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") throw new PaymentPlanError("That slot was just taken. Try again.");
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Parent mode: a parent pays for the children they are linked to (see parentLinks.ts)
+//
+// Each child gets their own PaymentPlan, all started together by ONE combined payment from the parent's own bank account (the same
+// FAMILY_PLAN_START payment a group plan uses, on a group of kind PARENT). The parent is a member only if they choose to learn too
+// ("I'm learning too", allowed while they have no plan of their own); they are never forced into a plan to pay for a child, and leaving
+// their own plan never ends the children's. Every person on it gets their own weekly time (they each pay the full per-person price), and
+// no two of them can share one. One child is priced like a solo plan; two or more people get the group rate.
+// ---------------------------------------------------------------------------
+
+export interface CreateParentPlansInput {
+  payerId: string;
+  cadence: PaymentPlanCadence;
+  term: PaymentPlanTerm;
+  zelleHandle: string;
+  /** The linked children's account emails, each with the weekly time that child will hold. */
+  children: ({ email: string } & ParentPlanSlot)[];
+  /** The parent learns too, on a plan of their own at the same price. Needs the parent to have no active plan. */
+  includeSelf: boolean;
+  /** The parent's own weekly time. Required when they learn too. */
+  selfSlot?: ParentPlanSlot | null;
+  expectedFirstPaymentCents?: number;
+}
+
+/** One weekly time: a class schedule and which 45-minute part of it. */
+export interface ParentPlanSlot {
+  scheduleId: string;
+  chunkIndex: number;
+}
+
+/** What one person pays per 28 days when `people` are on a parent-paid plan: solo price for one, the group rate for two or more. */
+export function parentPlanPerPersonCents(cadence: PaymentPlanCadence, term: PaymentPlanTerm, people: number, pricing: Awaited<ReturnType<typeof getPricingConfig>>): number {
+  return people >= 2 ? calculateFamilyBundleTotal(cadence, term, people, pricing).perStudentMonthlyCents : calculatePaymentPlanRate(cadence, term, pricing).installmentAmountCents;
+}
+
+export async function createParentPlans(input: CreateParentPlansInput) {
+  const { payerId, cadence, term, zelleHandle, includeSelf } = input;
+  if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
+  if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
+  if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
+
+  const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  if (!payer || payer.bannedAt || payer.role !== "STUDENT") throw new PaymentPlanError("Your account cannot start a plan.");
+  if (includeSelf && !hasFirstAndLastName(payer.name)) throw new PaymentPlanError("Your account needs a first and last name on it before you can be on a plan.");
+
+  const asked = input.children
+    .map((c) => ({ email: c.email.trim().toLowerCase(), scheduleId: c.scheduleId, chunkIndex: c.chunkIndex }))
+    .filter((c) => c.email && c.email !== payer.email.toLowerCase());
+  if (new Set(asked.map((c) => c.email)).size !== asked.length) throw new PaymentPlanError("An account is listed twice. Each child needs their own account.");
+  const typed = asked.map((c) => c.email);
+  if (typed.length < 1) throw new PaymentPlanError("Add at least one child's account.");
+  if (includeSelf && !input.selfSlot) throw new PaymentPlanError("Pick a weekly time for yourself too.");
+  const people = typed.length + (includeSelf ? 1 : 0);
+  if (people > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
+
+  const kids = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  const missing = typed.filter((email) => !kids.some((u) => u.email.toLowerCase() === email));
+  if (missing.length > 0) throw new PaymentPlanError(`These emails do not have a Bass Note Piano account yet: ${missing.join(", ")}`);
+  const orderedKids = typed.map((email) => kids.find((k) => k.email.toLowerCase() === email)!);
+  for (const kid of orderedKids) {
+    if (kid.bannedAt || kid.role !== "STUDENT") throw new PaymentPlanError(`${kid.email} cannot start a plan.`);
+    if (!hasFirstAndLastName(kid.name)) throw new PaymentPlanError(`${kid.email} needs a first and last name on the account before a plan can start.`);
+  }
+  const members = includeSelf ? [...orderedKids, payer] : orderedKids;
+  for (let i = 0; i < members.length; i++) {
+    for (let j = i + 1; j < members.length; j++) {
+      if (namesMatch(members[i].name, members[j].name)) {
+        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. Each person needs their own account.`);
+      }
+    }
+  }
+
+  // Each person's own weekly time, and never the same one twice.
+  const slotFor = new Map<string, ParentPlanSlot>(orderedKids.map((kid, i) => [kid.id, { scheduleId: asked[i].scheduleId, chunkIndex: asked[i].chunkIndex }]));
+  if (includeSelf && input.selfSlot) slotFor.set(payer.id, { scheduleId: input.selfSlot.scheduleId, chunkIndex: input.selfSlot.chunkIndex });
+  for (const slot of slotFor.values()) {
+    if (typeof slot.scheduleId !== "string" || !slot.scheduleId || !Number.isInteger(slot.chunkIndex) || slot.chunkIndex < 0) throw new PaymentPlanError("Pick a weekly time for everyone on the plan.");
+  }
+  if (duplicateWeeklyTime([...slotFor.values()])) throw new PaymentPlanError("Two people picked the same weekly time. Each person needs their own.");
+
+  const pricing = await getPricingConfig();
+  const perMemberCents = parentPlanPerPersonCents(cadence, term, members.length, pricing);
+  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(payerId);
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
+  const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+
+  try {
+    const created = await prisma.$transaction(
+      async (tx) => {
+        // Every child must be linked to this parent, and have said yes.
+        const links = await tx.parentLink.findMany({ where: { parentId: payerId, childId: { in: orderedKids.map((k) => k.id) }, status: "ACCEPTED" }, select: { childId: true } });
+        const linked = new Set(links.map((l) => l.childId));
+        const notLinked = orderedKids.filter((k) => !linked.has(k.id));
+        if (notLinked.length > 0) throw new PaymentPlanError(`${notLinked.map((k) => k.email).join(", ")} ${notLinked.length === 1 ? "is" : "are"} not linked to you yet. Ask them to accept your request first.`);
+
+        // Nobody may already be on a plan. A child's plan status is not told to the parent: only that someone cannot start.
+        const busyKid = await tx.paymentPlan.findFirst({ where: { userId: { in: orderedKids.map((k) => k.id) }, status: "ACTIVE" }, select: { userId: true } });
+        if (busyKid) throw new PaymentPlanError("One of the accounts cannot start a plan right now. Nobody was signed up. Finish or cancel their plan first.");
+        if (includeSelf) {
+          const mine = await tx.paymentPlan.findFirst({ where: { userId: payerId, status: "ACTIVE" }, select: { id: true } });
+          if (mine) throw new PaymentPlanError("You already have your own plan. Turn off \"I'm learning too\", or cancel your plan first.");
+        }
+        for (const [memberId, slot] of slotFor) await assertSlotReservable(tx, slot.scheduleId, slot.chunkIndex, creditsPerWeek, [memberId], []);
+
+        const group = await tx.familyPlanGroup.create({ data: { payerId, kind: "PARENT" } });
+        const plans: PaymentPlan[] = [];
+        for (const member of members) {
+          plans.push(
+            await tx.paymentPlan.create({
+              data: {
+                userId: member.id,
+                cadence,
+                term,
+                installmentAmountCents: perMemberCents,
+                creditsPerInstallment: rate.creditsPerInstallment,
+                termMonths: rate.termMonths,
+                nextDueDate: new Date(),
+                reservedScheduleId: slotFor.get(member.id)!.scheduleId,
+                reservedChunkIndex: slotFor.get(member.id)!.chunkIndex,
+                familyGroupId: group.id,
+              },
+            }),
+          );
+        }
+        const startPayment = await tx.zellePayment.create({
+          data: { userId: payerId, purpose: "FAMILY_PLAN_START", amountCents: perMemberCents * members.length, zelleHandle, familyGroupId: group.id, status: "AWAITING_TRANSFER" },
+        });
+        return { group, plans, startPayment };
+      },
+      { isolationLevel: "Serializable" },
+    );
+
+    await prisma.user.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { notifyEmailReminders: true } });
+    const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    await noticePlanUpdated({
+      userId: payerId,
+      title: "Your plan is set up",
+      body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? members[0].name ?? members[0].email : `${members.length} accounts`} is set up. Send the first payment (${money(created.startPayment.amountCents)}) from your own bank account to start the classes. You pay every 28-day bill from the Parent mode page.`,
+    });
+    for (const kid of orderedKids) {
+      await noticePlanUpdated({
+        userId: kid.id,
+        title: "A plan was set up for you",
+        body: `${payer.name ?? payer.email} set up your plan. When their first payment arrives your class credits appear and your weekly class is booked. They pay your bills, and they can see your progress and help with your class times.`,
+      }).catch((err) => console.error("Parent plan child notice failed (non-blocking):", err));
     }
     return created;
   } catch (err) {

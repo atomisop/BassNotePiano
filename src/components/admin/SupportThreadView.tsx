@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CANNED_REPLIES } from "@/lib/cannedReplies";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SupportMessageSender } from "@prisma/client";
@@ -19,7 +20,8 @@ import { usePoll } from "@/hooks/usePoll";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCommands";
 import { buttonVariants } from "@/components/ui/button";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -34,7 +36,7 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   if (message.sender === "INTERNAL") {
     return (
       <div className="flex flex-col items-center">
-        <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
+        <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
           Internal note{message.sentByName ? ` · ${message.sentByName}` : ""} · only admins see this
         </span>
         <div className="max-w-[90%] rounded-2xl border border-dashed border-slate-600 bg-slate-800/40 px-3.5 py-2 text-body text-slate-300">
@@ -46,16 +48,16 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
         {isVisitor ? visitorLabel : SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>
       <div
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
           isVisitor
-            ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+            ? "bg-slate-50 text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
+              ? "border border-slate-50/30 bg-neu-base shadow-pressed-low text-slate-100"
               : "text-slate-300 bg-neu-base shadow-raised-low"
         }`}
       >
@@ -172,9 +174,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
 
   return (
     <div className="flex flex-col gap-3">
-      <BackLink href={backHref} className="tap inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-small font-medium text-slate-300 transition hover:text-slate-50">
-        <span aria-hidden>←</span> Back
-      </BackLink>
+      <PageBack href={backHref} />
 
       {/* Tall enough to use the screen, short enough that the reply box ends above the floating dock. */}
       <div className="glass-surface flex h-[calc(100dvh-21rem)] min-h-[360px] min-w-0 flex-col overflow-hidden lg:h-[calc(100dvh-19rem)]">
@@ -185,10 +185,18 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
               {!isEmail && thread.subject ? `${thread.subject} · ` : ""}
               {isEmail && thread.contactName ? `${thread.contactName} · ` : ""}
               {thread.contactEmail}
-              {thread.user && <> · has an account{thread.user.username ? ` (@${thread.user.username})` : ""}</>}
+              {thread.user && (
+                <>
+                  {" · "}
+                  {/* Straight to their account (plan, credits, classes) without searching for them. */}
+                  <Link href={`/admin/users/${thread.user.id}`} className="font-medium text-slate-300 underline underline-offset-4 hover:text-slate-50">
+                    Open their account{thread.user.username ? ` (@${thread.user.username})` : ""}
+                  </Link>
+                </>
+              )}
             </p>
             {thread.assignedTo && (
-              <p className="mt-0.5 truncate text-small font-medium text-[rgb(var(--c-s-50))]">
+              <p className="mt-0.5 truncate text-small font-medium text-slate-50">
                 {thread.assignedTo.id === currentAdminId ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
               </p>
             )}
@@ -205,7 +213,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 {resolving ? "Resolving…" : "Mark resolved"}
               </button>
             ) : (
-              <span className="rounded-full bg-slate-50/15 px-2.5 py-1 text-small font-medium text-slate-100">Resolved</span>
+              <StatusDot tone="success">Resolved</StatusDot>
             )}
             <button
               type="button"
@@ -229,7 +237,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
                 disabled={deleting}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Never mind
               </button>
@@ -237,7 +245,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Delete permanently"}
@@ -267,7 +275,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </p>
         )}
         {notice && !error && (
-          <p role="status" className="border-t border-ink/10 bg-[rgb(var(--c-s-50)/0.08)] px-4 py-2 text-small text-slate-200">
+          <p role="status" className="border-t border-ink/10 bg-slate-50/8 px-4 py-2 text-small text-slate-200">
             {notice}
           </p>
         )}
@@ -296,7 +304,23 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </ul>
         )}
 
-        <form onSubmit={handleSend} className="flex min-w-0 items-end gap-2 border-t border-ink/10 p-3">
+        <div className="flex gap-1.5 overflow-x-auto border-t border-ink/10 px-3 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Saved replies">
+          {CANNED_REPLIES.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              disabled={sending}
+              onClick={() => {
+                setReply(c.text);
+                inputRef.current?.focus();
+              }}
+              className="tap shrink-0 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-raised-low transition hover:text-slate-50 hover:shadow-raised-mid"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={handleSend} className="flex min-w-0 items-end gap-2 p-3">
           {isEmail ? (
             <textarea
               ref={inputRef}

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import type { MeStatus } from "@/lib/meStatus";
+import { onChange } from "@/lib/liveEvents";
 
 const Ctx = createContext<MeStatus | null>(null);
 
@@ -35,7 +36,12 @@ export function MeStatusProvider({ initial, children }: { initial: MeStatus; chi
         // Offline or a hiccup: keep showing the last known values.
       }
     }
-    const timer = setInterval(load, POLL_MS);
+    // A background tab has nothing to show, so it does not ask; it catches up the moment it is shown again (below).
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, POLL_MS);
+    // Reading a message announces "messages": the unread badge (now part of this status) looks again.
+    const stopMessages = onChange("messages", () => void load());
     const onChanged = () => void load();
     const onVisible = () => {
       if (document.visibilityState === "visible") void load();
@@ -46,6 +52,7 @@ export function MeStatusProvider({ initial, children }: { initial: MeStatus; chi
     return () => {
       alive = false;
       clearInterval(timer);
+      stopMessages();
       window.removeEventListener("bnp:status-changed", onChanged);
       document.removeEventListener("visibilitychange", onVisible);
     };

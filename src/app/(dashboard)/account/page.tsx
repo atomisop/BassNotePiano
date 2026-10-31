@@ -1,3 +1,4 @@
+import { isIndefinitePause } from "@/lib/planPause";
 import { discordLinkState } from "@/lib/discordLinkState";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -5,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getActivePaymentPlan, getFamilyDetails } from "@/lib/paymentPlans";
 import { loadPersistedHistory } from "@/lib/assistant";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
+import { unusedBackupCodeCount } from "@/lib/adminTwoStep";
 import { AccountSettings } from "./AccountSettings";
 
 export const metadata = { title: "Settings" };
@@ -33,6 +35,10 @@ export default async function AccountPage() {
         notifyEmailSocial: true,
         notifyEmailReminders: true,
         notifyEmailClasses: true,
+        role: true,
+        totpEnabledAt: true,
+        hideFromLeaderboard: true,
+        parentLinksAsChild: { where: { status: "ACCEPTED" }, select: { id: true }, take: 1 },
       },
     }),
     loadPersistedHistory(session.user.id),
@@ -57,8 +63,11 @@ export default async function AccountPage() {
           verifyMode: await phoneVerifyMode(),
         },
         discordUsername: discordLinkState({ discordId: user.discordId, discordUsername: user.discordUsername }).name,
+        leaderboardHidden: user.hideFromLeaderboard,
+        leaderboardLinkedChild: user.parentLinksAsChild.length > 0,
       }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
+      twoStep={user.role === "ADMIN" ? { enabled: Boolean(user.totpEnabledAt), backupLeft: user.totpEnabledAt ? await unusedBackupCodeCount(session.user.id) : 0 } : null}
       initialNotificationPreferences={{
         notifyEmailPayments: user.notifyEmailPayments,
         notifyEmailRoleUpdates: user.notifyEmailRoleUpdates,
@@ -74,7 +83,12 @@ export default async function AccountPage() {
               term: activePlan.term,
               installmentsPaid: activePlan.installmentsPaid,
               termMonths: activePlan.termMonths,
+              installmentAmountCents: activePlan.installmentAmountCents,
+              nextDueDate: isIndefinitePause(activePlan) && activePlan.pauseUntil && activePlan.pauseUntil > new Date() ? null : activePlan.nextDueDate.toISOString(),
+              pausedIndefinitely: isIndefinitePause(activePlan) && Boolean(activePlan.pauseUntil && activePlan.pauseUntil > new Date()),
               family: familyDetails,
+              pausedAt: activePlan.pausedAt?.toISOString() ?? null,
+              pausedUntil: activePlan.pauseUntil && activePlan.pauseUntil > new Date() && !isIndefinitePause(activePlan) ? activePlan.pauseUntil.toISOString() : null,
             }
           : null
       }

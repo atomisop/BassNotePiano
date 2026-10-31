@@ -34,12 +34,12 @@ export function MetricCard({
   variant?: "area" | "bar";
   tone?: "accent" | "success";
 }) {
-  const colorClass = tone === "success" ? "text-slate-50" : "text-[rgb(var(--c-s-50))]";
+  const colorClass = "text-signal-fg";
   const hasSeries = data.length > 1;
 
   return (
     <div className="glass-surface p-5">
-      <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-500">{label}</p>
       <p className="mt-1.5 text-body tabular-nums text-slate-50 font-semibold">{value}</p>
       {hint && <p className="mt-1 text-small text-slate-500">{hint}</p>}
 

@@ -6,10 +6,10 @@ import { isObjectStorageConfigured } from "@/lib/storage";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
-import { ArrowLeftIcon } from "@/components/ui/icons";
+import { getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Profile" };
 
@@ -17,15 +17,13 @@ export default async function ProfilePage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/profile");
 
-  const [user, badgeRows] = await Promise.all([
+  const [user, badgeRows, practice] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         name: true,
         image: true,
         username: true,
-        currentStreak: true,
-        longestStreak: true,
         primaryInstrument: true,
         skillLevel: true,
         genres: true,
@@ -33,6 +31,7 @@ export default async function ProfilePage() {
       },
     }),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
+    getFingerPracticeStatus(session.user.id),
   ]);
   if (!user) redirect("/login");
 
@@ -45,26 +44,20 @@ export default async function ProfilePage() {
           friend's own profile link, so there's no single page it "belongs"
           to. Back to the roadmap rather than guessing a referrer, so this
           never reads as a dead end reachable only via the dock icons. */}
-      <BackLink
-        href="/dashboard"
-        className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
-      >
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
+      <PageBack href="/dashboard" />
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
+        <div className="h-16 w-16 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-body text-[rgb(var(--c-s-50))] font-semibold">
+            <div className="flex h-full w-full items-center justify-center text-body text-slate-50 font-semibold">
               {(user.name ?? user.username ?? "?").charAt(0).toUpperCase()}
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Profile</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Profile</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">{user.name ?? "Student"}</h1>
           {user.username && <p className="text-small text-slate-500">@{user.username}</p>}
         </div>
@@ -84,22 +77,23 @@ export default async function ProfilePage() {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="glass-surface p-5">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
-            {user.currentStreak > 0 ? `${user.currentStreak} day streak` : "Streak"}
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+            {practice.streak > 0 ? `${practice.streak} day streak` : "Streak"}
           </p>
-          <StreakDots currentStreak={user.currentStreak} />
+          {/* The same practice streak as Home and the Streak page (one number everywhere, 2026-10-30). */}
+          <StreakDots currentStreak={practice.streak} />
         </div>
         <div className="glass-surface p-5">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Longest streak</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Longest streak</p>
           <p className="mt-2 text-body text-slate-50 font-semibold">
-            {user.longestStreak} day{user.longestStreak === 1 ? "" : "s"}
+            {practice.longest ?? 0} day{practice.longest === 1 ? "" : "s"}
           </p>
         </div>
       </div>
 
       <div className="mt-8">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-body text-slate-50 font-semibold">Badges</h2>
+          <h2 className="text-title text-slate-50 font-semibold">Badges</h2>
           <p className="text-small text-slate-500">
             {earnedCodes.length} of {BADGES.length} earned
           </p>

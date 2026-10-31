@@ -101,6 +101,9 @@ model PaymentPlan {
   term    PaymentPlanTerm
 
   installmentAmountCents Int
+  // The price before a personal discount (see AccountDiscount); null while no discount is applied. Lets the owner change or remove the
+  // discount later without recomputing from today's list prices, so the plan's locked price stays a promise.
+  listAmountCents        Int?
   creditsPerInstallment  Int
   termMonths             Int
 
@@ -117,6 +120,10 @@ model PaymentPlan {
   reservedSchedule               ClassSchedule? @relation(fields: [reservedScheduleId], references: [id])
   reservedChunkIndex             Int?
   reservedSlotInactiveNotifiedAt DateTime?
+
+  // The latest pause: it began at pausedAt and the weekly classes resume at pauseUntil. Kept after it ends so the 90 day limit has a date to read.
+  pausedAt   DateTime?
+  pauseUntil DateTime?
 
   canceledAt       DateTime?
   canceledById     String?
@@ -137,8 +144,8 @@ model PaymentPlan {
   updatedAt DateTime @updatedAt
 
   // Set when this plan is one member's plan inside a family plan (see FamilyPlanGroup).
-  familyGroupId String?
-  familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
+  familyGroupId      String?
+  familyGroup        FamilyPlanGroup?  @relation(fields: [familyGroupId], references: [id])
   // Family plans created to replace this plan once their first payment is approved.
   replacedByFamilies FamilyPlanGroup[] @relation("FamilySwitchReplaces")
 
@@ -156,11 +163,19 @@ model PaymentPlan {
 // reserving the same weekly time and all created in one transaction (any member that cannot start stops the whole family). The one
 // payer (a member) pays everything: the first month as ONE combined FAMILY_PLAN_START payment whose approval starts every member's
 // plan in the same transaction, then each member's own monthly bill, which only the payer's bank account may settle.
+// FAMILY: the payer is a member (a group plan). PARENT: a parent pays for the children they are linked to (ParentLink); the parent
+// may or may not be a member too, and leaving the plan never ends the children's plans.
+enum FamilyGroupKind {
+  FAMILY
+  PARENT
+}
+
 model FamilyPlanGroup {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
+  kind      FamilyGroupKind @default(FAMILY)
   payerId   String
-  payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  payer     User            @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 
   // When the payer was already on a solo plan: that plan keeps running untouched until the family's combined first payment is
   // approved, and only then is it cancelled and replaced by the payer's family plan (same transaction, same weekly time).
@@ -172,6 +187,29 @@ model FamilyPlanGroup {
 
   @@index([payerId])
   @@index([replacesPlanId])
+}
+
+enum FamilyInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// Nobody is put on someone else's family plan without saying yes. The payer invites an existing account, that person accepts or
+// declines on their own Billing > Plans screen, and createFamilyPlans refuses to start a family unless every other member has an
+// ACCEPTED invite from this payer (made within FAMILY_INVITE_DAYS). A declined invite blocks asking again for a while.
+model FamilyInvite {
+  id          String             @id @default(cuid())
+  payerId     String
+  payer       User               @relation("FamilyInvitePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  inviteeId   String
+  invitee     User               @relation("FamilyInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  status      FamilyInviteStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  respondedAt DateTime?
+
+  @@unique([payerId, inviteeId])
+  @@index([inviteeId, status])
 }
 
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
@@ -458,6 +496,12 @@ enum NotificationType {
   PAYMENT_RECEIVED // to the student, when they submit a payment that now waits for review
   TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
   PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
+  SLOT_WAITLIST_OPENED // to the student, when a weekly time they were waiting for is free to take
+  PARENT_LINK_REQUEST // to a child's account, when a parent asks to link to it (parent mode)
+  PARENT_LINK_ACCEPTED // to the parent, when the child accepts
+  BANNER_PHONE // to the student, each time the "add your phone number" banner pops up (kept in the bell even if they close it)
+  BANNER_DISCORD // same, for the "connect your Discord" banner
+  BANNER_PRACTICE // same, for the "time to practice" banner
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -471,6 +515,8 @@ model Notification {
   type      NotificationType
   title     String
   body      String?
+  /// The in-app page tapping it opens (one student's page, one payment). Null falls back to the type's default (notificationTargets.ts).
+  href      String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
 
@@ -758,11 +804,11 @@ model GroupMessageReaction {
 // ---------------------------------------------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
-  emailVerified DateTime?
+  emailVerified  DateTime?
 
   // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
   // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
@@ -777,9 +823,9 @@ model User {
   phoneVerifiedAt DateTime?
   pendingPhone    String?
   phoneRequired   Boolean   @default(false)
-  image         String?
-  passwordHash  String? // set only for credentials-based signup
-  role          Role      @default(STUDENT)
+  image           String?
+  passwordHash    String? // set only for credentials-based signup
+  role            Role      @default(STUDENT)
 
   // Bumped by a password change or an explicit "sign out of all other
   // devices" (see src/lib/auth.ts's jwt callback and
@@ -788,7 +834,21 @@ model User {
   // at sign-in, so a mismatch here is what actually invalidates it, the
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
-  sessionVersion Int @default(1)
+  sessionVersion    Int                @default(1)
+  // Bumped by "make a new calendar link" in Settings; the personal calendar feed link is signed with it, so the old link stops working.
+  calendarVersion   Int                @default(0)
+  // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
+  totpSecretEnc     String?
+  totpEnabledAt     DateTime?
+  totpLastStep      Int? // the last 30 second step accepted, so one code cannot be used twice
+  adminBackupCodes  AdminBackupCode[]
+  knownDevices      KnownDevice[]
+  pushSubscriptions PushSubscription[]
+  slotWaitlist      SlotWaitlist[]
+  // Referral program: the code this person shares, and the referral rows they made / came in through.
+  referralCode      String?            @unique
+  referralsMade     Referral[]         @relation("ReferrerRel")
+  referralReceived  Referral?          @relation("ReferredRel")
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
@@ -808,7 +868,11 @@ model User {
   // As of the live-class-only model, hasCurriculumAccess is no longer set by
   // any purchase: it's the admin's complimentary override only. Real access
   // is derived from an active Payment Plan (src/lib/entitlement.ts).
-  hasCurriculumAccess  Boolean   @default(false)
+  hasCurriculumAccess Boolean @default(false)
+
+  // The studio leaderboard (weekly practice minutes) lists everyone except the admin, banned accounts and anyone who turned this
+  // on in Settings > Privacy.
+  hideFromLeaderboard  Boolean   @default(false)
   curriculumUnlockedAt DateTime?
 
   // Set once when a class application is approved (3 days out). Never
@@ -858,9 +922,9 @@ model User {
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
   lastSeenPatchVersion String? // the last What's new version this account has been shown
-  passwordChangedAt DateTime? // when they last changed or reset their password, null if never
-  discordId       String?   @unique // the Discord account they connected, used to give them access to their private class call
-  discordUsername String?
+  passwordChangedAt    DateTime? // when they last changed or reset their password, null if never
+  discordId            String?   @unique // the Discord account they connected, used to give them access to their private class call
+  discordUsername      String?
 
   // Drives the interactive spotlight walkthrough, shown automatically
   // exactly once (right after onboarding wizard + first login), never
@@ -898,9 +962,13 @@ model User {
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
-  paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
-  familyPlanGroupsPaid FamilyPlanGroup[] @relation("FamilyPlanPayer")
-  paymentPlansCanceled PaymentPlan[] @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
+  paymentPlans          PaymentPlan[]     @relation("PaymentPlanStudent")
+  familyPlanGroupsPaid  FamilyPlanGroup[] @relation("FamilyPlanPayer")
+  familyInvitesSent     FamilyInvite[]    @relation("FamilyInvitePayer")
+  familyInvitesReceived FamilyInvite[]    @relation("FamilyInviteInvitee")
+  parentLinksAsParent   ParentLink[]      @relation("ParentLinkParent")
+  parentLinksAsChild    ParentLink[]      @relation("ParentLinkChild")
+  paymentPlansCanceled  PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
 
@@ -911,11 +979,12 @@ model User {
   lessonProgress  LessonProgress[]
   scaleNotes      ScaleNote[]
 
-  verificationCodes VerificationCode[]
-  loginEvents       LoginEvent[]
-  badges            UserBadge[]
+  verificationCodes  VerificationCode[]
+  loginEvents        LoginEvent[]
+  badges             UserBadge[]
   fingerPracticeDays FingerPracticeDay[]
   mailMessages       MailMessage[]       @relation("MailRecipient")
+  emailLogs          EmailLog[]
 
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
@@ -946,8 +1015,10 @@ model User {
   groupMessagesSent     GroupMessage[]         @relation("GroupMessageSender")
   groupMessageReactions GroupMessageReaction[] @relation("GroupMessageReactionUser")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  accountDiscount       AccountDiscount?
+  accountDiscountsGiven AccountDiscount[] @relation("AccountDiscountGivenBy")
 
   @@index([emailCanonical])
 }
@@ -1048,12 +1119,44 @@ model LoginEvent {
 // bcrypt, and writes a row here on every failure. Rows are never deleted
 // on success; the sliding time window (see assertRateLimit) is what lets a
 // legitimate user recover, not a manual reset.
+// Single-use recovery codes for an admin who has lost their authenticator. Only a hash is stored.
+model AdminBackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, codeHash])
+}
+
+// A browser and device an account has signed in from (a short code of the browser and system, never the address),
+// so a sign-in from a new one can be emailed to the owner of the account.
+model KnownDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceHash  String
+  label       String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  // The most recent sign-in on this device, and the rough place it came from (city, region, country; never the IP address).
+  signedInAt  DateTime @default(now())
+  city        String?
+  region      String?
+  country     String?
+
+  @@unique([userId, deviceHash])
+}
+
 model FailedLoginAttempt {
   id        String   @id @default(cuid())
   email     String
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([createdAt])
 }
 
 // Rate-limit ledger for checkFamilyBundleRecipientsAction (billing/lessons).
@@ -1215,19 +1318,19 @@ enum SupportMessageSender {
 // generic "Support" role, which is the whole point (no personal admin
 // identity leaks to a visitor).
 model SupportMessage {
-  id           String               @id @default(cuid())
-  escalationId String
-  escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
-  sender       SupportMessageSender
-  body         String               @db.Text
+  id             String               @id @default(cuid())
+  escalationId   String
+  escalation     AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  sender         SupportMessageSender
+  body           String               @db.Text
   // Same `user:<id>` / IP convention as elsewhere, set only on VISITOR rows, for rate-limiting/abuse trail only.
-  identifier   String?
-  sentById     String?
-  sentBy       User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  identifier     String?
+  sentById       String?
+  sentBy         User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
   // The email's own Message-ID header, for EMAIL threads: dedupes a retried
   // delivery and lets a customer's reply be matched to its thread.
-  emailMessageId String?            @unique
-  createdAt    DateTime             @default(now())
+  emailMessageId String?              @unique
+  createdAt      DateTime             @default(now())
 
   @@index([escalationId, createdAt])
 }
@@ -1254,6 +1357,10 @@ model ScaleGroup {
   // nothing reads it anymore; not worth a destructive column drop for it.
   priceCents Int @default(2500)
 
+  // The roadmap (chapter) this scale belongs to. Null means the first roadmap, so scales made by the seed need no roadmap.
+  roadmapId String?
+  roadmap   Roadmap? @relation(fields: [roadmapId], references: [id], onDelete: SetNull)
+
   progress      ScaleProgress[]
   quizAttempts  QuizAttempt[]
   zellePayments ZellePayment[]
@@ -1262,6 +1369,26 @@ model ScaleGroup {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roadmapId])
+}
+
+// A roadmap: a run of consecutive scales shown to students as one course (Scales, Beginner Piano, Worship songs...). The curriculum
+// is still one ordered chain of scales (ScaleGroup.order); roadmaps are chapters of it in their own order, so each one opens after the
+// one before is finished, through the same teacher-approved unlock. Added and ordered by the owner in Admin > Setup > Roadmaps.
+model Roadmap {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?      @db.Text
+  instrument  String? // "Piano", "Guitar", "Bass"; null for any instrument
+  level       String? // "Beginner", "Intermediate", "Advanced"
+  artwork     String       @default("dusk") // a key of ROADMAP_ARTWORKS (src/lib/roadmapRules.ts)
+  order       Int          @unique
+  visible     Boolean      @default(true)
+  scales      ScaleGroup[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // Admin-authored course content (video or PDF) for one scale group's course
@@ -1565,6 +1692,9 @@ model ClassSchedule {
   bookings             ClassBooking[]
   reservedByPlans      PaymentPlan[]
   extraSessionPayments ZellePayment[]
+  slotHolds            SlotHold[]
+  ownerReservations    OwnerReservation[]
+  slotWaitlist         SlotWaitlist[]
 
   @@index([dayOfWeek, active])
 }
@@ -1613,17 +1743,19 @@ model ClassBooking {
   reservedByPlanId String?
   reservedByPlan   PaymentPlan? @relation(fields: [reservedByPlanId], references: [id])
 
-  status         ClassBookingStatus @default(SCHEDULED)
-  attendance     AttendanceStatus? // set by admin after the class happens; null until marked
+  status           ClassBookingStatus @default(SCHEDULED)
+  // True when the studio teaches this class in person: no Discord call is made for it, and the student is told it is in person.
+  inPerson         Boolean            @default(false)
+  attendance       AttendanceStatus? // set by admin after the class happens; null until marked
   // True once this booking was actually canceled before ever being charged,
   // which, now that the real charge waits for attendance, is every
   // cancellation that reaches this state at all (a booking already marked
   // COMPLETED can't be canceled, see cancelClassBooking's own guard).
-  refunded       Boolean            @default(false)
-  canceledReason String?
+  refunded         Boolean            @default(false)
+  canceledReason   String?
   // When the student was last reminded about this class, so each reminder goes out once.
-  reminder24At   DateTime?
-  reminder1hAt   DateTime?
+  reminder24At     DateTime?
+  reminder1hAt     DateTime?
   // The private Discord voice channel made for this class, until it is removed after the class.
   discordChannelId String?
 
@@ -1635,6 +1767,8 @@ model ClassBooking {
   @@index([studentId, status])
   @@index([familyBookingGroupId])
   @@index([reservedByPlanId])
+  // Classes by status and time: classes to mark, today's classes and the next 7 days, on every admin page (2026-10-31 speed pass).
+  @@index([status, scheduledAt])
 }
 
 // Audit trail for every manual admin change to a student's classCredits
@@ -1733,21 +1867,21 @@ model PayerAlias {
 }
 
 model ProcessedPaymentEmail {
-  id          String        @id @default(cuid())
-  messageId   String        @unique
-  method      PaymentMethod
-  senderName  String
-  amountCents Int
-  memo        String?       @db.Text
-  paymentId   String?
+  id               String        @id @default(cuid())
+  messageId        String        @unique
+  method           PaymentMethod
+  senderName       String
+  amountCents      Int
+  memo             String?       @db.Text
+  paymentId        String?
   // A phone number the email showed for the sender, when the bank includes one: the whole number (E.164), or
   // only its last four digits when the bank masks it. A cross-check against the student's number, never a
   // claim on money by itself.
   senderPhone      String?
   senderPhoneLast4 String?
   // Set when an admin says this email is nothing to do with a payment (a personal transfer, say), so it stops being counted as unmatched.
-  dismissedAt DateTime?
-  createdAt   DateTime      @default(now())
+  dismissedAt      DateTime?
+  createdAt        DateTime      @default(now())
 
   @@index([amountCents, createdAt])
 }
@@ -1788,6 +1922,40 @@ enum MailKind {
   BILLING
 }
 
+// One row per email the app tried to send: sent through Resend, skipped (the person switched that kind off, a banned account, the
+// staging copy) or failed. Resend's webhook then moves a sent email on to delivered, opened, clicked, bounced or marked as spam. Shown on
+// Admin > Inbox > Sent. Only the address and subject are kept, never the body (sign-in emails carry codes). Purged after 180 days.
+model EmailLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  to          String
+  subject     String
+  status      EmailStatus
+  detail      String?
+  resendId    String?     @unique
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  bouncedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+enum EmailStatus {
+  SENT
+  SKIPPED
+  FAILED
+  DELAYED
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+}
+
 model MailMessage {
   id            String    @id @default(cuid())
   userId        String
@@ -1817,7 +1985,7 @@ model MailMessage {
 // simply means "not typing".
 model SupportTypingStatus {
   escalationId String
-  escalation   AssistantEscalation @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
   side         SupportMessageSender
   updatedAt    DateTime             @updatedAt
 
@@ -1841,4 +2009,208 @@ model StudentNote {
   updatedAt         DateTime @updatedAt
 
   @@index([studentId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Contacts: people the teacher keeps track of who do not have an account,
+// with an optional soft hold on a weekly time. Info only: a hold never blocks
+// a booking, it makes the admin booking screen ask before booking over it.
+// ---------------------------------------------------------------------------
+
+enum ContactStatus {
+  INTERESTED
+  TRIAL
+  ACTIVE
+  PAUSED
+}
+
+model Contact {
+  id         String             @id @default(cuid())
+  name       String
+  phone      String?
+  email      String?
+  instrument PrimaryInstrument?
+  skillLevel SkillLevel?
+  // Where they came from ("friend of a student", "walked in").
+  source     String?
+  notes      String?            @db.Text
+  status     ContactStatus      @default(INTERESTED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  holds    SlotHold[]
+  sessions ContactSession[]
+
+  @@index([status, createdAt])
+  @@index([name])
+}
+
+// A note on one weekly time (a window and which hour of it) saying it is
+// being kept for this contact. `until` is the last date it applies to; null
+// means until released. Released holds are kept as history.
+model SlotHold {
+  id         String        @id @default(cuid())
+  contactId  String
+  contact    Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  until      DateTime?     @db.Date
+  note       String?
+
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([scheduleId, chunkIndex])
+  @@index([contactId])
+}
+
+// One day a contact took a class (or was booked and did not come).
+model ContactSession {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  attended  Boolean  @default(true)
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([contactId, date])
+}
+
+// Browser reports of things the strict Content-Security-Policy WOULD block (it runs report-only), counted by rule, what was blocked and the page.
+// Admin > Security reads it to show whether anything real would break before the policy is enforced. Capped at 500 distinct rows.
+model CspViolation {
+  id          String   @id @default(cuid())
+  directive   String
+  blocked     String
+  page        String
+  count       Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([directive, blocked, page])
+  @@index([lastSeenAt])
+}
+
+// A percentage off ONE account's plan price, set by the owner on Admin > Pricing. One row per account; changing the percent updates the row and
+// the account's running solo plan (see src/lib/accountDiscounts.ts). Family plans keep the family rate.
+model AccountDiscount {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  percent     Int
+  note        String?
+  // Set for a discount that ends by itself (a referral reward); null for one the owner gave, which stays until the owner removes it.
+  expiresAt   DateTime?
+  createdById String?
+  createdBy   User?     @relation("AccountDiscountGivenBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// A browser or phone that agreed to get class and practice reminders as push notifications. One row per browser (endpoint); a row the push service
+// says is gone (404 or 410) is deleted on the next send.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
+// Someone invited by a friend's link. rewardedAt is set once, when the invited person's first payment on a 3 or 6 month plan is approved and both get their discount.
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  referrer   User      @relation("ReferrerRel", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId String    @unique
+  referred   User      @relation("ReferredRel", fields: [referredId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  @@index([referrerId])
+}
+
+// Someone waiting for a weekly time that other plans hold. The hourly slot-waitlist job tells the first person in line when it frees up.
+model SlotWaitlist {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  createdAt  DateTime      @default(now())
+  notifiedAt DateTime?
+
+  @@unique([userId, scheduleId, chunkIndex])
+  @@index([scheduleId, chunkIndex, createdAt])
+}
+
+enum ParentLinkStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// A parent's link to a child's own account ("parent mode"). The child says yes once; either side can end it any time. While it is
+// ACCEPTED the parent can see the child's progress, practice and classes, change their class times, and pay for their plan.
+model ParentLink {
+  id          String           @id @default(cuid())
+  parentId    String
+  parent      User             @relation("ParentLinkParent", fields: [parentId], references: [id], onDelete: Cascade)
+  childId     String
+  child       User             @relation("ParentLinkChild", fields: [childId], references: [id], onDelete: Cascade)
+  status      ParentLinkStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
+
+  @@unique([parentId, childId])
+  @@index([childId, status])
+}
+
+// One row per "do this once" request: the browser makes a key when a form opens and sends it with the submit, so a double tap, a
+// retry after a dropped connection or a second tab cannot start a plan, book a class or send a payment twice. Only a request that
+// WORKED keeps its row (a failed one is released so the person can try again); the reply is stored and handed back for a repeat.
+model IdempotencyKey {
+  id        String   @id @default(cuid())
+  userId    String
+  scope     String
+  key       String
+  response  Json?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, scope, key])
+  @@index([createdAt])
+}
+
+// A day (or one hour of it) the owner keeps for a named customer so nobody can book it. Unlike a SlotHold (a weekly
+// reminder that never blocks), this one blocks every kind of booking until it is released. chunkIndex null means the
+// whole window that day; rows made together share a groupId so they are released together.
+model OwnerReservation {
+  id             String        @id @default(cuid())
+  groupId        String
+  scheduleId     String
+  schedule       ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  // ET calendar date stored at UTC midnight, the same key ClassBooking.occurrenceDate uses.
+  occurrenceDate DateTime
+  chunkIndex     Int?
+  name           String
+  email          String
+  phone          String
+  note           String?
+  createdById    String?
+  releasedAt     DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([scheduleId, occurrenceDate])
+  @@index([groupId])
 }

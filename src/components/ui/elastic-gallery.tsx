@@ -4,7 +4,7 @@
 // its panels as props, links each one, and uses the app's dark ground.
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 export interface ElasticItem {
@@ -48,7 +48,7 @@ export function ElasticGallery({ items, className }: { items: ElasticItem[]; cla
             </div>
 
             <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-8">
-              <div className={cn("flex flex-col gap-3 transition-all duration-500", active ? "translate-y-0 opacity-100 delay-200" : "pointer-events-none translate-y-12 opacity-0")}>
+              <div className={cn("flex flex-col gap-3 transition-[translate,scale,opacity] duration-500", active ? "translate-y-0 opacity-100 delay-200" : "pointer-events-none translate-y-12 opacity-0")}>
                 <h3 className="font-hero text-4xl font-bold leading-none text-white md:text-6xl">{item.title}</h3>
                 <Link href={item.href} className="tap inline-flex w-fit items-center gap-2 text-small font-semibold text-white/90 transition hover:text-white">
                   Start
@@ -56,8 +56,8 @@ export function ElasticGallery({ items, className }: { items: ElasticItem[]; cla
                 </Link>
               </div>
 
-              <div className={cn("absolute bottom-5 left-1/2 -translate-x-1/2 transition-all duration-500 md:bottom-8", active ? "scale-50 opacity-0" : "opacity-100 delay-500")}>
-                <span className="hidden whitespace-nowrap text-xl font-bold text-white [writing-mode:vertical-rl] md:block">{item.title}</span>
+              <div className={cn("absolute bottom-5 left-1/2 -translate-x-1/2 transition-[translate,scale,opacity] duration-500 md:bottom-8", active ? "scale-50 opacity-0" : "opacity-100 delay-500")}>
+                <span className="hidden whitespace-nowrap text-title font-bold text-white [writing-mode:vertical-rl] md:block">{item.title}</span>
                 <span className="block text-small font-bold text-white md:hidden">{item.title}</span>
               </div>
             </div>

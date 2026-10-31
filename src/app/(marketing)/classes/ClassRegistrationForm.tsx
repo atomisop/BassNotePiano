@@ -49,9 +49,9 @@ function Pill({
       onClick={onClick}
       disabled={comingSoon}
       aria-pressed={selected}
-      className={`tap flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`tap flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-50/70 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
-          ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+          ? "border-slate-50/60 bg-slate-50/10 text-slate-50"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       } ${comingSoon ? "" : "cursor-pointer"}`}
     >
@@ -72,7 +72,7 @@ function fieldClass() {
   // as "non-text, always"). -500 (6.5:1) is the same token SiteFooter's
   // real body text already uses after the accessibility pass found the
   // same mistake there.
-  return "w-full glass-surface-subtle px-3 py-2.5 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]";
+  return "w-full glass-surface-subtle border-(--field-edge) px-3 py-2.5 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-slate-50/60";
 }
 
 export function ClassRegistrationForm() {
@@ -114,7 +114,7 @@ export function ClassRegistrationForm() {
   if (success) {
     return (
       <div className="glass-surface-elevated p-8 text-center">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Request received</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Request received</p>
         <h3 className="mt-2 font-serif text-body text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
         {/* No coming-soon branch here anymore: the instrument pill for
             Drums/Vocal is disabled now, so `instrument` can never actually
@@ -140,6 +140,9 @@ export function ClassRegistrationForm() {
           disappears the moment you start typing. It also means tapping the
           label now focuses the field, which is the behaviour people expect on
           a phone where the targets are small. */}
+      {/* Two short groups instead of one long form: how to reach you, then what you want to learn. */}
+      <fieldset className="space-y-4">
+        <legend className="mb-3 text-body font-semibold text-slate-100">How to reach you</legend>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="reg-full-name" className="mb-1.5 block text-small font-medium text-slate-400">
@@ -192,6 +195,10 @@ export function ClassRegistrationForm() {
         />
       </div>
 
+      </fieldset>
+
+      <fieldset className="space-y-5 border-t border-(--neu-edge) pt-5">
+        <legend className="float-left mb-3 w-full text-body font-semibold text-slate-100">What you want to learn</legend>
       {/* These two are single-select sets of buttons, not free text, so the
           heading above them can't be a <label> (there is no one field to point
           at). role="group" + aria-labelledby is the equivalent: it tells a
@@ -240,6 +247,8 @@ export function ClassRegistrationForm() {
         />
       </div>
 
+      </fieldset>
+
       <TurnstileWidget action="class_form" onToken={setTurnstileToken} resetKey={captchaReset} />
 
       {error && <p className="text-small text-red-400">{error}</p>}
@@ -261,7 +270,7 @@ export function ClassRegistrationForm() {
           this page pointing them at how it's handled. */}
       <p className="text-center text-small text-slate-500">
         By submitting, you agree to our{" "}
-        <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+        <Link href="/privacy" target="_blank" className="text-slate-50 underline hover:opacity-70">
           Privacy policy
         </Link>
         .

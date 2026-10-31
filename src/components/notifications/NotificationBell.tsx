@@ -2,6 +2,7 @@
 
 import { OPEN_NOTIFICATIONS, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
+import { notificationTarget } from "@/lib/notificationTargets";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,7 +21,7 @@ import {
   Settings,
   Timer,
   Users,
-} from "lucide-react";
+} from "@/components/ui/appIcons";
 import {
   fetchNotificationsAction,
   markAllNotificationsReadAction,
@@ -32,6 +33,9 @@ import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
+import { newPaymentToasts } from "@/lib/paymentToasts";
+import { toast } from "@/components/ui/Toaster";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -40,52 +44,7 @@ const POLL_INTERVAL_MS = 30_000;
 // business logic. Falls back to no link (just marks read) for anything
 // unmapped, e.g. NEW_MESSAGE never reaches here (excluded upstream).
 function notificationHref(type: string): string | null {
-  switch (type) {
-    case "FRIEND_REQUEST_RECEIVED":
-      return "/friends#requests";
-    case "FRIEND_REQUEST_ACCEPTED":
-      return "/friends";
-    case "PAYMENT_APPROVED":
-    case "PAYMENT_REJECTED":
-    case "PAYMENT_AMOUNT_MISMATCH":
-      return "/billing/history";
-    case "ROLE_UPDATED":
-      return "/admin";
-    case "MAIL_MESSAGE":
-      return "/mail";
-    case "PRACTICE_REMINDER":
-    case "CURRICULUM_ACCESS_GRANTED":
-      return "/dashboard";
-    case "CURRICULUM_ACCESS_REVOKED":
-      return "/billing/plans";
-    case "CLASS_REGISTRATION_RECEIVED":
-    case "CLASS_REGISTRATION_APPROVED":
-    case "CLASS_REGISTRATION_REJECTED":
-      return "/admin/students";
-    case "LESSON_BOOKING_RECEIVED":
-      return "/admin/schedule?view=ATTENDANCE";
-    case "LESSON_BOOKING_CANCELED":
-      return "/lessons";
-    case "ANNOUNCEMENT":
-      return "/dashboard";
-    case "ASSISTANT_ESCALATION":
-      return "/admin/support";
-    case "SUPPORT_TRANSFER":
-      return "/admin/support?filter=mine";
-    case "PLAN_CANCELLATION_FEEDBACK":
-      return "/admin/payment-plans?status=FEEDBACK";
-    case "PAYMENT_PLAN_INSTALLMENT_DUE":
-    case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
-    case "PAYMENT_PLAN_COMPLETED":
-    case "PAYMENT_PLAN_CANCELED":
-    case "CREDITS_EXPIRED":
-    case "RESERVED_SLOT_UNAVAILABLE":
-      return "/billing/plans";
-    case "CREDITS_EXPIRING_SOON":
-      return "/lessons";
-    default:
-      return null;
-  }
+  return notificationTarget(type);
 }
 
 function relativeTime(iso: string): string {
@@ -109,9 +68,8 @@ function relativeTime(iso: string): string {
 // than a literal name.
 // ---------------------------------------------------------------------------
 
-// Same category set as before, restyled onto lucide-react (already this
-// app's icon library, see ScaleViewToggle/LessonVideoPlayer) instead of
-// hand-rolled inline SVG paths. The category-to-icon MAPPING below
+// Same category set as before, drawn with the app's shared icons
+// (components/ui/appIcons.tsx) instead of hand-rolled inline SVG paths. The category-to-icon MAPPING below
 // (TYPE_CATEGORY) is unchanged; only which icon component renders per key.
 const CATEGORY_ICONS = {
   billing: CreditCard,
@@ -123,7 +81,7 @@ const CATEGORY_ICONS = {
   announcements: Megaphone,
   support: Headset,
   // Added on main for the admin feedback inbox (PLAN_CANCELLATION_FEEDBACK),
-  // a hand-rolled SVG path there, swapped to lucide's MessageSquare here
+  // a hand-rolled SVG path there, swapped to the shared MessageSquare icon here
   // to match every other category icon in this restyle.
   feedback: MessageSquare,
   messages: Mail,
@@ -147,14 +105,20 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   RESERVED_SLOT_UNAVAILABLE: { key: "billing", label: "Billing" },
   PAYMENT_RECEIVED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_UPDATED: { key: "billing", label: "Billing" },
+  SLOT_WAITLIST_OPENED: { key: "billing", label: "Billing" },
   TRIAL_ENDING: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   ACCOUNT_UPDATE: { key: "account", label: "Account" },
+  PARENT_LINK_REQUEST: { key: "account", label: "Account" },
+  PARENT_LINK_ACCEPTED: { key: "account", label: "Account" },
   LESSON_BOOKING_CONFIRMED: { key: "bookings", label: "Bookings" },
   ATTENDANCE_RECORDED: { key: "bookings", label: "Bookings" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
   FRIEND_REQUEST_ACCEPTED: { key: "friends", label: "Friends" },
   PRACTICE_REMINDER: { key: "reminders", label: "Reminders" },
+  BANNER_PHONE: { key: "reminders", label: "Reminders" },
+  BANNER_DISCORD: { key: "reminders", label: "Reminders" },
+  BANNER_PRACTICE: { key: "reminders", label: "Reminders" },
   CLASS_REGISTRATION_RECEIVED: { key: "registrations", label: "Class registrations" },
   CLASS_REGISTRATION_APPROVED: { key: "registrations", label: "Class registrations" },
   CLASS_REGISTRATION_REJECTED: { key: "registrations", label: "Class registrations" },
@@ -248,15 +212,15 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
     notification.read
       ? "border-transparent bg-neu-base shadow-raised-low"
-      : "border-l-[3px] border-y border-r border-y-[rgb(var(--signal)/0.3)] border-r-[rgb(var(--signal)/0.3)] border-l-[rgb(var(--signal))] bg-[rgb(var(--signal)/0.14)] hover:bg-[rgb(var(--signal)/0.2)]"
+      : "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
   }`;
   const inner = (
     <>
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--signal))]"}`} />
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-signal"}`} />
       <span className="min-w-0 flex-1">
         <span className="block text-small font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
-        <span className="mt-1.5 block text-small text-slate-600">{relativeTime(notification.createdAt)}</span>
+        <span className="mt-1.5 block text-small text-slate-500">{relativeTime(notification.createdAt)}</span>
       </span>
     </>
   );
@@ -316,11 +280,11 @@ function NotificationGroup({
           aria-expanded={expanded}
           className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
             hasUnread
-              ? "border-l-[3px] border-y border-r border-y-[rgb(var(--signal)/0.3)] border-r-[rgb(var(--signal)/0.3)] border-l-[rgb(var(--signal))] bg-[rgb(var(--signal)/0.14)] hover:bg-[rgb(var(--signal)/0.2)]"
+              ? "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
               : "border-transparent bg-neu-base shadow-raised-low"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--signal)/0.15)] text-[rgb(var(--signal))]">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -330,13 +294,13 @@ function NotificationGroup({
             <span className="flex items-center gap-2">
               <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
               <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
-              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--signal))]" aria-hidden />}
+              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-signal" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
-            <span className="mt-1.5 block text-small text-slate-600">{relativeTime(latest.createdAt)}</span>
+            <span className="mt-1.5 block text-small text-slate-500">{relativeTime(latest.createdAt)}</span>
           </span>
           <ChevronRight
-            className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`}
+            className={`mt-1 h-4 w-4 shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-90" : ""}`}
             strokeWidth={1.75}
             aria-hidden
           />
@@ -370,6 +334,7 @@ function NotificationGroup({
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const inboxRef = useDialogFocus<HTMLDivElement>(open);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [mailUnreadCount, setMailUnreadCount] = useState(0);
@@ -382,6 +347,8 @@ export function NotificationBell() {
   // student just opened.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const previousUnreadRef = useRef<number | null>(null);
+  // Every notice this tab has already looked at; null until the first poll, which only fills it.
+  const seenNoticesRef = useRef<Set<string> | null>(null);
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) => {
@@ -414,6 +381,11 @@ export function NotificationBell() {
         playNotificationSound();
       }
       previousUnreadRef.current = total;
+
+      // A payment that clears (or is turned down) while they are on another page still tells them, as a toast.
+      const { toasts, seen } = newPaymentToasts(result.notifications, seenNoticesRef.current);
+      seenNoticesRef.current = seen;
+      for (const t of toasts) toast[t.kind](t.title, { description: t.description });
 
       setUnreadCount(result.unreadCount);
       setNotifications(result.notifications);
@@ -518,7 +490,7 @@ export function NotificationBell() {
         data-tour="notification-bell"
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
           open
-            ? "text-signal shadow-pressed-low"
+            ? "text-signal-fg shadow-pressed-low"
             : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >
@@ -538,7 +510,7 @@ export function NotificationBell() {
               // strip stays on the left, tapping it closes the panel, and the
               // panel itself only takes part of the screen (never full width).
               <motion.div
-                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end"
+                className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end"
                 initial="hidden"
                 animate="visible"
                 exit="hidden"
@@ -557,6 +529,8 @@ export function NotificationBell() {
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
                   transition={SPRING.smooth}
+                  ref={inboxRef}
+                  tabIndex={-1}
                   role="dialog"
                   aria-modal="true"
                   aria-label="Inbox"
@@ -568,7 +542,7 @@ export function NotificationBell() {
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Back"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
@@ -577,7 +551,7 @@ export function NotificationBell() {
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto inline-flex items-center gap-1.5 text-small text-[rgb(var(--signal))] transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal transition hover:opacity-70"
                     >
                       <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
@@ -607,7 +581,7 @@ export function NotificationBell() {
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {shown.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
                       <p className="text-small font-medium text-slate-400">{tab === "MAIL" ? "No mail yet." : "No notifications yet."}</p>
@@ -615,7 +589,7 @@ export function NotificationBell() {
                         <Link
                           href="/account?tab=notifications"
                           onClick={() => setOpen(false)}
-                          className="text-small text-[rgb(var(--signal))] transition hover:opacity-70"
+                          className="text-small text-signal transition hover:opacity-70"
                         >
                           Notification settings
                         </Link>
@@ -630,7 +604,7 @@ export function NotificationBell() {
                     <div className="space-y-5">
                       {groupNotifications(shown).map((section) => (
                         <div key={section.label}>
-                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
+                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-caps text-slate-500">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (

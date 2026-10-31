@@ -1,3 +1,4 @@
+import { parseAudience, parseParentMode } from "@/lib/planCheckout";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
@@ -5,20 +6,32 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
-import { BackLink } from "@/components/ui/BackLink";
+import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
+import { getPricingConfig } from "@/lib/pricing";
+import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
+import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
+import { listInvitesForPerson } from "@/lib/familyInvites";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
 
 export default async function BillingPlansPage(
   props: {
-    searchParams: Promise<{ cadence?: string; term?: string }>;
+    searchParams: Promise<{ cadence?: string; term?: string; who?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  if (!session?.user) {
+    // Keep what the pricing page chose (length and who it is for) through sign-in and registration.
+    const keep = new URLSearchParams();
+    if (searchParams.term) keep.set("term", searchParams.term);
+    if (searchParams.who) keep.set("who", searchParams.who);
+    const back = keep.size > 0 ? `/billing/plans?${keep}` : "/billing/plans";
+    redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
+  }
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
@@ -29,10 +42,15 @@ export default async function BillingPlansPage(
   // against the real enums (query params are just strings) rather than cast.
   const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);
   const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
+  // "?who=family" from the pricing page's family toggle opens the plan page already on "Me and my family".
+  const initialAudience = parseAudience(searchParams.who);
+  const initialParentMode = parseParentMode(searchParams.who);
 
-  const [activePlan, allPlans] = await Promise.all([
+  const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
     getActivePaymentPlan(session.user.id),
     getUserPaymentPlans(session.user.id),
+    getPricingConfig(),
+    getDiscountPercent(session.user.id),
   ]);
 
   // Ensures the current installment exists (idempotent) the moment an
@@ -109,25 +127,40 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
-  // Same split as the family bundle page (STEP 4): the explanation on the
-  // left, the form on the right, so the form never stretches across a wide
-  // screen. Stacks on smaller screens.
+  // Phones: one column. Tablets and computers: the page is wide, so the plan form can sit in two columns (see NewPlanForm).
   return (
-    <div className="lg:grid lg:grid-cols-12 lg:gap-12">
-      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
-      <div className="lg:col-span-5">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
+    <div className="mx-auto w-full max-w-2xl md:max-w-6xl">
+      <div className="mb-4 flex items-center justify-between">
+        <PageBack href="/lessons" />
+        <PlanHistoryButton
+          plans={pastPlans.map((plan) => ({
+            id: plan.id,
+            name: describePaymentPlan(plan.cadence, plan.term),
+            billsPaid: plan.installmentsPaid,
+            billsTotal: plan.termMonths,
+            status: plan.status,
+            startedAt: plan.createdAt.toISOString(),
+          }))}
+        />
+      </div>
+      <div data-deck-header className="deck-header -mt-4 pt-4 text-center md:text-left">
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
 
-      <div className="mt-8 lg:col-span-7 lg:mt-0">
+      <div className="mt-8">
+        <div className="mx-auto max-w-2xl md:max-w-none">
+          <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
+          {activePlan && <MyPlanSummary userId={session.user.id} />}
+        </div>
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}
           initialTerm={initialTerm}
+          initialAudience={initialAudience}
+          initialParentMode={initialParentMode}
+          pricing={pricing}
+          personalDiscountPercent={personalDiscountPercent}
           activePlan={
             activePlan
               ? {
@@ -159,22 +192,6 @@ export default async function BillingPlansPage(
         />
       </div>
 
-      {pastPlans.length > 0 && (
-        <div className="mt-10 border-t border-ink/10 pt-6 lg:col-span-7 lg:col-start-6">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
-          <div className="mt-4 space-y-3">
-            {pastPlans.map((plan) => (
-              <div key={plan.id} className="glass-surface p-4">
-                <p className="text-small text-slate-100">{describePaymentPlan(plan.cadence, plan.term)}</p>
-                <p className="mt-1 text-small text-slate-500">
-                  {plan.installmentsPaid} of {plan.termMonths} installments paid ·{" "}
-                  {plan.status === "COMPLETED" ? "Completed" : "Canceled"}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

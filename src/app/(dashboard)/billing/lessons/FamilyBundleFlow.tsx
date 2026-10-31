@@ -45,8 +45,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // class a week, so no cadence to choose.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
-  { value: "TERM_3", label: "3-Month" },
-  { value: "TERM_6", label: "6-Month" },
+  { value: "TERM_3", label: "3 Months" },
+  { value: "TERM_6", label: "6 Months" },
 ];
 
 type RowStatus =
@@ -231,7 +231,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <p className={`text-small font-medium ${active ? "text-signal" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
                   {optionRate.discountRate > 0 ? `−${Math.round(optionRate.discountRate * 100)}%` : "No commitment"}
                 </p>
@@ -272,7 +272,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   onClick={() => removeRecipient(index)}
                   disabled={emails.length <= MIN_FAMILY_BUNDLE_RECIPIENTS}
                   aria-label={`Remove recipient ${index + 1}`}
-                  className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   <XIcon size={13} />
                 </button>
@@ -348,18 +348,18 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-small text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
         />
         <span>
           I understand these classes go directly to the accounts listed above, not to my own, and that the purchase is{" "}
-          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>. The only way a class comes back is
+          <span className="font-medium text-slate-50">non-refundable</span>. The only way a class comes back is
           canceling a booking 24+ hours before it starts. Full{" "}
-          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+          <Link href="/terms" target="_blank" className="text-slate-50 underline hover:opacity-70">
             terms &amp; refund policy
           </Link>
           .

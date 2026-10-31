@@ -1,4 +1,5 @@
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { rewardReferralForFirstPayment } from "@/lib/referrals";
 import { noticePaymentReceived } from "@/lib/studentNotices";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { settleWithStoredReceipt } from "@/lib/paymentEmail";
@@ -17,11 +18,15 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
-import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot } from "@/lib/paymentPlans";
+import { addBillingCycles } from "@/lib/billingCycle";
+import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
+import { sendPaymentReceipt } from "@/lib/paymentReceipt";
+import { reportError } from "@/lib/reportError";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { assertRateLimit } from "@/lib/rateLimit";
+import { getPricingConfig } from "@/lib/pricing";
 
 /**
  * A student who opens the payment modal but never actually confirms a
@@ -108,6 +113,43 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
 export class ExtraCreditsError extends Error {}
 
 /**
+ * The optional fifth class for a MONTHLY subscriber (see getFifthClassOffer): one payment at the owner's price for the last
+ * class of a five-weekday cycle. The offer is worked out from the plan here, never from what the browser sends. Paying and
+ * approving it books the class through the same extra-session path (credit granted and spent in one step). Asking again
+ * before paying returns the same open payment.
+ */
+export async function createFifthClassPayment(userId: string, zelleHandle: string) {
+  await expireStalePendingPayments();
+  const offer = await getFifthClassOffer(userId);
+  if (!offer) throw new ExtraCreditsError("There is no fifth class to add right now.");
+  const existing = await prisma.zellePayment.findFirst({
+    where: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      extraSessionScheduleId: offer.scheduleId,
+      extraSessionOccurrenceDate: offer.occurrenceDate,
+      extraSessionScheduledAt: offer.scheduledAt,
+      status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existing) return existing;
+  return prisma.zellePayment.create({
+    data: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      amountCents: offer.priceCents,
+      zelleHandle,
+      lessonQuantity: CREDITS_PER_CLASS,
+      extraSessionScheduleId: offer.scheduleId,
+      extraSessionOccurrenceDate: offer.occurrenceDate,
+      extraSessionScheduledAt: offer.scheduledAt,
+      status: "AWAITING_TRANSFER",
+    },
+  });
+}
+
+/**
  * One extra class paid for directly: the student picks a specific open time and
  * pays a flat $55 for it by Zelle or Venmo. The row carries that exact time
  * (extraSession* columns) and the 2 credits it is worth; approving the payment
@@ -165,7 +207,7 @@ export async function createExtraClassPayment(
     data: {
       userId,
       purpose: "CLASS_CREDITS",
-      amountCents: EXTRA_CLASS_PRICE_CENTS,
+      amountCents: (await getPricingConfig()).extraClassCents,
       zelleHandle,
       lessonQuantity: CREDITS_PER_CLASS,
       extraSessionScheduleId: scheduleId,
@@ -263,7 +305,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(input.term)) {
-    throw new FamilyBundleError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+    throw new FamilyBundleError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
   }
 
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -296,7 +338,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("Each recipient needs to be a different account.");
   }
 
-  const { totalCents, creditsPerRecipient } = calculateFamilyBundleTotal(input.cadence, input.term, normalized.length);
+  const { totalCents, creditsPerRecipient } = calculateFamilyBundleTotal(input.cadence, input.term, normalized.length, await getPricingConfig());
 
   await expireStalePendingPayments();
 
@@ -378,7 +420,8 @@ export async function submitZellePaymentReference(
       // which would misleadingly attach an old code to a new submission
       // that never provided one.
       referenceCode: null,
-      note: input.note,
+      // A screenshot pre-check line (see receipt-actions.ts) stays on the payment, ahead of whatever the payer types.
+      note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n") || null,
       method: input.method === "VENMO" ? "VENMO" : "ZELLE",
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
@@ -688,13 +731,14 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
                 creditsPerInstallment: template.creditsPerInstallment,
                 termMonths: template.termMonths,
                 nextDueDate: new Date(),
-                reservedScheduleId: template.reservedScheduleId,
-                reservedChunkIndex: template.reservedChunkIndex,
+                // The payer keeps the weekly time their old plan held; the other members have none (they book with credits).
+                reservedScheduleId: old?.reservedScheduleId ?? null,
+                reservedChunkIndex: old?.reservedChunkIndex ?? null,
                 familyGroupId: group.id,
               },
             });
             if (old) {
-              const sameTime = old.reservedScheduleId === template.reservedScheduleId && old.reservedChunkIndex === template.reservedChunkIndex;
+              const sameTime = true;
               await tx.classBooking.updateMany({
                 where: { reservedByPlanId: old.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
                 data: sameTime ? { reservedByPlanId: mine.id, familyBookingGroupId: group.id } : { status: "CANCELED", refunded: true },
@@ -723,6 +767,17 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     throw err;
   }
 
+  // An old curriculum purchase that resolves late still switches on complimentary access: leave a trace in the activity log.
+  if (payment.purpose === "CURRICULUM" || payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    const recipients =
+      payment.purpose === "CURRICULUM"
+        ? [payment.userId]
+        : (await prisma.familyBundleRecipient.findMany({ where: { paymentId: payment.id }, select: { userId: true } })).map((r) => r.userId);
+    for (const userId of recipients) {
+      await logAudit({ actorId: reviewerId, action: "access.grant", targetType: "User", targetId: userId, detail: "Complimentary access from an old curriculum payment that was approved" });
+    }
+  }
+
   // A payer's family plan created inside the approval: its credit ledger row was written before the plan existed for good, so
   // it is linked to the plan now.
   if (newPlanId) {
@@ -739,6 +794,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // (and into the admin's Attendance list) right now, not at tomorrow's job.
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
     await bookReservedWindowForPlan(payment.paymentPlanId);
+    // A friend's invitation pays off once the invited person's first payment on a 3 or 6 month plan is in.
+    if (payment.installmentNumber === 1) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
 
     // A first payment going through is the moment someone becomes a subscriber: tell the admins who and when.
     if (payment.installmentNumber === 1) {
@@ -767,10 +824,14 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
     const plans = await prisma.paymentPlan.findMany({
       where: { familyGroupId: payment.familyGroupId },
-      select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, user: { select: { name: true, email: true } } },
+      select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, nextDueDate: true, user: { select: { name: true, email: true } } },
     });
     for (const plan of plans) await bookReservedWindowForPlan(plan.id);
-    familyStartBody = `Your family plan started for ${plans.length} accounts. Everyone's credits are on their accounts and the weekly classes are booked.`;
+    const groupKind = (await prisma.familyPlanGroup.findUnique({ where: { id: payment.familyGroupId }, select: { kind: true } }))?.kind ?? "FAMILY";
+    const parentPaid = groupKind === "PARENT";
+    familyStartBody = parentPaid
+      ? `The plan started for ${plans.length === 1 ? "your child" : `${plans.length} accounts`}. Their credits are on their accounts and the weekly class is booked. You can see their progress and change their class times from Parent mode in Settings. Credits expire at the end of each 28-day cycle.`
+      : `Your group plan started for ${plans.length} accounts. Your weekly class is booked. Everyone else has their credits and picks their own class times. Credits expire at the end of each 28-day cycle.`;
     await Promise.all(
       plans
         .filter((plan) => plan.userId !== payment.userId)
@@ -778,9 +839,10 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
           createNotification({
             userId: plan.userId,
             type: "PAYMENT_APPROVED",
-            title: "Your family plan started",
-            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account and your weekly classes are booked.`,
+            title: parentPaid ? "Your plan started" : "Your group plan started",
+            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account. Pick your own class times in Lessons. These credits expire on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })} (the end of this 28-day cycle), so book your classes before then.`,
             emailCategory: "payments",
+            cta: { label: "Pick your class time", path: "/lessons" },
           }).catch((err) => console.error(`Failed to notify family member ${plan.userId} (non-blocking):`, err)),
         ),
     );
@@ -788,8 +850,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       const slot = plans[0] ? await describeReservedSlot(plans[0].id) : null;
       await notifyAdmins("NEW_SUBSCRIPTION", {
         type: "ADMIN_ALERT",
-        title: "New family plan",
-        body: `${plans.map((plan) => plan.user.name ?? plan.user.email).join(", ")} started a family plan${plans[0] ? ` (${describePaymentPlan(plans[0].cadence, plans[0].term)})` : ""}${slot ? `, ${slot}` : ""}.`,
+        title: parentPaid ? "New parent-paid plan" : "New group plan",
+        body: `${plans.map((plan) => plan.user.name ?? plan.user.email).join(", ")} started a ${parentPaid ? "parent-paid" : "group"} plan${plans[0] ? ` (${describePaymentPlan(plans[0].cadence, plans[0].term)})` : ""}${slot ? `, ${slot}` : ""}.`,
         emailCategory: "social",
         cta: { label: "See the plans", path: "/admin/payment-plans" },
       });
@@ -799,6 +861,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   }
 
   let notificationBody = familyStartBody ?? "Your payment was verified.";
+  let fifthClass: Awaited<ReturnType<typeof fifthClassReceiptNote>> = null;
   if (payment.purpose === "CURRICULUM") {
     notificationBody = "Your curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
@@ -819,19 +882,24 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     notificationBody = plan
       ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
       : `Your payment plan installment was verified. ${creditsNote}.`;
+    // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
+    fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
+    if (fifthClass) notificationBody += ` ${fifthClass.text}`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     notificationBody = `Your payment for ${scaleGroup.code}: ${scaleGroup.title} was verified. It's unlocked now.`;
   }
 
+  // The bell notice only: the email that goes with an approval is the receipt below (the old plain "Payment approved" email,
+  // which had no amount, date or receipt number, would have been a second email about the same payment).
   await createNotification({
     userId: payment.userId,
     type: "PAYMENT_APPROVED",
     title: "Payment approved",
     body: notificationBody,
-    emailCategory: "payments",
-    alwaysEmail: true,
+    ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
   });
+  await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
 
   // A completed plan is a distinct milestone worth its own bell entry, on
   // top of the ordinary "payment approved" above, same "more than one
@@ -844,7 +912,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         userId: payment.userId,
         type: "PAYMENT_PLAN_COMPLETED",
         title: "Payment plan complete",
-        body: `You've paid off your ${plan.termMonths}-month plan in full. Nice work.`,
+        body: `You've paid off your ${plan.termMonths * 28}-day plan in full. Nice work.`,
         emailCategory: "payments",
       });
     }
@@ -911,7 +979,7 @@ async function applyPlanInstallment(
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
   const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
-  const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
+  const cycleEnd = plan && cycleStart ? addBillingCycles(cycleStart, 1) : null;
 
   // Quantity is snapshotted onto the payment row at installment-creation
   // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in

@@ -9,6 +9,8 @@ import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SPRING } from "@/lib/motionTokens";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { ChevronLeft, X } from "@/components/ui/appIcons";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -94,6 +96,8 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
     window.setTimeout(reset, 200);
   }
 
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, handleClose);
+
   // A full-screen panel must not leave the page scrollable behind it, same
   // reasoning (and same pattern) MarketingNav's own full-screen mobile menu
   // uses. Also where a genuine (re)start rolls a new seed and regenerates
@@ -149,6 +153,8 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          ref={dialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-labelledby="quiz-modal-title"
@@ -168,10 +174,10 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
           // which inset-0's bottom:0 constraint is exactly the shape of that
           // bug. h-[100svh] pins this to the smallest the viewport is ever
           // going to be instead, the same fix already proven here.
-          className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col overflow-hidden bg-slate-950"
+          className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col overflow-hidden bg-slate-950"
         >
           {step === "result" && result?.passed && <SuccessGlowPulse />}
-          <div className="h-1 w-full shrink-0 bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
+          <div className="h-1 w-full shrink-0 bg-gradient-to-r from-slate-300/40 via-slate-50 to-slate-300/40" />
 
           {/* Same Back-button header shape as SlideOverPanel's own, one
               consistent "this is a full screen, here's how you leave it"
@@ -183,17 +189,15 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               onClick={handleClose}
               disabled={step === "submitting"}
               aria-label="Back"
-              className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ChevronLeft className="h-[18px] w-[18px]" />
             </button>
             <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                 Scale-Spelling Quiz
               </p>
-              <h2 id="quiz-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
+              <h2 id="quiz-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
                 {scaleTitle}
               </h2>
             </div>
@@ -209,9 +213,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           key={q.id}
                           className={`h-1 flex-1 rounded-full ${
                             i < currentIndex || (i === currentIndex && selections[q.id] !== undefined)
-                              ? "bg-[rgb(var(--c-s-50))]"
+                              ? "bg-slate-50"
                               : i === currentIndex
-                                ? "bg-[rgb(var(--c-s-50)/0.4)]"
+                                ? "bg-slate-50/40"
                                 : "bg-neu-base shadow-pressed-low"
                           }`}
                         />
@@ -232,7 +236,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                             onClick={() => selectChoice(i)}
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-small font-medium transition ${
                               selected
-                                ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+                                ? "border-slate-50 bg-slate-50/10 text-slate-50"
                                 : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
                             }`}
                           >
@@ -309,12 +313,10 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                         </motion.svg>
                       ) : (
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
-                          <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                        </svg>
+                        <X className="text-slate-400" size={26} />
                       )}
                     </motion.div>
-                    <h3 className="text-body text-slate-50">
+                    <h3 className="text-title text-slate-50">
                       {result.passed ? "Quiz passed" : "Not quite yet"}
                     </h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
@@ -340,7 +342,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="flex-1 rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                        className="flex-1 rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       >
                         Done
                       </button>

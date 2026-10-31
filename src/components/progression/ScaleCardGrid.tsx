@@ -6,6 +6,8 @@ import { ctaLabel } from "@/lib/ctaLabel";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Checklist, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
+import { ArrowRight } from "@/components/ui/appIcons";
+import { ScaleArt } from "@/components/progression/ScaleArt";
 
 const gridContainer = {
   hidden: {},
@@ -22,6 +24,10 @@ export interface ScaleCardGridProps {
   /** Slug of the one "you're here" scale, or null if it is not in this list. */
   currentSlug: string | null;
   onCardClick: (scale: ScaleAccessState) => void;
+  /** On phones, cards from this position on are hidden (the roadmap's "Show all" button reveals them). */
+  phoneHiddenFrom?: number;
+  /** Where the scale pictures live, or null for plain cards. */
+  artBase?: string | null;
 }
 
 /**
@@ -34,7 +40,7 @@ export interface ScaleCardGridProps {
  * The section's one green button is "Continue" in the next-step card above,
  * so card actions here stay quiet text.
  */
-export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGridProps) {
+export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFrom, artBase = null }: ScaleCardGridProps) {
   return (
     <motion.ol
       variants={gridContainer}
@@ -42,29 +48,30 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
       animate="visible"
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
-      {roadmap.map((scale) => {
+      {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
 
         return (
-          <motion.li key={scale.scaleGroup.slug} variants={gridItem}>
+          <motion.li key={scale.scaleGroup.slug} variants={gridItem} className={cn("deck-card", phoneHiddenFrom !== undefined && index >= phoneHiddenFrom && "max-md:hidden")}>
             <button
               type="button"
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "group press-soft flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "group press-soft relative isolate flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isCurrent && "shadow-pressed-mid ring-1 ring-signal",
                 locked && "shadow-pressed-low",
               )}
             >
+              {artBase && <ScaleArt src={`${artBase}/${scale.scaleGroup.slug}.jpg`} locked={locked} />}
               <div className="flex items-center justify-between gap-2">
-                <p className="text-small font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <p className="text-small font-semibold uppercase tracking-caps text-slate-400">
                   {scale.scaleGroup.code}
                 </p>
                 {isCurrent ? (
-                  <Badge>You&apos;re here</Badge>
+                  <Badge className="tint-peach shadow-none">You&apos;re here</Badge>
                 ) : isCompleted ? (
                   <Badge tone="success">{STATUS_LABEL[scale.status]}</Badge>
                 ) : locked ? (
@@ -74,7 +81,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
                 )}
               </div>
 
-              <h3 className={cn("mt-2 text-body font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
+              <h3 className={cn("mt-2 text-title font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
                 {scale.scaleGroup.title}
               </h3>
               {scale.scaleGroup.kinitName && <p className="mt-0.5 text-small text-slate-400">{scale.scaleGroup.kinitName}</p>}
@@ -92,18 +99,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
                 {locked && <LockIcon />}
                 {ctaLabel(scale)}
                 {!locked && (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden
-                    className="transition-transform group-hover:translate-x-0.5"
-                  >
-                    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" size={14} />
                 )}
               </span>
             </button>

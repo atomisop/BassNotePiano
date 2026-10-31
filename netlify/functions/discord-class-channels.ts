@@ -24,7 +24,7 @@ async function tellOwnerOnce(ownerId: string | undefined, marker: string, title:
   const existing = await prisma.appSetting.findUnique({ where: { key } });
   if (existing && Number(existing.value) > now - 24 * 60 * MINUTE_MS) return;
   await prisma.appSetting.upsert({ where: { key }, update: { value: String(now) }, create: { key, value: String(now) } });
-  await createNotification({ userId: ownerId, type: "CLASS_REMINDER", title, body }).catch((err) => console.error("Owner notice failed (non-blocking):", err));
+  await createNotification({ userId: ownerId, type: "CLASS_REMINDER", title, body, href: "/admin/discord" }).catch((err) => console.error("Owner notice failed (non-blocking):", err));
 }
 
 // Every minute, so a call opens and closes, and people are pulled into it, within a minute of their time. Does nothing until the bot token is set, so it is safe to
@@ -54,6 +54,7 @@ export const handler = schedule("* * * * *", async () =>
       where: {
         status: "SCHEDULED",
         discordChannelId: null,
+        inPerson: false, // an in-person class has no call
         scheduledAt: { gt: new Date(now - 10 * MINUTE_MS), lte: new Date(now + OPEN_BEFORE_MIN * MINUTE_MS) },
       },
       select: {

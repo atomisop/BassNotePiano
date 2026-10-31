@@ -7,12 +7,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, CalendarDays, ClipboardCheck, NotebookPen, Shield } from "lucide-react";
+import { Bell, ClipboardCheck, NotebookPen, Shield, Users } from "@/components/ui/appIcons";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
+import { SignOut } from "@/components/ui/appIcons";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
 // one logout icon across the app, not a second one invented here.
-const LOGOUT_ICON_PATH = "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9";
 
 export interface ProfileMenuProps {
   name: string | null;
@@ -87,7 +87,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Your account"
+        aria-label={appExtras && phoneBadge > 0 ? `Your account, ${phoneBadge} new` : "Your account"}
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
@@ -95,20 +95,20 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         } ${triggerClassName ?? ""}`}
       >
-        <span className="block h-full w-full overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.1)] shadow-pressed-low">
+        <span className="block h-full w-full overflow-hidden rounded-full bg-slate-50/10 shadow-pressed-low">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">{initial}</span>
+            // The letter is drawn by CSS (not text in the page): the button already has a name ("Your account"), and a one-letter avatar
+            // is decoration that would otherwise count as visible text the name must contain.
+            <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-slate-50 after:content-[attr(data-char)]" />
           )}
         </span>
         {isOwner && <OwnerStarBadge />}
         {appExtras && phoneBadge > 0 && (
           // Phones only: the bell and the attendance button are in this menu there, so their counts show on the picture.
-          <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 md:hidden">
-            {phoneBadge > 9 ? "9+" : phoneBadge}
-          </span>
+          <span aria-hidden data-char={phoneBadge > 9 ? "9+" : String(phoneBadge)} className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 after:content-[attr(data-char)] md:hidden" />
         )}
       </button>
 
@@ -128,15 +128,15 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           animate="visible"
           exit="exit"
           style={{ transformOrigin: "top right" }}
-          className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
+          className="glass-menu absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
+                <div className="flex h-full w-full items-center justify-center text-small text-slate-50">
                   {initial}
                 </div>
               )}
@@ -151,11 +151,10 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
 
           {appExtras && (
             <div className="md:hidden">
+              <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
               <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Notifications and mail" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
-              {appExtras.isAdmin ? (
+              {appExtras.isAdmin && (
                 <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
-              ) : (
-                <MenuLink href="/lessons" icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />} label="Live classes" onNavigate={() => setOpen(false)} />
               )}
               {isOwner && (
                 <>
@@ -167,13 +166,16 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             </div>
           )}
 
-          <Link
-            href="/dashboard"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-          >
-            Dashboard
-          </Link>
+          {/* Inside the app the dock and sidebar already have Home and Settings; the menu repeats them only on the public pages. */}
+          {!appExtras && (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            >
+              Home
+            </Link>
+          )}
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
@@ -181,13 +183,15 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           >
             Profile
           </Link>
-          <Link
-            href="/account"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-          >
-            Settings
-          </Link>
+          {!appExtras && (
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            >
+              Settings
+            </Link>
+          )}
 
           <div className="my-1.5 border-t border-ink/10" />
 
@@ -199,9 +203,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             }}
             className="tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d={LOGOUT_ICON_PATH} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <SignOut size={15} />
             Log out
           </button>
         </motion.div>

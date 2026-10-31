@@ -6,7 +6,7 @@ import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageBubble } from "./MessageBubble";
 import { XIcon } from "@/components/ui/icons";
-import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, layoutThread } from "./threadUi";
+import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, ThreadSkeleton, clockLabel, layoutThread } from "./threadUi";
 import { scrollWithin } from "@/lib/scrollWithin";
 
 export interface MessageReplyPreview {
@@ -48,6 +48,7 @@ const MAX_COMPOSE_HEIGHT_PX = 140;
 export function ChatWindow({
   conversation,
   messages,
+  loading = false,
   currentUserId,
   onSend,
   onMinimize,
@@ -56,6 +57,8 @@ export function ChatWindow({
 }: {
   conversation: ConversationSummary;
   messages: MessageRow[];
+  /** True until this thread's first fetch has answered: shows placeholder bubbles, not an empty pane. */
+  loading?: boolean;
   currentUserId: string;
   onSend: (body: string, replyToId?: string) => Promise<boolean>;
   onMinimize: () => void;
@@ -162,7 +165,7 @@ export function ChatWindow({
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (
-            <p className="flex items-center gap-1.5 text-small text-[rgb(var(--c-s-50))]">
+            <p className="flex items-center gap-1.5 text-small text-slate-50">
               typing <TypingIndicator />
             </p>
           ) : (
@@ -176,12 +179,13 @@ export function ChatWindow({
           bottom of a thread and flinging back up rubber-bands and can
           visibly slide over that header for an instant on iOS. Same fix
           (dashboard)/layout.tsx already applies to its own <main>. */}
-      <div className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+      <div data-chat-scroll className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+        {loading && messages.length === 0 && <ThreadSkeleton />}
         {layoutThread(messages).map((meta, i) => {
           const m = messages[i];
           const isMine = m.senderId !== conversation.friendId;
           return (
-            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-3" : "mt-0.5"}>
+            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-4" : "mt-0.5"}>
               {meta.showDay && <DayDivider iso={m.createdAt} />}
             <MessageBubble
               id={`msg-${m.id}`}
@@ -214,7 +218,7 @@ export function ChatWindow({
 
       {replyingTo && (
         <div className="flex items-center gap-2 bg-neu-base shadow-pressed-low px-4 py-2">
-          <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
+          <div className="min-w-0 flex-1 border-l-2 border-slate-50/50 pl-2">
             <p className="text-small font-medium text-slate-300">
               Replying to {replyingTo.senderId === conversation.friendId ? conversation.friendName ?? conversation.friendUsername ?? "Unnamed" : "yourself"}
             </p>

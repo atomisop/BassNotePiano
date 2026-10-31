@@ -4,7 +4,9 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
+// ScrollTrigger runs a loop every frame from the moment it is switched on. It used to be switched on as soon as this file loaded,
+// which (through a shared bundle) also happened on Lessons, where nothing scrolls sideways (2026-10-31 speed pass). Now it is
+// switched on when the timeline appears and off again when the last one leaves.
 
 export interface ScrollTimelineStep {
   marker: string;
@@ -34,6 +36,8 @@ export function ScrollTimeline({
     const section = sectionRef.current;
     const track = trackRef.current;
     if (!section || !track) return;
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.enable();
 
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -76,7 +80,10 @@ export function ScrollTimeline({
       });
     });
 
-    return () => mm.revert();
+    return () => {
+      mm.revert();
+      if (ScrollTrigger.getAll().length === 0) ScrollTrigger.disable();
+    };
   }, [steps]);
 
   return (
@@ -85,7 +92,7 @@ export function ScrollTimeline({
       aria-label={label}
       className="relative h-screen w-full p-2 sm:p-3"
     >
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
+      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-3xl">
         <div
           ref={trackRef}
           className="relative flex h-full w-max items-stretch pl-6 md:pl-16"
@@ -93,17 +100,17 @@ export function ScrollTimeline({
           <div
             data-line
             aria-hidden
-            className="absolute left-[calc(min(82vw,34rem)+1.5rem)] right-0 top-1/2 h-px bg-[rgb(var(--c-a-400))] md:left-[calc(min(82vw,34rem)+4rem)]"
+            className="absolute left-[calc(min(82vw,34rem)+1.5rem)] right-0 top-1/2 h-px bg-amber-400 md:left-[calc(min(82vw,34rem)+4rem)]"
           />
 
           <div className="relative flex w-[min(82vw,34rem)] shrink-0 flex-col justify-center pr-8">
-            <p className="mb-4 text-small uppercase tracking-[0.18em] text-[#E1E0CC]/50">
+            <p className="mb-4 text-small uppercase tracking-caps text-cream/60">
               {label}
             </p>
-            <h2 className="text-[clamp(3rem,9vw,8rem)] font-medium leading-[0.88] tracking-[-0.06em] text-[#E1E0CC]">
+            <h2 className="text-[clamp(3rem,9vw,8rem)] font-medium leading-[0.88] tracking-[-0.06em] text-cream">
               {title}
             </h2>
-            <p className="mt-6 text-small text-[#E1E0CC]/50">Keep scrolling</p>
+            <p className="mt-6 text-small text-cream/60">Keep scrolling</p>
           </div>
 
           {steps.map((step, i) => {
@@ -116,24 +123,24 @@ export function ScrollTimeline({
                 <span
                   data-dot
                   aria-hidden
-                  className="absolute left-0 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgb(var(--c-a-400))]"
+                  className="absolute left-0 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-400"
                 />
                 <span
                   data-stem
                   aria-hidden
-                  className={`absolute left-0 h-[12vh] w-px bg-[rgb(var(--c-a-400))] ${above ? "bottom-1/2 origin-bottom" : "top-1/2 origin-top"}`}
+                  className={`absolute left-0 h-[12vh] w-px bg-amber-400 ${above ? "bottom-1/2 origin-bottom" : "top-1/2 origin-top"}`}
                 />
                 <div
                   data-copy
                   className={`absolute left-0 w-full pl-5 pr-4 ${above ? "bottom-[calc(50%+12vh)]" : "top-[calc(50%+12vh)]"}`}
                 >
-                  <p className="font-mono text-small text-[rgb(var(--c-a-400))]">
+                  <p className="font-mono text-small text-amber-400">
                     {step.marker}
                   </p>
-                  <h3 className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-medium leading-[1] tracking-[-0.04em] text-[#E1E0CC]">
+                  <h3 className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-medium leading-[1] tracking-display text-cream">
                     {step.title}
                   </h3>
-                  <p className="mt-3 max-w-[24rem] text-small leading-relaxed text-[#E1E0CC]/60 md:text-body">
+                  <p className="mt-3 max-w-[24rem] text-small leading-relaxed text-cream/60 md:text-body">
                     {step.description}
                   </p>
                 </div>

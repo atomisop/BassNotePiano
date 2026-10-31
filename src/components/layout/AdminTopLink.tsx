@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield } from "lucide-react";
+import { Shield } from "@/components/ui/appIcons";
 
 /**
  * The Admin shortcut in the top bar. Client-side only so it can read the
@@ -18,9 +18,9 @@ export function AdminTopLink() {
       href="/admin"
       aria-label="Admin"
       aria-current={active ? "page" : undefined}
-      className={`tap flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+      className={`tap flex h-9 w-9 items-center justify-center rounded-full bg-neu-base transition ${
         active
-          ? "text-signal shadow-pressed-low"
+          ? "text-signal-fg shadow-pressed-low"
           : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
       }`}
     >

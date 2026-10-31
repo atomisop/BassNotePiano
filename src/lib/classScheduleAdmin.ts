@@ -57,6 +57,8 @@ export interface AdminOccurrenceRosterEntry {
       SOLO_MAX_CREDITS or fewer for a solo booking, always exactly
       FAMILY_CREDITS_PER_STUDENT for a family one. */
   creditsSpent: number;
+  /** Taught in person: no Discord call is made. */
+  inPerson: boolean;
   /** Shared by every row from the same family booking, null for solo.
       Lets the roster show "these N rows are one family" instead of N
       unrelated-looking students who happen to share a start time. */
@@ -81,6 +83,7 @@ const ADMIN_ROSTER_WINDOW_DAYS = 60;
 
 export interface PendingAttendanceRow {
   bookingId: string;
+  studentId: string;
   studentName: string | null;
   studentEmail: string;
   scheduleLabel: string | null;
@@ -98,13 +101,14 @@ export interface PendingAttendanceRow {
 export async function getPendingAttendanceBookings(limit = 20): Promise<PendingAttendanceRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
 
   return bookings.map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -130,7 +134,7 @@ export interface BookingFeedRow extends PendingAttendanceRow {
 export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED" },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
@@ -139,6 +143,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     .filter((b) => b.scheduledAt.getTime() < weekEnd) // this week, plus any past class still waiting for an attendance call
     .map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -171,6 +176,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     if (!upcoming) continue;
     rows.push({
       bookingId: `plan:${plan.id}`,
+      studentId: plan.userId,
       studentName: plan.user.name,
       studentEmail: plan.user.email,
       scheduleLabel: slot.label,
@@ -197,7 +203,9 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
   // One roadmap lookup per distinct student, not per booking row, the same
   // student can appear across several occurrences inside the window, and
   // their curriculum progress doesn't change from one row to the next.
-  const studentIds = Array.from(new Set(bookings.map((b) => b.student.id)));
+  // Only classes still waiting for an attendance call show where the student is in the curriculum, so the many
+  // already-marked classes in the 60-day window cost no roadmap lookup at all (this was most of the page's load time).
+  const studentIds = Array.from(new Set(bookings.filter((b) => b.status === "SCHEDULED" && !b.attendance).map((b) => b.student.id)));
   const focusByStudent = new Map(
     await Promise.all(studentIds.map(async (id) => [id, summarizeFocus(await getRoadmap(id))] as const)),
   );
@@ -230,8 +238,9 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       status: b.status,
       attendance: b.attendance,
       creditsSpent: b.creditsSpent,
+      inPerson: b.inPerson,
       familyBookingGroupId: b.familyBookingGroupId,
-      focus: focusByStudent.get(b.student.id)!,
+      focus: focusByStudent.get(b.student.id) ?? { scaleOrder: null, scaleLabel: "", action: "" },
     });
   }
 
@@ -366,3 +375,48 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
   });
 }
 
+
+/**
+ * Tells the system a class is taught in person (no Discord call) or online (a call opens before it, as usual). A family
+ * class is one call for everyone, so the whole group changes together. Switching to in person closes a call that is already
+ * open; switching back lets the call open again. The student is told either way.
+ */
+export async function setClassInPerson(bookingId: string, inPerson: boolean): Promise<void> {
+  const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (booking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
+  // Until the class is over (a class lasts 45 minutes), so the switch still works while it is running.
+  if (booking.scheduledAt.getTime() < Date.now() - 45 * 60_000) throw new ClassBookingError("That class is already over.");
+  if (booking.inPerson === inPerson) return;
+
+  const rows = await prisma.classBooking.findMany({
+    where: booking.familyBookingGroupId ? { familyBookingGroupId: booking.familyBookingGroupId, status: "SCHEDULED" } : { id: booking.id },
+    select: { id: true, studentId: true, discordChannelId: true },
+  });
+  const channels = Array.from(new Set(rows.map((r) => r.discordChannelId).filter((c): c is string => Boolean(c))));
+
+  await prisma.classBooking.updateMany({
+    where: { id: { in: rows.map((r) => r.id) } },
+    data: { inPerson, ...(inPerson ? { discordChannelId: null } : {}) },
+  });
+
+  // The call that was already made is closed (best effort: the class is still marked, whatever Discord says).
+  if (inPerson) {
+    const { deleteChannel } = await import("@/lib/discordApi");
+    for (const channelId of channels) await deleteChannel(channelId).catch((err) => console.error("Closing a call for an in-person class failed (non-blocking):", err));
+  }
+
+  const when = formatEtDateTime(booking.scheduledAt);
+  await Promise.all(
+    rows.map((row) =>
+      createNotification({
+        userId: row.studentId,
+        type: "CLASS_REMINDER",
+        title: inPerson ? "Your class is in person" : "Your class is online",
+        body: inPerson
+          ? `Your ${when} class will be taught in person, so there is no Discord call for it.`
+          : `Your ${when} class will be online on Discord. Your call opens a few minutes before it starts.`,
+        emailCategory: "classes",
+      }).catch((err) => console.error("In-person notice failed (non-blocking):", err)),
+    ),
+  );
+}

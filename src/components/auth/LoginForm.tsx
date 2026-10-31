@@ -16,6 +16,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, requestLoginCodeAction } from "@/app/(auth)/login/actions";
 import { startNavigation } from "@/lib/navigationState";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 /**
  * The email-and-password login form, shared by the /login page and the Log in
@@ -32,7 +33,7 @@ import { startNavigation } from "@/lib/navigationState";
 function FormError({ message }: { message: string }) {
   if (message === BANNED_MESSAGE) {
     return (
-      <p role="alert" className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-small font-semibold text-red-400">
+      <p role="alert" className="rounded-xl border border-red-500/50 bg-neu-base shadow-pressed-low px-4 py-3 text-small font-semibold text-red-400">
         {message}
       </p>
     );
@@ -61,6 +62,9 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Admins with two-step sign-in on are asked for a code after the right password.
+  const [needsSecondStep, setNeedsSecondStep] = useState(false);
+  const [secondStep, setSecondStep] = useState("");
   const shakeControls = useErrorShake(error);
 
   // "Email me a code instead": enter your email, we send a 6-digit code, type
@@ -129,10 +133,16 @@ export function LoginForm({
     setError(null);
     setSubmitting(true);
 
-    const result = await loginStepOneAction(email, password);
+    const result = await loginStepOneAction(email, password, needsSecondStep ? secondStep : undefined);
 
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    if ("needsSecondStep" in result) {
+      setNeedsSecondStep(true);
       setSubmitting(false);
       return;
     }
@@ -144,7 +154,7 @@ export function LoginForm({
       return;
     }
 
-    const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
+    const signInResult = await signIn("credentials", { email, code: result.autoCode, secondStep: needsSecondStep ? secondStep : undefined, redirect: false });
     if (signInResult?.error) {
       setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Something went wrong logging in. Try again.");
       setSubmitting(false);
@@ -208,12 +218,12 @@ export function LoginForm({
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  pattern="[0-9]*"
-                  maxLength={6}
+                  pattern="[0-9 ]*"
+                  maxLength={CHUNKED_CODE_LENGTH}
                   required
                   autoFocus
                   aria-invalid={Boolean(error)}
-                  value={code}
+                  value={chunkCode(code)}
                   onChange={(e) => {
                     const next = e.target.value.replace(/\D/g, "").slice(0, 6);
                     setCode(next);
@@ -234,7 +244,7 @@ export function LoginForm({
                   type="button"
                   disabled={resendIn > 0 || submitting}
                   onClick={() => void handleSendCode()}
-                  className="tap text-slate-400 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap text-slate-400 transition hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {resendIn > 0 ? `Send again in ${resendIn}s` : "Send a new code"}
                 </button>
@@ -245,7 +255,7 @@ export function LoginForm({
                     setCode("");
                     setError(null);
                   }}
-                  className="tap text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+                  className="tap text-slate-400 transition hover:text-slate-50"
                 >
                   Different email
                 </button>
@@ -260,14 +270,14 @@ export function LoginForm({
             setMethod("password");
             setError(null);
           }}
-          className="tap mt-5 block w-full text-center text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+          className="tap mt-5 block w-full text-center text-small text-slate-400 transition hover:text-slate-50"
         >
           Use my password instead
         </button>
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+          <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
             Create an account
           </Link>
         </p>
@@ -306,7 +316,7 @@ export function LoginForm({
             <Link
               href="/forgot-password"
               onClick={onNavigateAway}
-              className="tap inline-flex items-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+              className="tap inline-flex items-center text-small text-slate-500 transition hover:text-slate-50"
             >
               Forgot?
             </Link>
@@ -326,6 +336,28 @@ export function LoginForm({
           />
         </div>
 
+        {needsSecondStep && (
+          <div>
+            <Label htmlFor={embedded ? "panel-second-step" : "second-step"} className={fieldLabel}>
+              Authenticator code
+            </Label>
+            <Input
+              id={embedded ? "panel-second-step" : "second-step"}
+              name="one-time-code"
+              autoComplete="one-time-code"
+              autoFocus
+              required
+              placeholder="6 digits, or a backup code"
+              value={secondStep}
+              onChange={(e) => {
+                setSecondStep(e.target.value);
+                setError(null);
+              }}
+            />
+            <p className="mt-1 text-small text-slate-500">Open your authenticator app. Lost your phone? Type one of your backup codes instead.</p>
+          </div>
+        )}
+
         {error && (
           <FormError message={error} />
         )}
@@ -342,14 +374,14 @@ export function LoginForm({
           setCodeSent(false);
           setError(null);
         }}
-        className="tap mt-3 block w-full text-center text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))]"
+        className="tap mt-3 block w-full text-center text-small text-slate-400 transition hover:text-slate-50"
       >
         Email me a code instead
       </button>
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+        <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Create an account
         </Link>
       </p>

@@ -18,7 +18,7 @@ export function GroupListItem({ group, active, onSelect }: { group: GroupSummary
       type="button"
       onClick={onSelect}
       className={`tap flex w-full min-w-0 items-center gap-3 rounded-2xl p-3 text-left transition ${
-        active ? "bg-neu-base shadow-pressed-low" : "hover:shadow-raised-low"
+        active ? "bg-signal/12" : "hover:bg-slate-800/40"
       }`}
     >
       <GroupAvatar className="h-11 w-11" />

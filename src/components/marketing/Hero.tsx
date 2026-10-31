@@ -8,10 +8,12 @@ import { PillCTA } from "@/components/ui/pill-cta";
 import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
-// Served from R2 (the same object storage the app already uses for lesson
-// videos and avatars, see lib/storage.ts), not the Next.js public folder: 17MB
-// is a lot of repo weight for one background loop, and R2 has no egress fees.
-const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/1788454184967-hero-piano.mp4";
+// Served from the site itself (Netlify's CDN), re-encoded 2026-10-31: the original was a 17 MB 4K HEVC file (HEVC does not even play
+// in Chrome on many devices). Now H.264 at 1080p for computers (2.3 MB) and 720p for phones (1.2 MB), looking the same under the dark
+// gradient and grain, plus a still poster so the first frame shows at once instead of a black box while the video loads.
+const HERO_VIDEO_LARGE = "/marketing/hero-piano-1080.mp4";
+const HERO_VIDEO_SMALL = "/marketing/hero-piano-720.mp4";
+const HERO_POSTER = "/marketing/hero-piano-poster.webp";
 
 /**
  * Keeps the background loop playing. autoPlay alone leaves it stopped on phones
@@ -71,8 +73,8 @@ export function Hero() {
   useKeepPlaying(videoRef, motionAllowed);
 
   return (
-    <section className="h-[100svh] w-full p-2 sm:p-3">
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
+    <section className="h-[100svh] w-full">
+      <div className="relative h-full w-full overflow-hidden bg-black">
         {/* pointer-events-none: pure background, so a phone never offers its own tap-to-play glyph over the copy. */}
         <video
           ref={videoRef}
@@ -81,41 +83,40 @@ export function Hero() {
           loop
           muted
           playsInline
-          preload="auto"
-          src={HERO_VIDEO_URL}
+          preload="metadata"
+          poster={HERO_POSTER}
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        />
+        >
+          <source media="(min-width: 1024px)" src={HERO_VIDEO_LARGE} type="video/mp4" />
+          <source src={HERO_VIDEO_SMALL} type="video/mp4" />
+        </video>
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/75" />
 
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-2 sm:px-6 md:px-10">
-          <div className="grid grid-cols-12 items-end gap-4">
-            <div className="col-span-12 lg:col-span-8">
-              <h1 className="text-[22vw] font-medium leading-[0.85] tracking-[-0.07em] text-[#E1E0CC] sm:text-[19vw] md:text-[16vw] lg:text-[13vw] xl:text-[12.5vw]">
-                <WordsPullUp text="Bass Note Piano" />
-              </h1>
-            </div>
-
-            <div className="col-span-12 flex flex-col gap-5 pb-6 lg:col-span-4 lg:pb-10">
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
-                className="text-sm leading-[1.2] text-[#E1E0CC]/70 md:text-base"
-              >
-                Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
-              </motion.p>
-
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.7, ease: EASE_IOS }}
-              >
-                <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
-              </motion.div>
-            </div>
-          </div>
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-16 text-center md:pb-24">
+          <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-display text-cream">
+            <WordsPullUp text="Bass Note Piano" className="justify-center" />
+          </h1>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
+            className="mt-5 max-w-xl text-lg leading-snug text-cream/75 md:text-xl"
+          >
+            Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
+          </motion.p>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: EASE_IOS }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+          >
+            <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
+            <PillCTA href="/pricing" secondary>
+              See pricing
+            </PillCTA>
+          </motion.div>
         </div>
       </div>
     </section>

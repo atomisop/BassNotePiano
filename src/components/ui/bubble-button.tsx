@@ -77,7 +77,7 @@ const UsageBadge = React.forwardRef<HTMLDivElement, UsageBadgeProps>(({ icon, pl
             ref={ref}
             className={cn(
               // "group" enables group-hover states for child elements
-              "group relative inline-flex cursor-default items-center gap-3 overflow-hidden rounded-full border bg-secondary px-4 py-2 text-base font-medium text-secondary-foreground shadow-sm transition-all hover:shadow-md",
+              "group relative inline-flex cursor-default items-center gap-3 overflow-hidden rounded-full border bg-secondary px-4 py-2 text-body font-medium text-secondary-foreground shadow-sm transition-shadow hover:shadow-md",
               className,
             )}
           >
@@ -102,7 +102,7 @@ const UsageBadge = React.forwardRef<HTMLDivElement, UsageBadgeProps>(({ icon, pl
             <div className="absolute inset-0 z-0 h-full w-full bg-secondary" />
 
             {/* Progress Bar Fill */}
-            <div className="absolute inset-y-0 left-0 z-0 h-full bg-foreground/10 transition-all duration-300" style={{ width: `${usagePercentage}%` }} />
+            <div className="absolute inset-0 z-0 h-full origin-left bg-foreground/10 transition-transform duration-300 ease-(--ease-ios)" style={{ transform: `scaleX(${Math.max(0, Math.min(100, usagePercentage)) / 100})` }} />
           </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs text-center">{tooltipContent}</TooltipContent>

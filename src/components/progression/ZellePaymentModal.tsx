@@ -14,6 +14,9 @@ import { normalizePhone, PHONE_HELP } from "@/lib/phone";
 import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { toast } from "@/components/ui/Toaster";
+import { Check, X } from "@/components/ui/appIcons";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -32,6 +35,8 @@ export interface ZellePaymentModalProps {
   /** Polled while the sheet is open: resolves to the payment's status, so it can notice the bank email clearing it. */
   checkStatus?: () => Promise<string | null>;
   onVerified?: () => void;
+  /** Optional: reads a screenshot of the bank's confirmation and says whether amount, code and date agree. Never approves anything. */
+  onPrecheck?: (base64: string, mimeType: string) => Promise<{ ok: true; matches: boolean; summary: string } | { ok: false; error: string }>;
   onSubmit: (payload: {
     senderName: string;
     note?: string;
@@ -98,6 +103,7 @@ export function ZellePaymentModal({
   paymentId,
   checkStatus,
   onVerified,
+  onPrecheck,
   onSubmit,
 }: ZellePaymentModalProps) {
   const [step, setStep] = useState<Step>(paymentId ? "loading" : "instructions");
@@ -118,6 +124,7 @@ export function ZellePaymentModal({
   const phoneOk = confirmMatches && phoneCheck !== null && phoneCheck !== "checking" && (phoneCheck.status === "match" || phoneCheck.status === "free");
   const [senderName, setSenderName] = useState("");
   const [note, setNote] = useState("");
+  const [precheck, setPrecheck] = useState<{ state: "reading" } | { state: "done"; matches: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
   const reference = paymentId ? paymentReferenceCode(paymentId) : null;
@@ -234,6 +241,8 @@ export function ZellePaymentModal({
     window.setTimeout(reset, 200);
   }
 
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, handleClose);
+
   async function handleCopyHandle() {
     await navigator.clipboard.writeText(method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle);
     setCopied(true);
@@ -246,6 +255,25 @@ export function ZellePaymentModal({
     window.setTimeout(() => setCopiedWhat(null), 1800);
   }
 
+  /** Shrinks the screenshot in the browser (a phone screenshot is large), then asks the server to read it. */
+  async function handleScreenshot(file: File | undefined) {
+    if (!file || !onPrecheck) return;
+    setPrecheck({ state: "reading" });
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      const result = await onPrecheck(dataUrl.split(",")[1] ?? "", "image/jpeg");
+      setPrecheck(result.ok ? { state: "done", matches: result.matches, text: result.summary.replace(/^Screenshot check: /, "") } : { state: "done", matches: false, text: result.error });
+    } catch {
+      setPrecheck({ state: "done", matches: false, text: "Could not read that image. You can still send it for review." });
+    }
+  }
+
   async function handleSubmit() {
     if (!senderName.trim()) {
       setError("Enter the name the transfer was sent under.");
@@ -256,8 +284,11 @@ export function ZellePaymentModal({
     try {
       await onSubmit({ senderName: senderName.trim(), note: note.trim() || undefined, method });
       setStep("pending");
+      toast.info("Sent for review", { description: "We will check your payment and tell you here as soon as it is approved." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong submitting your confirmation.");
+      const message = err instanceof Error ? err.message : "Something went wrong submitting your confirmation.";
+      setError(message);
+      toast.error("Couldn't send that", { description: message, action: { label: "Retry", onClick: () => void handleSubmit() } });
     } finally {
       setSubmitting(false);
     }
@@ -269,7 +300,7 @@ export function ZellePaymentModal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
+          className="kb-fit fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
           initial="hidden"
           animate="visible"
           exit="hidden"
@@ -282,6 +313,8 @@ export function ZellePaymentModal({
           />
 
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="zelle-modal-title"
@@ -292,15 +325,15 @@ export function ZellePaymentModal({
             className="glass-surface-modal relative !bg-neu-base max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-b-none pb-[env(safe-area-inset-bottom)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-[inherit] sm:pb-0"
           >
             {step === "pending" && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
+            <div className="h-1 w-full bg-gradient-to-r from-slate-300/40 via-slate-50 to-slate-300/40" />
 
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+                  <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                     {scaleCode} · {eyebrowLabel}
                   </p>
-                  <h2 id="zelle-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
+                  <h2 id="zelle-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
                     {scaleTitle}
                   </h2>
                 </div>
@@ -311,9 +344,7 @@ export function ZellePaymentModal({
                   aria-label="Close"
                   className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
+                  <X size={18} />
                 </button>
               </div>
 
@@ -342,7 +373,7 @@ export function ZellePaymentModal({
                             onChange={(e) => setPhoneInput(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
                             placeholder="(555) 123-4567"
-                            className="w-full glass-surface-subtle py-2 pl-3 pr-12 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                            className="w-full glass-surface-subtle py-2 pl-3 pr-12 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                           />
                           {phoneOk && (
                             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
@@ -380,7 +411,7 @@ export function ZellePaymentModal({
                             onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
                             placeholder="Type it again"
                             aria-invalid={confirmDigits >= 10 && !confirmMatches}
-                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                           />
                           {confirmDigits >= 10 && !confirmMatches && (
                             <p role="status" className="mt-1.5 text-small text-red-400">These don&apos;t match yet.</p>
@@ -440,7 +471,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={handleCopyHandle}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copied ? "Copied" : "Copy"}
                       </button>
@@ -454,7 +485,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copiedWhat === "amount" ? "Copied" : "Copy"}
                       </button>
@@ -469,7 +500,7 @@ export function ZellePaymentModal({
                         <button
                           type="button"
                           onClick={() => handleCopy("code", reference)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
+                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                         >
                           {copiedWhat === "code" ? "Copied" : "Copy"}
                         </button>
@@ -478,14 +509,14 @@ export function ZellePaymentModal({
 
                     <ol className="mt-5 space-y-2.5 text-small text-slate-300">
                       <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">1</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">1</span>
                         {method === "VENMO"
                           ? `Send exactly ${formatUsd(amountCents)} on Venmo, set to Private. Leave the note as it is.`
                           : `Open your bank's Zelle transfer and send exactly ${formatUsd(amountCents)} to the handle above.`}
                       </li>
                       {reference && method === "ZELLE" && (
                         <li className="flex gap-2.5">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">2</span>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">2</span>
                           Type {reference} in the message box. That is how we find your payment, even if someone else sends it for you.
                         </li>
                       )}
@@ -518,7 +549,7 @@ export function ZellePaymentModal({
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
-                          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                         />
                       </div>
                       <div>
@@ -528,9 +559,23 @@ export function ZellePaymentModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
                           placeholder="Anything that helps us match the transfer"
-                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
                         />
                       </div>
+
+                      {onPrecheck && (
+                        <div>
+                          <label className="mb-1 block text-small font-medium text-slate-400">Screenshot of your bank&apos;s confirmation (optional)</label>
+                          <input type="file" accept="image/*" onChange={(e) => void handleScreenshot(e.target.files?.[0])} className="block w-full text-small text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-neu-base file:px-3 file:py-2 file:text-small file:font-medium file:text-slate-100" />
+                          {precheck?.state === "reading" && <p className="mt-1.5 text-small text-slate-400">Checking your screenshot…</p>}
+                          {precheck?.state === "done" && (
+                            <p role="status" className={`mt-1.5 text-small ${precheck.matches ? "text-emerald-400" : "text-amber-300"}`}>
+                              {precheck.matches ? "Looks right: " : "Check this: "}
+                              {precheck.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {error && <p className="text-small text-red-400">{error}</p>}
 
@@ -563,17 +608,15 @@ export function ZellePaymentModal({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ ...SPRING.lively, delay: 0.05 }}
-                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/10"
                     >
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--c-s-50))]" aria-hidden>
-                        <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <Check className="text-slate-50" size={26} />
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Payment received</h3>
+                    <h3 className="text-title text-slate-50">Payment received</h3>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>
@@ -586,7 +629,7 @@ export function ZellePaymentModal({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ ...SPRING.lively, delay: 0.05 }}
-                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/10"
                     >
                       <motion.svg
                         width="26"
@@ -595,7 +638,7 @@ export function ZellePaymentModal({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-[rgb(var(--c-s-50))]"
+                        className="text-slate-50"
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: 1 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
@@ -604,14 +647,14 @@ export function ZellePaymentModal({
                         <circle cx="12" cy="12" r="9" />
                       </motion.svg>
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Confirmation received</h3>
+                    <h3 className="text-title text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
                       We&apos;re verifying your transfer.
                     </p>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>

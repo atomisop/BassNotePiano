@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { buildChordOnDegree, spellScale, type RootKey } from "@/lib/music-theory";
 import { formulaForRoot, tokenForRoot, type ScaleVariant } from "@/lib/scale-content";
 import type { ScalePlayer } from "@/components/scales/useScalePlayer";
+import { Play } from "@/components/ui/appIcons";
 
 export interface ScaleChordsPanelProps {
   variant: ScaleVariant;
@@ -13,9 +14,7 @@ export interface ScaleChordsPanelProps {
 
 function ChordPlayIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z" />
-    </svg>
+    <Play size={12} />
   );
 }
 
@@ -69,7 +68,7 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
               className="group flex cursor-pointer items-center justify-between gap-3 rounded-control p-3 text-left transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-raised-low"
             >
               <span>{body}</span>
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors group-hover:border-signal group-hover:text-signal bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low" aria-hidden>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors group-hover:border-signal group-hover:text-signal-fg bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low" aria-hidden>
                 <ChordPlayIcon />
               </span>
             </button>

@@ -23,14 +23,14 @@ export function SocialProof() {
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
       <WordsPullUp
         text="Nothing here asks you to take our word for it."
-        className="max-w-[18ch] text-[clamp(2.5rem,6vw,5rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#E1E0CC]"
+        className="max-w-[18ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-display text-cream"
       />
       <ScrollReveal className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
         {PROOF_POINTS.map((point, i) => (
           <div key={point.label} className="rounded-2xl bg-black p-6 md:p-8">
-            <p className="font-mono text-small text-[rgb(var(--c-a-400))]">0{i + 1}</p>
-            <p className="mt-10 text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{point.label}</p>
-            <p className="mt-2 text-small leading-relaxed text-[#E1E0CC]/60">{point.body}</p>
+            <p className="font-mono text-small text-amber-400">0{i + 1}</p>
+            <p className="mt-10 text-xl font-medium tracking-tight text-cream">{point.label}</p>
+            <p className="mt-2 text-small leading-relaxed text-cream/60">{point.body}</p>
           </div>
         ))}
       </ScrollReveal>
@@ -41,7 +41,7 @@ export function SocialProof() {
         rel="noopener noreferrer"
         className="tap mt-8 inline-flex items-center gap-2 text-small font-medium text-slate-200 transition hover:opacity-70"
       >
-        <DiscordIcon size={16} className="text-[#5865F2]" />
+        <DiscordIcon size={16} className="text-discord" />
         See the community for yourself
       </a>
     </section>

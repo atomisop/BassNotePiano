@@ -8,7 +8,7 @@ import {
   type EmojiPickerListRowProps,
   EmojiPicker as EmojiPickerPrimitive,
 } from "frimousse";
-import { LoaderIcon, SearchIcon } from "lucide-react";
+import { LoaderIcon, SearchIcon } from "@/components/ui/appIcons";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ function EmojiPickerEmoji({ emoji, className, ...props }: EmojiPickerListEmojiPr
   return (
     <button
       {...props}
-      className={cn("flex size-9 items-center justify-center rounded-full text-xl data-[active]:bg-neu-base data-[active]:shadow-pressed-low", className)}
+      className={cn("flex size-9 items-center justify-center rounded-full text-title data-[active]:bg-neu-base data-[active]:shadow-pressed-low", className)}
       data-slot="emoji-picker-emoji"
     >
       {emoji.emoji}

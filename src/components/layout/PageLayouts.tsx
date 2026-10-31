@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { KeyboardFit } from "@/components/layout/KeyboardFit";
 
 /**
  * The four page layouts every signed-in page is built on. A page picks one
@@ -19,8 +20,13 @@ type LayoutProps = {
   className?: string;
 };
 
-export function WideLayout({ children, className = "" }: LayoutProps) {
-  return <div className={`mx-auto w-full max-w-wide ${className}`}>{children}</div>;
+/** `deckDesktop`: keep the card deck (cards stacking under a heading that stays put, see DeckStack) on a computer too. */
+export function WideLayout({ children, className = "", deckDesktop = false }: LayoutProps & { deckDesktop?: boolean }) {
+  return (
+    <div className={`mx-auto w-full max-w-wide ${className}`} data-deck-desktop={deckDesktop ? "" : undefined}>
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -74,6 +80,7 @@ export function TwoPaneLayout({
   header,
   mobile = "switch",
   showDetail = false,
+  bleed = false,
   className = "",
 }: {
   list: ReactNode;
@@ -81,8 +88,24 @@ export function TwoPaneLayout({
   header?: ReactNode;
   mobile?: "switch" | "stack";
   showDetail?: boolean;
+  /**
+   * Fill the whole area under the top bar, edge to edge, with no window around it: the page's own side and bottom padding is cancelled and the
+   * panes take the full height (leaving room for the phone dock). For Messages.
+   */
+  bleed?: boolean;
   className?: string;
 }) {
+  if (bleed) {
+    return (
+      <div className="-mx-4 -mb-32 -mt-4 md:-mx-6 md:-mt-5 lg:-mb-8">
+        <KeyboardFit className={className}>
+          <div className={`${showDetail ? "hidden md:flex" : "flex"} min-w-0 w-full md:w-[var(--container-pane)] md:shrink-0`}>{list}</div>
+          <div className={`${showDetail ? "flex" : "hidden md:flex"} min-w-0 flex-1 [&>*]:min-w-0 [&>*]:flex-1`}>{detail}</div>
+        </KeyboardFit>
+      </div>
+    );
+  }
+
   if (mobile === "stack") {
     return (
       <div className="mx-auto w-full max-w-wide">

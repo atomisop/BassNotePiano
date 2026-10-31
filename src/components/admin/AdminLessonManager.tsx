@@ -2,13 +2,15 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "@/components/ui/appIcons";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { Collapse } from "@/components/ui/Collapse";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { FileText } from "@/components/ui/appIcons";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -238,7 +240,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -248,7 +250,7 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -280,17 +282,18 @@ export function AdminLessonManager({
       </Collapse>
 
       {lessons.length === 0 ? (
-        <p className="glass-surface p-6 text-center text-small text-slate-500">No lessons for this scale yet.</p>
+        <EmptyState icon={<FileText />} title="No lessons for this scale yet" description="Upload a PDF or video and it appears in the scale's lesson list." />
       ) : (
         <div className="glass-surface divide-y divide-slate-50/10 px-4">
           {lessons.map((lesson, index) => (
             <div key={lesson.id} className="flex items-center gap-3 py-3.5">
               <span className="w-5 shrink-0 text-center text-small font-semibold text-slate-500">{index + 1}</span>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-body text-slate-50">{lesson.title}</h3>
+                <h2 className="truncate text-title text-slate-50">{lesson.title}</h2>
                 <p className="truncate text-small text-slate-500">
-                  {lesson.type === "VIDEO" ? "Video" : "PDF"} · {formatBytes(lesson.fileSizeBytes)}
-                  {lesson.type === "VIDEO" && ` · ${formatDuration(lesson.durationSeconds)}`}
+                  {lesson.type === "VIDEO" ? "Video" : "PDF"}
+                  {lesson.fileSizeBytes != null && ` · ${formatBytes(lesson.fileSizeBytes)}`}
+                  {lesson.type === "VIDEO" && lesson.durationSeconds != null && ` · ${formatDuration(lesson.durationSeconds)}`}
                 </p>
               </div>
 

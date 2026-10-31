@@ -11,8 +11,9 @@ import { Hero } from "@/components/ui/Hero";
  * someone in Addis would be wrong more often than right. Computing it during
  * render instead of in an effect would produce different HTML on the server
  * than on the client and trip a hydration mismatch, so the neutral form is
- * rendered first and upgraded on mount. Only the greeting word changes; the
- * name beside it never moves.
+ * rendered first and upgraded on mount. That first form is kept invisible, so
+ * nobody sees "Welcome back" turn into "Good evening": the line holds its
+ * space, then fades in already correct.
  */
 function greetingFor(hour: number): string {
   if (hour < 5) return "Still up";
@@ -23,16 +24,24 @@ function greetingFor(hour: number): string {
 
 /** The Home screen's one Hero element (STEP 2C). */
 export function TodayGreeting({ name, className }: { name: string | null; className?: string }) {
-  const [greeting, setGreeting] = useState("Welcome back");
+  const [greeting, setGreeting] = useState<string | null>(null);
+  const [date, setDate] = useState<string | null>(null);
 
   useEffect(() => {
-    setGreeting(greetingFor(new Date().getHours()));
+    const now = new Date();
+    setGreeting(greetingFor(now.getHours()));
+    setDate(now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
   }, []);
 
+  const fade = `transition-opacity duration-200 motion-reduce:transition-none ${greeting === null ? "opacity-0" : "opacity-100"}`;
   return (
-    <Hero className={className}>
-      {greeting}
-      {name ? <>, {name.split(" ")[0]}</> : null}.
-    </Hero>
+    <div className={className}>
+      {/* Today's date over the greeting, by the student's own clock (so it is filled in the browser too; the line keeps its space). */}
+      <p className={`text-small font-medium text-slate-400 ${fade}`}>{date ?? "\u00a0"}</p>
+      <Hero className={`mt-1.5 ${fade}`}>
+        {greeting ?? "Welcome back"}
+        {name ? <>, {name.split(" ")[0]}</> : null}.
+      </Hero>
+    </div>
   );
 }

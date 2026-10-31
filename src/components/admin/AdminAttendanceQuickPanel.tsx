@@ -5,11 +5,12 @@ import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
-import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "@/components/ui/appIcons";
+import { getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const POLL_INTERVAL_MS = 30_000;
 // Present and Absent stay greyed out until this long before the class starts.
@@ -17,6 +18,7 @@ const ATTENDANCE_OPENS_MIN_BEFORE = 10;
 
 interface FeedRow {
   bookingId: string;
+  studentId: string;
   studentName: string | null;
   studentEmail: string;
   scheduleLabel: string | null;
@@ -31,22 +33,22 @@ interface DayGroup {
   rows: FeedRow[];
 }
 
+const ET = "America/New_York";
+
 function dayKeyOf(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD in the viewer's own time zone
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: ET }); // YYYY-MM-DD, Eastern
 }
 
 function dayLabelOf(iso: string): string {
-  const d = new Date(iso);
-  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((startOf(d) - startOf(new Date())) / 86_400_000);
+  const diff = Math.round((Date.parse(dayKeyOf(iso)) - Date.parse(dayKeyOf(new Date().toISOString()))) / 86_400_000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { timeZone: ET, weekday: "short", month: "short", day: "numeric" });
 }
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
 }
 
 /**
@@ -69,7 +71,6 @@ export function AdminAttendanceQuickPanel() {
   const [rows, setRows] = useState<FeedRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Which day drop-downs the admin has toggled by hand; anything not in here
   // uses its default (open for today and anything that needs a call).
@@ -83,6 +84,7 @@ export function AdminAttendanceQuickPanel() {
   // The panel is portaled to document.body, so it is never a DOM descendant of
   // wrapperRef; the outside-click handler has to check both.
   const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus<HTMLDivElement>(open, undefined, { trap: false, ref: panelRef });
 
   useEffect(() => setMounted(true), []);
 
@@ -182,27 +184,8 @@ export function AdminAttendanceQuickPanel() {
     }
   }
 
-  async function handleCancel(bookingId: string) {
-    setBusyId(bookingId);
-    setError(null);
-    try {
-      const result = await adminCancelBookingAction(bookingId);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      removedRef.current.set(bookingId, Date.now());
-      setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
-      setConfirmCancelId(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   const gatedClass =
-    "tap flex min-h-9 items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
+    "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -214,7 +197,7 @@ export function AdminAttendanceQuickPanel() {
         aria-expanded={open}
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
           open
-            ? "text-signal shadow-pressed-low"
+            ? "text-signal-fg shadow-pressed-low"
             : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >
@@ -236,6 +219,7 @@ export function AdminAttendanceQuickPanel() {
         createPortal(
           <div
             ref={panelRef}
+            tabIndex={-1}
             className="fixed right-3 top-12 z-[60] max-h-[75vh] w-[min(26rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
             role="dialog"
             aria-label="Class bookings"
@@ -251,7 +235,7 @@ export function AdminAttendanceQuickPanel() {
               <Link
                 href="/admin/schedule?view=ATTENDANCE"
                 onClick={() => setOpen(false)}
-                className="tap shrink-0 text-small font-medium text-[rgb(var(--signal))] transition hover:opacity-70"
+                className="tap shrink-0 text-small font-medium text-signal transition hover:opacity-70"
               >
                 Full view
               </Link>
@@ -311,7 +295,7 @@ export function AdminAttendanceQuickPanel() {
                                   <Link
                                     href="/admin/payments"
                                     onClick={() => setOpen(false)}
-                                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--signal))]" })}
+                                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-signal" })}
                                   >
                                     Review payment
                                   </Link>
@@ -320,7 +304,6 @@ export function AdminAttendanceQuickPanel() {
                             }
                             const ready = isReady(r.scheduledAt);
                             const busy = busyId === r.bookingId;
-                            const confirming = confirmCancelId === r.bookingId;
                             return (
                               <div key={r.bookingId} className="rounded-lg bg-neu-base p-2.5 shadow-raised-low">
                                 <div className="flex items-center gap-2">
@@ -351,41 +334,16 @@ export function AdminAttendanceQuickPanel() {
                                     {busy ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                                     Absent
                                   </button>
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => setConfirmCancelId(confirming ? null : r.bookingId)}
-                                    aria-label={`Cancel booking for ${r.studentName ?? r.studentEmail}`}
-                                    title="Cancel this booking"
-                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-raised-low transition hover:bg-red-400 active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50"
+                                  <Link
+                                    href={`/admin/users/${r.studentId}#scheduler`}
+                                    onClick={() => setOpen(false)}
+                                    aria-label={`Open ${r.studentName ?? r.studentEmail}'s scheduler to move or cancel`}
+                                    title="Move or cancel in this student's Scheduler"
+                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
                                   >
-                                    <XIcon className="h-4 w-4" strokeWidth={2.5} />
-                                  </button>
+                                    <CalendarDays className="h-4 w-4" strokeWidth={2} />
+                                  </Link>
                                 </div>
-                                {confirming && (
-                                  <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-neu-base px-2.5 py-2 shadow-pressed-low">
-                                    <p className="text-small text-slate-300">Cancel this booking? The student is told and not charged.</p>
-                                    <div className="flex shrink-0 gap-1.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => setConfirmCancelId(null)}
-                                        disabled={busy}
-                                        className={buttonVariants({ variant: "secondary", size: "sm" })}
-                                      >
-                                        Keep
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCancel(r.bookingId)}
-                                        disabled={busy}
-                                        className={buttonVariants({ variant: "danger", size: "sm" })}
-                                      >
-                                        {busy && <MorphingSquare size={11} />}
-                                        Cancel booking
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             );
                           })}

@@ -40,7 +40,6 @@ type DockProps = {
 type DockItemProps = {
   className?: string;
   children: React.ReactNode;
-  'aria-label'?: string;
 };
 type DockLabelProps = {
   className?: string;
@@ -141,7 +140,7 @@ function Dock({
   );
 }
 
-function DockItem({ children, className, 'aria-label': ariaLabel }: DockItemProps) {
+function DockItem({ children, className }: DockItemProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { distance, magnification, mouseX, spring } = useDock();
@@ -173,10 +172,8 @@ function DockItem({ children, className, 'aria-label': ariaLabel }: DockItemProp
         'relative inline-flex items-center justify-center',
         className
       )}
-      tabIndex={0}
-      role='button'
-      aria-haspopup='true'
-      aria-label={ariaLabel}
+      // Deliberately not focusable and not a button: it sits inside a real link (see AppDock), and a second tab stop and an
+      // interactive role nested in a link are both wrong for keyboard and screen reader users. The link carries the name.
     >
       {Children.map(children, (child) =>
         cloneElement(child as React.ReactElement<{ width: unknown; isHovered: unknown }>, { width, isHovered })
@@ -207,7 +204,7 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
           exit={{ opacity: 0, y: 0 }}
           transition={FADE}
           className={cn(
-            'glass-surface-subtle absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md px-2 py-0.5 text-small text-[rgb(var(--c-s-50))]',
+            'glass-surface-subtle absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md px-2 py-0.5 text-small text-slate-50',
             className
           )}
           role='tooltip'

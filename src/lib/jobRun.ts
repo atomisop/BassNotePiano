@@ -1,7 +1,14 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { isJobPaused, pausedJobNames } from "@/lib/jobPause";
 
 /** Runs one scheduled job and records that it ran, and whether it worked, so a job that stops shows up. */
 export async function runJob<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  // A job the owner paused does nothing and records nothing (so it never looks like a failure). If the pause cannot be read, it runs.
+  if (await isJobPaused(name).catch(() => false)) {
+    console.log(`${name} is paused: skipped.`);
+    return { statusCode: 200, body: "paused" } as unknown as T;
+  }
   try {
     const result = await fn();
     await prisma.jobRun.create({ data: { name, ok: true } }).catch(() => undefined);
@@ -27,8 +34,10 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "discord-class-channels": 2,
   "mail-chain-probe": 30,
   "db-backup": 30,
+  "slot-waitlist": 3,
   // The watchdog itself runs every 30 minutes; the outside monitor is what notices if it stops.
   "job-watchdog": 3,
+  "job-catch-up": 3,
 };
 
 /**
@@ -41,9 +50,11 @@ export const JOB_ADDED_AT: Record<string, string> = {
   "mail-chain-probe": "2026-10-09T00:00:00Z",
   "db-backup": "2026-10-09T00:00:00Z",
   "attendance-auto-charge": "2026-10-13T00:00:00Z",
+  "slot-waitlist": "2026-10-22T00:00:00Z",
+  "job-catch-up": "2026-10-28T23:00:00Z",
 };
 
-export type JobState = "ok" | "waiting" | "failed" | "late" | "never";
+export type JobState = "ok" | "waiting" | "failed" | "late" | "never" | "paused";
 
 export interface JobStatus {
   name: string;
@@ -71,9 +82,12 @@ export function evaluateJob(input: {
   trackingSince: Date | null;
   addedAt?: Date | null;
   now: Date;
+  /** The owner paused this job: it is not late or failed, it is stopped on purpose. */
+  paused?: boolean;
 }): JobStatus {
-  const { name, maxSilenceHours, last, trackingSince, addedAt, now } = input;
+  const { name, maxSilenceHours, last, trackingSince, addedAt, now, paused } = input;
   const windowMs = maxSilenceHours * 3_600_000;
+  if (paused) return { name, state: "paused", lastRanAt: last?.ranAt ?? null, note: null, maxSilenceHours };
   if (!last) {
     const clockStart = Math.max(trackingSince?.getTime() ?? Infinity, addedAt?.getTime() ?? 0);
     const state: JobState = Number.isFinite(clockStart) && now.getTime() - clockStart > windowMs ? "never" : "waiting";
@@ -84,15 +98,27 @@ export function evaluateJob(input: {
 }
 
 export async function getJobStatuses(now = new Date()): Promise<JobStatus[]> {
-  const oldest = await prisma.jobRun.findFirst({ orderBy: { ranAt: "asc" }, select: { ranAt: true } });
-  return Promise.all(
-    Object.entries(JOB_MAX_SILENCE_HOURS).map(async ([name, maxSilenceHours]) => {
-      const last = await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true, ok: true, note: true } });
-      const added = JOB_ADDED_AT[name];
-      return evaluateJob({ name, maxSilenceHours, last, trackingSince: oldest?.ranAt ?? null, addedAt: added ? new Date(added) : null, now });
-    }),
-  );
+  const names = Object.keys(JOB_MAX_SILENCE_HOURS);
+  // Each job's latest run in ONE query (DISTINCT ON, served by the (name, ranAt) index) instead of one query per job: this runs on
+  // every admin page load, and 14 round trips to the database added up (2026-10-31 speed pass).
+  const [oldest, paused, latest] = await Promise.all([
+    prisma.jobRun.findFirst({ orderBy: { ranAt: "asc" }, select: { ranAt: true } }),
+    pausedJobNames().catch(() => new Set<string>()),
+    prisma.$queryRaw<{ name: string; ranAt: Date; ok: boolean; note: string | null }[]>`
+      SELECT DISTINCT ON ("name") "name", "ranAt", "ok", "note"
+      FROM "JobRun"
+      WHERE "name" = ANY(${names})
+      ORDER BY "name", "ranAt" DESC`,
+  ]);
+  const lastByName = new Map(latest.map((r) => [r.name, { ranAt: r.ranAt, ok: r.ok, note: r.note }]));
+  return Object.entries(JOB_MAX_SILENCE_HOURS).map(([name, maxSilenceHours]) => {
+    const added = JOB_ADDED_AT[name];
+    return evaluateJob({ name, maxSilenceHours, last: lastByName.get(name) ?? null, trackingSince: oldest?.ranAt ?? null, addedAt: added ? new Date(added) : null, now, paused: paused.has(name) });
+  });
 }
+
+/** The stopped jobs, worked out once per page load (the admin side cards and "needs you" both ask while one page renders). */
+export const findStoppedJobsOnce = cache(() => findStoppedJobs());
 
 /** Names of the jobs that have not run (or last failed) within their allowed window, or never ran at all. */
 export async function findStoppedJobs(now = new Date()): Promise<string[]> {

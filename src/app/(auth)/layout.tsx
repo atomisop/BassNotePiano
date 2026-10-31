@@ -43,7 +43,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // screen, the Create account form most of all, could not be scrolled to
     // the bottom. Now the form scrolls inside its own box, with the content
     // still centered whenever it fits.
-    <div data-surface="app" className="fixed inset-0 overflow-y-auto overscroll-contain">
+    <div data-surface="app" className="kb-fit fixed inset-0 overflow-y-auto overscroll-contain">
       <PageHitBeacon />
       <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
@@ -52,6 +52,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           to a visitor who isn't already fluent in that web convention. An
           explicit corner link says so directly, on every auth screen at
           once, without disturbing the centered brand moment. */}
+      <nav aria-label="Back to homepage">
       <Link
         href="/"
         className="tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
@@ -68,6 +69,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             this shell down to begin with. */}
         Back<span className="hidden sm:inline">&nbsp;to homepage</span>
       </Link>
+      </nav>
       {/* header, not a bare <a>: axe's "region" check flagged this brand
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}
@@ -78,7 +80,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               This was still the pre-Pianote-pass title-case/split-color
               version. Fully accent-colored at the time; neutral again now
               under the "premium black and white" pass. */}
-          <p className="text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+          <p className="text-body font-bold lowercase tracking-tight text-slate-50">
             Bass Note Piano
           </p>
           {/* Hidden below `sm` specifically, the one purely decorative line

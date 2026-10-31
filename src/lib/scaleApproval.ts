@@ -4,15 +4,19 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { computeNextApproval, isFullAccess, type ApprovalScaleState, type NextApproval } from "@/lib/entitlementRules";
 import { createNotification } from "@/lib/notifications";
+import { hiddenRoadmapIds } from "@/lib/roadmaps";
 
 export class ScaleApprovalError extends Error {}
 
 /** The student's scale-by-scale state in the shape computeNextApproval reads. */
 export async function loadApprovalStates(userId: string): Promise<ApprovalScaleState[]> {
-  const [scaleGroups, rows] = await Promise.all([
-    prisma.scaleGroup.findMany({ orderBy: { order: "asc" }, select: { id: true, slug: true, order: true } }),
+  const [allScaleGroups, rows, hidden] = await Promise.all([
+    prisma.scaleGroup.findMany({ orderBy: { order: "asc" }, select: { id: true, slug: true, order: true, roadmapId: true } }),
     prisma.scaleProgress.findMany({ where: { userId }, select: { scaleGroupId: true, status: true, unlockedAt: true } }),
+    hiddenRoadmapIds(),
   ]);
+  // A hidden roadmap's scales are never the next one to approve.
+  const scaleGroups = allScaleGroups.filter((sg) => !sg.roadmapId || !hidden.has(sg.roadmapId));
   const byGroup = new Map(rows.map((r) => [r.scaleGroupId, r]));
   return scaleGroups.map((sg) => {
     const row = byGroup.get(sg.id);

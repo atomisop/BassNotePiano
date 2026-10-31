@@ -17,6 +17,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
 import { BackLink } from "@/components/ui/BackLink";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -30,7 +31,10 @@ function VerifyEmailForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Sign-up could not email the first code: say so up front and let them tap Resend, rather than wait for mail that was never sent.
+  const [error, setError] = useState<string | null>(
+    searchParams.get("sendFailed") === "1" ? "We couldn't email your code just now. Tap Resend below to try again." : null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [resent, setResent] = useState(false);
 
@@ -94,7 +98,7 @@ function VerifyEmailForm() {
       >
         <p className="text-small text-slate-400">
           Missing email.{" "}
-          <Link href="/register" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+          <Link href="/register" className="text-slate-50 transition hover:opacity-70">
             Start over
           </Link>
           .
@@ -117,7 +121,7 @@ function VerifyEmailForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Almost there</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your email</h1>
       <p className="mt-2 text-small text-slate-500">
         Code sent to <span className="text-slate-300">{email}</span>.
@@ -137,11 +141,11 @@ function VerifyEmailForm() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={CHUNKED_CODE_LENGTH}
             required
             autoFocus
             aria-invalid={Boolean(error)}
-            value={code}
+            value={chunkCode(code)}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             className={cn(
               "h-12 text-center font-mono text-body tracking-[0.5em] font-semibold",
@@ -177,7 +181,7 @@ function VerifyEmailForm() {
       </button>
       {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
         <p className="mt-3 text-center text-small text-slate-500">
-          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
         </p>
       )}
     </motion.div>

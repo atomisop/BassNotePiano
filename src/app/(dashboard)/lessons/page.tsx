@@ -1,4 +1,6 @@
 import { discordLinkState } from "@/lib/discordLinkState";
+import { ParentLockedArea } from "@/components/parent/ParentLockedArea";
+import { hasParentControl } from "@/lib/parentLinks";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,14 +16,16 @@ import {
   FAMILY_MIN_ATTENDEES,
   FAMILY_CREDITS_PER_STUDENT,
 } from "@/lib/classSchedule";
-import { getActivePaymentPlan } from "@/lib/paymentPlans";
+import { getActivePaymentPlan, getFifthClassOffer } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
-import { ScheduleClient } from "../schedule/ScheduleClient";
+import { ScheduleClient } from "./ScheduleClient";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
+import { getPricingConfig } from "@/lib/pricing";
+import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 
 /**
@@ -49,19 +53,25 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getBoolSetting("cancel.studentCanReschedule"),
   ]);
 
-  const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
+  const [credits, occurrences, bookings, supportContactId, weeklyLimited, pricing] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
     getEffectiveClassCredits(session.user.id),
-    getUpcomingOccurrences(),
+    getUpcomingOccurrences(session.user.id),
     getUserClassBookings(session.user.id),
     getSupportContactId(),
     hasLivePaymentPlan(session.user.id),
+    getPricingConfig(),
   ]);
+
+  // A Monthly subscriber whose billing month holds a fifth class day can add it for a set price.
+  const fifthOffer = activePlan ? await getFifthClassOffer(session.user.id) : null;
 
   const bookingClient = (
     <ClassBookingClient
+      extraClassCents={pricing.extraClassCents}
+      fifthClassOffer={fifthOffer ? { scheduledAt: fifthOffer.scheduledAt.toISOString(), priceCents: fifthOffer.priceCents } : null}
       extraMode={Boolean(activePlan)}
       weeklyLimited={weeklyLimited}
       initialCredits={credits}
@@ -82,6 +92,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         occurrenceDateMs: o.occurrenceDate.getTime(),
         scheduledAt: o.scheduledAt.toISOString(),
         isBooked: o.isBooked,
+        reservedForYou: o.reservedForYou,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,
@@ -94,6 +105,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         attendance: b.attendance,
         canceledReason: b.canceledReason,
         reserved: Boolean(b.reservedByPlanId),
+        inPerson: b.inPerson,
         discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
       }))}
     />
@@ -102,11 +114,21 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true, discordUsername: true } });
   const card = <DiscordConnectCard link={discordLinkState({ discordId: me?.discordId ?? null, discordUsername: me?.discordUsername ?? null })} flag={searchParams.discord} />;
 
+  // One title at the top of Lessons, pinned like every page's heading, above the Discord card and the plan (it used to sit halfway down).
+  // Not wrapped in a layout box: a pinned heading only stays pinned while its parent is the whole page.
+  const heading = (
+    <div data-deck-header className="deck-header mx-auto -mt-4 mb-4 w-full max-w-wide pt-4">
+      <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Lessons</h1>
+    </div>
+  );
+
+  const parentControlled = await hasParentControl(session.user.id);
   if (!activePlan)
     return (
       <>
+        {heading}
         {card}
-        {bookingClient}
+        <ParentLockedArea locked={parentControlled}>{bookingClient}</ParentLockedArea>
       </>
     );
 
@@ -124,7 +146,10 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
 
   return (
     <>
+      {heading}
       {card}
+      <MyPlanSummary userId={session.user.id} />
+    <ParentLockedArea locked={parentControlled}>
     <LessonsHub
       initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
       weekly={
@@ -151,12 +176,14 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
             label: b.schedule.label,
             scheduledAt: b.scheduledAt.toISOString(),
             creditsSpent: b.creditsSpent,
+            inPerson: b.inPerson,
             discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
           }))}
         />
       }
       extras={bookingClient}
     />
+    </ParentLockedArea>
     </>
   );
 }

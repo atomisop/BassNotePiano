@@ -7,6 +7,8 @@ import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { buttonVariants } from "@/components/ui/button";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
+import { getFollowUps } from "@/lib/adminFollowUps";
+import { FollowUpList } from "@/components/admin/FollowUpList";
 
 export const metadata = { title: "Admin: Accounts" };
 
@@ -17,7 +19,13 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const isOwner = isOwnerEmail(session?.user?.email);
   const needsApproval = searchParams.filter === "approval";
   const notPracticing = searchParams.filter === "idle";
-  const [users, progress] = await Promise.all([searchUsers(query), getAdminProgressOverview(query)]);
+  const complimentary = searchParams.filter === "comped";
+  const showFollowUps = !query.trim() && !needsApproval && !notPracticing && !complimentary;
+  const [users, progress, followUps] = await Promise.all([
+    searchUsers(query, { complimentaryOnly: complimentary }),
+    getAdminProgressOverview(query),
+    showFollowUps ? getFollowUps() : Promise.resolve([]),
+  ]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
   // Practice is only expected from students with full access (not the admin, not a lapsed or never-paid account).
   const expectedToPractice = (id: string) => {
@@ -35,6 +43,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         name: u.name,
         email: u.email,
         roleLabel: u.bannedAt ? "Banned" : u.role === "ADMIN" ? "Admin" : null,
+        complimentary: u.hasCurriculumAccess && u.role !== "ADMIN",
         progress: p ? `${p.scalesCompleted}/${p.scales.length}` : null,
         readyScale: ready ? (p!.scales.find((s) => s.slug === ready)?.code ?? "next") : null,
         practiceDays: expectedToPractice(u.id) ? (doneByUser.get(u.id) ?? 0) : null,
@@ -47,16 +56,19 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Accounts</h1>
+      <h1 className="sr-only">Accounts</h1>
+
+      {/* Who needs a nudge, with one-tap reminders (moved here from the Overview). */}
+      <FollowUpList followUps={followUps} className="mt-6" />
 
       <div className="mt-6">
         <AdminFilterTabs
           label="Show"
           items={[
-            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing },
+            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing && !complimentary },
             { label: "Needs approval", href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", href: `/admin/users?filter=idle${q}`, active: notPracticing },
+            { label: "Complimentary", href: `/admin/users?filter=comped${q}`, active: complimentary },
           ]}
         />
       </div>

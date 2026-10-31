@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
-import { Ban } from "lucide-react";
+import { Ban } from "@/components/ui/appIcons";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";
@@ -18,6 +18,7 @@ import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { PageBack } from "@/components/ui/BackLink";
 
 interface PublicProfile {
   id: string;
@@ -66,15 +67,27 @@ function SectionCard({
 }) {
   return (
     <div id={id} className="glass-surface scroll-mt-24 p-6">
-      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
       {description && <p className="mt-1 text-small text-slate-500">{description}</p>}
       <div className="mt-4">{children}</div>
     </div>
   );
 }
 
-export function FriendsClient({ username, friends, receivedRequests, sentRequests, blocked }: FriendsClientProps) {
+export function FriendsClient({ username, friends: allFriends, receivedRequests: allReceived, sentRequests, blocked: allBlocked }: FriendsClientProps) {
   const router = useRouter();
+  // Optimistic: a row the person just answered, blocked or unblocked leaves its list at once; if the server refuses, it comes back.
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const hide = (id: string) => setGone((prev) => new Set(prev).add(id));
+  const unhide = (id: string) =>
+    setGone((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  const friends = allFriends.filter((f) => !gone.has(`block:${f.id}`));
+  const receivedRequests = allReceived.filter((r) => !gone.has(`req:${r.id}`));
+  const blocked = allBlocked.filter((b) => !gone.has(`unblock:${b.user.id}`));
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PublicProfile[]>([]);
   const action = useAction();
@@ -100,48 +113,79 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     if (!profile.username) return;
     setRequestError(null);
     const username = profile.username;
+    // Shows "Request sent" straight away; taken back if it fails.
+    setSentTo((prev) => new Set(prev).add(profile.id));
     await action.run(async () => {
       const result = await sendFriendRequestAction(username);
       if (!result.ok) {
+        setSentTo((prev) => {
+          const next = new Set(prev);
+          next.delete(profile.id);
+          return next;
+        });
         setRequestError(result.error);
         return;
       }
-      setSentTo((prev) => new Set(prev).add(profile.id));
       router.refresh();
       announceChange("notifications");
     }, `add:${profile.id}`);
   }
 
   async function handleRespond(requestId: string, accept: boolean) {
-    await action.run(async () => {
-      await respondToFriendRequestAction(requestId, accept);
+    hide(`req:${requestId}`);
+    const done = await action.run(async () => {
+      try {
+        await respondToFriendRequestAction(requestId, accept);
+      } catch (err) {
+        unhide(`req:${requestId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `${accept ? "accept" : "reject"}:${requestId}`);
+    if (!done) unhide(`req:${requestId}`);
   }
 
   async function handleBlock(userId: string) {
-    await action.run(async () => {
-      await blockUserAction(userId);
-      setBlockingId(null);
+    hide(`block:${userId}`);
+    setBlockingId(null);
+    const done = await action.run(async () => {
+      try {
+        await blockUserAction(userId);
+      } catch (err) {
+        unhide(`block:${userId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `block:${userId}`);
+    if (!done) unhide(`block:${userId}`);
   }
 
   async function handleUnblock(userId: string) {
-    await action.run(async () => {
-      await unblockUserAction(userId);
+    hide(`unblock:${userId}`);
+    const done = await action.run(async () => {
+      try {
+        await unblockUserAction(userId);
+      } catch (err) {
+        unhide(`unblock:${userId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `unblock:${userId}`);
+    if (!done) unhide(`unblock:${userId}`);
   }
 
   if (!username) {
     return (
       <WideLayout className="space-y-6">
-        <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <div data-deck-header className="deck-header -mt-4 pt-4">
+          <PageBack href="/dashboard" />
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first">
@@ -160,8 +204,9 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     <TwoPaneLayout
       mobile="stack"
       header={
-        <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <div data-deck-header className="deck-header -mt-4 pt-4">
+          <PageBack href="/dashboard" />
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
           <p className="mt-1 text-small text-slate-500">
             You&apos;re <span className="text-slate-300">@{username}</span>.
@@ -185,7 +230,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       <ProfileLine profile={friend} />
                     </div>
                     {blockingId === friend.id ? (
-                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                         Block {friend.name ?? friend.username ?? "them"}?
                         <button
                           type="button"
@@ -218,7 +263,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                           onClick={() => setBlockingId(friend.id)}
                           aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
                           title="Block"
-                          className="tap flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap flex h-9 w-9 items-center justify-center rounded-full text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           <Ban size={18} strokeWidth={1.75} aria-hidden />
                         </button>
@@ -243,7 +288,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       type="button"
                       onClick={() => handleUnblock(entry.user.id)}
                       disabled={action.pending}
-                      className={`tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                      className={`tap flex shrink-0 items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                     >
                       {action.isPending(`unblock:${entry.user.id}`) && spin}
                       Unblock
@@ -264,7 +309,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search @username"
-                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
               <button
                 type="submit"
@@ -324,7 +369,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                         type="button"
                         onClick={() => handleRespond(req.id, false)}
                         disabled={action.pending}
-                        className={`tap flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                        className={`tap flex items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                       >
                         {action.isPending(`reject:${req.id}`) && spin}
                         Reject

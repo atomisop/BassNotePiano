@@ -1,0 +1,32 @@
+# Dependabot checks our dependencies for new versions (and security fixes) and opens pull requests for them.
+# It never merges anything itself: CI runs on each PR and a person decides.
+#
+# Why "groups": without them Dependabot opens one pull request per package, and every pull request triggers
+# a Netlify deploy preview (which costs deploy credits). Grouping all the small updates into one weekly pull
+# request keeps the noise and the cost down. Big version jumps (major updates) still come on their own, so
+# they get a proper look.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 2
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

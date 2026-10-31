@@ -1,7 +1,9 @@
 "use server";
 
 import { getServerAuthSession } from "@/lib/auth";
+import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getUnreadCount, getRecentNotifications, markAllNotificationsRead, markNotificationRead } from "@/lib/notifications";
+import { notificationTarget } from "@/lib/notificationTargets";
 import { dismissAnnouncement } from "@/lib/announcements";
 import { getMailUnreadCount, listMail } from "@/lib/mail";
 import { getTotalUnreadMessageCount } from "@/lib/messages";
@@ -53,6 +55,7 @@ export async function fetchNotificationsAction(): Promise<{
       body: n.body,
       read: n.readAt !== null,
       createdAt: n.createdAt.toISOString(),
+      href: notificationTarget(n.type, n.href) ?? undefined,
     })),
   };
 }
@@ -84,9 +87,10 @@ export async function dismissAnnouncementAction(announcementId: string): Promise
 export async function fetchUnreadMessageCountAction(): Promise<number> {
   const session = await getServerAuthSession();
   if (!session?.user) return 0;
-  const [direct, group] = await Promise.all([
+  const [direct, group, support] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
+    getSupportUnreadCount(session.user.id),
   ]);
-  return direct + group;
+  return direct + group + support;
 }

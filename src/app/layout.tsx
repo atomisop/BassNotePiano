@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { Providers } from "./providers";
 import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
@@ -76,6 +77,8 @@ const mono = localFont({
 // paint" split THEME_BOOT_SCRIPT already uses for `data-theme`.
 export const viewport: Viewport = {
   themeColor: themeGroundColor(LOGGED_OUT_THEME),
+  // Lets env(safe-area-inset-*) report the notch and home bar, so fixed bars can keep clear of them.
+  viewportFit: "cover",
 };
 
 // metadataBase is what turns every relative `openGraph.images` / canonical
@@ -129,14 +132,20 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
 
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
+  // The staging copy must never be indexed.
+  robots:
+    process.env.APP_ENV === "staging" || process.env.NEXT_PUBLIC_APP_ENV === "staging"
+      ? { index: false, follow: false }
+      : {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, "max-image-preview": "large" },
+        },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The per-request nonce set by the middleware, so the inline theme script is allowed by the stricter policy.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // suppressHydrationWarning: the boot script below rewrites data-theme /
     // data-mode on this element before React hydrates, so the server-
@@ -152,12 +161,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             renders in the default theme and then snaps to the stored one,
             the classic dark-mode flash. Has to be inline and synchronous;
             anything deferred is already too late. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-neu-base font-sans text-slate-100 antialiased">
+      <body className="min-h-screen bg-ground font-sans text-slate-100 antialiased">
         {/* No flat ambient wash here by design, each area (marketing sections,
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}
+        {process.env.NEXT_PUBLIC_APP_ENV === "staging" && (
+          <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 z-[90] -translate-x-1/2 rounded-b-md bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-caps text-slate-950">
+            Staging
+          </div>
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>

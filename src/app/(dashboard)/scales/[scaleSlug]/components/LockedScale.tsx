@@ -36,7 +36,7 @@ export function LockedScale({ scaleLabel, scaleSlug, message }: { scaleLabel: st
     <div className="mx-auto max-w-xl py-10">
       <Card>
         <Eyebrow>{scaleLabel}</Eyebrow>
-        <h1 className="mt-2 text-body font-semibold text-slate-50">{message.heading}</h1>
+        <h1 className="mt-2 text-title font-semibold text-slate-50">{message.heading}</h1>
         {message.lines.map((line) => (
           <p key={line} className="mt-2 text-small text-slate-400">
             {line}

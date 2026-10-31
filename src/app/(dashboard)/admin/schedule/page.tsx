@@ -4,24 +4,21 @@ import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
 import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
-import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
-import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
-import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
   setClassScheduleActiveAction,
   markAttendanceAction,
   undoAttendanceAction,
-  adminCancelBookingAction,
-  searchStudentsForBookingAction,
-  adminBookClassAction,
+  setClassInPersonAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { AdminReservations } from "@/components/admin/AdminReservations";
+import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 
-type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
+type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -30,14 +27,14 @@ type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 // page, not one task, and scrolling past a growing attendance history to
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
-  { label: "Weekly windows", value: "WINDOWS" },
-  { label: "Bookings", value: "BOOKINGS" },
+  { label: "Times", value: "WINDOWS" },
   { label: "Attendance", value: "ATTENDANCE" },
+  { label: "Reserved", value: "RESERVED" },
 ];
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; group?: string }> }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
@@ -56,30 +53,16 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
     </div>
   );
 
-  if (activeView === "BOOKINGS") {
-    const upcoming = await getUpcomingOccurrences();
-    const openOccurrences = upcoming.filter((o) => !o.isBooked);
-
+  if (activeView === "RESERVED") {
+    const [hours, reservations] = await Promise.all([getReservableHours(), listOwnerReservations()]);
     return (
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+        <h1 className="sr-only">Weekly schedule</h1>
 
         {viewSwitcher}
 
         <div className="mt-6">
-          <AdminManualBooking
-            openOccurrences={openOccurrences.map((o) => ({
-              scheduleId: o.scheduleId,
-              occurrenceDateMs: o.occurrenceDate.getTime(),
-              chunkIndex: o.chunkIndex,
-              label: o.label,
-              scheduledAt: o.scheduledAt.toISOString(),
-              creditCost: o.creditCost,
-            }))}
-            onSearchStudents={searchStudentsForBookingAction}
-            onBook={adminBookClassAction}
-          />
+          <AdminReservations hours={hours} reservations={reservations} />
         </div>
       </div>
     );
@@ -87,31 +70,14 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   if (activeView === "ATTENDANCE") {
     const occurrences = await getAdminOccurrences();
-    const byStudent = searchParams.group === "student";
 
     return (
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+        <h1 className="sr-only">Weekly schedule</h1>
 
         {viewSwitcher}
 
-        <div className="mt-4">
-          <AdminFilterTabs
-            label="Group attendance by"
-            items={[
-              { label: "By class", href: "/admin/schedule?view=ATTENDANCE", active: !byStudent },
-              { label: "By student", href: "/admin/schedule?view=ATTENDANCE&group=student", active: byStudent },
-            ]}
-          />
-        </div>
-
         <div className="mt-6">
-          {byStudent ? (
-            <AdminAttendanceByStudent
-              occurrences={occurrences.map((o) => ({ scheduleId: o.scheduleId, label: o.label, scheduledAt: o.scheduledAt.toISOString(), roster: o.roster }))}
-            />
-          ) : (
           <AdminAttendanceRoster
             occurrences={occurrences.map((o) => ({
               scheduleId: o.scheduleId,
@@ -122,10 +88,9 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
               roster: o.roster,
             }))}
             onMarkAttendance={markAttendanceAction}
-            onCancelBooking={adminCancelBookingAction}
+            onSetInPerson={setClassInPersonAction}
             onUndoAttendance={undoAttendanceAction}
           />
-          )}
         </div>
       </div>
     );
@@ -138,8 +103,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+      <h1 className="sr-only">Weekly schedule</h1>
 
       {viewSwitcher}
 

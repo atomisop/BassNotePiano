@@ -30,7 +30,7 @@ cases, payments, login codes, the mail check, backups): `npm run test:db`, which
 refuses to run against anything but a local database, and which CI runs after the
 build has migrated its throwaway Postgres. `tsc --noEmit`, `next lint`, `next build`
 and both test runs are the correctness gates, plus manual verification (see below). Every
-scheduled Netlify function wraps its body in `runJob` (`src/lib/jobRun.ts`) so
+scheduled Netlify function (except `keep-warm`, which requests `/login` every 5 minutes so the server never sleeps and must never touch the database; see docs/SPEED-AUDIT.md) wraps its body in `runJob` (`src/lib/jobRun.ts`) so
 the owner overview and the morning email can show a job that stopped. A job that
 never ran counts as stopped once the system has been recording longer than its
 window. `job-watchdog` (every 30 minutes) checks them all, emails the owner at
@@ -52,8 +52,12 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   `/billing/*`, `/friends`, `/messages` (1:1 + group), `/account`
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
-- `src/app/(dashboard)/admin`, the sole admin's console. Nav is
-  `src/components/admin/AdminNav.tsx`: one grouped list on the left from md up (icons, count badges, Settings pinned underneath), one swipeable row on phones. Groups: Overview / Billing (Payments, Payment Plans) / People (**Applications**, **Accounts**, Employees) / Teaching (Schedule, Lessons, Discord) / Inbox (Support Chat, Messages). Each label matches its page heading; pages keep their own tabs only for statuses and filters.
+- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
+  Pricing), People (Accounts, Applicants, Contacts, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
+  Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
+  `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
+  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
+  across a 320px phone, checked in `tests/adminNav.test.ts`). Pages keep their own filter pills for statuses.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
@@ -164,7 +168,7 @@ message, and the widget then offers the handoff to a person. `recordAtomFailure`
 (`src/lib/atomHealth.ts`) emails the owner at once for credits or key problems
 (or after 5 temporary failures in 10 minutes), at most every 12 hours, with one
 "answering again" email on recovery; the state is `atom-alert` rows in `JobRun`
-and shows as an item in the Overview's "Needs you now".
+and shows as an item in the admin alerts button ("Needs you").
 
 A **separate** persistence mechanism now also exists for ordinary (non-
 escalated) Atom chats, per the current system prompt in
@@ -191,6 +195,10 @@ one student's open payment but whose amount is different sends that student a
 payment-email pipeline (`findPaymentPipelineProblem`), with a constant line so it alerts once.
 Accounts now need a first and last name (`src/lib/studentName.ts`).
 
+**A forwarded email that FAILS the sender signature check is still read** (`holdUnverifiedPaymentEmail`): if it carries a real payment's BNP code AND that payment's exact amount, that one payment moves to "waiting for your approval" with a note and an admin alert, and is never auto-approved; anything else is ignored with the old alert.
+
+**Soft trust**: when Mailgun gives NO verdict (not a failure) but the message carries a signature from the sender's own domain and Gmail recorded the bank's signature as passing (`checkForwardedBankMail().soft`), the email is read like a verified one and anything it settles stays in the owner's "unchecked" list (`ingestPaymentEmail(..., { forceCheck: true })`). An explicit failure, another domain, or no Gmail hint still only reaches the hold path above.
+
 **Payment emails arrive by forwarding** (added 2026-10-10, `docs/PAYMENT-EMAIL-FORWARDING.md`): Gmail forwards bank/SoFi/Venmo mail to
 the private address `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`; a Mailgun route posts it to `/api/inbound/payments`, which
 checks the private address, Mailgun's signature, a bank sender domain and the bank's own DKIM signature aligned with the sender
@@ -211,14 +219,15 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   `src/lib/entitlement.ts` (DB) resolve a student to `ADMIN | PAID | COMPED |
   TRIAL | NONE`. `PAID` = a Payment Plan with at least one approved
   installment, through the end of the paid period (+3 days grace). Cancelling
-  keeps access to the end of the paid month. A COMPLETED plan (every Monthly
+  keeps access to the end of the paid 4 weeks. A COMPLETED plan (every 4-Week
   one) does not advance `nextDueDate` on its last installment, so its paid
-  period ends one month *after* it (easy to get wrong, it was).
+  period ends one 28-day cycle *after* it (easy to get wrong, it was).
 - `User.hasCurriculumAccess` is now only the admin's complimentary override
   (`COMPED`). The migration cleared every existing flag (they were all free
   grants). The JWT's copy is display-only; the edge no longer gates scales.
   `getRoadmap`/`canAccessScale` in `src/lib/access.ts` (DB-authoritative) are
   the real gate, via `decideScaleAccess`.
+- **Billing cycles are 28 days (decided 2026-10-24).** Every payment plan is billed every 4 weeks, never by calendar month: one payment covers exactly 28 days, so a cycle always holds exactly four of any weekday. `addBillingCycles` / `BILLING_CYCLE_DAYS` (`src/lib/billingCycle.ts`, tested) is the only place a cycle's length is defined; the paid period, the next due date and the credits' expiry all go through it, so never add months to a billing date. The price per payment did not change. The offer is worded exactly this way everywhere: billed every 28 days, and each bill pays for exactly 4 classes. Plans are NAMED 1 Month (no commitment), 3 Months (3 payments) and 6 Months (6 payments) (decided 2026-10-24: a 28-day cycle is sold as a month, off only by days), while billing copy says "every 28 days", never "monthly" or "4 weeks"; `termMonths` in the code means the NUMBER OF PAYMENTS, not months. The old fifth-class offer and free credit are switched off (`FIFTH_CLASS_RETIRED` in `paymentPlans.ts`; a fifth class already given is still honored). Migration `20261106000000_billing_28_day_cycles` moved plans that were mid-cycle onto 28 days (due dates, live credits, a bell notice each); `tests/db/billing28Migration.test.ts` runs that file against realistic rows. Referral discounts still last 3 calendar months (they are a promotion, not a bill).
 - **Teacher-approved drip.** Full access opens Scale 1 only. Each next scale
   opens when the teacher approves it (`approveNextScale` in
   `src/lib/scaleApproval.ts`, button on `/admin/progress`): eligible when the
@@ -240,13 +249,25 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 
 ## Family plans (added 2026-10-14, `docs/FAMILY-PLANS.md`)
 
-2 to 4 accounts, one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
+2 to 8 accounts (`MIN_FAMILY_MEMBERS` / `MAX_FAMILY_MEMBERS` in `classCreditPricing.ts`, shared by the form and the server), one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
 stops everyone). The payer pays one combined `FAMILY_PLAN_START` first payment whose approval starts every plan at once; from month two each
 member has their own bill. Only the payer's bank account settles family money (`familyPayerOf`). A failed start lapses the whole group.
 The old one-payment `FAMILY_BUNDLE` page now redirects to `/billing/plans`.
 A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus emailed code, the old plan runs until the combined payment is
 approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
 leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
+
+**Nobody is put on a family without saying yes (2026-10-24, `familyInvites.ts`, table `FamilyInvite`).** The payer invites an existing account from the plan form (or the switch panel); the invitee sees Accept / Decline on their own Billing > Plans screen (`FamilyInvitesPanel`) and gets a bell notice. `createFamilyPlans` refuses unless every other member has an ACCEPTED invite from THIS payer made within `FAMILY_INVITE_DAYS` (7); the invites are deleted when the family is created, so a yes starts one family only. A decline blocks asking again for 30 days. Nothing (no plan row, no held slot) exists for an invitee until they accept and the payer pays.
+**Two more guards in the same place**: `assertNotHoardingTimes` stops anyone who started `MAX_UNPAID_STARTS_PER_WEEK` (3) plans in 7 days without paying one; and the screen sends the first payment it showed (`expectedFirstPaymentCents`), the server refuses with `PRICE_CHANGED_MESSAGE` if the real price differs and the screen reloads the prices. The live account check (`familyMemberCheck.ts`) answers a banned or admin email exactly like a missing one.
+
+## Contacts and soft holds (added 2026-10-20)
+
+Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
+the weekly time a payment plan reserves), applicants with no account (`ClassRegistration`), and people added by hand (`Contact`, with a status, notes
+and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
+contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. The admin booking screen
+(`AdminManualBooking`) asks "This slot is reserved for X" before booking over one (`holdAppliesTo` in `slotHolds.ts`). The popup is admin only;
+students never see a contact's name.
 
 ## Daily practice in the admin (added 2026-10-14)
 
@@ -294,10 +315,12 @@ proves nothing about the line being active or theirs; only a text code or a paid
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
-notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. The phone
-banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`). The Discord banner shows to anyone with no
-`discordId` and comes back after `discord.promptRepeatMinutes` (default 10) whenever it was ignored or closed
-(`bnp-discord-banner-next`); lengths and the on/off switch are owner settings (`phone.promptSeconds`, `discord.prompt*`, default 8 seconds).
+notification and show one at a time, **only on Home and at most one per slot in all (2026-10-30; the practice banner never shows, Home's hero says it)**, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
+Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
+(`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
+`/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
+Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. The owner settings `discord.promptRepeatMinutes`
+and the practice repeat minutes no longer set the timing (the slots do); `phone.promptSeconds` and the `discord.prompt*` lengths and on/off switches still apply.
 
 ## Staying in sync across the app (added 2026-10-10, `docs/SYNC-AUDIT.md`)
 
@@ -314,6 +337,71 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **User switches decide what they see.** `emailPreferences.ts` maps each kind of notice to its switch (payments, account updates, social, class updates, practice and class reminders); never send or show a notice around a switch (a payment result they are waiting on is the one documented exception). Practice and class reminders are turned on for everyone who subscribes (a data migration for those already subscribed, and `createPaymentPlan` for new ones, once, so a later opt-out sticks). The practice banner is a practice reminder: it needs the owner's `reminders.practiceEnabled` and the person's own reminders switch. A banned account is sent nothing.
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
+
+## Sidebar spotlight, devices and follow-ups (added 2026-10-21)
+
+- **Sidebar spotlight** (`SidebarSpotlight`, `src/lib/sidebarCards.ts`, `/api/me/sidebar`): the bottom of the desktop sidebar shows one card at a time (dots step
+  through the rest): Discord invitation until linked, next class countdown, low credits, scale unlocked / waiting, streak, continue lesson,
+  friends practicing; admins get jobs stopped, needs-you counts and today's classes. Each is a true fact with one tap; add a new kind to the `SidebarCard` union.
+- **Signed-in devices** (Settings > "Where you are signed in"): `KnownDevice` rows (browser + OS, never the IP) with city/region/country from the host's geo headers
+  (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
+  Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
+- **Follow-ups** (`adminFollowUps.ts`, People > Accounts (`FollowUpList`) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
+  expiring, stale applications. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
+- **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
+- **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
+- **Top banners** never ask for what the screen already shows (`alreadyShown` in `TopBanners.tsx`): no Discord banner on Lessons or at desktop width (the sidebar card
+  carries it), no practice banner on Practice, no phone banner on Settings.
+
+## Email opt-out, Atom notice, accessibility (added 2026-10-21)
+
+- **Unsubscribe**: every email a switch governs (anything sent through `createNotification` with an `emailCategory`, announcements and admin messages, payment-plan
+  bills) carries a signed link (`src/lib/unsubscribe.ts`, HMAC of user + category, no sign-in) to `/unsubscribe` (a page that only asks) and a `List-Unsubscribe`
+  one-click POST header to `/api/unsubscribe` (the only thing that changes a switch). Sign-in codes, security alerts, the welcome email, applicant replies and owner
+  emails carry none, on purpose. Pass `unsubscribe: { userId, category }` when adding a new email of that kind.
+- **Atom** shows one warning line before anyone types (the footer: "AI assistant. Don't share passwords or card numbers.") and the rest of the
+  notice (what Atom is, that words go to Google, 30-day history, shared with the team on handoff) behind the "i" next to it, in `AssistantWidget.tsx`; keep it
+  in step with `PrivacyContent.tsx` and the privacy summary in `assistant.ts`. Opened from the sidebar's Ask AI on a computer, the window sits above that
+  button with a pointer (`openAtom(anchor)`).
+- **Email record** (`EmailLog`, `src/lib/emailLog.ts`): every email `sendEmail` sends, fails or skips (staging, no key in dev) and every one a
+  person's switch or a ban stops (`maybeSendEmail`) gets a row: address, subject, status, reason, never the body. Resend's signed webhook
+  (`/api/webhooks/resend`, `RESEND_WEBHOOK_SECRET`, `verifyResendSignature`) moves it to delivered, opened, clicked, bounced or spam
+  (`nextEmailStatus` never moves backward). Shown as the Email channel on Admin > Inbox > Sent; the daily `credit-expiry` job removes rows after 180 days.
+- **Admin alerts**: an admin's sidebar holds the admin sections, so their spotlight cards (Discord, stopped jobs, waiting counts, today's classes) live in the
+  alerts button by the profile picture (`AdminAlertsButton`, `SidebarSpotlight mode="list"`); students keep the cards at the foot of the sidebar.
+- **Accessibility**: run axe-core (WCAG 2.2 AA + best-practice) against the signed-out pages, Home, Lessons, Settings, Billing and the admin screens after UI changes.
+  Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
+  least 24px; links inside running text are underlined.
+
+- **Security policy reports** (`CspViolation`, Admin > Security, owner only): the strict Content-Security-Policy still runs report-only. `/api/csp-report` counts each report by rule, what was blocked (host only)
+  and page (path only), capped at 500 rows; the page separates real findings from visitors' own browser extensions (`isBrowserNoise`) and says whether it looks safe to enforce (no real finding in 3 days).
+  Turning enforcement on is a small follow-up (swap `Content-Security-Policy-Report-Only` for the enforced header in `middleware.ts`) once that page has stayed clean for several days of normal use.
+
+- **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
+  the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
+- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.
+
+- **Pull to refresh** (`PullToRefreshMain`, touch screens only): the finger drives the page and the spinner through refs (no React state per touch move), on a rubber-band curve, with the
+  browser's own bounce switched off while pulling (a non-passive `touchmove`). Twelve spokes light up as you pull and become the fading ring while it refreshes (the "iOS Spinner" idea from
+  21st.dev, which has no pull-to-refresh component of its own). It refreshes the page's data in place (`router.refresh`) and tells the badges to look again. Always check a screen built for
+  the computer at phone width too (390px and 320px) before calling it done.
+
+## Pricing and personal discounts (added 2026-10-21)
+
+- **Prices are the owner's numbers** (Admin > Pricing, owner only, `src/app/(dashboard)/admin/pricing/`): monthly plan price, 3 and 6 month discount %, family extra %, extra class price,
+  fifth class price. They are settings (`pricing.*`, plus `payments.fifthClassPriceDollars`), read with `getPricingConfig()` (`src/lib/pricing.ts`). The math is still the pure
+  `calculatePaymentPlanRate` / `calculateFamilyBundleTotal` in `classCreditPricing.ts`, which take a `PricingConfig` (default `DEFAULT_PRICING` = today's prices): never hard-code a price,
+  pass the config. Server pages hand it to client components as a prop, or through `PricingProvider` / `usePricing()` in the signed-in layout. A plan keeps the price it enrolled at, so a
+  price change affects new plans and plan changes only.
+- **Personal discount** (`AccountDiscount`, one row per account, `src/lib/accountDiscounts.ts`): 1 to 90 percent off a SOLO plan. `discountedPlanPriceCents` (nearest dollar, a cent under). Setting,
+  changing or removing it rewrites the account's running solo plan (`installmentAmountCents`, the one price bills read) and its unpaid, not-yet-submitted bill, and tells the student; the
+  price before the discount is kept in `PaymentPlan.listAmountCents` so removing it restores the signed-up price exactly. New plans and term changes apply it (`createPaymentPlan`,
+  `changePaymentPlanTerm`). Family plans keep the family rate and are left alone. All of it is audited (`pricing.update`, `pricing.discount.set/clear`).
+
+- **Emailed links are for one person**: `tagAppLinks` tags every page link in an email (only `/api` and files are left alone, sign-in and reset steps included) and
+  the middleware stops a different signed-in account on ANY tagged page, public ones like `/unsubscribe` too, with the "Sign in with the right account" screen
+  (`/wrong-account`; a public target simply opens once they sign out). Any link the app builds from inside a page that is about another person (such as the
+  unsubscribe confirmation's settings link) must carry their tag too (`settingsLinkFor`).
 
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
@@ -395,6 +483,22 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   standing, explicit brand rule from `PRODUCT.md`, this repo's own
   history includes a dedicated cleanup commit for stray ones).
 
+## Design system (added 2026-10-29, `DESIGN.md`)
+
+`DESIGN.md` at the repo root is the design system every screen follows: type scale (`text-caption` 12, `text-small` 13, `text-body` 16,
+`text-title` 20, `text-headline` 24, `text-hero`, `text-figure`), corners (8 small, 12 controls and rows, 16 cards, 24 sheets, pills for
+buttons), one orange accent. Tailwind's own size and radius names land on the same steps (`@theme` in `globals.css`), and `cn()` knows the
+custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `text-[rgb(var(--c-s-50))]` or a px size. A control with its own
+solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
+matching CSS rule); add any new solid fill there too, or the lens paints over it.
+
+## Card deck on computers (added 2026-10-30)
+
+The phone card deck (cards stacking under a heading that stays put, `DeckStack.tsx`, `.deck-card` / `.deck-header` in globals.css) also runs
+on a computer on the screens whose `WideLayout` has `deckDesktop` (Streak, Leaderboard). Home is no longer a deck (2026-10-30): one hero (`HomeHero`, the roadmap picture carrying today's step) and quiet rows with hairlines (`HomeRow` / `HomeRows`), colour only on the hero and the small icons. `docs/PREMIUM-AUDIT.md` ranks what is left. There each column is its own stack (cards
+grouped by left edge), and the columns run the full height (`content-start`, no `items-start`) so a stack stays pinned to the end of the page.
+Card grids (Roadmap's scales, the admin overview) keep normal scrolling on a computer.
+
 ## Workflow this session (and prior Claude sessions in this repo) actually follow
 
 1. Branch per unit of work, PR against `main`, `subscribe_pr_activity`,
@@ -423,3 +527,142 @@ sessions are JWT), `LoginEvent` and `LessonBooking` (historical) are not read or
 written by any code. They stay in the schema on purpose: dropping a table is
 irreversible, so do it only in its own migration, after confirming with the owner
 that nothing in production needs the rows.
+
+## Pausing a plan (added 2026-10-21)
+
+Settings > "Pause your plan" (`PausePlanCard`, `pausePaymentPlan` in `paymentPlans.ts`, pure rules in `planPause.ts`): a running, paid-up, non-family plan can pause 1 to 4
+weeks, once per 90 days (`PaymentPlan.pausedAt` / `pauseUntil` keep the last one). The weekly slot stays reserved. In one transaction the next due date and the expiry of the
+plan's unused `CreditGrant`s move out by the same whole weeks (the one place a grant's `expiresAt` is ever changed; its "expiring soon" flag resets), and classes inside the pause
+are canceled with `canceledReason = "Plan paused"`, which `createReservedBookingIfAbsent` already reads as "do not book again", so both booking jobs skip them with no extra code.
+Refused while a payment is under review or the bill is already due. The student and the owner are told, and `plan.pause` is audited.
+
+**The studio can pause a plan too** (2026-10-25, `adminPausePlan` / `adminResumePlan`, buttons next to the Active badge in Admin > Billing > Plans and in the plan box on the student page): to a date up to a year out, or **indefinitely**. Same mechanics as the student pause (weekly time kept, next bill and credit expiry moved out by the span, classes inside it canceled with "Plan paused", an unpaid bill for the old date expired); an indefinite pause uses a fixed 10 year span (`INDEFINITE_PAUSE_MS`, no schema change: `pauseUntil` is 10 years after `pausedAt`, read with `isIndefinitePause`), and resuming moves both back by the time actually paused. `bookReservedWindowForPlan` books nothing while a plan is paused (`isPausedNow`), a student cannot pause on top of it, and students see "paused until the studio resumes it" instead of the far date. Not for family plans.
+
+## Parent mode (added 2026-10-26)
+
+Settings > Parent mode (`ParentLinksPanel`, `/parent`, `lib/parentLinks.ts`, table `ParentLink`): a parent adds a child's OWN account by email (the same account-exists check as group plans, `checkFamilyMember`), the child accepts once (bell notice `PARENT_LINK_REQUEST`, answered in the child's Settings), and either side can end it any time. `assertParentOf` is the gate every parent action goes through; a non-linked parent gets a 404 on `/parent/[childId]`. A linked parent sees the child's progress, practice and classes (`getChildView`), can book, move and cancel their classes and move their weekly time acting AS the child (same cutoffs and credit rules, the child is told; `parent/actions.ts`), and pays for their plan.
+
+Paying (`createParentPlans`, `enrollParentPlanAction`, "Parent mode" button in the people area of the plan form, or `/billing/plans?who=parent`): a `FamilyPlanGroup` with `kind = PARENT`. Each linked child gets their own plan; ONE combined `FAMILY_PLAN_START` payment from the parent starts them all; later 28-day bills are the parent's (`listParentBills`, shown on `/parent`, the payer-may-submit rule is unchanged). The parent is never forced onto a plan: "I'm learning too" adds a plan for them at the same price, off by default needs no plan of their own, and leaving their own plan never ends the children's (`afterFamilyPlanEnded` only ends a FAMILY group when its payer leaves). Abuse guards (`tests/db/parentAbuse.test.ts`): link lookups are rate limited BEFORE they answer (the answers differ, so unlimited tries would list accounts), a pair is limited to 3 asks an hour, a child who ends a link is remembered like a decline (30 days), and a plan a parent pays for can only be ended by the parent (`parentEndChildPlanAction`), never by the child. One person pays the solo price, two or more the group rate (`parentPlanPerPersonCents`, `checkoutTotals({ parent })`). **Every person on it has their own weekly time** (decided 2026-10-29): each child, and the parent when learning too, picks one on the plan form (`parentTimeHolders`, one picker per person, times another person picked are hidden), `createParentPlans` takes `children: { email, scheduleId, chunkIndex }[]` plus `selfSlot`, refuses two people on one time (`duplicateWeeklyTime`) and checks each time with `assertSlotReservable` inside the transaction; the combined first payment books every plan's weekly class. The plan screen is two columns from md (plan and people beside the times) and ends with the price and Review (`CheckoutBar` is a plain card now, not pinned). **A linked child cannot change their own schedule**: while a parent link is accepted (`hasParentControl`), the child's own booking, cancel, reschedule and weekly-time actions in `lessons/actions.ts` refuse with "Your schedule is controlled by your parent.", and /lessons shows that line over a switched-off screen (`ParentLockedArea`); only the parent (through `/parent`) can change it. `changeReservedSlot` blocks only FAMILY groups, so the parent's move works. No one-group-per-payer limit and no change cooldown for PARENT groups.
+
+The old "family plan" is now called **Group plan** everywhere a person reads it (form tab "Me and others", Terms "Group plans", notices); code names (`FamilyPlanGroup`, `family*` files, the `#family-plans` anchor) are unchanged. "Family" still means a class session for several students (`bookFamilyClass`), which is a different feature.
+
+## Interface polish (added 2026-10-26)
+
+- **Shortcuts** (`lib/shortcuts.ts`, handled in `CommandMenu`): Cmd/Ctrl-K or `/` opens the command menu, `?` the shortcut sheet, `B` the sidebar, and "G then a letter" jumps (G H home, G M messages, admin G A / G Y / G C). Hints are `Kbd` keycaps (hidden on touch): in the menu rows, on sidebar hover, in the help sheet. A new destination with a shortcut goes in `GO_SHORTCUTS`, nowhere else.
+- **Once-only requests** (`lib/idempotency.ts`, table `IdempotencyKey`, client `newIdempotencyKey()`): wrap a money or booking action in `runOnce(userId, scope, key, work, { isSuccess, whileRunning })`. The page makes one key per attempt and renews it after success; a double tap or retry gets the stored answer, a failure frees the key. Used by starting a solo or family plan and booking a family class. The daily `credit-expiry` job purges keys older than a week.
+- **Motion**: `withViewTransition` (`lib/viewTransition.ts`) crossfades the page when a dock tap swaps in the skeleton and again when the real page arrives (`NavPendingGate`); keep the callback synchronous (flushSync). Dialog is a bottom sheet you can pull down by its handle or title on phones. The dock icon pop is a spring so a second tap takes over. `SwipeBack` (installed app only) drags the page in from the left edge to go back. **Keyboard actions never animate** (2026-10-30): every shortcut (and Escape) calls `markKeyboardAction()` (`lib/keyboardMotion.ts`), which sets `html[data-kb-motion="off"]` until the next pointer press or 2.5s; globals.css drops the command menu's, the page arrival's and the sidebar's motion while it is set. Gate any new animation a shortcut can trigger the same way. The page arrival is a 200ms fade and 6px rise with no overshoot, because it plays on every navigation.
+- **Admin menu flyouts** use the safe triangle (`lib/safeTriangle.ts`): crossing another row on the way to an open flyout does not swap it. Reuse `isHeadingForFlyout` for any hover submenu.
+- **Images**: `BlurhashImage` draws a BlurHash (made by `node scripts/make-blur-placeholders.mjs` into `blurPlaceholders.generated.ts`; rerun after adding a photo under public/marketing, shop or screenshots) until the photo loads. `useSwr` (`lib/useSwr.ts`) shows the last fetched copy at once and refreshes behind it. Chrome prerenders main-navigation links (`a[data-prerender]`) through `/speculation-rules.json`, sent as a `Speculation-Rules` header so the CSP needs no change; never mark a page whose opening changes data (Messages, a mail message).
+- **Type and touch**: headings are balanced, paragraphs `pretty`, the signed-in shell uses tabular numbers, and rounded boxes use `corner-shape: squircle` where supported (all in globals.css). `hit-slop` extends a small control's touch target by 8px; `viewportFit: "cover"` plus `pad-safe-x` keep the shell clear of the notch. The emailed and texted code boxes already use `autocomplete="one-time-code"`; the SMS ones also read the code with WebOTP (`useWebOtp`).
+- **Scrolling** (2026-10-30): the page and `#app-scroll` hide their scrollbars; a thin orange `.scroll-progress` line at the top shows how far down you are (scroll-driven CSS, no script). On phones and tablets, cards tagged `deck-card` (Home, Roadmap) form a deck (the admin overview does NOT: under its greeting it scrolls as a plain list, decided 2026-10-30): each sticks under the top bar and the next is drawn over it, earlier cards' tips showing (up to 5); `DeckStack.tsx` sets each card's stopping place (tall cards stop once their bottom is seen). A page heading marked `data-deck-header` (class `deck-header`) stays put above the deck (Home, Roadmap, Streak, Leaderboard, admin overview). Tag a new screen's heading and top-level cards the same way. Menus that open over page text use `glass-menu` (mostly solid matte glass), not `glass-surface-elevated`.
+- Toasts: `toast.undo(title, onUndo)` and `toast.run(promise, { loading, success, error })` in `ui/Toaster.tsx`.
+
+**Moving a whole plan (2026-10-25)**: "Move time" next to Pause (Admin > Billing > Plans and the student page) opens the free weekly times and calls `changeReservedSlot(..., { byAdmin: true })`: the standing slot and every upcoming class on it move together (the old weeks are canceled with no charge and rebooked on the new day inside the paid period), with no 24 hour cutoff and family payers allowed. The student is told; audited as `plan.move-time`. The one-class mover on the attendance list is unchanged.
+
+## Owner reservations (added 2026-10-25)
+
+Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAdmin.ts`, table `OwnerReservation`): the owner keeps a day (every window, `chunkIndex` null) or chosen hours for a named customer (name, email and phone required). Unlike a `SlotHold` (a reminder that never blocks), this BLOCKS: `bookClass`, `adminBookClass`, `bookFamilyClass`, `rescheduleClassBooking` and `bookExtraSessionOccurrence` refuse it ("reserved by the owner"), a plan's weekly auto-booking skips that week (`createReservedBookingIfAbsent`), and `getUpcomingOccurrences` marks it `isBooked` (+ `reservedByOwner`), so students just see the time as taken and never see the customer. Creating one is refused when someone already has a class in it. Release (two taps) frees it. Audited as `reservation.create` / `reservation.release`.
+
+## Staging and smoke checks (added 2026-10-27, `docs/STAGING.md`)
+
+`APP_ENV=staging` (+ `NEXT_PUBLIC_APP_ENV=staging`) makes a deploy the safe testing copy (`lib/appEnv.ts`): a STAGING tag, `noindex`, no email to anyone outside the test allow-list (`stagingMayEmail`, guard in `sendEmail`), and the staging-only `/api/staging/open-test-payment` (404 elsewhere, needs `STAGING_SMOKE_TOKEN`). `scripts/seed-staging.mjs` (refuses without `I_AM_SEEDING_STAGING=yes`) makes the test accounts. `npm run smoke` (`scripts/smoke/`) runs five checks against `SMOKE_BASE_URL`: site and security, sign in and roles, classes and schedule, parent mode, payments pipeline (signed test bank emails through `scripts/send-test-bank-email.mjs`). `.github/workflows/staging-smoke.yml` runs them nightly and does nothing until the `SMOKE_BASE_URL` secret exists. A new feature that changes sign in, booking, parent mode or the payment email path should get a step in the matching check.
+
+## Catching a broken change before CI (added 2026-10-27)
+
+A file that starts with `"use server"` may only export async functions and types; a constant or class there fails `next build` but not `tsc` or lint, so it once reached CI and emailed the owner. `tests/useServerExports.test.ts` reads every such file under `src` (part of `npm test`, so CI too). `.githooks/pre-push` runs the type check, lint and all tests before every push; turn it on once per checkout with `npm run hooks:on` (`git push --no-verify` skips it). Still run `npm run build` before opening a PR that touches routes or actions.
+
+## Payment receipts (added 2026-10-31)
+
+Approving a payment (`approveZellePayment`) keeps the bell notice but sends a real receipt instead of the old plain "Payment approved" email
+(`sendPaymentReceipt` in `src/lib/paymentReceipt.ts`, wording in `paymentReceiptRules.ts`, tested; email in `renderPaymentReceiptEmail`): the
+BNP code as the receipt number, amount, date, payer (a bank's all-capitals name is title-cased), method, account, what it was for, the 28 days
+it covers, classes added and the next bill. It goes out whatever the payments switch says (a payment result is the documented exception) and
+never to a banned account. The same receipt is a printable page at `/billing/receipt/[paymentId]` (the payer or an admin; anyone else gets a 404),
+linked from Payment history; only a VERIFIED payment has one. Admins reach every receipt from Billing > Payments and the student page's Money tab, and the owner is emailed
+a "Receipt copy" of each one while the owner-only `RECEIPT_COPY` alert is on (Admin > People > Staff; never for the owner's own payment).
+
+## Data page (added 2026-10-31)
+
+Admin > Setup > Data (`/admin/data`, owner only, read only; `src/lib/adminData.ts`): four views in `?tab=`. Scales: a checklist funnel per scale (open, module read,
+practice done, finished), stuck 21+ days, first-try quiz pass, average quiz, median days to finish, lessons finished, and a student by scale grid. People: every
+student's figures in four column groups (account, learning, classes and money, help), cards on phones. Collected: every kind of record kept, with live counts.
+Insights: fixed checks over the studio's own numbers (`buildInsights` in `adminInsightsRules.ts`, pure and tested), each a finding with its numbers and one thing to
+try; nothing is sent to Gemini or anywhere else, and a check needs `MIN_SAMPLE` (3) people before it speaks. Add a new check there with a test.
+
+## Admin Overview (reworked 2026-10-30)
+
+`/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
+
+## Activity log (added 2026-10-21)
+
+Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter
+(the part of the action before the dot), a date range (30 days by default) and `?user=<id>` for one account's changes. 50 per page. Plain-English action names
+live in `src/lib/auditView.ts`; an action not listed there shows as its code, so add a label when you add a new audited action. The student page's change log links to it.
+
+## Personal calendar feed (added 2026-10-21)
+
+Settings > "Your classes in your calendar" gives a signed-in student a subscribe link (`webcal://` and https) to `/api/calendar/me?u=<id>&t=<token>`: their SCHEDULED classes for the next
+120 days with a 15 minute alert and the Discord link; a canceled class is simply absent so calendar apps drop it on refresh. Calendar apps cannot sign in, so the token is an HMAC of
+the account id and `User.calendarVersion` (`studentCalendar.ts`, nothing stored); "Make a new link" bumps the version (`POST /api/me/calendar`, audited as `calendar.reset`) and the old
+link 404s, as does a banned account's. The teacher's own feed (`teacherCalendar.ts`) is separate and unchanged.
+
+## Push reminders (added 2026-10-21)
+
+Settings > "Reminders on your phone" (`PushCard` in `AccountSettings.tsx`, `public/sw.js`, `/api/me/push`, `webPush.ts`, `pushRules.ts`): class and practice reminders also arrive as web push. `createNotification` pushes
+only when its `emailCategory` is `reminders` or `classes` and the person's own switch for it is on (same rule as the email; a banned account gets nothing). `PushSubscription` rows are one per
+browser; the push service saying 404/410 deletes the row. The endpoint a browser sends must be on an allow-list of real push hosts (`isAllowedPushEndpoint`), because our server POSTs to it.
+**Needs three env vars to turn on**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (make a pair with `npx web-push generate-vapid-keys`) and optionally `VAPID_SUBJECT` (`mailto:...`). Without the keys the card is
+hidden and nothing is sent. On iPhone/iPad push only works once the site is on the Home Screen, so the card shows those steps first (the "Add to Home Screen" prompt).
+
+## Offline (added 2026-10-31)
+
+`OfflineNotice` (providers.tsx) shows a red "No internet connection" pill while the device is offline (the top banners step aside) and a short "Back online". `public/sw.js` is now installed on every visit (`ServiceWorkerSetup`, production only) and, besides push, serves the self-contained `public/offline.html` when a page is opened with no internet; it caches only that page and `/logo-mark.png` (`bnp-offline-v1`, bump the name when the page changes). Never add other caching there without a plan for stale pages.
+
+## Referrals (added 2026-10-21)
+
+Settings > "Invite a friend": each account has a `referralCode` (made on first view, `referrals.ts`); `/register?ref=CODE` carries it into sign-up, which records a `Referral` (own, unknown or banned-referrer codes are ignored; one referral per invited person).
+When the invited person's FIRST plan payment is approved (`approveZellePayment`, installment 1) and their plan is a 3 or 6 month term (`isQualifyingReferralTerm`; Monthly earns nothing), `rewardReferralForFirstPayment`
+claims the reward once (atomic `rewardedAt`) and gives BOTH people a 10% `AccountDiscount` for 3 months (`referralRules.ts`). The discount rides the personal-discount tool: `expiresAt` marks one that ends by itself, the owner's own
+discounts have none, and setting a discount by hand clears any expiry. A reward never lowers a bigger or longer discount (`rewardWouldHelp`). The daily `credit-expiry` job runs `expireTimedDiscounts`, which deletes due discounts and
+puts the running plan back to its list price. Audited as `referral.reward`.
+
+## Teaching day screen (added 2026-10-21)
+
+Admin > Teaching > Today (`/admin/today`, `src/lib/teachingToday.ts`): today's classes (Eastern day) grouped by start time, one row per student with the facts a teacher wants before class: first class flag, in person flag,
+plan, current open scale, days practiced out of 7, credits left, Discord linked, overdue bill, and the newest teacher note. Read only; the sidebar "Today" card for admins opens it. Marking attendance stays on Schedule > Attendance.
+
+## Payment plan screen (reworked 2026-10-24)
+
+`/billing/plans` for a new plan is `NewPlanForm` (`billing/plans/`): Just me / Me and my family, plan length, family emails, then the weekday-and-time chips. `?term=TERM_3&who=family` (set by the pricing page's Start plan links, kept through the login redirect)
+preselects everything but the time. The price and the next step live in `CheckoutBar` (fixed above the dock on phones, sticky from lg), and the family price follows every added row (`checkoutTotals`, `planCheckout.ts`, pure and tested). Each typed family email is looked up live
+(`checkFamilyMemberAction` -> `familyMemberCheck.ts`, 40 a minute per account because each answer says whether an email has an account): a square loader, then a green check, or why not (no account, needs a first and last name, cannot join, your own, a repeat).
+Review stays off until every row is a found account. The server still re-checks everything in `createFamilyPlans`.
+
+## Weekly time waitlist (added 2026-10-21)
+
+On Billing > Plans the weekly time picker (`WeekdayTimePicker`) shows the times other plans hold dimmed, right in the day and time chips (`getTakenSlots`, the chunks `getReservableSlots` does not return); tapping one offers "Tell me when it opens" / "Stop waiting"
+(square loader while it saves), for up to 5 times (`SlotWaitlist`, `slotWaitlist.ts`). Joining a time also sends the OWNER only a notice, once per new entry: "<name> is looking forward to <Day>s at <time> becoming available.". The hourly `slot-waitlist` job (`netlify/functions/slot-waitlist.ts`, in `JOB_MAX_SILENCE_HOURS`) runs `notifyOpenedSlots`: for each waitlisted time that is open again it tells ONLY the first person in line
+(`SLOT_WAITLIST_OPENED`, class-updates switch, so it also pushes), then waits 24 hours before offering it to the next; a time that is taken again resets the offer; entries older than 90 days, for a retired schedule, or for someone who now holds
+that very time are cleared. Nothing is reserved for the person told: the time still goes to whoever starts a plan first.
+
+## Tests that guard money and access (added 2026-10-21)
+
+`tests/db/` now also covers `access.ts` (`accessGate`), `scaleApproval.ts`, `creditLedger.ts`, `creditAdjustments.ts` and `attendanceAutoCharge.ts`: who can open which scale, the teacher-approved drip and its two rules, FIFO draw-down and the
+once-only expiry (floored at the real balance, never touching credits a booked class holds), admin credit changes that can never go below zero, and the unmarked-class charge happening once. Settings in tests go through
+`saveSetting` / `resetSetting` (the raw table is cached for 10 seconds).
+
+Icons: import every icon from `@/components/ui/appIcons` (never from an icon package directly). It maps the names the screens use to
+Phosphor's duotone icons (soft, rounded, with a tinted fill; chosen by the owner 2026-10-30, replacing lucide), drawn solid when given a
+`fill`; change the whole look there. Hand-drawn brand marks (Discord and the like) stay in `@/components/ui/icons`. Do not add another icon library.
+
+Complimentary access (the `hasCurriculumAccess` flag) is visible and traceable: Admin > Accounts has a "Complimentary" tab and a badge on each such row, and every grant or removal is in the activity log (`access.grant` / `access.revoke`,
+naming the account), including the rare old curriculum payment that is approved late (`approveZellePayment`).
+
+## Add to Home Screen (added 2026-10-22)
+
+`AddToHomePrompt` (mounted in `(dashboard)/layout.tsx`, `src/components/pwa/`) asks once per DEVICE (localStorage `bnp-add-to-home-seen`, not per account) to put the site on the Home Screen, with the numbered steps for iPhone/iPad and Android
+(`HOME_SCREEN_STEPS` in `src/lib/addToHome.ts`; Chrome on Android also gets a one-tap Install button from `beforeinstallprompt`). Phones and tablets only, never when already running standalone, never over the first-visit tour or the "what's new"
+card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).
+
+The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.

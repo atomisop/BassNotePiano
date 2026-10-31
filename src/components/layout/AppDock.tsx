@@ -1,28 +1,69 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
-import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
-import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
-import { SPRING } from "@/lib/motionTokens";
+import { usePathname, useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
+import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
+import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
+import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
 
-// Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere,
-// see navIcons.tsx) to lucide-react for this dock specifically, by direct
-// instruction.
-const NAV_ICON: Record<string, LucideIcon> = {
-  home: Home,
-  lessons: CalendarCheck,
-  friends: Users,
-  messages: MessageSquare,
-  settings: Settings,
+// The dock's own icon set: one 24pt grid, one 2pt rounded stroke, so the five read as a family the way Instagram's do. The tab you
+// are on is drawn filled: `fill` is the solid shape, `cut` is detail punched back out of it in the capsule's color (the map's folds,
+// the calendar's line and check, the gear's hole).
+type DockGlyph = { outline: string[]; fill?: string; cut?: string; /** The cut-out is a solid hole (the gear) rather than lines. */ cutSolid?: boolean; rings?: string };
+const GEAR =
+  "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z";
+const MAP =
+  "M14.1 5.55a2 2 0 0 0 1.8 0l3.65-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.55 2.27a2 2 0 0 1-1.8 0l-4.2-2.1a2 2 0 0 0-1.8 0l-3.65 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9L8.1 3.45a2 2 0 0 1 1.8 0z";
+const HOUSE = "M3.5 10.4 12 3.6l8.5 6.8V19a1.75 1.75 0 0 1-1.75 1.75H15v-5a1.25 1.25 0 0 0-1.25-1.25h-3.5A1.25 1.25 0 0 0 9 15.75v5H5.25A1.75 1.75 0 0 1 3.5 19z";
+const BUBBLE =
+  "M12 3.6c4.8 0 8.6 3.4 8.6 7.7S16.8 19 12 19c-1.1 0-2.15-.18-3.12-.5L4.4 20.2l1.25-3.65C4.3 15.2 3.4 13.35 3.4 11.3 3.4 7 7.2 3.6 12 3.6z";
+// The owner's Admin tab: a shield with a check (the usual sign for "admin"), so it is not mistaken for an overview grid.
+const SHIELD = "M12 3.25 19.25 6v5.6c0 4.45-3 8.2-7.25 9.65C7.75 19.8 4.75 16.05 4.75 11.6V6z";
+const SHIELD_CHECK = "M8.9 12.1l2.15 2.15 4.05-4.05";
+const DOCK_GLYPHS: Record<string, DockGlyph> = {
+  home: { outline: [HOUSE], fill: HOUSE },
+  roadmap: {
+    outline: [MAP, "M9 3.5v14.6M15 5.9v14.6"],
+    fill: MAP,
+    cut: "M9 3.5v14.6M15 5.9v14.6",
+  },
+  lessons: {
+    outline: ["M6.75 4.75h10.5a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3H6.75a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3z", "M3.75 9.75h16.5M8 3v3.5M16 3v3.5M9.25 14.75l1.9 1.9 3.6-3.6"],
+    fill: "M6.75 4.75h10.5a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3H6.75a3 3 0 0 1-3-3v-9.5a3 3 0 0 1 3-3z",
+    cut: "M3.75 9.75h16.5M9.25 14.75l1.9 1.9 3.6-3.6",
+    rings: "M8 3v3.5M16 3v3.5",
+  },
+  messages: { outline: [BUBBLE], fill: BUBBLE },
+  admin: { outline: [SHIELD, SHIELD_CHECK], fill: SHIELD, cut: SHIELD_CHECK },
+  settings: { outline: [GEAR, "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"], fill: GEAR, cut: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", cutSolid: true },
 };
+
+function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean }) {
+  const line = { stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const filled = active && glyph.fill;
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[25px] w-[25px]">
+      {filled ? (
+        <>
+          <path d={glyph.fill} fill="currentColor" {...line} />
+          {glyph.cut && <path d={glyph.cut} {...line} stroke="var(--dock-cut)" fill={glyph.cutSolid ? "var(--dock-cut)" : "none"} />}
+          {/* The calendar's rings sit above the filled body and stay lines. */}
+          {glyph.rings && <path d={glyph.rings} {...line} />}
+        </>
+      ) : (
+        glyph.outline.map((d, i) => <path key={i} d={d} {...line} strokeWidth={active ? 2.4 : 2} />)
+      )}
+    </svg>
+  );
+}
 
 // How close the cursor has to get to the bottom edge to reveal a hidden
 // dock, and how long it lingers after the cursor leaves before hiding
@@ -32,6 +73,8 @@ const NAV_ICON: Record<string, LucideIcon> = {
 
 export interface AppDockProps {
   unreadMessageCount: number;
+  /** The owner's own dock (2026-10-30, by their request): Admin takes Messages' place. Messages is still in the sidebar and menu. */
+  ownerAdmin?: boolean;
 }
 
 // "About" and "Sign out" live inside Settings now, not as dock icons,
@@ -54,12 +97,13 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: "home", dataTour: "nav-roadmap" },
-  { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
+  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
+  { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
+const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -99,56 +143,40 @@ const NAV_ITEMS = [
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
+export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAdmin = false }: AppDockProps) {
+  const items = ownerAdmin ? OWNER_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
-
-  // Seeded from the layout's own server-rendered count (no flash of 0 on
-  // first paint), then kept fresh client-side, this badge used to be that
-  // static prop alone, which only ever changed on a full re-run of the
-  // dashboard layout's data fetch (a hard reload), not a client-side route
-  // change within it. Reported live: reading every message in /messages
-  // left the dock's badge showing the old count until a manual refresh.
-  // Same 30s-poll-plus-visibilitychange shape as NotificationBell's own
-  // unread count, and additionally refetched on every pathname change
-  // (below) so leaving /messages after reading something updates it
-  // immediately rather than waiting out the rest of the interval.
-  const [unreadMessageCount, setUnreadMessageCount] = useState(initialUnreadMessageCount);
-
+  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  // The tab just tapped lights up at once, before the new page has arrived.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => setPendingHref(null), [pathname]);
+  // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      try {
-        const count = await fetchUnreadMessageCountAction();
-        if (!cancelled) setUnreadMessageCount(count);
-      } catch (err) {
-        // Same non-blocking posture as NotificationBell's own poll, a
-        // backgrounded tab killing this request mid-flight is routine, and
-        // the next poll or pathname change just tries again.
-        console.error("Unread message count refresh failed (non-blocking, will retry):", err);
-      }
-    }
+    for (const item of items) router.prefetch(item.href);
+  }, [router, items]);
+  // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
+  // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
+  const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
 
-    refresh();
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") refresh();
-    }, POLL_INTERVAL_MS);
-
-    function handleVisibility() {
-      if (document.visibilityState === "visible") refresh();
-    }
-    document.addEventListener("visibilitychange", handleVisibility);
-    const stopListening = onChange("messages", refresh);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      stopListening();
+  // Like Instagram's bar: scrolling down narrows the pill (same height, icons closer together); scrolling up or reaching the top
+  // widens it again. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    let last = 0;
+    const onScroll = (e: Event) => {
+      const el = e.target;
+      if (!(el instanceof HTMLElement) || el.tagName !== "MAIN") return;
+      const top = el.scrollTop;
+      if (top < 24) setNarrow(false);
+      else if (top - last > 6) setNarrow(true);
+      else if (last - top > 6) setNarrow(false);
+      last = top;
     };
-    // Deliberately re-runs on every pathname change (not just mount), see
-    // the comment above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
+  useEffect(() => setNarrow(false), [pathname]);
 
   // Opening a chat focuses its input, and iOS Safari answers by scrolling the
   // whole document to keep the input above the keyboard. The shell is a fixed
@@ -171,215 +199,78 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
 
 
   return (
-    <>
-      {/* No fade/blur band behind the dock anymore, by direct instruction,
-          the dock is meant to be the one thing freely floating above the
-          page, full stop. An earlier version of this file painted a
-          ground-toned gradient (then a blurred one) behind it to soften the
-          seam where a lighter card's edge met the dock's own forced-black
-          bar; on a phone's short viewport that band itself read as a
-          separate solid/hazy bar sitting under the dock rather than the
-          dock floating cleanly, which is exactly what this removes. */}
-      <div
-        role="navigation"
-        aria-label="Primary"
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
+    <div
+      role="navigation"
+      aria-label="Primary"
+      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
+    >
+      {/* A copy of Instagram's floating tab bar: a 53pt glass pill 20pt from the edges, five icon slots with no names, and a lighter
+          capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
+          words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
+      {/* Scrolling down shrinks the whole dock (both ways, toward the bottom) and scrolling back up grows it again, on a spring so it
+          overshoots a touch, like the dock first did. One full transform string, not the scale/y shortcuts: Framer Motion can hand a
+          whole transform to the browser's compositor, so the dock stays smooth while the page is busy scrolling. */}
+      <motion.div
+        data-glass=""
+        initial={false}
+        animate={{ transform: narrow ? "translateY(6px) scale(0.84)" : "translateY(0px) scale(1)" }}
+        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 22, mass: 0.9 }}
+        style={{ transformOrigin: "50% 100%" }}
+        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
       >
-        <motion.div className="pointer-events-auto">
-          {/* No idle bob: the dock used to drift up and down by 2px on an
-              endless loop, which read as the bar never sitting still. It now
-              rests; the only things that move it are the deliberate
-              hide/reveal slide above and the tap squish on an icon. */}
-          <div>
-            {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
-                elevated`'s own theme-driven glass background, solid black
-                regardless of theme or accent, by direct instruction. Both
-                `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
-                sets `background` as a shorthand (a translucent gradient, see
-                `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
-                shorthand's background-color slot, the gradient's own
-                background-image would otherwise keep painting over the black,
-                a soft wash rather than the requested pitch black. The `!` is
-                load-bearing on both: `glass-surface-elevated` sets these via a
-                plain class rule, not an inline style, so an unmarked override
-                isn't guaranteed to win the cascade against it.
-  
-                `!backdrop-blur-none` removes `glass-surface-elevated`'s own
-                `backdrop-filter: blur(...)`, which is pure dead weight on a
-                100%-opaque black bar, there's nothing behind it left to blur
-                into view. It's also the precondition for a well-documented
-                WebKit rendering bug: `backdrop-filter` combined with
-                `border-radius` on an element that doesn't otherwise clip its
-                own content (this bar is `overflow: visible`, so its box-shadow
-                glow can extend past its own box) can leak a faint square-
-                cornered halo at each rounded corner in Safari, because the
-                blur's own compositing layer doesn't reliably mask itself to
-                the rounded shape, reported as "a light gray sharp corner on
-                all sides of the smooth corners" surviving even after the
-                tap-highlight fix (that fix addressed a real, separate
-                tap-only flash; this addresses a persistent one). Removing the
-                backdrop-filter here removes the bug's precondition entirely,
-                without needing `overflow: hidden` (which would also clip the
-                glow this bar is meant to have).
-  
-                `!shadow-[...]` overrides `glass-surface-elevated`'s own
-                `--elev-shadow` for the same reason as the three overrides
-                above: that token is a *dark* drop shadow (tuned for a card
-                sitting on a lighter surface), which all but disappears
-                underneath a bar that's forced solid black sitting on this
-                app's own near-black page ground, direct instruction: "the
-                dock is not a freely suspended thing, it's lying on [the
-                bottom edge]." A dark shadow can't read as elevation once
-                there's no lighter surface for it to fall on, so this pairs a
-                normal dark contact shadow (still doing real work wherever the
-                page behind happens to be lighter, e.g. the Paper theme) with
-                a soft white ambient glow, the same light-not-dark technique
-                the icons above already use to read as lit against black.
-
-                `!rounded-full` fixes the actual, still-unaddressed source of
-                the corner artifact reported after the backdrop-filter fix
-                above (that fix was real, it closed a genuine bug class,
-                but it wasn't this one). `dock.tsx`'s own `Dock` hardcodes
-                `rounded-2xl` (1rem) on the very same element that also
-                carries `glass-surface-elevated`, which sets its own
-                `border-radius: var(--surface-radius)` (0.75rem on Paper,
-                0.5rem on Ink), two same-specificity classes fighting over
-                one property, on the one element none of the four overrides
-                above ever touched. Nothing here ever decided which wins;
-                it was just whichever the build's own class order happened
-                to emit last. Either way, 0.5-1rem on a 60px-tall bar is a
-                visibly squared corner, not the smooth capsule this bar is
-                designed to be, and a genuine cascade tie is exactly the
-                kind of thing that can paint one way in one browser/engine
-                and differently in another, which fits "the curve is there
-                but so is a frame around it" better than a single clean
-                radius ever would. Forcing one explicit, fully-rounded value
-                here removes the conflict outright instead of relying on a
-                tiebreak this file never actually chose. */}
-            <Dock
-              className="items-center !gap-1 !rounded-full !bg-neu-lift !bg-none !border-transparent !px-2 !backdrop-blur-none !shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_var(--neu-edge)]"
-              magnification={36}
-              distance={140}
-              panelHeight={44}
+        {/* A flat frosted pane: a pill like the dock, a thin edge and a gentle bend, so it reads as matte glass, not a bulge. */}
+        <GlassLens radius="full" bezel={6} strength={4} magnify={0} blur={14} />
+        {items.map((item) => {
+          const at = pendingHref ?? pathname;
+          // A scale's page belongs to the Roadmap tab.
+          const active =
+            at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
+          const current = pathname === item.href;
+          const badge = item.href === "/messages" ? unreadMessageCount : 0;
+          const glyph = DOCK_GLYPHS[item.icon];
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              data-prerender={item.href === "/messages" ? undefined : ""}
+              aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
+              aria-current={current ? "page" : undefined}
+              // The current tab again means "take me to the top" (it would only reload the same page).
+              onClick={
+                current
+                  ? (e) => {
+                      e.preventDefault();
+                      window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
+                    }
+                  : () => {
+                      setPendingHref(item.href);
+                      window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
+                    }
+              }
+              data-tour={"dataTour" in item ? item.dataTour : undefined}
+              className="tap relative flex h-full items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {/* Icon-only now, by direct instruction ("remove the texts"),
-                  the permanent-caption layout (`flex-col`, a bottom-anchored
-                  bar via `items-end pb-3` above) is gone along with the
-                  labels themselves, so the bar is `items-center` instead:
-                  with no caption anchoring each tab to the bottom, centering
-                  is what actually puts the icon in the middle of the bar's
-                  own height rather than low and cramped against where the
-                  removed label used to sit.
+              {active && (
+                <motion.span
+                  layoutId="dock-active-pill"
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
+                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-full"
+                />
+              )}
+              <motion.span
+                // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
+                whileTap={{ scale: 0.82 }}
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
+                className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
+              >
+                <DockGlyphIcon glyph={glyph} active={active} />
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-unread" />}
+              </motion.span>
 
-                  The active-tab indicator is a "spotlight" pair now (look
-                  ported from a reference component, by direct instruction),
-                  replacing the previous liquid-glass droplet pill entirely:
-                  a soft light glowing down from directly above the active
-                  icon, plus a thin white line hovering at the top of the
-                  bar above it. Every tab carries a dimmer version of the
-                  same glow, falling off with distance from whichever tab is
-                  actually active, a roaming spotlight sweeping the whole
-                  bar, not just a single fixed pool of light, the reference's
-                  own `Math.max(0, 1 - distance * 0.6)` falloff curve,
-                  ported as-is since it's what gives the sweep its shape.
-
-                  This also happens to remove the one other place the bar's
-                  own documented corner-artifact bug (see the big comment
-                  above `<Dock`) could still have been sneaking in from: the
-                  droplet this replaces carried its own inline
-                  `backdropFilter`, entirely separate from, and not reached
-                  by, the outer bar's `!backdrop-blur-none` override, which
-                  only ever touched `glass-surface-elevated`'s own backdrop-
-                  filter, not a one-off inline style on a child. That's gone
-                  now along with the droplet itself. The glow below uses a
-                  plain `filter: blur()` (Tailwind's `blur-lg`), not
-                  `backdrop-filter`, blurring the glow's own pixels rather
-                  than sampling and blurring whatever sits behind it, which
-                  is the specific combination (backdrop-sampling blur +
-                  border-radius on a non-clipping element) the bug actually
-                  needs, so this isn't a new instance of it. */}
-              {NAV_ITEMS.map((item, index) => {
-                const active = pathname === item.href;
-                const badge = item.href === "/messages" ? unreadMessageCount : 0;
-                const Icon = NAV_ICON[item.icon];
-                return (
-                  // Badge lives on this wrapper, not inside `DockItem`, that
-                  // component clones its direct children unconditionally (see
-                  // dock.tsx), so a third, sometimes-`false` child there
-                  // crashes it. `DockItem` gets exactly one static child
-                  // (`DockIcon`), always.
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-label={item.label}
-                    data-tour={"dataTour" in item ? item.dataTour : undefined}
-                    className="tap relative flex items-center justify-center px-1"
-                  >
-                    {/* The glow: a blurred white gradient, positioned above
-                        the icon (`-translate-y-full` moves it fully clear of
-                        the icon itself, rather than the reference's own
-                        half-overlapping version, since there's no label
-                        underneath here competing for the same vertical
-                        space) and centered on the tab's own box so it tracks
-                        correctly even while magnification is resizing that
-                        box. Opacity-only transition (not position), since
-                        every tab's glow lives in the same spot at all times,
-                        only how bright it is ever changes. */}
-                    {/* The line: only the active tab gets one, and the
-                        shared `layoutId` is what makes Framer Motion slide
-                        the single element from one tab's position to the
-                        next on navigation, instead of one instance fading
-                        out while a new one fades in elsewhere, the same
-                        shared-layout technique the previous glass-droplet
-                        indicator used, just carried over to this new shape
-                        rather than reinventing it. */}
-                    {active && (
-                      <motion.div
-                        layoutId="dock-active-line"
-                        transition={SPRING.lively}
-                        className="pointer-events-none absolute bottom-[3px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-signal"
-                      />
-                    )}
-                    <motion.div whileTap={{ scale: 0.9 }} className="relative">
-                      {/* White at every step, not accent-colored, same
-                          direct instruction as the dock's own background.
-                          Active vs inactive is opacity, glow, and now stroke
-                          weight too (a subtly bolder active glyph, matching
-                          the reference): every icon carries a soft white
-                          ambient glow at rest (a `drop-shadow` on the icon
-                          itself, since that follows the glyph's own shape
-                          rather than boxing it like `box-shadow` would), and
-                          the active tab's icon glows brighter still. */}
-                      <DockItem
-                        aria-label={item.label}
-                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:shadow-pressed-low"}`}
-                      >
-                        <DockIcon>
-                          <Icon
-                            strokeWidth={active ? 2.2 : 1.75}
-                            fill={active ? "currentColor" : "none"}
-                            fillOpacity={active ? 0.2 : 0}
-                            className={`h-full w-full transition-[color,filter] duration-200 ${
-                              active
-                                ? "text-signal"
-                                : "text-slate-400 hover:text-slate-50"
-                            }`}
-                          />
-                        </DockIcon>
-                      </DockItem>
-                    </motion.div>
-                    {Boolean(badge) && (
-                      <span className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-small font-bold text-slate-950">
-                        {badge > 9 ? "9+" : badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </Dock>
-          </div>
-        </motion.div>
-      </div>
-    </>
+            </Link>
+          );
+        })}
+      </motion.div>
+    </div>
   );
 }

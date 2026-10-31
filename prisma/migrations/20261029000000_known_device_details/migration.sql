@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "KnownDevice" ADD COLUMN     "city" TEXT,
+ADD COLUMN     "country" TEXT,
+ADD COLUMN     "region" TEXT,
+ADD COLUMN     "signedInAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

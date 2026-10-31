@@ -3,7 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -116,7 +116,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
   return (
     <div className="space-y-6">
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">New message</h2>
+        <h2 className="text-title text-slate-50 font-semibold">New message</h2>
 
         <div className="mt-4 space-y-3">
           {recipients.length > 0 && (
@@ -146,7 +146,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={recipients.length ? "Add someone else" : "Search a name or email"}
-                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
             </div>
             {query.trim().length >= 2 && (
@@ -189,7 +189,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title, e.g. About your last payment"
             maxLength={120}
-            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
           />
           <textarea
             value={body}
@@ -197,7 +197,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             placeholder="Message…"
             maxLength={2000}
             rows={5}
-            className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
           />
         </div>
 
@@ -227,7 +227,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
       </div>
 
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">History</h2>
+        <h2 className="text-title text-slate-50 font-semibold">History</h2>
         <div className="mt-4 space-y-3">
           {sent.length === 0 ? (
             <p className="text-small text-slate-500">No messages yet.</p>
@@ -254,7 +254,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                       To {m.recipientName ?? m.recipientEmail}
                       {m.supportCta ? " · with contact support" : ""}
                     </p>
-                    <p className="mt-1 text-small text-slate-600">{relativeTime(m.createdAt)}</p>
+                    <p className="mt-1 text-small text-slate-500">{relativeTime(m.createdAt)}</p>
                   </button>
                   <Collapse open={open}>
                     <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">

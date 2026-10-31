@@ -1,5 +1,7 @@
 "use client";
 
+import { useSwr } from "@/lib/useSwr";
+import { AdminTwoStepCard } from "./AdminTwoStepCard";
 import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -7,32 +9,43 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { ThemePicker } from "@/components/theme/ThemePicker";
+import { AppearanceTiles } from "@/components/theme/AppearanceTiles";
 import { Switch } from "@/components/ui/switch";
+import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { PasswordInput } from "@/components/ui/password-input";
 import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
+import { PausePlanCard } from "@/components/account/PausePlanCard";
+import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";
+import { AddToHomeSteps, isStandalone } from "@/components/pwa/AddToHomeSteps";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
   requestPasswordChangeCodeAction,
   signOutOtherDevicesAction,
+  listSignedInDevicesAction,
+  type SignedInDevice,
   updateNotificationPreferencesAction,
   requestAccountDeletionCodeAction,
   confirmAccountDeletionAction,
   changePaymentPlanTermAction,
   cancelPaymentPlanBySelfAction,
+  pausePaymentPlanAction,
   type NotificationPreferencesInput,
 } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
+import { Hint } from "@/components/ui/Hint";
 import { startNavigation } from "@/lib/navigationState";
 import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { Bell, ChevronRight, CreditCard, Info, KeyRound, Laptop, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Smartphone, Tablet, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -44,6 +57,10 @@ export interface AccountOverview {
   createdAt: string;
   phone: PhoneState;
   discordUsername: string | null;
+  /** They took themselves off the studio leaderboard. */
+  leaderboardHidden: boolean;
+  /** A child linked to a parent: never on the leaderboard, so there is nothing to switch. */
+  leaderboardLinkedChild: boolean;
 }
 
 interface AccountSettingsProps {
@@ -52,24 +69,24 @@ interface AccountSettingsProps {
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
   activePlan: ActivePlanInfo | null;
+  /** Set for the admin only (students never see two-step sign-in). */
+  twoStep: { enabled: boolean; backupLeft: number } | null;
 }
 
 const TAB_ICONS = {
-  account: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0",
-  notifications:
-    "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
-  membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
-  password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
-  tutorials: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
-  appearance:
-    "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
-  chevron: "M9 18l6-6-6-6",
-  shop: "M6 7h12l-1 12a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7zM9 7a3 3 0 016 0",
-  about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
-  logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
-  danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
-  privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
-} as const;
+  account: User,
+  notifications: Bell,
+  membership: CreditCard,
+  password: KeyRound,
+  tutorials: PlayCircle,
+  appearance: Palette,
+  chevron: ChevronRight,
+  shop: ShoppingBag,
+  about: Info,
+  logout: SignOut,
+  danger: Trash2,
+  privacy: ShieldCheck,
+} satisfies Record<string, AppIcon>;
 
 // Grouped into defined categories rather than one flat list, order here is
 // render order, so entries in the same category stay adjacent. "Danger
@@ -96,6 +113,8 @@ type Category = (typeof TABS)[number]["category"];
 function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] {
   const groups: { category: Category; tabs: (typeof TABS)[number][] }[] = [];
   for (const tab of TABS) {
+    // Appearance is not a screen of its own any more: its three choices sit right in the menu (AppearanceTiles). The tab stays for old links.
+    if (tab.id === "appearance") continue;
     const last = groups[groups.length - 1];
     if (last && last.category === tab.category) {
       last.tabs.push(tab);
@@ -106,18 +125,34 @@ function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] 
   return groups;
 }
 
-function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { icon: AppIcon; className?: string }) {
+  return <Icon className={className} />;
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * `advanced` cards start closed behind their title (a native disclosure, so
+ * it works without JavaScript and is keyboard and screen reader friendly):
+ * options most people never need stay out of the way until asked for.
+ */
+function SectionCard({ title, hint, advanced = false, children }: { title: string; hint?: string; advanced?: boolean; children: React.ReactNode }) {
+  if (advanced) {
+    return (
+      <details className="glass-surface group p-6 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="tap flex cursor-pointer list-none items-center justify-between gap-2 text-body font-semibold text-slate-50">
+          {title}
+          <span aria-hidden className="text-slate-400 transition group-open:rotate-90">›</span>
+        </summary>
+        {hint && <p className="mt-2 text-small text-slate-400">{hint}</p>}
+        <div className="mt-4">{children}</div>
+      </details>
+    );
+  }
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <h2 className="flex items-center gap-1 text-title text-slate-50 font-semibold">
+        {title}
+        {hint && <Hint>{hint}</Hint>}
+      </h2>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -129,13 +164,18 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // existing `/about` page, which is its own substantial tabbed page
 // (About/Update notes/Terms). Styled to match the tab buttons above it so
 // it reads as part of the same list.
+// Every row in the desktop settings menu (tabs, Shop, About, Sign out) is the same shape; only the current one is filled.
+const NAV_ROW =
+  "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
+const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
+
 function ShopLink({ back }: { back: string }) {
   return (
     <Link
       href={`/shop?back=${encodeURIComponent(back)}`}
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
-      <TabIcon path={TAB_ICONS.shop} />
+      <TabIcon icon={TAB_ICONS.shop} />
       Shop
     </Link>
   );
@@ -145,9 +185,9 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
-      <TabIcon path={TAB_ICONS.about} />
+      <TabIcon icon={TAB_ICONS.about} />
       About
     </Link>
   );
@@ -163,9 +203,9 @@ function SignOutButton({ className = "" }: { className?: string }) {
         startNavigation();
         void signOut({ callbackUrl: "/" });
       }}
-      className={`tap flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low ${className}`}
+      className={cn(NAV_ROW, className)}
     >
-      <TabIcon path={TAB_ICONS.logout} />
+      <TabIcon icon={TAB_ICONS.logout} />
       Sign out
     </button>
   );
@@ -178,7 +218,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
 function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
   return (
     <p
-      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] text-slate-500 ${isFirst ? "" : "mt-3"}`}
+      className={`px-3 pb-1 text-small font-semibold uppercase tracking-caps text-slate-500 ${isFirst ? "" : "mt-3"}`}
     >
       {category}
     </p>
@@ -203,13 +243,10 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 key={tab.id}
                 type="button"
                 onClick={() => onSelect(tab.id)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
-                  activeTab === tab.id
-                    ? "border-transparent bg-neu-base text-signal shadow-pressed-low"
-                    : "border-transparent text-slate-400 hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
-                }`}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={activeTab === tab.id ? NAV_ROW_ACTIVE : NAV_ROW}
               >
-                <TabIcon path={tab.icon} />
+                <TabIcon icon={tab.icon} />
                 {tab.label}
               </button>
             ))}
@@ -222,6 +259,12 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
           </div>
         </div>
       ))}
+      <div className="mt-3">
+        <p className="px-3 pb-1 text-small font-semibold uppercase tracking-caps text-slate-500">Appearance</p>
+        <div className="px-2 pt-1 pb-2">
+          <AppearanceTiles compact />
+        </div>
+      </div>
       <div className="my-1 h-px bg-ink/10" />
       <SignOutButton />
     </nav>
@@ -242,7 +285,7 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       {groupedTabs().map((group) => (
         <section key={group.category}>
           <p
-            className="px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] text-slate-500"
+            className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500"
           >
             {group.category}
           </p>
@@ -250,33 +293,40 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
             {group.tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => onSelect(tab.id)} className={row}>
                 <span className={`${well} `}>
-                  <TabIcon path={tab.icon} />
+                  <TabIcon icon={tab.icon} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">{tab.label}</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </button>
             ))}
             {group.category === "Help" && (
               <Link href={`/shop?back=${encodeURIComponent("/account")}`} className={row}>
                 <span className={well}>
-                  <TabIcon path={TAB_ICONS.shop} />
+                  <TabIcon icon={TAB_ICONS.shop} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">Shop</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
             {group.category === "Help" && (
               <Link href="/about" className={row}>
                 <span className={well}>
-                  <TabIcon path={TAB_ICONS.about} />
+                  <TabIcon icon={TAB_ICONS.about} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">About</span>
-                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
           </div>
         </section>
       ))}
+      {/* Like the Claude app's settings: the look is chosen right here, three pictures, no screen of its own. */}
+      <section>
+        <p className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500">Appearance</p>
+        <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+          <AppearanceTiles />
+        </div>
+      </section>
       <div className="overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
         <SignOutButton className="w-full rounded-none px-4 py-3 hover:shadow-none active:shadow-pressed-low" />
       </div>
@@ -291,6 +341,7 @@ function TabContent({
   initialNotificationPreferences,
   assistantHistory,
   activePlan,
+  twoStep,
 }: {
   tab: TabId;
   account: AccountOverview;
@@ -298,19 +349,20 @@ function TabContent({
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
   activePlan: ActivePlanInfo | null;
+  twoStep: AccountSettingsProps["twoStep"];
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
-  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} activePlan={activePlan} />;
+  if (tab === "membership") return <MembershipSection activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
-  return <AccountSection account={account} history={assistantHistory} />;
+  return <AccountSection account={account} history={assistantHistory} twoStep={twoStep} />;
 }
 
 function AccountGroup({ id, title, blurb, danger, children }: { id: string; title: string; blurb?: string; danger?: boolean; children: React.ReactNode }) {
   return (
     <section data-account-group={id} className="scroll-mt-4 space-y-4">
       <div>
-        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}`}>{title}</h2>
+        <h2 className={`text-small font-semibold uppercase tracking-caps ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
         {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
       </div>
       {children}
@@ -329,7 +381,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 
 function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
-    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
   );
 }
 
@@ -338,10 +390,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
   const [busy, setBusy] = useState(false);
   return (
     <SectionCard title="Discord">
-      <p className="text-small text-slate-500">
-        Live classes happen in a private Discord call. Connecting gives you access to yours.
-      </p>
-      <p className="mt-3 text-small text-slate-100">
+      <p className="text-small text-slate-100">
         {username ? (
           <>
             Connected as <span className="font-semibold">{username}</span>
@@ -388,7 +437,7 @@ const ACCOUNT_JUMPS = [
 // Everything about the person and their sign-in, in one place and in groups, so nothing account-related is
 // scattered across tabs: who you are, how we reach you, how you sign in, what is connected, what we keep, and
 // the one irreversible action last.
-function AccountSection({ account, history }: { account: AccountOverview; history: AssistantMessage[] }) {
+function AccountSection({ account, history, twoStep }: { account: AccountOverview; history: AssistantMessage[]; twoStep: AccountSettingsProps["twoStep"] }) {
   // Looked up inside this copy only: Settings renders the section twice (desktop column, phone panel), so ids would clash.
   const root = useRef<HTMLDivElement>(null);
   return (
@@ -419,32 +468,36 @@ function AccountSection({ account, history }: { account: AccountOverview; histor
         </SectionCard>
       </AccountGroup>
 
-      <AccountGroup id="contact" title="Contact" blurb="How we reach you, and how we know it is you.">
+      <AccountGroup id="contact" title="Contact">
         <SectionCard title="Email address">
           <div className="flex flex-wrap items-center">
             <span className="text-small text-slate-100">{account.email}</span>
             <Badge ok={account.emailVerified}>{account.emailVerified ? "Verified" : "Not verified"}</Badge>
           </div>
-          <p className="mt-2 text-small text-slate-500">Sign-in codes, receipts and class reminders go here. To change it, message the studio from the Messages tab.</p>
         </SectionCard>
         <PhoneCard state={account.phone} />
       </AccountGroup>
 
-      <AccountGroup id="security" title="Sign-in & security" blurb="Your password, and where you are signed in.">
+      <AccountGroup id="security" title="Sign-in & security">
         <PasswordSection />
+        {twoStep && <AdminTwoStepCard enabled={twoStep.enabled} backupLeft={twoStep.backupLeft} />}
       </AccountGroup>
 
       <AccountGroup id="connections" title="Connected accounts">
         <DiscordAccountCard username={account.discordUsername} />
       </AccountGroup>
 
-      <AccountGroup id="privacy" title="Privacy & data" blurb="What we keep, and getting a copy of it.">
+      <AccountGroup id="privacy" title="Privacy & data">
+        <SectionCard title="Studio leaderboard">
+          {account.leaderboardLinkedChild ? (
+            <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+          ) : (
+            <LeaderboardPrivacySwitch initialHidden={account.leaderboardHidden} />
+          )}
+        </SectionCard>
         <PrivacySection history={history} />
-        <SectionCard title="Download my data">
-          <p className="text-small text-slate-500">
-            A copy of your account details, classes, payments, progress and any teacher notes shared with you, as one file.
-          </p>
-          <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+        <SectionCard advanced title="Download my data">
+          <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Download my data
           </a>
         </SectionCard>
@@ -465,13 +518,13 @@ function AccountSection({ account, history }: { account: AccountOverview; histor
 // who wants it gone sooner.
 function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
-    <SectionCard title="Saved Atom conversations">
+    <SectionCard advanced title="Saved Atom conversations">
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
           {history.length === 0 ? (
-            <p className="py-6 text-center text-small text-slate-600">
-              Nothing here yet. Questions you ask Atom while signed in will show up here.
+            <p className="py-6 text-center text-small text-slate-500">
+              Nothing here yet.
             </p>
           ) : (
             history.map((message, index) => (
@@ -488,7 +541,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
           )}
         </div>
         <p className="mt-3 text-small text-slate-500">
-          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
+          <Link href="/privacy" className="underline underline-offset-2 text-slate-50 hover:opacity-70">
             Privacy policy
           </Link>
         </p>
@@ -500,9 +553,9 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
 function AppearanceSection() {
   return (
     <section>
-      <h2 className="text-body text-slate-50 font-semibold">Themes &amp; appearance</h2>
-      <div className="mt-6">
-        <ThemePicker />
+      <h2 className="text-title text-slate-50 font-semibold">Appearance</h2>
+      <div className="mt-6 max-w-md">
+        <AppearanceTiles />
       </div>
     </section>
   );
@@ -514,6 +567,7 @@ function AccountSettingsInner({
   initialNotificationPreferences,
   assistantHistory,
   activePlan,
+  twoStep,
 }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -551,9 +605,8 @@ function AccountSettingsInner({
     <>
       <SettingsLayout
         header={
-          <div>
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Yours to control</p>
-            <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
+          <div data-deck-header className="deck-header -mt-4 pt-4">
+            <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Settings</h1>
           </div>
         }
         menu={
@@ -571,6 +624,7 @@ function AccountSettingsInner({
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
             activePlan={activePlan}
+            twoStep={twoStep}
           />
         </div>
       </SettingsLayout>
@@ -588,6 +642,7 @@ function AccountSettingsInner({
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
             activePlan={activePlan}
+            twoStep={twoStep}
           />
         )}
       </SlideOverPanel>
@@ -603,37 +658,34 @@ export function AccountSettings(props: AccountSettingsProps) {
   );
 }
 
-function MembershipSection({
-  hasCurriculumAccess,
-  activePlan,
-}: {
-  hasCurriculumAccess: boolean;
-  activePlan: ActivePlanInfo | null;
-}) {
+function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }) {
   return (
     <div className="space-y-6">
       <SectionCard title="Membership & purchases">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 bg-neu-base shadow-raised-low">
-          <div>
-            <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
-          </div>
-          {!hasCurriculumAccess && (
-            <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm" })}>
-              See class plans
-            </Link>
-          )}
-        </div>
+        <Link
+          href="/billing/plans"
+          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
+        >
+          Payment plan
+          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
+        </Link>
 
         <Link
           href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment history
-          <span className="text-slate-500">→</span>
+          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
         </Link>
       </SectionCard>
 
-      <SectionCard title="Manage subscriptions">
+      {activePlan && !activePlan.family && (
+        <SectionCard title="Pause your plan">
+          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} indefinite={activePlan.pausedIndefinitely ?? false} onPause={pausePaymentPlanAction} />
+        </SectionCard>
+      )}
+
+      <SectionCard title="Manage membership">
         <ManageSubscriptions
           activePlan={activePlan}
           onChangeTerm={changePaymentPlanTermAction}
@@ -757,17 +809,17 @@ function PasswordSection() {
           {awaitingCode && (
             <div className="space-y-2">
               <p className="text-small text-slate-500">
-                We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+                Enter the 6-digit code we emailed you.
               </p>
               <input
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="6-digit code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 autoFocus
                 required
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 disabled={submitting}
                 className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-signal/60 disabled:opacity-60"
@@ -783,7 +835,7 @@ function PasswordSection() {
               type="button"
               onClick={cancelCode}
               disabled={submitting}
-              className="tap flex w-full items-center justify-center rounded-lg bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
+              className="tap flex w-full items-center justify-center rounded-full bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
             >
               Cancel
             </button>
@@ -799,8 +851,309 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <div id="parent-mode" className="scroll-mt-24">
+        <SectionCard title="Parent mode">
+          <ParentLinksPanel />
+        </SectionCard>
+      </div>
+      <ReferralCard />
+      <PushCard />
+      <CalendarFeedCard />
+      <SignedInDevicesCard />
       <SignOutOtherDevicesCard />
     </div>
+  );
+}
+
+const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as const;
+
+// Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
+// it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
+function ReferralCard() {
+  // Shown from the last visit at once, refreshed behind it.
+  const { data: swrData } = useSwr<{ link: string; joined: number; rewarded: number; percent: number; months: number }>("/api/me/referral");
+  const data = swrData ?? null;
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    if (!data) return;
+    try {
+      await navigator.clipboard.writeText(data.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* the link is shown in full below */
+    }
+  }
+
+  if (!data) return null;
+  return (
+    <SectionCard advanced title="Invite a friend">
+      <p className="text-small text-slate-400">
+        Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
+      </p>
+      <label htmlFor="ref-link" className="sr-only">Your invite link</label>
+      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
+        <span className="text-small text-slate-400">
+          {data.joined === 0 ? "No one has joined yet." : `${data.joined} joined, ${data.rewarded} earned the discount.`}
+        </span>
+      </div>
+    </SectionCard>
+  );
+}
+
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+type PushState = "loading" | "unavailable" | "needs-home-screen" | "unsupported" | "blocked" | "off" | "on";
+
+/** Class and practice reminders as push notifications. On an iPhone the browser only allows it once the site is on the Home Screen. */
+function PushCard() {
+  const [state, setState] = useState<PushState>("loading");
+  const [key, setKey] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const ua = navigator.userAgent;
+        const isIos = /iPhone|iPad|iPod/.test(ua);
+        const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+        const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+        if (isIos && !standalone) return alive && setState("needs-home-screen");
+        if (!supported) return alive && setState("unsupported");
+        let endpoint = "";
+        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        const existing = await reg?.pushManager.getSubscription();
+        if (existing) endpoint = existing.endpoint;
+        const r = await fetch(`/api/me/push${endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : ""}`, { cache: "no-store" });
+        if (!r.ok || !alive) return;
+        const d = (await r.json()) as { publicKey: string | null; subscribedHere: boolean };
+        setKey(d.publicKey);
+        if (!d.publicKey) return setState("unavailable");
+        if (Notification.permission === "denied") return setState("blocked");
+        setState(d.subscribedHere ? "on" : "off");
+      } catch {
+        if (alive) setState("unsupported");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function turnOn() {
+    if (!key) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setState(permission === "denied" ? "blocked" : "off");
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) as BufferSource });
+      const r = await fetch("/api/me/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sub.toJSON()) });
+      if (!r.ok) throw new Error("save failed");
+      setState("on");
+    } catch {
+      setMessage("Couldn't turn it on. Try again in a moment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function turnOff() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/me/push", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+        await sub.unsubscribe();
+      }
+      setState("off");
+    } catch {
+      setMessage("Couldn't turn it off. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendTest() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const r = await fetch("/api/me/push/test", { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      setMessage(r.ok ? (d.delivered > 0 ? "Sent. It should arrive in a few seconds." : "Nothing was delivered. Turn it off and on again.") : (d.error ?? "Couldn't send a test."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (state === "loading" || state === "unavailable") return null;
+
+  return (
+    <SectionCard advanced title="Reminders on your phone">
+      {state === "needs-home-screen" && (
+        <p className="mt-3 text-small text-slate-300">
+          On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.
+        </p>
+      )}
+      {state === "unsupported" && <p className="mt-3 text-small text-slate-500">This browser can&apos;t show push notifications. Email reminders still work.</p>}
+      {state === "blocked" && <p className="mt-3 text-small text-slate-300">Notifications are blocked for this site. Allow them in your browser or phone settings, then come back.</p>}
+      {state === "off" && (
+        <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}`}>
+          {busy ? "Working…" : "Turn on reminders here"}
+        </button>
+      )}
+      {state === "on" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-small text-slate-300">On for this device.</span>
+          <button type="button" disabled={busy} onClick={sendTest} className={buttonVariants({ variant: "secondary", size: "sm" })}>Send a test</button>
+          <button type="button" disabled={busy} onClick={turnOff} className={buttonVariants({ variant: "secondary", size: "sm" })}>Turn off</button>
+        </div>
+      )}
+      {message && <p className="mt-2 text-small text-slate-300" role="status">{message}</p>}
+    </SectionCard>
+  );
+}
+
+function CalendarFeedCard() {
+  const [links, setLinks] = useState<{ https: string; webcal: string } | null | undefined>(undefined);
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/me/calendar", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setLinks(d?.links ?? null))
+      .catch(() => alive && setLinks(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function copy() {
+    if (!links) return;
+    try {
+      await navigator.clipboard.writeText(links.https);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* the link is also shown in full to copy by hand */
+    }
+  }
+
+  async function reset() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/me/calendar", { method: "POST" });
+      if (r.ok) setLinks((await r.json()).links);
+    } finally {
+      setBusy(false);
+      setConfirmReset(false);
+    }
+  }
+
+  return (
+    <SectionCard advanced title="Your classes in your calendar" hint="Keep the link private: anyone who has it can see your class times.">
+      {links === undefined ? (
+        <p className="mt-3 text-small text-slate-500">Loading…</p>
+      ) : links === null ? (
+        <p className="mt-3 text-small text-slate-500">Couldn&apos;t load your link. Refresh the page.</p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <a href={links.webcal} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Subscribe on this device</a>
+            <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
+          </div>
+          <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
+          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          {!confirmReset ? (
+            <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
+          ) : (
+            <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+              <p className="text-small text-slate-200">The old link stops working. Calendars that use it will need the new one.</p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
+                <button type="button" disabled={busy} onClick={() => setConfirmReset(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep it</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+function SignedInDevicesCard() {
+  const [devices, setDevices] = useState<SignedInDevice[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      listSignedInDevicesAction()
+        .then((rows) => alive && setDevices(rows))
+        .catch(() => alive && setDevices((prev) => prev ?? []));
+    void load();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 60_000);
+    window.addEventListener("bnp:devices-changed", load);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("bnp:devices-changed", load);
+    };
+  }, []);
+
+  return (
+    <SectionCard advanced title="Where you are signed in">
+      {devices === null ? (
+        <p className="text-small text-slate-500">Loading…</p>
+      ) : devices.length === 0 ? (
+        <p className="text-small text-slate-500">Nothing to show yet.</p>
+      ) : (
+        <ul className="divide-y divide-slate-50/10">
+          {devices.map((d) => {
+            const Icon = DEVICE_ICON[d.kind];
+            return (
+              <li key={d.id} className="flex items-center gap-3 py-3">
+                <Icon className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-slate-50">
+                    <span className="min-w-0 break-words">{d.label}</span>
+                    {d.isThisDevice && <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">This device</span>}
+                  </p>
+                  <p className="text-small text-slate-400">
+                    {d.place ?? "Location unavailable"} · Signed in{" "}
+                    {new Date(d.signedInAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1.5 text-small text-slate-400">
+                  <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${d.active ? "bg-green-400 shadow-[0_0_6px_rgb(74_222_128/0.8)]" : "bg-slate-600"}`} />
+                  {d.active ? "Active now" : "Not active"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </SectionCard>
   );
 }
 
@@ -821,10 +1174,11 @@ function SignOutOtherDevicesCard() {
     await update();
     setSubmitting(false);
     setSuccess(true);
+    window.dispatchEvent(new Event("bnp:devices-changed"));
   }
 
   return (
-    <SectionCard title="Sign out of other devices">
+    <SectionCard advanced title="Sign out of other devices">
       <button
         type="button"
         onClick={handleClick}
@@ -897,7 +1251,7 @@ function DangerZoneSection() {
   }
 
   return (
-    <SectionCard title="Danger zone">
+    <SectionCard advanced title="Danger zone">
       <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
         <p className="text-small text-slate-200">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
@@ -936,14 +1290,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
@@ -955,17 +1309,17 @@ function DangerZoneSection() {
         {stage === "code" && (
           <form onSubmit={handleDelete} className="mt-4 space-y-3">
             <p className="text-small text-slate-500">
-              We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+              Enter the 6-digit code we emailed you.
             </p>
             <input
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="6-digit code"
-              maxLength={6}
+              maxLength={CHUNKED_CODE_LENGTH}
               autoFocus
               required
-              value={code}
+              value={chunkCode(code)}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               disabled={deleting}
               className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-red-400/60 disabled:opacity-60"
@@ -986,14 +1340,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}
@@ -1008,16 +1362,30 @@ function DangerZoneSection() {
 
 function TutorialsSection() {
   const router = useRouter();
+  const [installed, setInstalled] = useState(false);
+  useEffect(() => setInstalled(isStandalone()), []);
   return (
-    <SectionCard title="Tutorials">
-      <button
-        type="button"
-        onClick={() => router.push("/dashboard?tour=1")}
-        className={buttonVariants({ variant: "primary", className: "mt-4" })}
-      >
-        Replay app tour
-      </button>
-    </SectionCard>
+    <>
+      <SectionCard advanced title="Tutorials">
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard?tour=1")}
+          className={buttonVariants({ variant: "primary", className: "mt-4" })}
+        >
+          Replay app tour
+        </button>
+      </SectionCard>
+      <SectionCard advanced title="Add to your Home Screen">
+        <p className="text-small text-slate-400">
+          {installed
+            ? "You are already using Bass Note Piano from your Home Screen. The steps are here in case you set up another phone."
+            : "Put Bass Note Piano on your Home Screen so it opens full screen with its own icon, like an app from the store."}
+        </p>
+        <div className="mt-4">
+          <AddToHomeSteps />
+        </div>
+      </SectionCard>
+    </>
   );
 }
 

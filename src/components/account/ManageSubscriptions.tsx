@@ -1,13 +1,20 @@
 "use client";
 
-import { NumberTicker } from "@/components/ui/number-ticker";
 import { useState } from "react";
+import { ArrowLeft } from "@/components/ui/appIcons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, discountedPlanPriceCents, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { usePricing } from "@/components/billing/PricingContext";
+import { toast } from "@/components/ui/Toaster";
+import { Dialog } from "@/components/ui/Dialog";
+import { Hint } from "@/components/ui/Hint";
+import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
+import { planProgress } from "@/lib/planProgress";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -22,9 +29,9 @@ const CADENCE_LABELS: Record<PaymentPlanCadence, string> = {
 // below: anything ranked higher than the plan's own current term is an
 // upgrade (more commitment, a better rate), anything lower is a downgrade.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; rank: number }[] = [
-  { value: "MONTHLY", label: "Monthly", rank: 0 },
-  { value: "TERM_3", label: "3-Month", rank: 1 },
-  { value: "TERM_6", label: "6-Month", rank: 2 },
+  { value: "MONTHLY", label: "1 Month", rank: 0 },
+  { value: "TERM_3", label: "3 Months", rank: 1 },
+  { value: "TERM_6", label: "6 Months", rank: 2 },
   { value: "TERM_12", label: "Yearly", rank: 3 },
 ];
 
@@ -42,7 +49,7 @@ const CANCELLATION_REASONS: { value: PlanCancellationReason; label: string }[] =
   { value: "OTHER", label: "Other" },
 ];
 
-/** Set when the plan is one person's share of a family plan. */
+/** Set when the plan is one person's share of a group plan. */
 export interface FamilyPlanDetails {
   isPayer: boolean;
   payerName: string | null;
@@ -57,7 +64,17 @@ export interface ActivePlanInfo {
   term: PaymentPlanTerm;
   installmentsPaid: number;
   termMonths: number;
+  /** What each bill of this plan costs (the price it was started at). */
+  installmentAmountCents?: number;
+  /** ISO date the next bill is due. */
+  nextDueDate?: string | null;
   family?: FamilyPlanDetails | null;
+  /** ISO date the current pause ends, when one is running. */
+  pausedUntil?: string | null;
+  /** Paused by the studio with no end date. */
+  pausedIndefinitely?: boolean;
+  /** ISO date of the last pause, for the once-in-90-days limit. */
+  pausedAt?: string | null;
 }
 
 export interface ManageSubscriptionsProps {
@@ -87,10 +104,16 @@ type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
  * either way (9 options, OTHER needs its own explanation) so the Feedback
  * tab of /admin/payment-plans has something real to read.
  */
+const isOffered = isPlanTermOffered;
+
 export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
   const router = useRouter();
+  // The owner's current prices and this account's own discount, from the signed-in layout.
+  const { pricing, personalDiscountPercent } = usePricing();
   // One plan on offer (45 minutes a week). A plan on a retired length keeps showing its own.
   const cadence: PaymentPlanCadence = activePlan?.cadence ?? OFFERED_PLAN_CADENCE;
+  const [view, setView] = useState<"summary" | "switch">("summary");
+  const [confirmTerm, setConfirmTerm] = useState<PaymentPlanTerm | null>(null);
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
   const [termError, setTermError] = useState<string | null>(null);
   const [cancelStage, setCancelStage] = useState<CancelStage>("idle");
@@ -103,10 +126,17 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     setTermError(null);
     const result = await onChangeTerm(term);
     if (!result.ok) {
+      const message = result.error ?? "Something went wrong. Please try again.";
       setPendingTerm(null);
-      setTermError(result.error ?? "Something went wrong. Please try again.");
+      setConfirmTerm(null);
+      setTermError(message);
+      toast.error("Couldn't change your plan", { description: message });
       return;
     }
+    toast.success("Plan updated");
+    setPendingTerm(null);
+    setConfirmTerm(null);
+    setView("summary");
     router.refresh();
   }
 
@@ -133,141 +163,183 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     setCancelError(null);
     const result = await onCancel(reason, trimmedNote || null);
     if (!result.ok) {
+      const message = result.error ?? "Something went wrong. Please try again.";
       setCancelStage("reason");
-      setCancelError(result.error ?? "Something went wrong. Please try again.");
+      setCancelError(message);
+      toast.error("Couldn't cancel your plan", { description: message });
       return;
     }
+    toast.info("Plan canceled");
     router.refresh();
   }
 
-  // Same terms the Pricing page and the plan picker offer. Yearly was retired,
-  // so it only shows for someone who is still on a Yearly plan (as "Current").
-  const visibleTerms = TERM_OPTIONS.filter((t) => isPlanTermOffered(t.value) || t.value === activePlan?.term);
+  const progress = activePlan ? planProgress(activePlan) : null;
+  const currentLabel = activePlan ? (TERM_OPTIONS.find((t) => t.value === activePlan.term)?.label ?? "Your plan") : null;
+  const canSwitch = Boolean(activePlan && !activePlan.family);
 
-  const currentRank = activePlan ? TERM_OPTIONS.find((t) => t.value === activePlan.term)!.rank : null;
+  // What a switch would do, for the confirm step. Same maths the server uses.
+  const switchPreview = (() => {
+    if (!activePlan || !confirmTerm) return null;
+    const list = calculatePaymentPlanRate(cadence, confirmTerm, pricing);
+    const price = personalDiscountPercent > 0 ? discountedPlanPriceCents(list.installmentAmountCents, personalDiscountPercent) : list.installmentAmountCents;
+    const left = list.termMonths - activePlan.installmentsPaid;
+    return { price, total: list.termMonths, left, blocked: left <= 0, label: TERM_OPTIONS.find((t) => t.value === confirmTerm)?.label ?? "" };
+  })();
 
   return (
     <div className="space-y-6">
-      <div>
-        {activePlan ? (
-          <>
-            <p className="text-small font-medium text-slate-400">
-              Your plan: {CADENCE_LABELS[activePlan.cadence]} · {activePlan.installmentsPaid} of {activePlan.termMonths}{" "}
-              installments paid
-            </p>
-            {activePlan.family && (
-              <div className="mt-3 rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
-                <p className="font-semibold text-slate-50">Family plan</p>
-                <p className="mt-1">In this family: {activePlan.family.memberNames.join(", ")}.</p>
-                {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
-                <p className="mt-1">
-                  {activePlan.family.isPayer
-                    ? "You pay everyone's monthly bill from your own bank account."
-                    : `${activePlan.family.payerName ?? "The person who set it up"} pays your monthly bill from their own bank account.`}
-                </p>
-                <p className="mt-1 text-slate-400">The length and weekly time of a family plan are changed by the teacher.</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <p className="text-small font-medium text-slate-400">No active plan.</p>
-          </>
-        )}
-
-        <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"} ${activePlan?.family ? "hidden" : ""}`}>
-          {visibleTerms.map((option) => {
-            const rate = calculatePaymentPlanRate(cadence, option.value);
-            const isCurrent = activePlan ? option.value === activePlan.term : false;
-            const isUpgrade = currentRank !== null && option.rank > currentRank;
-            const pending = pendingTerm === option.value;
-
-            return (
-              <div
-                key={option.value}
-                className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)] shadow-pressed-low" : "border border-transparent"}`}
-              >
-                <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
-                <p className="mt-2 text-body text-slate-50 font-semibold">
-                  <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
-                </p>
-                {/* Classes/month, not a raw credit count, by direct
-                    instruction: same reasoning as PaymentPlanEnrollmentFlow's
-                    own classesPerMonth, both cadences work out to 4 classes
-                    a month, just a different length each. The total-over-
-                    term line below it is new: showing only "4/month" made
-                    a 6- or 12-month card look identical to Monthly at a
-                    glance, so what a longer term actually adds (more total
-                    classes locked in, not a different rate) wasn't visible
-                    without doing the multiplication yourself. */}
-                {(() => {
-                  const perMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
-                  return (
-                    <>
-                      <p className="text-small text-slate-500">
-                        per month · <NumberTicker value={perMonth} /> classes
-                      </p>
-                      {option.value !== "MONTHLY" && (
-                        <p className="text-small text-slate-500">
-                          <NumberTicker value={perMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths} /> months
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
-
-                {activePlan ? (
-                  <button
-                    type="button"
-                    disabled={isCurrent || pendingTerm !== null}
-                    onClick={() => handleChangeTerm(option.value)}
-                    className={`tap mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold transition disabled:cursor-not-allowed ${
-                      isCurrent
-                        ? "bg-neu-base shadow-pressed-low text-slate-400"
-                        : "text-slate-200 hover:text-[rgb(var(--c-s-50))] disabled:opacity-50 bg-neu-base shadow-raised-low"
-                    }`}
-                  >
-                    {pending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                    {isCurrent ? "Current" : pending ? "Working…" : isUpgrade ? "Upgrade" : "Downgrade"}
-                  </button>
-                ) : (
-                  <Link
-                    href={`/billing/plans?cadence=${cadence}&term=${option.value}`}
-                    className="tap mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                  >
-                    Start plan
-                  </Link>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {termError && <p className="mt-3 text-small text-red-400">{termError}</p>}
-      </div>
-
-      {/* Family bundle: independent of a solo plan's own state, shown either way, same reasoning /pricing shows it alongside the term grid rather than gating it on anything. */}
-      <div className={`glass-surface flex flex-col items-start gap-3 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] p-4 sm:flex-row sm:items-center sm:justify-between ${activePlan?.family ? "hidden" : ""}`}>
+      {!activePlan && (
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
-          <p className="mt-1 text-small text-slate-400">
-            Buying for 2 or more kids gets an extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total.
-          </p>
+          <p className="mb-6 text-center text-small text-slate-400">No active plan yet. Pick one to start.</p>
+          <PaymentPlanTierGrid narrow pricing={pricing} personalDiscountPercent={personalDiscountPercent} />
         </div>
-        <Link
-          href="/billing/plans"
-          className={buttonVariants({ variant: "secondary", className: "shrink-0" })}
-        >
-          Bundle &amp; save
-        </Link>
-      </div>
+      )}
 
-      {activePlan && (
+      {activePlan && progress && view === "summary" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
+            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Your plan</p>
+            <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <p className="font-serif text-hero text-slate-50">{currentLabel}</p>
+              {activePlan.installmentAmountCents !== undefined && (
+                <p className="text-small text-slate-400">
+                  {formatUsd(activePlan.installmentAmountCents)} every 28 days · {CADENCE_LABELS[activePlan.cadence]}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5" role="img" aria-label={`${progress.billsPaid} of ${progress.billsTotal} bills paid`}>
+              <div className="flex gap-1.5">
+                {Array.from({ length: progress.billsTotal }, (_, i) => (
+                  <span key={i} className={`h-2.5 min-w-0 flex-1 rounded-full ${i < progress.billsPaid ? "bg-signal" : "bg-slate-700"}`} />
+                ))}
+              </div>
+              <p className="mt-2 text-small font-medium text-slate-100">
+                {progress.billsPaid} of {progress.billsTotal} bills paid
+              </p>
+            </div>
+
+            <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
+                <dd className="text-body font-semibold text-slate-50">
+                  {progress.daysCovered}
+                  <span className="text-small font-normal text-slate-500"> of {progress.daysTotal}</span>
+                </dd>
+                <dt className="text-small text-slate-400">days paid</dt>
+              </div>
+              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
+                <dd className="text-body font-semibold text-slate-50">{progress.billsLeft}</dd>
+                <dt className="text-small text-slate-400">{progress.billsLeft === 1 ? "bill left" : "bills left"}</dt>
+              </div>
+              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
+                <dd className="text-body font-semibold text-slate-50">
+                  {progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                </dd>
+                <dt className="text-small text-slate-400">next bill</dt>
+              </div>
+            </dl>
+
+            {activePlan.pausedIndefinitely && <p className="mt-3 text-small text-amber-300">Paused until the studio resumes it.</p>}
+            {activePlan.pausedUntil && (
+              <p className="mt-3 text-small text-amber-300">
+                Paused until {new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
+              </p>
+            )}
+
+            {canSwitch && (
+              <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "primary", className: "mt-5 w-full sm:w-auto" })}>
+                Switch plan
+              </button>
+            )}
+          </div>
+
+          {activePlan.family && (
+            <div className="rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
+              <p className="flex items-center gap-1 font-semibold text-slate-50">
+                Group plan
+                <Hint>The length and weekly time of a group plan are changed by the teacher.</Hint>
+              </p>
+              <p className="mt-1">In this group: {activePlan.family.memberNames.join(", ")}.</p>
+              {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
+              <p className="mt-1">
+                {activePlan.family.isPayer
+                  ? "You pay everyone's 28-day bill from your own bank account."
+                  : `${activePlan.family.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activePlan && view === "switch" && canSwitch && (
+        <div>
+          <button type="button" onClick={() => setView("summary")} className="tap mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
+            <ArrowLeft aria-hidden className="h-4 w-4" />
+            Back to your plan
+          </button>
+          <p className="mb-6 text-center font-serif text-hero text-slate-50">Switch your plan</p>
+          <PaymentPlanTierGrid
+            narrow
+            pricing={pricing}
+            personalDiscountPercent={personalDiscountPercent}
+            switchTo={{ currentTerm: TERM_OPTIONS.some((t) => t.value === activePlan.term && isOffered(t.value)) ? activePlan.term : null, pendingTerm, onSwitch: setConfirmTerm }}
+          />
+          {termError && <p className="mt-3 text-center text-small text-red-400">{termError}</p>}
+        </div>
+      )}
+
+      <Dialog
+        open={confirmTerm !== null}
+        onOpenChange={(open) => !open && pendingTerm === null && setConfirmTerm(null)}
+        title={switchPreview ? `Switch to ${switchPreview.label}?` : "Switch plan"}
+        footer={
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!switchPreview || switchPreview.blocked || pendingTerm !== null}
+              onClick={async () => {
+                if (!confirmTerm) return;
+                await handleChangeTerm(confirmTerm);
+              }}
+              className={buttonVariants({ variant: "primary" })}
+            >
+              {pendingTerm !== null && <MorphingSquare size={14} className="mr-2 shrink-0" />}
+              {pendingTerm !== null ? "Switching…" : "Yes, switch"}
+            </button>
+            <button type="button" disabled={pendingTerm !== null} onClick={() => setConfirmTerm(null)} className={buttonVariants({ variant: "secondary" })}>
+              Not now
+            </button>
+          </div>
+        }
+      >
+        {switchPreview && activePlan && (
+          <div className="space-y-2 text-small text-slate-300">
+            {switchPreview.blocked ? (
+              <p>
+                You have already paid {activePlan.installmentsPaid} bills, which is as many as {switchPreview.label} asks for. Pick a longer plan, or cancel if you want to stop here.
+              </p>
+            ) : (
+              <>
+                <p>
+                  Your next bill becomes <span className="font-semibold text-slate-50">{formatUsd(switchPreview.price)}</span>, still every 28 days.
+                </p>
+                <p>
+                  {switchPreview.label} has {switchPreview.total} {switchPreview.total === 1 ? "bill" : "bills"} in all. You have paid {activePlan.installmentsPaid}, so{" "}
+                  {switchPreview.left} {switchPreview.left === 1 ? "is" : "are"} left.
+                </p>
+                <p className="text-slate-400">Your weekly time stays the same.</p>
+              </>
+            )}
+          </div>
+        )}
+      </Dialog>
+
+      {activePlan && view === "summary" && (
         <div className="border-t border-ink/10 pt-4">
           {activePlan.family && cancelStage === "idle" && (
             <p className="mb-3 text-small text-slate-400">
               {activePlan.family.isPayer
-                ? "You pay for this family. If you cancel, the family plan ends for everyone. Each person keeps the month already paid, with its credits and booked classes."
+                ? "You pay for this family. If you cancel, the group plan ends for everyone. Each person keeps the 28 days already paid, with its credits and booked classes."
                 : "If you cancel, only you leave the family. If one person is left, they pay the solo price from their next bill."}
             </p>
           )}
@@ -279,7 +351,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
-              <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
+              <p className="text-small text-slate-100">Before you cancel, want to switch to 3 Months instead?</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -288,7 +360,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   className={buttonVariants({ variant: "primary" })}
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  Switch to 3-Month
+                  Switch to 3 Months
                 </button>
                 <button
                   type="button"

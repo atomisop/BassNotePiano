@@ -1,3 +1,4 @@
+import { PageBack } from "@/components/ui/BackLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -22,13 +23,16 @@ export default async function MailPage() {
 
   return (
     <WideLayout>
-      <div className="grid gap-(--space-group)">
-        <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+      <div className="grid grid-cols-1 gap-(--space-group)">
+        <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/dashboard" />
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <Eyebrow>Inbox</Eyebrow>
             <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Mail</h1>
           </div>
           {unread > 0 && <MarkAllReadButton />}
+        </div>
         </div>
 
         {mail.length === 0 ? (
@@ -41,7 +45,7 @@ export default async function MailPage() {
               <Link key={m.id} href={`/mail/${m.id}`} className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Card interactive className="flex items-start gap-3">
                   <span
-                    className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${m.readAt ? "bg-transparent" : "bg-[rgb(var(--signal))]"}`}
+                    className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${m.readAt ? "bg-transparent" : "bg-signal"}`}
                     aria-label={m.readAt ? undefined : "Unread"}
                   />
                   <div className="min-w-0 flex-1">

@@ -116,6 +116,7 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
         // registrations): there's no dedicated "ops alerts" email category,
         // and this is the closest fit of the four that exist.
         emailCategory: "social",
+        href: `/admin/support/${escalation.id}`,
       }),
     ),
   );
@@ -297,6 +298,7 @@ export async function postVisitorMessage(
           title: "New message in Support Chat",
           body: `${escalation.contactName ?? escalation.contactEmail}: "${trimmed.slice(0, 160)}"`,
           emailCategory: "social",
+          href: `/admin/support/${escalationId}`,
         }).catch((err) => console.error("Support chat notification failed (non-blocking):", err)),
       ),
     );
@@ -579,6 +581,7 @@ export async function transferSupportThread(input: {
         type: "SUPPORT_TRANSFER",
         title: match.kind === "all" ? "Case escalated to all admins" : "A case was transferred to you",
         body: `${adminLabel(sender)} sent you "${who}".${note ? ` Note: ${note.slice(0, 160)}` : ""}`,
+        href: `/admin/support/${escalationId}`,
       }).catch((err) => console.error("Support transfer notification failed (non-blocking):", err)),
     ),
   );
@@ -721,6 +724,7 @@ export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome:
           title: outcome === "created" ? "New email to music@" : "New reply by email",
           body: `${whoLabel}: ${subject}`,
           cta: { label: "Open Email", path: "/admin/support?source=email" },
+          href: `/admin/support/${escalationId}`,
         }).catch((err) => console.error("Inbound email notification failed (non-blocking):", err)),
       ),
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Reply } from "lucide-react";
+import { Reply } from "@/components/ui/appIcons";
 import { motion } from "framer-motion";
 import { REACTION_EMOJI } from "@/lib/reactions";
 import { AttachmentButton } from "@/components/ui/attachment-button";
@@ -130,7 +130,7 @@ export function MessageBubble({
             WhatsApp both use. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-0 flex items-center text-[rgb(var(--c-s-50))] transition-opacity"
+          className="pointer-events-none absolute left-0 flex items-center text-slate-50 transition-opacity"
           style={{ opacity: swipe.dragX > 10 ? Math.min(1, swipe.dragX / 44) : 0 }}
         >
           <ReplyArrowIcon size={16} />
@@ -150,8 +150,8 @@ export function MessageBubble({
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 select-none rounded-2xl px-3.5 py-2 text-body [-webkit-touch-callout:none] md:select-text ${
             isMine
-              ? `bg-[rgb(var(--signal)/0.16)] text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
-              : `bg-neu-base text-slate-100 shadow-raised-low ${endsCluster ? "rounded-bl-md" : ""}`
+              ? `bg-signal/16 text-slate-50 ${endsCluster ? "rounded-br-md" : ""}`
+              : `bg-neu-base text-slate-100 ${endsCluster ? "rounded-bl-md" : ""}`
           }`}
         >
           {reply && (
@@ -159,7 +159,7 @@ export function MessageBubble({
               type="button"
               onClick={() => onJumpToReply?.(reply.id)}
               className={`tap mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
-                "border-[rgb(var(--c-s-50)/0.4)] bg-ink/5"
+                "border-slate-50/40 bg-ink/5"
               }`}
             >
               <p className="font-medium">{reply.senderLabel}</p>
@@ -185,7 +185,7 @@ export function MessageBubble({
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
           aria-label="React"
-          className="tap flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
+          className="tap hit-slop flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
         >
           <SmileyPlusIcon size={15} />
         </button>

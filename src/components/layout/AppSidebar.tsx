@@ -1,36 +1,45 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, ArrowRight, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, type AppIcon } from "@/components/ui/appIcons";
+import GenerateAIButton from "@/components/ui/button-33";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
-import { useMeStatus } from "@/components/layout/MeStatusProvider";
-import { DiscordIcon } from "@/components/ui/icons";
+import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
+import type { SidebarCard } from "@/lib/sidebarCards";
+import { Kbd } from "@/components/ui/Kbd";
+import { goKeysFor } from "@/lib/shortcuts";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminNavBadges } from "@/lib/adminNav";
+import { HUB_ICON } from "@/components/admin/AdminNav";
+import { atomHiddenOn, openAtom } from "@/lib/atomTrigger";
+import { GlassLens } from "@/components/ui/GlassLens";
 
-type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
+type Item = { href: string; label: string; icon: AppIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
 
 // Same destinations as the phone dock, plus Practice and Profile, which have
 // room here. Grouped so a long list stays scannable.
 const GROUPS: { title: string; items: Item[] }[] = [
   {
-    title: "Learn",
+    title: "Main menu",
     items: [
-      { href: "/dashboard", label: "Home", icon: Home, dataTour: "nav-roadmap", match: ["/scales"] },
+      { href: "/dashboard", label: "Home", icon: Home },
+      { href: "/roadmap", label: "Roadmap", icon: Map, dataTour: "nav-roadmap", match: ["/scales"] },
       { href: "/practice", label: "Practice", icon: Music2 },
-      { href: "/lessons", label: "Online Lessons", icon: CalendarCheck, dataTour: "nav-lessons" },
+      { href: "/lessons", label: "Lessons", icon: CalendarCheck, dataTour: "nav-lessons" },
     ],
   },
   {
     title: "Community",
     items: [
-      { href: "/friends", label: "Friends", icon: Users, dataTour: "nav-friends" },
+      { href: "/friends", label: "Friends", icon: Users },
       { href: "/messages", label: "Messages", icon: MessageSquare, dataTour: "nav-messages" },
+      { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     ],
   },
   {
-    title: "Account",
+    title: "More",
     items: [
-      { href: "/profile", label: "Profile", icon: User },
       { href: "/account", label: "Settings", icon: Settings, dataTour: "nav-settings" },
       // The public homepage, in a new tab so the app stays where it is.
       { href: "/", label: "Website", icon: Globe, external: true },
@@ -43,26 +52,89 @@ const GROUPS: { title: string; items: Item[] }[] = [
  * AppDock; this takes its place on wide screens so nothing floats over the
  * content and every destination has a label. Sits under the fixed TopBar.
  */
-export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount: number }) {
+export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminBadges = {} }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean; adminBadges?: AdminNavBadges }) {
   const pathname = usePathname();
   const unread = useUnreadMessages(initial);
-  const status = useMeStatus();
+  const [mounted, setMounted] = useState(false);
+  // The admin's six sections sit under Website as one more group, so the admin pages need no second menu of their own on a computer.
+  const adminHub = pathname.startsWith("/admin") ? locateAdminPage(pathname)?.hub.id ?? "overview" : null;
+  const groups: { title: string; items: Item[] }[] = isAdmin
+    ? [
+        ...GROUPS,
+        {
+          title: "Admin",
+          items: ADMIN_HUBS.map((hub) => ({
+            href: hub.pages[0].href,
+            label: hub.label,
+            icon: HUB_ICON[hub.id],
+            isActive: () => adminHub === hub.id,
+            count: hubWaiting(hub, adminBadges),
+          })),
+        },
+      ]
+    : GROUPS;
+  useEffect(() => setMounted(true), []);
+
+  // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
+  const navRef = useRef<HTMLElement>(null);
+  // Atom's chat opens just above this button and points at it.
+  const askRef = useRef<HTMLDivElement>(null);
+  const askAtom = () => {
+    const r = askRef.current?.getBoundingClientRect();
+    openAtom(r ? { left: r.left, top: r.top, width: r.width } : undefined);
+  };
+  const [sel, setSel] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const el = nav.querySelector<HTMLElement>('a[aria-current="page"]');
+      setSel(el ? { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight } : null);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(nav);
+    nav.querySelectorAll("a").forEach((a) => ro.observe(a));
+    // The width of the open or closing sidebar changes over a third of a second: keep up with it.
+    const timer = window.setInterval(schedule, 40);
+    const stop = window.setTimeout(() => window.clearInterval(timer), 500);
+    return () => {
+      ro.disconnect();
+      window.clearInterval(timer);
+      window.clearTimeout(stop);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pathname, mounted]);
 
   return (
     <nav
+      ref={navRef}
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto border-r border-(--neu-edge) bg-neu-base px-3 pb-4 pt-14 lg:flex"
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 pt-[4.25rem] hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2 lg:flex"
     >
-      {GROUPS.map((group) => (
-        <div key={group.title}>
-          <p className="px-2.5 pb-1.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-500">{group.title}</p>
+      {sel && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute z-0 rounded-xl"
+          style={{ top: sel.top, left: sel.left, width: sel.width, height: sel.height, transition: "top 460ms cubic-bezier(0.22,1.1,0.36,1), left 380ms var(--ease-ios), width 380ms var(--ease-ios), height 300ms var(--ease-ios)" }}
+        >
+          <GlassLens radius={12} bezel={11} strength={10} />
+        </span>
+      )}
+      {groups.map((group) => (
+        <div key={group.title} className="sb-group relative z-10">
+          <p className="sb-group-title px-2.5 pb-1.5 text-small font-medium text-slate-500">{group.title}</p>
           <ul className="grid gap-0.5">
             {group.items.map((item) => {
-              const active =
-                pathname === item.href ||
-                pathname.startsWith(`${item.href}/`) ||
-                (item.match?.some((m) => pathname.startsWith(m)) ?? false);
-              const badge = item.href === "/messages" ? unread : 0;
+              const active = item.isActive
+                ? item.isActive(pathname)
+                : pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.match?.some((m) => pathname.startsWith(m)) ?? false);
+              const badge = item.href === "/messages" ? unread : item.count ?? 0;
               const Icon = item.icon;
               return (
                 <li key={item.href}>
@@ -71,28 +143,38 @@ export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      title={item.label}
+                      className="sb-item press-soft flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-                      <span className="truncate">{item.label}</span>
-                      <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+                      <span className="sb-label truncate">{item.label}</span>
+                      <ArrowUpRight className="sb-label ml-auto h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
                       <span className="sr-only">(opens in a new tab)</span>
                     </a>
                   ) : (
                   <Link
                     href={item.href}
+                    prefetch
                     data-tour={item.dataTour}
+                    data-prerender={item.href === "/messages" ? undefined : ""}
+                    title={item.label}
                     aria-current={active ? "page" : undefined}
-                    className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`sb-item group/sb press-soft relative flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
-                        ? "bg-neu-lift text-slate-50 shadow-pressed-low"
+                        ? "text-slate-50"
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
-                    <span className="truncate">{item.label}</span>
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
+                    <span className="sb-label truncate">{item.label}</span>
+                    {goKeysFor(item.href) && badge === 0 && (
+                      // The label wrapper carries `sb-label` (the rail's own opacity rule); the hint inside shows only on hover or focus.
+                      <span className="sb-label ml-auto">
+                        <Kbd keys={goKeysFor(item.href) ?? []} className="opacity-0 transition-opacity group-hover/sb:opacity-100 group-focus-visible/sb:opacity-100" />
+                      </span>
+                    )}
                     {badge > 0 && (
-                      <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
+                      <span className="sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
                         {badge > 9 ? "9+" : badge}
                       </span>
                     )}
@@ -105,41 +187,21 @@ export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount
         </div>
       ))}
 
-      {/* Shown only until Discord is linked: live classes happen there. The two logos link up with a travelling pulse. */}
-      {status && !status.discordConnected && (
-        <a
-          href="/api/discord/connect"
-          className="press-soft mt-auto block overflow-hidden rounded-card bg-neu-lift shadow-raised-low hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-[rgb(var(--c-s-950))]">
-            <span className="link-star left-[14%] top-[22%]" />
-            <span className="link-star left-[82%] top-[30%] [animation-delay:0.7s]" />
-            <span className="link-star left-[26%] top-[78%] [animation-delay:1.3s]" />
-            <span className="link-star left-[70%] top-[80%] [animation-delay:0.3s]" />
-            <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-[#5865F2] text-white shadow-raised-mid">
-              <DiscordIcon size={24} />
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="link-dot" />
-              <span className="link-dot [animation-delay:0.15s]" />
-              <span className="link-dot [animation-delay:0.3s]" />
-              <span className="link-dot [animation-delay:0.45s]" />
-            </span>
-            <span className="link-tile link-tile-b flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-neu-lift shadow-raised-mid">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg" />
-            </span>
-          </span>
-          <span className="block p-3">
-            <span className="block text-small font-semibold text-slate-50">Link your Discord</span>
-            <span className="mt-0.5 block text-small text-slate-400">Your private class call opens there before each lesson.</span>
-            <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal">
-              Connect Discord
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </span>
-          </span>
-        </a>
-      )}
+      {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
+      {/* The admin's cards live in the alerts window by the profile picture: this space holds the admin sections instead. */}
+      {!isAdmin && <SidebarSpotlight initial={cards} isAdmin={false} />}
+
+      {/* Ask AI at the foot of the sidebar (search and the light/dark switch are in the top bar): the same Ask AI pill as in the top
+          bar (orbiting orange ring, sparkle), just as wide as the sidebar. */}
+      <div className="sb-tools sticky bottom-0 mt-auto pt-1">
+        {!atomHiddenOn(pathname) && (
+        <div ref={askRef}>
+          <GenerateAIButton calm ariaLabel="Ask AI" onClick={askAtom} className="sb-item tap h-10 w-full px-3">
+            <span className="sb-label">Ask AI</span>
+          </GenerateAIButton>
+        </div>
+        )}
+      </div>
     </nav>
   );
 }

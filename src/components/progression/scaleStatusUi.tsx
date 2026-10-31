@@ -1,5 +1,6 @@
 import type { ProgressStatus } from "@prisma/client";
 import type { ScaleAccessState } from "@/lib/access";
+import { Check, Lock } from "@/components/ui/appIcons";
 
 // Shared between ScaleCardGrid and ScaleListRows so the grid/list toggle in
 // ScaleRoadmap.tsx renders the exact same status vocabulary either way.
@@ -13,36 +14,13 @@ export const STATUS_LABEL: Record<ProgressStatus, string> = {
 
 export function LockIcon({ className }: { className?: string }) {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={className ?? "shrink-0"}
-      aria-hidden
-    >
-      <rect x="4" y="11" width="16" height="9" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-    </svg>
+    <Lock className={className ?? "shrink-0"} size={14} />
   );
 }
 
 export function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className={className ?? "shrink-0"}
-      aria-hidden
-    >
-      <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <Check className={className ?? "shrink-0"} size={14} />
   );
 }
 
@@ -66,7 +44,7 @@ export function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emph
           <span
             key={item.label}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              item.done ? "bg-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low"
+              item.done ? "bg-slate-50" : "bg-neu-base shadow-pressed-low"
             }`}
           />
         ))}

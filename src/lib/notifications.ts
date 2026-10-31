@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
+import { notificationTarget, safeInAppHref } from "@/lib/notificationTargets";
+import { sendPushToUser } from "@/lib/webPush";
+import { categoryIsPushed } from "@/lib/pushRules";
 import { EMAIL_PREF_SELECT, isEmailEnabled, type EmailCategory } from "@/lib/emailPreferences";
+import { recordEmail } from "@/lib/emailLog";
 type EmailKind = "default" | "notice";
 
 export interface CreateNotificationParams {
@@ -17,6 +21,8 @@ export interface CreateNotificationParams {
   alwaysEmail?: boolean;
   /** Overrides the default button for this type, e.g. a deep link to the exact page. `path` is an in-app path. */
   cta?: { label: string; path?: string; url?: string };
+  /** The exact in-app page tapping this notification opens. Defaults to the button's page, then to the type's default page. */
+  href?: string;
 }
 
 interface NotificationCta {
@@ -42,7 +48,12 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   ROLE_UPDATED: { label: "Go to admin panel", url: getAppUrl("/admin"), kind: "default" },
   FRIEND_REQUEST_RECEIVED: { label: "View request", url: getAppUrl("/friends#requests"), kind: "default" },
   FRIEND_REQUEST_ACCEPTED: { label: "Say hello", url: getAppUrl("/friends"), kind: "default" },
-  PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/dashboard"), kind: "default" },
+  PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/roadmap"), kind: "default" },
+  PARENT_LINK_REQUEST: { label: "Answer the request", url: getAppUrl("/account?tab=account#parent-mode"), kind: "default" },
+  PARENT_LINK_ACCEPTED: { label: "Open Parent mode", url: getAppUrl("/parent"), kind: "default" },
+  BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
+  BANNER_DISCORD: { label: "Connect Discord", url: getAppUrl("/api/discord/connect"), kind: "default" },
+  BANNER_PRACTICE: { label: "Start practice", url: getAppUrl("/practice"), kind: "default" },
   CLASS_REGISTRATION_RECEIVED: { label: "Review registration", url: getAppUrl("/admin/students"), kind: "default" },
   CLASS_REGISTRATION_APPROVED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
   CLASS_REGISTRATION_REJECTED: { label: "View details", url: getAppUrl("/dashboard"), kind: "notice" },
@@ -72,7 +83,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // family bundle recipient never paid anything themselves, so their own
   // billing history has nothing to do with this, the roadmap they can now
   // actually use does.
-  CURRICULUM_ACCESS_GRANTED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
+  CURRICULUM_ACCESS_GRANTED: { label: "Open your roadmap", url: getAppUrl("/roadmap"), kind: "default" },
   CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
   ACCOUNT_UPDATE: { label: "Open settings", url: getAppUrl("/account"), kind: "notice" },
   LESSON_BOOKING_CONFIRMED: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
@@ -80,6 +91,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PAYMENT_RECEIVED: { label: "View your payments", url: getAppUrl("/billing/history"), kind: "default" },
   TRIAL_ENDING: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
   PAYMENT_PLAN_UPDATED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
+  SLOT_WAITLIST_OPENED: { label: "Pick your time", url: getAppUrl("/billing/plans"), kind: "default" },
 };
 
 /** The in-app path of a full link, or null if it can't be read (a notice must never fail over its link). */
@@ -106,6 +118,7 @@ export async function createNotification(params: CreateNotificationParams) {
   const cta: NotificationCta | undefined = params.cta
     ? { label: params.cta.label, url: params.cta.url ?? getAppUrl(params.cta.path ?? "/"), kind: "default" }
     : NOTIFICATION_CTA[params.type];
+  const href = notificationTarget(params.type, safeInAppHref(params.href) ?? (cta ? pathOf(cta.url) : null));
   const notification = mailKind
     ? await createMailMessage({
         userId: params.userId,
@@ -116,7 +129,7 @@ export async function createNotification(params: CreateNotificationParams) {
         actionHref: cta ? pathOf(cta.url) : null,
       })
     : await prisma.notification.create({
-        data: { userId: params.userId, type: params.type, title: params.title, body: params.body },
+        data: { userId: params.userId, type: params.type, title: params.title, body: params.body, href },
       });
 
   if (params.emailCategory) {
@@ -125,8 +138,32 @@ export async function createNotification(params: CreateNotificationParams) {
     );
   }
 
+  // Class and practice reminders also go to the person's phone or browser when they turned push on, under the same switch as the email.
+  if (params.emailCategory && categoryIsPushed(params.emailCategory)) {
+    await maybePush(params.userId, params.emailCategory, params.title, params.body, (cta ? pathOf(cta.url) : null) ?? undefined);
+  }
+
   return notification;
 }
+
+async function maybePush(userId: string, category: EmailCategory, title: string, body: string | undefined, path: string | undefined) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: EMAIL_PREF_SELECT });
+    if (!user || user.bannedAt || !isEmailEnabled(user, category)) return;
+    await sendPushToUser(userId, { title, body: body ?? "", url: path });
+  } catch (err) {
+    console.error("Notification push failed (non-blocking):", err);
+  }
+}
+
+/** The names of the email switches as Settings shows them, for the "not sent" reason on Admin > Inbox > Sent. */
+const SWITCH_NAME: Record<EmailCategory, string> = {
+  payments: "Payments and invoices",
+  roleUpdates: "Account updates",
+  social: "Social",
+  reminders: "Practice and class reminders",
+  classes: "Class updates",
+};
 
 async function maybeSendEmail(
   userId: string,
@@ -138,14 +175,22 @@ async function maybeSendEmail(
 ) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: EMAIL_PREF_SELECT });
   if (!user) return;
-  // A banned account is sent nothing, whatever its switches say.
-  if (user.bannedAt) return;
-  if (!isEmailEnabled(user, category) && !force) return;
+  // A banned account is sent nothing, whatever its switches say. Both kinds of "not sent" are recorded for Admin > Inbox > Sent.
+  if (user.bannedAt) {
+    await recordEmail({ to: user.email, subject: title, status: "SKIPPED", detail: "Banned account", userId });
+    return;
+  }
+  if (!isEmailEnabled(user, category) && !force) {
+    await recordEmail({ to: user.email, subject: title, status: "SKIPPED", detail: `They turned off "${SWITCH_NAME[category]}" emails`, userId });
+    return;
+  }
 
+  // Every email a switch governs carries an "Unsubscribe" for that same switch.
+  const unsubscribe = { userId, category };
   if (cta) {
-    await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind);
+    await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind, unsubscribe);
   } else {
-    await sendNotificationEmail(user.email, title, body ?? "");
+    await sendNotificationEmail(user.email, title, body ?? "", "default", unsubscribe);
   }
 }
 

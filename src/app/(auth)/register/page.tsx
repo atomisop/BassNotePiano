@@ -7,7 +7,7 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -18,6 +18,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { normalizePhone, PHONE_HELP, signupPhoneError, signupPhoneNote } from "@/lib/phone";
+import { UserPlus } from "@/components/ui/appIcons";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -29,12 +30,24 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   // Already signed in: nothing to create, go straight into the app.
   useEffect(() => {
-    if (status === "authenticated") router.replace("/dashboard");
-  }, [status, router]);
+    if (status !== "authenticated" || !session?.user?.id) return;
+    let cancelled = false;
+    // Only a session the server still accepts counts (see the login page).
+    fetch("/api/me/status", { cache: "no-store" })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) router.replace("/dashboard");
+        else void signOut({ redirect: false });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session, router]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
@@ -96,7 +109,7 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken }),
+      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken, ref: searchParams.get("ref") }),
     });
 
     if (!res.ok) {
@@ -109,7 +122,9 @@ function RegisterForm() {
 
     // Account exists but isn't usable yet, a verification code was just
     // emailed. Signing in happens at the end of that flow, not here.
+    const created = await res.json().catch(() => null);
     const params = new URLSearchParams({ email, callbackUrl });
+    if (created?.emailSent === false) params.set("sendFailed", "1");
     router.push(`/verify-email?${params}`);
   }
 
@@ -121,17 +136,12 @@ function RegisterForm() {
       className="w-full glass-surface-elevated p-7"
     >
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-300 bg-neu-base shadow-raised-low">
-        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-          <path
-            d="M9 11a4 4 0 100-8 4 4 0 000 8zM3 21a6 6 0 0112 0M19 8v6M22 11h-6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <UserPlus className="h-6 w-6" />
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
+      {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
+        <p className="mt-3 text-center text-small text-slate-300">A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</p>
+      )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
@@ -183,7 +193,7 @@ function RegisterForm() {
             />
             <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
             <label className="mt-2 flex cursor-pointer items-center gap-2 text-small text-slate-400">
-              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-[rgb(var(--c-s-50))]" />
+              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-slate-50" />
               I do not have my own phone number
             </label>
           </div>
@@ -241,15 +251,15 @@ function RegisterForm() {
               setAgreedToTerms(e.target.checked);
               setError(null);
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
+            <Link href="/terms" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
               Terms &amp; refund policy
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
+            <Link href="/privacy" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
               Privacy policy
             </Link>
             .
@@ -271,7 +281,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+        <Link href="/login" className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Log in
         </Link>
       </p>

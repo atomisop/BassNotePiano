@@ -13,9 +13,16 @@ export default function AdminUsersLoading() {
 
         <div className="mt-8">
           <Skeleton className="h-10 w-full max-w-sm" />
-          <div className="mt-5 space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          <div className="glass-surface mt-5 divide-y divide-slate-50/10 px-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-3.5">
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="mt-1.5 h-3.5 w-1/2" />
+                </div>
+                <Skeleton className="hidden h-4 w-12 shrink-0 sm:block" />
+                <Skeleton className="h-4 w-4 shrink-0" />
+              </div>
             ))}
           </div>
         </div>

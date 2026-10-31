@@ -1,37 +1,30 @@
-import { formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowRight, CalendarCheck, Check, Clock, Flame, Lightbulb, Map, Sparkles, Ticket, Trophy, Users, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
-import { getRoadmap } from "@/lib/access";
-import { prisma } from "@/lib/prisma";
-import { BADGES } from "@/lib/badges";
-import { DAILY_GOAL_SECONDS, getFingerPracticeStatus } from "@/lib/fingerPractice";
-import { putFingerPracticeFirst, resolveNextStep, summariseProgress, type NextStep } from "@/lib/next-step";
-import { gettingStartedStep } from "@/lib/lockedScale";
-import { getCurriculumEntitlement } from "@/lib/entitlement";
-import { cn } from "@/lib/utils";
-import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
-import { StreakDots } from "@/components/gamification/StreakDots";
-import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
-import { ProgressRing } from "@/components/ui/ProgressRing";
-import { Card, Eyebrow } from "@/components/ui/Card";
-import { CardDeck } from "@/components/ui/CardDeck";
-import { buttonVariants } from "@/components/ui/button";
-import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
-import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
-import { WideLayout } from "@/components/layout/PageLayouts";
+import { getHomeData } from "@/lib/homeData";
+import { getWeeklyLeaderboard } from "@/lib/leaderboard";
+import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
+import { WEEKLY_GOAL_MINUTES } from "@/lib/homeRules";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
+import { formatCredits } from "@/lib/classCreditPricing";
+import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
-import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { cn } from "@/lib/utils";
+import { WideLayout } from "@/components/layout/PageLayouts";
+import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
+import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
+import { CelebrationCard } from "@/components/home/CelebrationCard";
+import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
+import { HomeHero } from "@/components/home/HomeHero";
+import { HomeRow, HomeRows } from "@/components/home/HomeRow";
+import { GlanceTiles } from "@/components/home/GlanceTiles";
+import { PathCard, ShelfCard } from "@/components/home/ShelfCards";
+import { Shelf, ShelfItem } from "@/components/ui/Shelf";
+import { BADGES } from "@/lib/badges";
 
-function ArrowIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+export const metadata = { title: "Home" };
 
 /** "in 3 days", "tomorrow", "in 2 hours", "starting now". */
 function untilLabel(when: Date): string {
@@ -44,261 +37,256 @@ function untilLabel(when: Date): string {
   return days === 1 ? "tomorrow" : `in ${days} days`;
 }
 
-/** One figure and its label. Figures stay small: the Hero is the greeting. */
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="text-body font-semibold tabular-nums text-slate-50">{value}</p>
-      <p className="text-small text-slate-400">{label}</p>
-    </div>
-  );
-}
-
 /**
- * Home (STEP 2B wireframe, approved 2026-10-02).
- *
- * Desktop: the full width. A band of cards (finger practice, next class, next
- * step, week, progress) sits on the same four columns as the scales below it.
- * Below md (phones) the cards become one swipeable deck (CardDeck); tablets get two columns.
- *
- * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
- * sits huge and faint behind it on the back plane; Continue is the one
- * green button.
+ * Home: a welcome and the one thing to do today, as one hero and quiet rows (2026-10-30, the owner picked "one hero, then rows"). A new account (no plan, no trial) gets the free trial class and how the studio
+ * works; a student gets today's step, their roadmap, the next class, practice, a tip and their friends. The course itself lives on
+ * the Roadmap screen (/roadmap). Design: docs/superpowers/specs/2026-10-29-new-home-and-roadmaps-design.md.
  */
-export const metadata = { title: "Home" };
-
-export default async function DashboardPage() {
+export default async function HomePage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
+  const data = await getHomeData({ id: session.user.id, role: session.user.role, email: session.user.email ?? null });
 
-  const [roadmap, badgeRows, user, practice, nextClass, entitlement, pendingApplication] = await Promise.all([
-    getRoadmap(session.user.id),
-    prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { name: true, currentStreak: true, classCredits: true },
-    }),
-    getFingerPracticeStatus(session.user.id),
-    // Still counts for an hour after it starts, so "Join" is there if they are a little late.
-    prisma.classBooking.findFirst({
-      where: { studentId: session.user.id, status: "SCHEDULED", scheduledAt: { gt: new Date(Date.now() - 60 * 60_000) } },
-      orderBy: { scheduledAt: "asc" },
-      select: { scheduledAt: true, creditsSpent: true, discordChannelId: true },
-    }),
-    getCurriculumEntitlement(session.user.id),
-    // An application from this account, or from this email before the account existed.
-    prisma.classRegistration.count({
-      where: {
-        status: "PENDING",
-        OR: [{ userId: session.user.id }, { email: { equals: session.user.email ?? "", mode: "insensitive" } }],
-      },
-    }),
-  ]);
-
-  const progress = summariseProgress(roadmap);
-  const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
-  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
-  const resolvedStep = resolveNextStep(roadmap);
-  const nextStep: NextStep = starting ? { ...resolvedStep, ...starting } : putFingerPracticeFirst(resolvedStep, {
-    required: session.user.role !== "ADMIN",
-    completedToday: practice.completedToday,
-    minutesLeft: Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60)),
-  });
-  const earnedBadgeCodes = badgeRows.map((b) => b.code);
-
-  const streak = user?.currentStreak ?? 0;
-
-  // Each card is a function, called once per place it renders (never reuse one
-  // element twice: a streamed <Suspense> reused in two spots fails to hydrate): the phone deck below
-  // `lg`, and the normal layout from `lg` up (the other copy is display:none).
-  const nextStepCard = () => (
-    <Card className="relative z-(--z-mid)">
-      <Eyebrow>Your next step</Eyebrow>
-      <p className="mt-2 text-body font-semibold text-slate-50">{nextStep.action}</p>
-      <p className="mt-1 max-w-[60ch] text-small text-slate-400">{nextStep.detail}</p>
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link href={nextStep.href} className={cn(buttonVariants(), "relative z-(--z-front)")}>
-          {nextStep.cta}
-          <ArrowIcon />
-        </Link>
-        {nextStep.secondary && (
-          <Link href={nextStep.secondary.href} className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
-            {nextStep.secondary.cta}
-          </Link>
-        )}
-        {nextStep.scale && nextStep.kind !== "buy-curriculum" && (
-          <span className="text-small text-slate-400">
-            {nextStep.scale.scaleGroup.code} · {nextStep.scale.scaleGroup.title}
-          </span>
-        )}
-      </div>
-    </Card>
+  // The greeting stays put while the page scrolls under it (every page's heading does), so it sits above both columns.
+  const greeting = (
+    <div data-deck-header className="deck-header -mt-4 pt-8 md:pt-10 lg:pb-6">
+      <TodayGreeting name={data.name} />
+    </div>
   );
 
-  const nextClassCard = () => {
-    const minutesAway = nextClass ? (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 : 0;
-    const canJoin = nextClass !== null && minutesAway <= 30;
-    const length = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
+  if (data.isNew) {
     return (
-      <Card className="relative z-(--z-mid)">
-        <Eyebrow>Next class</Eyebrow>
-        {nextClass ? (
-          <>
-            <p className="mt-2 text-body font-semibold text-slate-50">{formatEtDateTime(nextClass.scheduledAt)}</p>
-            <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}</p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {canJoin && (
+      <WideLayout>
+        {greeting}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
+          <div className="grid min-w-0 grid-cols-1 gap-6">
+            <HomeHero
+              artwork={data.roadmap.artwork}
+              eyebrow="Start here"
+              title={data.nextStep.action}
+              detail={data.nextStep.detail}
+              actions={
+                <>
+                  <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
+                    {data.nextStep.cta}
+                    <ArrowRight aria-hidden className="h-4 w-4" />
+                  </Link>
+                  {data.nextStep.secondary && (
+                    <Link href={data.nextStep.secondary.href} className={buttonVariants({ variant: "secondary", size: "lg" })}>
+                      {data.nextStep.secondary.cta}
+                    </Link>
+                  )}
+                </>
+              }
+            />
+          </div>
+          <div className="grid min-w-0 grid-cols-1 gap-8">
+            <HomeRows title="How it works">
+              <li>
+                <HomeRow href="/lessons" icon={<Video />} title="Live classes on Discord" detail="A real teacher every week, at a time you pick." />
+              </li>
+              <li>
+                <HomeRow href="/roadmap" icon={<Map />} title="Your roadmap" detail="Scales one at a time, opened by your teacher as you go." />
+              </li>
+              <li>
+                <HomeRow href="/practice" icon={<Flame />} title="10 minutes a day" detail="Daily finger practice builds your streak and your hands." />
+              </li>
+            </HomeRows>
+            <TipLine tip={data.tip} />
+          </div>
+        </div>
+      </WideLayout>
+    );
+  }
+
+  const { practice, nextClass } = data;
+  const board = await getWeeklyLeaderboard(session.user.id);
+  const myRow = board.rows.find((r) => r.userId === session.user.id) ?? null;
+  const leader = board.rows[0] ?? null;
+  const joinNow = nextClass !== null && !nextClass.inPerson && (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 <= 30;
+  const minutesLeft = Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60));
+
+  /**
+   * Home, one hero then rows: the roadmap picture carries today's one thing, and everything else is a quiet line on the page
+   * (no cards), so the next step is the only loud thing here. On a computer the hero sits on the left and the rows on the right.
+   */
+  return (
+    <WideLayout>
+      {greeting}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
+        <div className="grid min-w-0 grid-cols-1 gap-6">
+          {data.celebration && <CelebrationCard win={data.celebration} />}
+          <HomeHero
+            artwork={data.roadmap.artwork}
+            eyebrow="Today"
+            title={data.nextStep.action}
+            detail={data.nextStep.detail}
+            actions={
+              joinNow && nextClass ? (
                 <DiscordLink
                   href={nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(buttonVariants(), "relative z-(--z-front)")}
+                  className={buttonVariants({ size: "lg" })}
                 >
-                  Join on Discord
-                  <ArrowIcon />
+                  Join your class
                 </DiscordLink>
-              )}
-              <a
-                href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
-              >
-                Add to calendar
-              </a>
-              <Link href="/lessons" className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
-                My classes
-              </Link>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="mt-2 text-body font-semibold text-slate-50">No class booked</p>
-            <Link href="/lessons" className={cn(buttonVariants(), "relative z-(--z-front) mt-4")}>
-              Book a class
-              <ArrowIcon />
-            </Link>
-          </>
-        )}
-      </Card>
-    );
-  };
-
-  const weekCard = () => (
-    <Card>
-      <Eyebrow>This week</Eyebrow>
-      <StreakDots currentStreak={streak} />
-      <p className="mt-3 text-small text-slate-400">
-        {streak > 0 ? `${streak} day streak` : "Practice today to start a streak"}
-      </p>
-    </Card>
-  );
-
-  const progressCard = () => (
-    <Card>
-      <Eyebrow>Progress</Eyebrow>
-      <div className="mt-3 flex items-center gap-5">
-        <ProgressRing
-          value={progress.itemsDone}
-          max={progress.itemsTotal}
-          size={84}
-          strokeWidth={7}
-          label={`Curriculum progress: ${progress.itemsDone} of ${progress.itemsTotal} checklist items complete`}
-          caption={`${progress.itemsDone}/${progress.itemsTotal} steps`}
-        />
-        <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-3">
-          <Stat value={`${progress.completedScales}/${progress.totalScales}`} label="Scales" />
-          <Stat value={`${earnedBadgeCodes.length}`} label="Badges" />
-          <Stat value={`${streak}`} label="Day streak" />
-          <Stat value={formatCredits(storedToCredits(user?.classCredits ?? 0))} label="Credits" />
-        </div>
-      </div>
-    </Card>
-  );
-
-  const practiceCard = () => (
-    <Card className="relative z-(--z-mid)">
-      <Eyebrow>Finger practice</Eyebrow>
-      <p className="mt-2 text-body font-semibold text-slate-50">
-        {practice.completedToday ? "Done for today" : "10 minutes to unlock your scales"}
-      </p>
-      <div
-        className="mt-3 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={DAILY_GOAL_SECONDS}
-        aria-valuenow={practice.todaySeconds}
-        aria-label="Finger practice today"
-      >
-        <div className="h-full rounded-full bg-[rgb(var(--signal))] transition-all" style={{ width: `${Math.round((practice.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link href="/practice" className={cn(buttonVariants(), "relative z-(--z-front)")}>
-          {practice.completedToday ? "Practice more" : practice.todaySeconds > 0 ? "Continue" : "Start practice"}
-          <ArrowIcon />
-        </Link>
-        <span className="text-small text-slate-400">
-          {practice.streak} day streak
-        </span>
-      </div>
-    </Card>
-  );
-
-  const badgesCard = () => (
-    <Card>
-      <Eyebrow>Badges</Eyebrow>
-      <p className="mt-2 text-small text-slate-50">
-        {earnedBadgeCodes.length} of {BADGES.length} earned
-      </p>
-      <Link
-        href="/profile"
-        className="tap mt-1 inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
-      >
-        See them on your profile
-      </Link>
-    </Card>
-  );
-
-  return (
-    <WideLayout>
-      <div className="grid gap-y-(--space-group)">
-        {/* ---- Hero -------------------------------------------------------- */}
-        <div className="relative pt-4 md:pt-6">
-          <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
+              ) : (
+                <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
+                  {data.nextStep.cta}
+                  <ArrowRight aria-hidden className="h-4 w-4" />
+                </Link>
+              )
+            }
+            progress={{
+              name: data.roadmap.name,
+              current: data.currentScale ? `${data.currentScale.code} · ${data.currentScale.title}` : null,
+              percent: data.progress.percent,
+            }}
+          />
+          <GlanceTiles
+            items={[
+              {
+                href: "/practice",
+                label: "Streak",
+                icon: <Flame />,
+                value: String(practice.streak),
+                unit: practice.streak === 1 ? "day" : "days",
+                hint: practice.completedToday ? "Done today" : `${minutesLeft} min left today`,
+                meter: { value: Math.min(practice.todaySeconds, DAILY_GOAL_SECONDS), max: DAILY_GOAL_SECONDS, label: practice.completedToday ? "Today's practice is done" : `${minutesLeft} minutes of practice left today` },
+              },
+              {
+                href: "/streak",
+                label: "This week",
+                icon: <Clock />,
+                value: String(data.weekMinutes),
+                unit: "min",
+                hint: `Goal ${WEEKLY_GOAL_MINUTES} min`,
+                bars: { values: data.weekDays, current: data.todayIndex, label: `Practice minutes each day this week: ${data.weekDays.join(", ")}` },
+              },
+              {
+                href: "/lessons",
+                label: "Credits",
+                icon: <Ticket />,
+                value: formatCredits(data.credits),
+                unit: data.credits === 1 ? "class" : "classes",
+                hint: nextClass ? `Next ${untilLabel(nextClass.scheduledAt)}` : "No class booked",
+                alert: data.credits === 0,
+              },
+            ]}
+          />
+          {data.path.length > 0 && (
+            <Shelf title="Your path" aside={`${data.progress.completedScales} of ${data.progress.totalScales} done`}>
+              {data.path.map((p, i) => (
+                <ShelfItem key={p.slug} className="w-36 sm:w-40">
+                  <PathCard step={i + 1} {...p} />
+                </ShelfItem>
+              ))}
+            </Shelf>
+          )}
+          {data.gettingStarted.length > 0 && <GettingStarted items={data.gettingStarted} />}
+          <TeacherNotesCard studentId={session.user.id} />
+          <TipLine tip={data.tip} className="hidden lg:flex" />
         </div>
 
-        {/* ---- Phones: the cards as one swipeable deck. Finger practice is
-            first: it is the thing to do today, and it unlocks the scales. --- */}
-        <CardDeck
-          className="md:hidden"
-          label="Your home cards"
-          labels={["Finger practice", "Next class", "Your next step", "This week", "Progress", "Badges"]}
-        >
-          {practiceCard()}
-          {nextClassCard()}
-          {nextStepCard()}
-          {weekCard()}
-          {progressCard()}
-          {badgesCard()}
-        </CardDeck>
+        <div className="grid min-w-0 grid-cols-1 gap-8">
+          <HomeRows title="This week">
+            <li>
+              <HomeRow
+                href="/lessons"
+                icon={<CalendarCheck />}
+                title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
+                detail={nextClass ? `Next class, ${untilLabel(nextClass.scheduledAt)}` : "Book your weekly class"}
+              />
+            </li>
+            <li>
+              <HomeRow
+                href="/roadmap"
+                icon={<Map />}
+                title={`${data.progress.completedScales} of ${data.progress.totalScales} scales`}
+                detail={`${data.progress.itemsDone} of ${data.progress.itemsTotal} steps · ${formatCredits(data.credits)} credits`}
+              />
+            </li>
+          </HomeRows>
 
-        {/* ---- Desktop: one band of cards, on the same four columns as the
-            scales below. The next step is only as wide as it needs to be, and
-            the week and progress cards take the space it used to leave empty,
-            so there is no side column and the scales get the full width. ---- */}
-        <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 [&>*>*]:h-full">
-          <div className="lg:col-span-2">{practiceCard()}</div>
-          <div className="lg:col-span-2">{nextClassCard()}</div>
-          <div className="md:col-span-2 lg:col-span-2">{nextStepCard()}</div>
-          <div>{weekCard()}</div>
-          <div>{progressCard()}</div>
-        </div>
+          {/* Studio as a shelf you swipe through, the way Spotify shows its rows. */}
+          <Shelf title="Studio">
+            <ShelfItem>
+              <ShelfCard
+                href="/leaderboard"
+                icon={<Trophy />}
+                title={myRow ? `You're ${ordinal(myRow.place)} this week` : "Leaderboard"}
+                detail={leader ? `${leader.name} leads with ${leader.minutes} min` : "Nobody has practiced yet"}
+              />
+            </ShelfItem>
+            <ShelfItem>
+              <ShelfCard
+                href="/friends"
+                icon={<Users />}
+                title={data.friendCount > 0 ? `${data.friendCount} friend${data.friendCount === 1 ? "" : "s"}` : "Friends"}
+                detail={
+                  data.friendsPracticing.length > 0
+                    ? `${data.friendsPracticing.slice(0, 2).join(", ")} ${data.friendsPracticing.length === 1 ? "is" : "are"} practicing`
+                    : data.friendCount > 0
+                      ? "Nobody is practicing right now"
+                      : "Practice is more fun with friends"
+                }
+              />
+            </ShelfItem>
+            <ShelfItem>
+              <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} card />
+            </ShelfItem>
+            <ShelfItem>
+              <ShelfCard href="/streak" icon={<Flame />} title={`${practice.streak} day streak`} detail={practice.completedToday ? "Done for today" : "Practice today to keep it"} />
+            </ShelfItem>
+          </Shelf>
 
-        <TeacherNotesCard studentId={session.user.id} />
-
-        {/* ---- The path: tabs + scale grid --------------------------------- */}
-        <div>
-          <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} />
+          <TipLine tip={data.tip} className="lg:hidden" />
         </div>
       </div>
     </WideLayout>
+  );
+}
+
+/** 1st, 2nd, 3rd, 4th. */
+function ordinal(n: number): string {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
+  return `${n}${s}`;
+}
+
+/** The tip of the day as a quiet line on the page, not a card. */
+function TipLine({ tip, className }: { tip: { title: string; body: string }; className?: string }) {
+  return (
+    <aside className={cn("flex items-start gap-3 text-small text-slate-400", className)}>
+      <Lightbulb aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-signal-fg" />
+      <p>
+        <span className="font-semibold text-slate-200">{tip.title}.</span> {tip.body}
+      </p>
+    </aside>
+  );
+}
+
+/** First-week checklist, as rows: each ticks itself when the real thing happens, and the list is gone once all are done. */
+function GettingStarted({ items }: { items: { done: boolean; label: string; detail: string; href: string; external: boolean }[] }) {
+  return (
+    <HomeRows title="Get started" aside={`${items.filter((g) => g.done).length} of ${items.length}`}>
+      {items.map((g) =>
+        g.done ? (
+          <li key={g.label} className="flex min-h-14 items-center gap-3.5 px-4 py-2">
+            <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-slate-50/8 text-slate-400">
+              <Check className="h-4 w-4" strokeWidth={3} />
+            </span>
+            <span className="text-body text-slate-500 line-through">
+              {g.label}
+              <span className="sr-only"> (done)</span>
+            </span>
+          </li>
+        ) : (
+          <li key={g.label}>
+            <HomeRow href={g.href} external={g.external} icon={<Sparkles />} title={g.label} detail={g.detail} />
+          </li>
+        ),
+      )}
+    </HomeRows>
   );
 }

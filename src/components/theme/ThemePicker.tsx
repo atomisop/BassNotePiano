@@ -2,12 +2,12 @@
 
 import { THEMES, type ThemeChoice } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
+import { LiquidThemeToggle } from "./LiquidThemeToggle";
+import { Check } from "@/components/ui/appIcons";
 
 function CheckIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-      <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <Check size={12} />
   );
 }
 
@@ -48,8 +48,24 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
     { id: "system", label: "Match system" },
   ];
 
+  if (!compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-4">
+        <LiquidThemeToggle />
+        <button
+          type="button"
+          onClick={() => setTheme("system")}
+          aria-pressed={theme === "system"}
+          className={`tap rounded-full px-3.5 py-2 text-small font-medium shadow-raised-low ${theme === "system" ? "bg-signal text-slate-950" : "bg-neu-base text-slate-200"}`}
+        >
+          Match my device
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className={compact ? "w-64 p-3" : ""}>
+    <div className="w-64 p-3">
       <fieldset>
         <legend className={compact ? "sr-only" : "eyebrow mb-3"}>Theme</legend>
         <div className={compact ? "space-y-1.5" : "grid gap-3 sm:grid-cols-3"}>
@@ -65,7 +81,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
                     ? "border-amber-400/70 bg-neu-base shadow-pressed-low"
-                    : "border-transparent hover:border-[rgb(var(--c-s-50)/0.4)] bg-neu-base shadow-raised-low"
+                    : "border-transparent hover:border-slate-50/40 bg-neu-base shadow-raised-low"
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">

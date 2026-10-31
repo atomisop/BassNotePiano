@@ -48,8 +48,7 @@ export default async function AdminPaymentsPage(
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 text-small text-slate-500">
@@ -154,8 +153,7 @@ async function EmailsTab() {
   const isOwner = isOwnerEmail(session?.user?.email);
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 max-w-[70ch] text-small text-slate-500">
@@ -179,7 +177,10 @@ async function EmailsTab() {
               studentEmail: c.studentEmail,
               createdAtMs: c.createdAt.getTime(),
               phoneMatch: c.phoneMatch,
+              score: c.score,
+              reasons: c.reasons,
             })),
+            confidence: r.confidence,
           }))}
           onMatch={matchReceiptAction}
           onDismiss={dismissReceiptAction}
@@ -195,8 +196,7 @@ async function CreditsTab() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} />
 
       <div className="mt-6">

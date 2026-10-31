@@ -1,13 +1,15 @@
+import { cache } from "react";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { summariseRevenue, type RevenueSummary } from "@/lib/revenueSummary";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
-import { findStoppedJobs } from "@/lib/jobRun";
+import { findStoppedJobsOnce } from "@/lib/jobRun";
 import { findMailChainProblem } from "@/lib/mailProbe";
 import { getAtomAlertState } from "@/lib/atomHealth";
 import { GEMINI_BILLING_URL } from "@/lib/atomFailure";
@@ -130,17 +132,15 @@ export interface ModuleHealthRow {
 
 /** Per-scale unlock/completion counts across the whole user base, where students drop off. */
 export async function getModuleHealth(): Promise<ModuleHealthRow[]> {
-  const scaleGroups = await prisma.scaleGroup.findMany({ orderBy: { order: "asc" } });
-
-  return Promise.all(
-    scaleGroups.map(async (sg) => {
-      const [unlockedCount, completedCount] = await Promise.all([
-        prisma.scaleProgress.count({ where: { scaleGroupId: sg.id, unlockedAt: { not: null } } }),
-        prisma.scaleProgress.count({ where: { scaleGroupId: sg.id, status: "COMPLETED" } }),
-      ]);
-      return { slug: sg.slug, code: sg.code, title: sg.title, unlockedCount, completedCount };
-    }),
-  );
+  // Three queries in all (grouped counts), not two counts per scale (28 for 14 scales; 2026-10-31 speed pass).
+  const [scaleGroups, unlocked, completed] = await Promise.all([
+    prisma.scaleGroup.findMany({ orderBy: { order: "asc" } }),
+    prisma.scaleProgress.groupBy({ by: ["scaleGroupId"], where: { unlockedAt: { not: null } }, _count: { _all: true } }),
+    prisma.scaleProgress.groupBy({ by: ["scaleGroupId"], where: { status: "COMPLETED" }, _count: { _all: true } }),
+  ]);
+  const unlockedBy = new Map(unlocked.map((r) => [r.scaleGroupId, r._count._all]));
+  const completedBy = new Map(completed.map((r) => [r.scaleGroupId, r._count._all]));
+  return scaleGroups.map((sg) => ({ slug: sg.slug, code: sg.code, title: sg.title, unlockedCount: unlockedBy.get(sg.id) ?? 0, completedCount: completedBy.get(sg.id) ?? 0 }));
 }
 
 // ---------------------------------------------------------------------------
@@ -161,17 +161,21 @@ export interface AdminUserRow {
   assistantMessageCount: number;
 }
 
-export async function searchUsers(query: string): Promise<AdminUserRow[]> {
+export async function searchUsers(query: string, opts: { complimentaryOnly?: boolean } = {}): Promise<AdminUserRow[]> {
   const trimmed = query.trim();
   const users = await prisma.user.findMany({
-    where: trimmed
-      ? {
-          OR: [
-            { email: { contains: trimmed, mode: "insensitive" } },
-            { name: { contains: trimmed, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
+    where: {
+      ...(trimmed
+        ? {
+            OR: [
+              { email: { contains: trimmed, mode: "insensitive" } },
+              { name: { contains: trimmed, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      // Complimentary = the owner switched curriculum access on by hand; an admin account does not need it.
+      ...(opts.complimentaryOnly ? { hasCurriculumAccess: true, role: { not: "ADMIN" as const } } : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: {
       progress: { include: { scaleGroup: true } },
@@ -497,7 +501,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     countUnmatchedReceipts(),
     getPaymentPipelineHealth(),
     // Employees are admins too and never saw this: the jobs table below is owner only.
-    findStoppedJobs(),
+    findStoppedJobsOnce(),
     getAtomAlertState(),
     findMailChainProblem(),
   ]);
@@ -506,18 +510,16 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
     { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
     { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
-    { label: "Bank emails have stopped arriving while payments wait", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
+    { label: "No bank emails lately, but payments are waiting", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
     {
       label:
-        stoppedJobs.length === 1
-          ? `Scheduled job stopped: ${stoppedJobs[0]}`
-          : `${stoppedJobs.length} scheduled jobs stopped: ${stoppedJobs.slice(0, 3).join(", ")}${stoppedJobs.length > 3 ? ` and ${stoppedJobs.length - 3} more` : ""}`,
+        stoppedJobs.length === 1 ? "An automatic task stopped" : `${stoppedJobs.length} automatic tasks stopped`,
       count: stoppedJobs.length,
-      href: "/admin",
+      href: "/admin/security#tasks",
     },
-    { label: "Studio email (music@) is not reaching the site: check the forwarding chain", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
+    { label: "Studio email is not arriving", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
     {
-      label: atom?.note === "busy" ? "Atom keeps failing (Google may be slow)" : "Atom can't answer: check Gemini credits and the key",
+      label: atom?.note === "busy" ? "The assistant keeps failing (Google may be slow)" : "The assistant is down: check Gemini credits",
       count: atom ? 1 : 0,
       href: atom?.note === "busy" ? "/admin" : GEMINI_BILLING_URL,
     },
@@ -530,7 +532,10 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
 }
 
 /** What is waiting, by admin page, for the small count badges in the admin menu. Four cheap counts. */
-export async function getAdminNavBadges(): Promise<Record<string, number>> {
+/** The admin menu's waiting counts, read once per page load (the app layout and the admin layout both need them). */
+export const getAdminNavBadges = cache(readAdminNavBadges);
+
+async function readAdminNavBadges(): Promise<Record<string, number>> {
   const [payments, applications, chats, unmarked] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
@@ -538,4 +543,17 @@ export async function getAdminNavBadges(): Promise<Record<string, number>> {
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(Date.now() - 3 * 3_600_000) } } }),
   ]);
   return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked };
+}
+
+/**
+ * Money that came in by week and by month (the Overview's Money section): every approved payment, dated by when it was approved
+ * (the last change, for older rows that never recorded one).
+ */
+export async function getRevenueSummary(now: Date = new Date()): Promise<RevenueSummary> {
+  const since = new Date(now.getTime() - 220 * 86_400_000);
+  const rows = await prisma.zellePayment.findMany({
+    where: { status: "VERIFIED", OR: [{ reviewedAt: { gte: since } }, { reviewedAt: null, updatedAt: { gte: since } }] },
+    select: { reviewedAt: true, updatedAt: true, amountCents: true },
+  });
+  return summariseRevenue(rows.map((r) => ({ at: r.reviewedAt ?? r.updatedAt, amountCents: r.amountCents })), now);
 }

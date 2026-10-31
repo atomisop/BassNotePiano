@@ -1,0 +1,10 @@
+#!/bin/sh
+# Runs before every push so a broken change stops here instead of failing CI and sending an email.
+# Turn it on once per checkout with: npm run hooks:on   (skip one push in an emergency with: git push --no-verify)
+set -e
+echo "pre-push: type check"
+npx tsc --noEmit
+echo "pre-push: lint"
+npx next lint --quiet
+echo "pre-push: tests"
+npx vitest run --reporter=dot

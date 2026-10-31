@@ -1,9 +1,11 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
+import { Search } from "@/components/ui/appIcons";
 
 /**
  * #3, Command primitive (cmdk), re-tokenised.
@@ -34,21 +36,36 @@ function CommandDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  // The window grows a little out of the button that was pressed (opened from the keyboard it does not animate at all, see globals.css):
+  // the moment the panel is attached (before it is painted), work out how far, and which way, that button is from where the panel
+  // sits, and hand it to the CSS as the transform-origin.
+  const place = React.useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const trigger = Array.from(document.querySelectorAll<HTMLElement>("[data-search-trigger]")).find((t) => t.getBoundingClientRect().width > 0);
+    const rect = trigger?.getBoundingClientRect();
+    const fromX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+    const fromY = rect ? rect.top + rect.height / 2 : window.innerHeight - 36;
+    el.style.setProperty("--cmd-dx", `${Math.round(fromX - window.innerWidth / 2)}px`);
+    el.style.setProperty("--cmd-dy", `${Math.round(fromY - (el.offsetTop + el.offsetHeight / 2))}px`);
+  }, []);
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+        <DialogPrimitive.Overlay className="cmd-scrim fixed inset-0 z-50" />
         <DialogPrimitive.Content
-          className="glass-surface fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 overflow-hidden !bg-surface p-0 shadow-raised-mid data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          ref={place}
+          className="cmd-window fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 rounded-[1.25rem] p-0 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)]"
           aria-label="Command menu"
         >
+          <GlassLens radius={20} bezel={18} strength={12} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           {/* Radix requires a title for screen readers; it's visually hidden
               because the search field already labels the dialog on screen. */}
           <DialogPrimitive.Title className="sr-only">Search and jump to</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             Type to search scales and pages, then press Enter.
           </DialogPrimitive.Description>
-          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
+          <Command className="!bg-transparent [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-caps [&_[cmdk-group-heading]]:text-slate-500">
             {children}
           </Command>
         </DialogPrimitive.Content>
@@ -62,19 +79,7 @@ const CommandInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
   <div className="flex items-center gap-2 border-b border-ink/10 px-3">
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="shrink-0 text-slate-500"
-      aria-hidden
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-    </svg>
+    <Search className="shrink-0 text-slate-500" size={16} />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
@@ -126,7 +131,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-small text-slate-300 outline-none transition-colors data-[selected=true]:bg-[rgb(var(--c-s-50)/0.1)] data-[selected=true]:text-[rgb(var(--c-s-50))] data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+      "relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-small text-slate-300 outline-none transition-colors data-[selected=true]:bg-slate-50/10 data-[selected=true]:text-slate-50 data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}
@@ -134,7 +139,13 @@ const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = "CommandItem";
 
+/** The keys that do this command anywhere, shown at the right edge of its row. */
+function CommandShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+  return <span className={cn("ml-auto flex items-center gap-1", className)} {...props} />;
+}
+
 export {
+  CommandShortcut,
   Command,
   CommandDialog,
   CommandInput,

@@ -10,6 +10,9 @@ import { verifyCode } from "@/lib/verification";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
+import { consumeSecondStep } from "@/lib/adminTwoStep";
+import { placeFromHeaders, recordSignInDevice } from "@/lib/deviceAlerts";
+import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
@@ -112,7 +115,16 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 // on every subsequent session touch), a slow Postgres round trip here
 // would otherwise block a login that already passed the real credential
 // check, so it gets a hard cap rather than being trusted to always be fast.
-async function loadEntitlementsBounded(userId: string, attempts = 2): Promise<Entitlements | null> {
+// A few seconds of memory per server instance. Every page, every background poll (credits, sidebar) and every action reads the
+// session, and each read used to cost about six database queries; a navigation now pays them once instead of several times
+// over. A sign-in and an explicit session update always read fresh (`fresh`), so "I just changed my password" never
+// signs the device that did it out. The ban check in getServerAuthSession is separate and stays live on every request.
+const ENTITLEMENT_TTL_MS = 5_000;
+const entitlementCache = new Map<string, { at: number; value: Entitlements }>();
+
+async function loadEntitlementsBounded(userId: string, attempts = 2, fresh = false): Promise<Entitlements | null> {
+  const hit = entitlementCache.get(userId);
+  if (!fresh && hit && Date.now() - hit.at < ENTITLEMENT_TTL_MS) return hit.value;
   // A slow first query (a cold Neon database) is retried once before giving up.
   // Returning null means "unknown": the caller keeps what the token already
   // says instead of overwriting it with least-privilege defaults, which is
@@ -123,7 +135,11 @@ async function loadEntitlementsBounded(userId: string, attempts = 2): Promise<En
         loadEntitlements(userId),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
       ]);
-      if (result) return result;
+      if (result) {
+        if (entitlementCache.size > 500) entitlementCache.clear();
+        entitlementCache.set(userId, { at: Date.now(), value: result });
+        return result;
+      }
     } catch (err) {
       console.error("loadEntitlements failed:", err);
     }
@@ -171,8 +187,9 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         code: { label: "Code", type: "text" },
+        secondStep: { label: "Second step", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials.code) return null;
 
         // Guess limit for the code itself. Codes used to be issued only after a
@@ -192,6 +209,15 @@ export const authOptions: NextAuthOptions = {
           where: { email: normalizedEmail, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
         });
         if (recentTries > 8) return null;
+        await maybeAlertFailedLogins();
+
+        // Admin two-step sign-in. Every route to a session ends here (password, reset, verify), so this is the one
+        // place that cannot be skipped. Checked before the sign-in code is used up, so a missing second step does not
+        // burn a code. The try recorded above stays counted when it fails, so wrong codes feed the same lockout.
+        const candidate = await prisma.user.findUnique({ where: { email: normalizedEmail }, select: { id: true, role: true, totpEnabledAt: true } });
+        if (candidate?.role === "ADMIN" && candidate.totpEnabledAt) {
+          if (!credentials.secondStep || !(await consumeSecondStep(candidate.id, credentials.secondStep))) return null;
+        }
 
         const result = await verifyCode(normalizedEmail, "LOGIN_2FA", credentials.code);
         if (!result.ok || !result.userId) return null;
@@ -201,6 +227,9 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
         // A banned account can never get a session, whichever way it asks for one (password, emailed code, reset, verify).
         if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
+
+        // A sign-in from a browser or device this account has not used before is emailed to its owner.
+        await recordSignInDevice(user, req?.headers?.["user-agent"], placeFromHeaders(req?.headers));
 
         return {
           id: user.id,
@@ -223,7 +252,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
-      const loaded = await loadEntitlementsBounded(token.sub);
+      const loaded = await loadEntitlementsBounded(token.sub, 2, Boolean(user) || trigger === "update");
       if (!loaded) {
         // Database did not answer: keep the last known values (or, on a fresh
         // sign-in, what authorize just read), they are corrected on the next

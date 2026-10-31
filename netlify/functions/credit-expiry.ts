@@ -2,6 +2,9 @@ import { schedule } from "@netlify/functions";
 import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
+import { expireTimedDiscounts } from "../../src/lib/referrals";
+import { purgeOldIdempotencyKeys } from "../../src/lib/idempotency";
+import { purgeOldEmailLogs } from "../../src/lib/emailLog";
 import { sendTrialNotices } from "../../src/lib/trialNotices";
 import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCreditPricing";
 
@@ -18,7 +21,8 @@ import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCr
 // exclusive by construction (a grant's expiresAt is either still in the
 // future, the warning phase's whole domain, or already past, the sweep
 // phase's), so the two never double up on the same grant in one run.
-export const handler = schedule("0 9 * * *", async () =>
+// The job body is exported so the catch-up (src/lib/jobCatchUp.ts) can run it when a scheduled run was missed.
+export const runCreditExpiry = () =>
   runJob("credit-expiry", async () => {
   // One shared instant for both phases (rather than each defaulting its own
   // `now` independently a few lines apart), keeps "expiring soon" and
@@ -51,6 +55,15 @@ export const handler = schedule("0 9 * * *", async () =>
     }).catch((err) => console.error(`CREDITS_EXPIRED notification failed for user ${summary.userId} (non-blocking):`, err));
   }
 
+  const discountsEnded = await expireTimedDiscounts(now);
+  console.log(`Timed discounts ended: ${discountsEnded}.`);
+
+  const keysPurged = await purgeOldIdempotencyKeys(now);
+  console.log(`Old once-only keys removed: ${keysPurged}.`);
+
+  const emailLogsPurged = await purgeOldEmailLogs(now);
+  console.log(`Email records older than 180 days removed: ${emailLogsPurged}.`);
+
   const trials = await sendTrialNotices(now);
   console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);
 
@@ -59,4 +72,6 @@ export const handler = schedule("0 9 * * *", async () =>
     `Credit expiry: warned ${warned.length} grant(s) expiring soon, expired ${expired.length} grant(s) totaling ${totalExpired} credit(s).`,
   );
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("0 9 * * *", async () => runCreditExpiry());

@@ -6,11 +6,15 @@ import type { AssistantEscalationStatus, SupportThreadSource } from "@prisma/cli
 import { getSupportThreadsAction, type AdminThreadSummary } from "@/app/(dashboard)/admin/support/actions";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
+import { ViewMore } from "@/components/ui/ViewMore";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LifeBuoy } from "@/components/ui/appIcons";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 const LIST_POLL_MS = 15_000;
 
 const STATUS_STYLE: Record<string, string> = {
-  OPEN: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  OPEN: "bg-slate-50/15 text-slate-50",
   RESOLVED: "bg-slate-50/15 text-slate-100",
 };
 
@@ -41,11 +45,11 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
     <Link href={href} className="tap flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-ink/5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 truncate text-small font-medium text-slate-100">
-          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" />}
+          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-50" />}
           <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
-          {isEmail && <span className="rounded-full bg-slate-50/10 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-300">Email</span>}
+          {isEmail && <StatusDot>Email</StatusDot>}
           <span className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
             {thread.status === "OPEN" ? "Open" : "Resolved"}
           </span>
@@ -58,10 +62,10 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
           {thread.lastMessage.body}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-600">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
         <span>{relativeTime(thread.createdAt)}</span>
         {thread.assignedTo && (
-          <span className={assignedToMe ? "font-medium text-[rgb(var(--c-s-50))]" : "text-slate-400"}>
+          <span className={assignedToMe ? "font-medium text-slate-50" : "text-slate-400"}>
             · {assignedToMe ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
           </span>
         )}
@@ -106,12 +110,14 @@ export function SupportThreadList({ initialThreads, source, filter, currentAdmin
         />
       )}
       {threads.length === 0 ? (
-        <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>
+        <EmptyState icon={<LifeBuoy />} title={emptyMessage.replace(/\.$/, "")} description="New chats and emails from students land here." />
       ) : (
         <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
-          {threads.map((thread) => (
+          <ViewMore items={threads} initial={12} step={20}>
+          {(thread) => (
             <ThreadRow key={thread.id} thread={thread} href={hrefFor(thread)} currentAdminId={currentAdminId} />
-          ))}
+          )}
+          </ViewMore>
         </div>
       )}
     </div>

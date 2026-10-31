@@ -54,6 +54,31 @@ export function creditsLabelFromStored(stored: number): string {
  */
 export const EXTRA_CLASS_PRICE_CENTS = 5500;
 
+/**
+ * The numbers the owner can change on Admin > Pricing (stored as settings, read with getPricingConfig in pricing.ts). Everything that
+ * prices a plan takes one of these, and falls back to DEFAULT_PRICING (today's prices) when none is passed, so tests and code that
+ * has no database to ask keep working. A plan keeps the price it enrolled at: this only prices NEW plans and plan changes.
+ */
+export interface PricingConfig {
+  /** The monthly price of the one offered plan before any term discount, in cents (the "$220" that shows as $219.99). */
+  monthlyBaseCents: number;
+  /** Off the monthly price for a 3-month commitment, as a fraction (0.1 = 10%). */
+  term3DiscountRate: number;
+  term6DiscountRate: number;
+  /** The extra fraction off per student on a family plan. */
+  familyDiscountRate: number;
+  /** What an extra class costs, in cents. */
+  extraClassCents: number;
+}
+
+export const DEFAULT_PRICING: PricingConfig = {
+  monthlyBaseCents: 22000,
+  term3DiscountRate: 0.1,
+  term6DiscountRate: 0.2,
+  familyDiscountRate: 0.1,
+  extraClassCents: EXTRA_CLASS_PRICE_CENTS,
+};
+
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
 export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 
@@ -268,9 +293,9 @@ const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
 };
 
 const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
-  MONTHLY: "Monthly",
-  TERM_3: "3-Month",
-  TERM_6: "6-Month",
+  MONTHLY: "1 Month",
+  TERM_3: "3 Months",
+  TERM_6: "6 Months",
   TERM_12: "Yearly",
 };
 
@@ -306,9 +331,10 @@ export interface PaymentPlanRate {
  * (Monthly / 3-Month / 6-Month). Math.round
  * on the discount step is a guard against float error from the multipliers.
  */
-export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: PaymentPlanTerm): PaymentPlanRate {
-  const baseCents = PLAN_CADENCE_MONTHLY_BASE_CENTS[cadence];
-  const discountRate = PLAN_TERM_DISCOUNT_RATE[term];
+export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: PaymentPlanTerm, pricing: PricingConfig = DEFAULT_PRICING): PaymentPlanRate {
+  // The offered plan (45 minutes a week, stored as MIN_60_WEEKLY) follows the owner's price; the retired length keeps its old number.
+  const baseCents = cadence === OFFERED_PLAN_CADENCE ? pricing.monthlyBaseCents : PLAN_CADENCE_MONTHLY_BASE_CENTS[cadence];
+  const discountRate = term === "TERM_3" ? pricing.term3DiscountRate : term === "TERM_6" ? pricing.term6DiscountRate : PLAN_TERM_DISCOUNT_RATE[term];
   const installmentAmountCents = toPlanPriceCents(Math.round(baseCents * (1 - discountRate)));
   const termMonths = PLAN_TERM_MONTHS[term];
 
@@ -340,6 +366,13 @@ export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: Paym
 // ---------------------------------------------------------------------------
 
 export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.1;
+/**
+ * A family plan is you (the payer) plus others, each with their own account and their own plan at the family rate, all on one weekly time.
+ * One number for the screen and the server, so they can never disagree about how many people fit.
+ */
+export const MIN_FAMILY_MEMBERS = 2;
+export const MAX_FAMILY_MEMBERS = 8;
+
 export const MIN_FAMILY_BUNDLE_RECIPIENTS = 2;
 export const MAX_FAMILY_BUNDLE_RECIPIENTS = 20; // matches MAX_CUSTOM_QUANTITY's own order of magnitude, a ceiling, not an expectation
 
@@ -363,12 +396,13 @@ export function calculateFamilyBundleTotal(
   cadence: PaymentPlanCadence,
   term: PaymentPlanTerm,
   recipientCount: number,
+  pricing: PricingConfig = DEFAULT_PRICING,
 ): FamilyBundleTotal {
   const recipients = Math.min(MAX_FAMILY_BUNDLE_RECIPIENTS, Math.max(MIN_FAMILY_BUNDLE_RECIPIENTS, Math.floor(recipientCount)));
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const perRecipientCents = rate.totalCommittedCents;
   const combinedBeforeFamilyDiscountCents = perRecipientCents * recipients;
-  const perStudentMonthlyCents = toPlanPriceCents(Math.round(rate.installmentAmountCents * (1 - FAMILY_BUNDLE_DISCOUNT_RATE)));
+  const perStudentMonthlyCents = toPlanPriceCents(Math.round(rate.installmentAmountCents * (1 - pricing.familyDiscountRate)));
   const totalCents = perStudentMonthlyCents * rate.termMonths * recipients;
   return {
     cadence,
@@ -381,4 +415,22 @@ export function calculateFamilyBundleTotal(
     perStudentMonthlyCents,
     totalCents,
   };
+}
+
+
+// ---------------------------------------------------------------------------
+// A personal percentage off one account's plan, set by the owner on Admin > Pricing.
+// ---------------------------------------------------------------------------
+
+/** The most the owner can take off one account (a free account is "complimentary access", not a 100% discount). */
+export const MAX_PERSONAL_DISCOUNT_PERCENT = 90;
+
+/**
+ * A plan price after a personal discount: the percentage off the price before it, then nearest dollar and a cent under it, the same
+ * ".99" ending every price in the app has ($219.99 with 25% off is $164.99). Never below 99 cents. 0 (or less) changes nothing.
+ */
+export function discountedPlanPriceCents(listCents: number, percent: number): number {
+  if (!Number.isFinite(percent) || percent <= 0) return listCents;
+  const capped = Math.min(percent, MAX_PERSONAL_DISCOUNT_PERCENT);
+  return Math.max(99, toCharmPriceCents(Math.round(listCents * (1 - capped / 100))));
 }

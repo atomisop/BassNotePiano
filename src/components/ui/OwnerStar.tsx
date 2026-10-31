@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { Star } from "lucide-react";
+import { Star } from "@/components/ui/appIcons";
 
 /**
  * The studio owner's account carries a small gold star on its avatar, and

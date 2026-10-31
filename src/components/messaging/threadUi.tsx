@@ -59,10 +59,31 @@ export function layoutThread<T extends { senderId: string; createdAt: string }>(
 
 export function DayDivider({ iso }: { iso: string }) {
   return (
-    <div className="flex justify-center pb-1 pt-3">
-      <span className="rounded-full bg-neu-base px-3 py-1 text-small font-medium text-slate-500 shadow-pressed-low">
+    <div className="flex justify-center pb-2 pt-5">
+      <span suppressHydrationWarning className="text-caption font-medium text-slate-500">
         {dayLabel(iso)}
       </span>
+    </div>
+  );
+}
+
+/** Placeholder bubbles while a thread's first messages load, shaped like a short back-and-forth, instead of an empty pane. */
+export function ThreadSkeleton() {
+  const rows: Array<[mine: boolean, width: string]> = [
+    [false, "w-48"],
+    [false, "w-64"],
+    [true, "w-56"],
+    [false, "w-40"],
+    [true, "w-72"],
+    [true, "w-36"],
+  ];
+  return (
+    <div aria-hidden className="flex flex-col gap-1.5 motion-safe:animate-pulse">
+      {rows.map(([mine, width], i) => (
+        <div key={i} className={`flex ${mine ? "justify-end" : "justify-start"} ${i > 0 && rows[i - 1][0] !== mine ? "mt-4" : ""}`}>
+          <div className={`h-10 max-w-[85%] rounded-2xl ${width} ${mine ? "bg-signal/10" : "bg-neu-base"}`} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -134,7 +155,7 @@ export function ComposerBar({
         maxLength={2000}
         rows={1}
         enterKeyHint="send"
-        className="min-h-9 min-w-0 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-3xl border border-(--neu-edge) bg-neu-base px-4 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
+        className="min-h-9 min-w-0 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-3xl bg-neu-base px-4 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
         style={{ maxHeight }}
       />
       <button

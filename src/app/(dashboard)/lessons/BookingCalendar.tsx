@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
 
 /**
  * Adapted from a 21st.dev/shadcnblocks "cal.com-style" bento calendar demo,
@@ -54,15 +55,16 @@ export function BookingCalendar({
   // multiple schedules landing on the same day just add to the day's own
   // count rather than producing duplicate dots.
   const dayInfo = useMemo(() => {
-    const map = new Map<string, { count: number; hasOpenSlot: boolean; ms: number }>();
+    const map = new Map<string, { count: number; open: number; hasOpenSlot: boolean; ms: number }>();
     for (const o of occurrences) {
       const key = dayKey(o.occurrenceDateMs);
       const existing = map.get(key);
       if (existing) {
         existing.count += 1;
+        existing.open += o.isBooked ? 0 : 1;
         existing.hasOpenSlot = existing.hasOpenSlot || !o.isBooked;
       } else {
-        map.set(key, { count: 1, hasOpenSlot: !o.isBooked, ms: o.occurrenceDateMs });
+        map.set(key, { count: 1, open: o.isBooked ? 0 : 1, hasOpenSlot: !o.isBooked, ms: o.occurrenceDateMs });
       }
     }
     return map;
@@ -82,6 +84,13 @@ export function BookingCalendar({
     const first = sortedDayKeys[0] ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
     return { year: first.getUTCFullYear(), monthIndex: first.getUTCMonth() };
   });
+
+  // Follow the chosen day: tapping a time in the month list (or a day anywhere) moves this calendar to that day's month.
+  useEffect(() => {
+    if (!selectedDateKey) return;
+    const d = new Date(selectedDateKey);
+    setViewMonth((v) => (v.year === d.getUTCFullYear() && v.monthIndex === d.getUTCMonth() ? v : { year: d.getUTCFullYear(), monthIndex: d.getUTCMonth() }));
+  }, [selectedDateKey]);
 
   const minMonth = sortedDayKeys.length > 0 ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
   const maxMonth = sortedDayKeys.length > 0 ? new Date(sortedDayKeys[sortedDayKeys.length - 1]) : new Date(todayMidnight);
@@ -105,16 +114,28 @@ export function BookingCalendar({
   const firstWeekday = new Date(firstOfMonth).getUTCDay();
   const daysInMonth = new Date(Date.UTC(viewMonth.year, viewMonth.monthIndex + 1, 0)).getUTCDate();
 
-  const cells: (number | null)[] = [
+  const allCells: (number | null)[] = [
     ...Array(firstWeekday).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
+  // A week that is entirely behind us is no use to anyone: it is left out, so the first row is this week.
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < allCells.length; i += 7) {
+    const week = allCells.slice(i, i + 7);
+    const allPast = week.every((d) => d === null || utcMidnight(viewMonth.year, viewMonth.monthIndex, d) < todayMidnight);
+    if (!allPast) cells.push(...week);
+  }
 
   return (
-    <div className="glass-surface p-5">
+    <div className="glass-surface p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <p className="text-body text-slate-100 font-semibold">{monthLabel}</p>
         <div className="flex items-center gap-1">
+          {selectedDateKey && (
+            <button type="button" onClick={() => onSelectDate(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mr-1" })}>
+              Show all
+            </button>
+          )}
           <button
             type="button"
             onClick={() => shiftMonth(-1)}
@@ -122,9 +143,7 @@ export function BookingCalendar({
             aria-label="Previous month"
             className={buttonVariants({ variant: "secondary", size: "iconSm" })}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -133,16 +152,14 @@ export function BookingCalendar({
             aria-label="Next month"
             className={buttonVariants({ variant: "secondary", size: "iconSm" })}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-y-1.5 text-center">
+      <div className="no-wave mt-3 grid grid-cols-7 gap-y-1 text-center">
         {DAY_NAMES.map((d, i) => (
-          <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-600">
+          <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-500">
             {d}
           </span>
         ))}
@@ -154,7 +171,8 @@ export function BookingCalendar({
           const isPast = ms < todayMidnight;
           const isToday = ms === todayMidnight;
           const isSelected = selectedDateKey === key;
-          const clickable = !!info && !isPast;
+          const clickable = !!info && !isPast && info.hasOpenSlot;
+          const isFull = !!info && !isPast && !info.hasOpenSlot;
 
           return (
             <button
@@ -162,48 +180,33 @@ export function BookingCalendar({
               type="button"
               disabled={!clickable}
               onClick={() => onSelectDate(isSelected ? null : key)}
-              title={info ? `${info.count} class${info.count === 1 ? "" : "es"}` : undefined}
-              className={`relative mx-auto flex h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
+              aria-label={info && !isPast ? `${day}, ${info.hasOpenSlot ? `${info.open} open` : "full"}` : undefined}
+              title={info && !isPast ? (info.hasOpenSlot ? `${info.open} open` : "Full") : undefined}
+              className={`relative mx-auto flex h-10 w-10 pointer-coarse:h-10 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
                 isSelected
-                  ? "bg-amber-400 font-semibold text-slate-950"
+                  ? "bg-signal font-semibold text-slate-950"
                   : clickable
-                    ? info?.hasOpenSlot
-                      ? "font-medium text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]"
-                      : "font-medium text-slate-500 hover:bg-ink/5"
-                    : isToday
-                      ? "text-slate-300 ring-1 ring-inset ring-ink/15"
-                      : "text-slate-700"
+                    ? "bg-signal/14 font-semibold text-slate-50 ring-1 ring-inset ring-signal/45 hover:bg-signal/24"
+                    : isFull
+                      ? "text-slate-500 line-through decoration-slate-600/60"
+                      : isToday
+                        ? "text-slate-300 ring-1 ring-inset ring-ink/15"
+                        : "text-slate-700"
               }`}
             >
               {day}
-              {info && !isSelected && (
-                <span
-                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSlot ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-600"}`}
-                  aria-hidden
-                />
+              {clickable && (
+                <span className="absolute bottom-1 flex gap-0.5" aria-hidden>
+                  {Array.from({ length: Math.min(info!.open, 3) }).map((_, n) => (
+                    <span key={n} className={`h-1 w-1 rounded-full ${isSelected ? "bg-slate-950" : "bg-signal"}`} />
+                  ))}
+                </span>
               )}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
-        <p className="flex items-center gap-1.5 text-small text-slate-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />
-          Available
-          <span className="ml-2 h-1.5 w-1.5 rounded-full bg-slate-600" aria-hidden />
-          Booked
-        </p>
-        {selectedDateKey && (
-          <button
-            type="button"
-            onClick={() => onSelectDate(null)}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-          >
-            Show all
-          </button>
-        )}
-      </div>
     </div>
   );
 }

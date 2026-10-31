@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
-import { EyeOff, Eye, Pencil, Trash2 } from "lucide-react";
+import { EyeOff, Eye, Pencil, Trash2 } from "@/components/ui/appIcons";
 import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -21,6 +22,8 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
   const [notes, setNotes] = useState<StudentNoteRow[] | null>(null);
   const [draft, setDraft] = useState("");
   const [hidden, setHidden] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +63,10 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this note for good?")) return;
+    setDeleting(true);
     const r = await deleteStudentNoteAction(id);
+    setDeleting(false);
+    setConfirmingDelete(null);
     if (r.ok) setNotes((prev) => (prev ?? []).filter((n) => n.id !== id));
     else setError(r.error);
   }
@@ -79,7 +84,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
         />
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <label className="tap inline-flex cursor-pointer items-center gap-2 text-small text-slate-300">
-            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="h-4 w-4 accent-signal" />
             Hide from student
           </label>
           <div className="flex gap-1.5">
@@ -126,7 +131,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-small font-medium ${
-                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-[rgb(var(--signal)/0.16)] text-signal"
+                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-signal/16 text-signal-fg"
                   }`}
                 >
                   {n.hiddenFromStudent ? "Private" : "Student can see"}
@@ -156,7 +161,8 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => remove(n.id)}
+                    onClick={() => setConfirmingDelete((cur) => (cur === n.id ? null : n.id))}
+                    aria-expanded={confirmingDelete === n.id}
                     aria-label="Delete note"
                     title="Delete note"
                     className="tap flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:text-red-300"
@@ -165,6 +171,18 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   </button>
                 </span>
               </div>
+              {confirmingDelete === n.id && (
+                <InlineConfirm
+                  className="mt-3"
+                  danger
+                  question="Delete this note for good?"
+                  confirmLabel="Yes, delete it"
+                  busyLabel="Deleting…"
+                  busy={deleting}
+                  onCancel={() => setConfirmingDelete(null)}
+                  onConfirm={() => void remove(n.id)}
+                />
+              )}
             </div>
           ))
         )}

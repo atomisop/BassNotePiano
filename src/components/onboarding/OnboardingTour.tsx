@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { TOUR_STEPS } from "./tourSteps";
 import { markOnboardingTourSeenAction } from "@/app/(dashboard)/about/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { X } from "@/components/ui/appIcons";
 
 interface Rect {
   top: number;
@@ -93,6 +95,8 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  // Focus moves into the tour card, stays there, and returns when it ends (Escape already skips the tour, below).
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -242,10 +246,11 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   const visibleIndex = TOUR_STEPS.slice(0, stepIndex + 1).filter((s) => !s.target || findVisibleTarget(s.target)).length;
   const visibleTotal = TOUR_STEPS.filter((s) => !s.target || findVisibleTarget(s.target)).length;
 
-  const transitionClass = reducedMotion ? "" : "transition-all duration-300 ease-out";
+  // Only what moves between steps (the spotlight and the card change place and size), so nothing else on them is ever animated by accident.
+  const transitionClass = reducedMotion ? "" : "transition-[top,left,right,bottom,width,height] duration-300 ease-(--ease-ios)";
 
   return createPortal(
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="App tour">
+    <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[60] outline-none" role="dialog" aria-modal="true" aria-label="App tour">
       {/* Dimmed backdrop with a spotlight cutout around the current target, via a huge box-shadow, no SVG masking needed. */}
       {targetRect ? (
         <div
@@ -292,16 +297,14 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-            </svg>
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <h2 className="mt-1.5 text-body text-slate-50 font-semibold">{step.title}</h2>
+        <h2 className="mt-1.5 text-title text-slate-50 font-semibold">{step.title}</h2>
         <p className="mt-2 text-small text-slate-400">{step.body}</p>
 
         <div className="mt-5 flex items-center justify-between gap-3">

@@ -392,12 +392,70 @@ export async function reportRejectedBankEmail(input: { messageId: string; from: 
   }
 }
 
-export async function ingestPaymentEmail(input: {
-  messageId: string;
-  from: string;
-  subject: string;
-  body: string;
-}): Promise<IngestOutcome> {
+/**
+ * A forwarded bank email failed the sender signature check. It is still READ: if it carries a real payment's code AND that payment's exact
+ * amount, that one payment moves to "waiting for your approval" with a note saying the email could not be verified, so the owner checks the
+ * bank app and approves it by hand. Nothing is ever approved from an email that failed the check, so a forged one can only put a payment in
+ * front of the owner, never settle it. Anything else is ignored with the usual alert, as before.
+ */
+export async function holdUnverifiedPaymentEmail(input: { messageId: string; from: string; subject: string; body: string; reason: string }): Promise<"held" | "rejected"> {
+  try {
+    const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
+    const code = parsed ? referenceInMemo(parsed.memo) : null;
+    if (parsed && code) {
+      const open = await prisma.zellePayment.findMany({ where: { status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
+      const hits = open.filter((payment) => normalizedCodeOf(payment.id) === code);
+      if (hits.length === 1) {
+        const hit = hits[0];
+        const money = (parsed.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+        let moved = false;
+        if (hit.status !== "PENDING_REVIEW") {
+          const claimed = await prisma.zellePayment.updateMany({
+            where: { id: hit.id, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } },
+            data: {
+              status: "PENDING_REVIEW",
+              submittedAt: new Date(),
+              rejectionReason: null,
+              senderName: parsed.name.slice(0, 120),
+              method: parsed.method,
+              note: `A bank email with this payment's code and the exact amount arrived, but it could not be verified (${input.reason}). Check your bank app, then approve.`,
+            },
+          });
+          moved = claimed.count === 1;
+        }
+        // The student may already have tapped "I've sent it": then it is already in the queue, and the owner just needs to know the email matched.
+        if (moved || hit.status === "PENDING_REVIEW") {
+          const key = `payment-email-held:${normalizeMessageId(input.messageId).slice(0, 160)}`;
+          const fresh = await prisma.appSetting.create({ data: { key, value: String(Date.now()) } }).then(() => true, (err) => ((err as { code?: string })?.code === "P2002" ? false : Promise.reject(err)));
+          if (fresh) {
+            await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
+              type: "ADMIN_ALERT",
+              title: "A payment is waiting for your check",
+              body: `A forwarded email from ${parsed.name} for ${money} carries a payment's code, but it could not be verified (${input.reason}). That payment is waiting in Admin > Payments. Check your bank app, then approve it.`,
+              cta: { label: "Open payments", path: "/admin/payments" },
+            }).catch((err) => console.error("Held payment alert failed (non-blocking):", err));
+          }
+          return "held";
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Holding an unverified payment email failed (non-blocking):", err);
+  }
+  await reportRejectedBankEmail({ messageId: input.messageId, from: input.from, subject: input.subject, reason: input.reason });
+  return "rejected";
+}
+
+export async function ingestPaymentEmail(
+  input: {
+    messageId: string;
+    from: string;
+    subject: string;
+    body: string;
+  },
+  /** forceCheck: whatever this email settles stays in the owner's "unchecked" list (its sender was only softly verified). */
+  options: { forceCheck?: boolean } = {},
+): Promise<IngestOutcome> {
   if (!isAllowedSender(input.from)) return "ignored";
   // Money taken back by Venmo (a reversed or cancelled payment) is not a new payment; the admins are told instead.
   if (await reportReversal(input)) return "ignored";
@@ -453,7 +511,7 @@ export async function ingestPaymentEmail(input: {
   const match = picked?.payment ?? null;
   if (picked && (await getBoolSetting("payments.emailAutoApprove"))) {
     // The weaker ways in leave the payment in the owner's unchecked list to be confirmed.
-    const needsCheck = Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
+    const needsCheck = Boolean(options.forceCheck) || Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
     if (await approveFromReceipt(picked.payment.id, receipt, { needsCheck, via: picked.via })) return "approved";
   }
   if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));

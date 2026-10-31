@@ -40,6 +40,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         Skip to main content
       </a>
       <PageHitBeacon />
+      {/* How far down the page you are, in place of a scrollbar (see .scroll-progress in globals.css). */}
+      <div aria-hidden className="scroll-progress scroll-progress-page" />
       {children}
     </div>
   );

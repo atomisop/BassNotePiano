@@ -12,7 +12,7 @@ export async function ModuleHealthSection() {
 
   return (
     <>
-      <h2 className="mb-4 text-body text-slate-100 font-semibold">Module health</h2>
+      <h2 className="mb-4 text-title text-slate-100 font-semibold">Module health</h2>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {moduleHealth.map((row) => {
           const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
@@ -30,7 +30,7 @@ export async function ModuleHealthSection() {
                   className="size-24 text-body"
                 />
               </div>
-              <p className="mt-3 text-small font-medium uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">{row.code}</p>
+              <p className="mt-3 text-small font-medium uppercase tracking-wide text-slate-50/80">{row.code}</p>
               <p className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-small text-slate-300">{row.title}</p>
               <div className="mt-3 grid w-full grid-cols-2 gap-2">
                 <div className="rounded-xl bg-neu-base px-2 py-1.5 shadow-pressed-low">
@@ -54,7 +54,7 @@ export async function ModuleHealthSection() {
 export function ModuleHealthSkeleton() {
   return (
     <div aria-hidden>
-      <h2 className="mb-4 text-body font-semibold text-slate-100">Module health</h2>
+      <h2 className="mb-4 text-title font-semibold text-slate-100">Module health</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center rounded-2xl bg-neu-base p-4 shadow-raised-mid">

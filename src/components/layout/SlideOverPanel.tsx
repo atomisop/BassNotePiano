@@ -4,7 +4,9 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDismissDrag } from "@/lib/useDismissDrag";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";
+import { ChevronLeft } from "@/components/ui/appIcons";
 
 /**
  * Shared "push navigation" panel, full-screen on phones, a right-anchored
@@ -28,6 +30,7 @@ export function SlideOverPanel({
   useEffect(() => setMounted(true), []);
 
   const titleId = useId();
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
 
   // The panel is full-width on phones and capped at md:max-w-md above that,
   // so the dismiss distance has to be measured rather than assumed.
@@ -64,7 +67,7 @@ export function SlideOverPanel({
         // or get clipped once the toolbar's actually showing, and this app
         // shell already hit that exact bug once before, see
         // (dashboard)/layout.tsx's own h-[100svh] comment.
-        <motion.div className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
+        <motion.div className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -95,6 +98,8 @@ export function SlideOverPanel({
               onPointerMove={dismiss.onPointerMove}
               onPointerUp={dismiss.onPointerUp}
               onPointerCancel={dismiss.onPointerUp}
+              ref={dialogRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
@@ -105,11 +110,9 @@ export function SlideOverPanel({
                 type="button"
                 onClick={onClose}
                 aria-label="Back"
-                className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                  <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <ChevronLeft className="h-[18px] w-[18px]" />
               </button>
               <h1 id={titleId} className="font-hero text-hero font-bold text-balance truncate text-slate-50">{title}</h1>
             </div>

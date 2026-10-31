@@ -88,33 +88,79 @@
   /* Signal orange (the logo color). `--signal` / `--signal-ink` are set per data-mode below. */
   --color-signal: rgb(var(--signal));
   --color-signal-ink: rgb(var(--signal-ink));
+  /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
+  --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
+  /* Fixed colours that are not part of the theme ramps: Discord's own brand blue, the dock's unread dot, the near-black text on
+     the white Roadmap button, and the drawn iPhone's titanium rim (the same in both themes). */
+  --color-discord: #5865f2;
+  --color-unread: #ff3040;
+  --color-on-white: #1d1a22;
+  --color-titanium: #3a3a3d;
+  --color-titanium-hi: #5a5a5e;
+  --color-titanium-mid: #2b2b2d;
+  --color-titanium-lo: #4a4a4d;
 
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
 
+  /* The type scale (DESIGN.md): caption 12, small 13, body 16, title 20, headline 24, hero 28 to 44, plus one display figure
+     for big counters. Tailwind's own size names land on the same steps, so nothing can sit between them. */
   --text-hero: clamp(1.75rem, 1.2rem + 1.7vw, 2.75rem);
   --text-hero--line-height: 1.02;
   --text-hero--letter-spacing: -0.03em;
+  --text-figure: clamp(3.25rem, 2.6rem + 2vw, 4rem);
+  --text-figure--line-height: 1;
+  --text-headline: 1.5rem;
+  --text-headline--line-height: 1.2;
+  --text-headline--letter-spacing: -0.015em;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.3;
+  --text-title--letter-spacing: -0.01em;
   --text-body: 1rem;
   --text-body--line-height: 1.6;
   --text-small: 0.8125rem;
   --text-small--line-height: 1.4;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.35;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
 
-  /* Soft iOS-style corners: controls, cards, sheets. Pills stay rounded-full. */
+  /* Letter spacing: uppercase eyebrows, and tight display titles. */
+  --tracking-caps: 0.16em;
+  --tracking-display: -0.035em;
+
+  /* One radius personality, soft: 8 small, 12 controls and rows, 16 cards, 24 sheets, full for pills. */
+  --radius: 0.5rem;
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
   --radius-control: 0.75rem;
-  --radius-card: 1.25rem;
-  --radius-sheet: 1.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+
+  /* The marketing pages' warm cream text (one colour; it was typed as a hex 17 times). */
+  --color-cream: #e1e0cc;
 
   /* Depth planes. Values come from per-mode variables below so a light
      page gets lighter shadows than a dark one. */
   /* Neumorphism (one base surface, one light source at top-left). Raised =
      pressable; pressed = held/filled/selected. Three depths, tokens only:
      never write a one-off shadow on a component. */
-  --color-neu-base: rgb(var(--neu-base));
+  /* --neu-alpha makes every card and panel see-through inside the app (the glass material at the end of this file). */
+  --color-neu-base: rgb(var(--neu-base) / var(--neu-alpha, 1));
+  --color-ground: rgb(var(--ground));
   /* One step lighter than the base: the floating dock sits on this so it
      never blends into the page. */
-  --color-neu-lift: rgb(var(--neu-lift));
+  --color-neu-lift: rgb(var(--neu-lift) / var(--neu-alpha, 1));
   --shadow-float: var(--neu-float);
   --shadow-raised-low: var(--neu-raised-low);
   --shadow-raised-mid: var(--neu-raised-mid);
@@ -127,15 +173,15 @@
   --shadow-plane-front: var(--plane-front-shadow);
   --shadow-signal: var(--signal-glow);
 
-  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1); /* Apple's UI curve: fast out of the blocks, long soft landing (the iOS sheet curve) */
   /* Release curve for pressable things: overshoots, then settles. The
      linear() form is a real spring; older browsers get the one-bounce bezier. */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.22, 1.12, 0.36, 1); /* a quiet overshoot, the way iOS springs settle */
 
   /* Every Tailwind `transition*` utility without its own duration/curve now
      uses the same iOS ease, so hover, press and toggle changes all settle the
      same way instead of mixing 150ms linear-ish easings. */
-  --default-transition-duration: 220ms;
+  --default-transition-duration: 200ms;
   --default-transition-timing-function: var(--ease-ios);
 
   /* Page widths for the four shared page layouts in
@@ -145,10 +191,6 @@
   --container-settings: 72rem;
   --container-narrow: 27.5rem;
   --container-pane: 21.25rem;
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
 
   --shadow-card: var(--surface-shadow);
   --shadow-card-lifted: var(--elev-shadow);
@@ -299,10 +341,23 @@
   box-shadow: var(--elev-shadow);
 }
 
+/* Shaded matte glass for menus that open over page text (the profile menu): mostly solid so the words under it never read
+   through (a blur alone fails inside a header that already blurs, which is where this menu sits on the public pages), a soft
+   frost where the browser can still apply one, and a faint light along the top. */
+@utility glass-menu {
+  background-color: rgb(var(--c-surface-solid) / 0.93);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 40%);
+  border: 1px solid var(--elev-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--elev-shadow);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+}
+
 /* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
    tap. Callers add their own padding and size. */
 @utility neu-btn {
-  @apply bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50;
+  @apply liquid text-slate-300 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility glass-pill {
@@ -331,17 +386,6 @@
 @utility rule {
   /* Full-measure hairline, the way a rule separates sections in print. */
   border-top: 1px solid var(--surface-border);
-}
-
-@utility chip-accent {
-  /* The small token chips, spelled notes, transposition cells, badges.
-     Accent-tinted again, by direct instruction bringing signal green back
-     as the one accent (see themes.css's own "Accent" comment), badges
-     being exactly this utility's own job. Diverged back out from
-     `.chip-neutral` below. amber-300 is this ramp's own byte-exact green
-     (--c-a-300), safely inside AA even at low opacity. */
-  border: 1px solid rgb(var(--c-a-300) / 0.35);
-  background: rgb(var(--c-a-300) / 0.1);
 }
 
 @utility chip-neutral {
@@ -447,7 +491,7 @@
 
 /* Both glows neutral now, not accent-tinted, a soft white/black ambient
    bloom instead of a colour wash, same "accent only on true CTAs"
-   instruction as `.chip-accent`/`.eyebrow` above. */
+   instruction as `.eyebrow` above. */
 @utility backdrop-glow-smoke-top {
   background: radial-gradient(
     60% 80% at 50% 0%,
@@ -683,7 +727,7 @@
 
     /* Corner radius follows the active theme's own card radius rather than
      shadcn's fixed 0.5rem, so a Button matches the panels beside it. */
-    --radius: var(--surface-radius, 0.75rem);
+    --radius: 0.5rem;
   }
 
   body {
@@ -727,6 +771,17 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    overflow: clip;
+  }
+
+  /* The shell boxes (the fixed screen and the column beside the sidebar) must never move. `overflow: hidden` hides what spills out but
+     the box is still a scroll container: `scrollIntoView`, `focus()`, a text drag near an edge, find-in-page and anchors all scroll it
+     (a scrollIntoView on a lower card moved the shell 670px). The island then slid up under the top bar and left a gap under it.
+     `overflow: clip` clips the same way but is not scrollable at all, by anyone, so no caller can shift the shell. The first line is the
+     fallback for browsers without `clip` (Safari before 16). Only <main> scrolls. */
+  .shell-lock {
+    overflow: hidden;
+    overflow: clip;
   }
 
   /* iOS Safari's default tap-highlight, a translucent gray rectangle,
@@ -786,8 +841,6 @@
     letter-spacing: -0.008em;
   }
   /* Body sits at 0, the default, and only the smallest sizes open up. */
-  .text-xs,
-  .text-\[11px\],
   .text-\[10px\] {
     letter-spacing: 0.006em;
   }
@@ -852,10 +905,10 @@
    ========================================================================== */
   @keyframes page-enter {
     from {
-      transform: translateY(14px) scale(0.985);
+      transform: translateY(6px);
     }
     to {
-      transform: translateY(0) scale(1);
+      transform: translateY(0);
     }
   }
 
@@ -868,14 +921,19 @@
     }
   }
 
-  /* Springy arrival: opacity eases out while the page rises and settles
-     with the same spring as button presses. Fill is `backwards` (not `both`)
-     so no transform is left on the page afterwards, which would otherwise
-     become the containing block for fixed-position children. */
+  /* A quick arrival: the page fades in while it rises 6px, both in 200ms
+     with no overshoot, because this plays on every dock tap and every
+     navigation. A page reached by a keyboard shortcut does not animate
+     (`data-kb-motion`, lib/keyboardMotion.ts). Fill is `backwards` (not
+     `both`) so no transform is left on the page afterwards, which would
+     otherwise become the containing block for fixed-position children. */
   .page-enter {
     animation:
-      page-enter-opacity 260ms var(--ease-ios) backwards,
-      page-enter 560ms var(--ease-spring) backwards;
+      page-enter-opacity 200ms var(--ease-ios) backwards,
+      page-enter 200ms var(--ease-ios) backwards;
+  }
+  html[data-kb-motion="off"] .page-enter {
+    animation: none;
   }
   @keyframes page-enter-opacity {
     from {
@@ -942,14 +1000,6 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
-  /* The bright top edge is light catching the lip of the material, a
-   theme-aware highlight (`--c-ink` flips dark-on-light/white-on-dark per
-   theme) rather than a hardcoded white line, since Editorial Paper's own
-   chrome is now translucent too and a literal white edge would vanish
-   against its light ground. */
-  .chrome-top-edge {
-    border-top: 1px solid rgb(var(--c-ink) / 0.12);
-  }
 
   /* ==========================================================================
    Accessibility preferences beyond reduced-motion
@@ -999,10 +1049,8 @@
     --space-section: 3rem;
     --space-group: 1rem;
     --space-card: 1rem;
-    --space-inline: 0.75rem;
 
     /* Layering for the three planes plus app chrome. */
-    --z-back: 0;
     --z-mid: 10;
     --z-front: 20;
     --z-chrome: 40;
@@ -1011,35 +1059,68 @@
 
     /* Motion: short and purposeful. */
     --dur-fast: 140ms;
-    --dur-base: 220ms;
-    --dur-slow: 360ms;
+    --dur-base: 240ms;
+    --dur-slow: 320ms;
   }
 
-  /* Neumorphic base + the two shadow colors, per mode. Dark is charcoal
-     (not black) so the light-side shadow has room to show. Light is a soft
+  /* Neumorphic base + the two shadow colors, per mode. Dark is near-black
+     ground (#111111, the Claude app's) with cards a step lighter, so the light-side shadow has room to show. Light is a soft
      gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
-    --neu-base: 38 38 36; /* Claude dark grey #262624 */
-    --neu-lift: 50 50 48;
-    --neu-hi: rgb(255 255 255 / 0.045);
-    --neu-lo: rgb(0 0 0 / 0.42);
-    --neu-top: rgb(255 255 255 / 0.04);
-    --neu-edge: rgb(255 255 255 / 0.1);
+    --ground: 0 0 0; /* the page itself: true black, like apple.com's dark bands */
+    --neu-base: 22 22 23; /* cards and panels, a step above the ground */
+    --neu-lift: 29 29 31;
+    /* Buttons, chips, toggles AND cards share one soft light-and-shade depth (see --neu-raised-*). */
+    --neu-hi: rgb(255 255 255 / 0.04);
+    --neu-lo: rgb(0 0 0 / 0.55);
+    --neu-top: rgb(255 255 255 / 0.05);
+    --neu-edge: rgb(255 255 255 / 0.12);
+    /* A text field's outline: strong enough to read as a field (3:1 against the card it sits on, WCAG 1.4.11). */
+    --field-edge: rgb(255 255 255 / 0.36);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
+    --signal-fg: var(--c-a-400);
+    /* Pastel tints for pills and chips (classes, practice, payments). A soft wash of the hue over the card, and a light ink. */
+    --tint-purple-bg: rgb(167 139 250 / 0.2);
+    --tint-purple-fg: rgb(205 195 255);
+    --tint-green-bg: rgb(74 222 128 / 0.16);
+    --tint-green-fg: rgb(150 235 185);
+    --tint-peach-bg: rgb(251 146 60 / 0.2);
+    --tint-peach-fg: rgb(255 200 150);
+    --tint-blue-bg: rgb(96 165 250 / 0.2);
+    --tint-blue-fg: rgb(165 210 255);
+    --tint-pink-bg: rgb(248 113 113 / 0.2);
+    --tint-pink-fg: rgb(255 175 175);
+    --tint-yellow-bg: rgb(250 204 21 / 0.18);
+    --tint-yellow-fg: rgb(250 220 120);
   }
 
   [data-mode="light"] {
-    --neu-base: 229 229 233;
-    --neu-lift: 244 244 248;
+    --ground: 245 245 247; /* #f5f5f7, the light gray band on apple.com */
+    --neu-base: 255 255 255; /* cards are white on that gray */
+    --neu-lift: 255 255 255;
     --neu-hi: rgb(255 255 255 / 0.95);
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
-    --neu-edge: rgb(0 0 0 / 0.1);
+    --neu-edge: rgb(0 0 0 / 0.08);
+    --field-edge: rgb(0 0 0 / 0.45);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
+    --signal-fg: 156 54 18; /* #9c3612: 4.7:1 or better on every light surface, including the orange-tinted ones */
+    --tint-purple-bg: rgb(222 219 252);
+    --tint-purple-fg: rgb(59 54 128);
+    --tint-green-bg: rgb(205 238 219);
+    --tint-green-fg: rgb(31 107 69);
+    --tint-peach-bg: rgb(255 224 194);
+    --tint-peach-fg: rgb(138 74 20);
+    --tint-blue-bg: rgb(212 236 250);
+    --tint-blue-fg: rgb(29 90 133);
+    --tint-pink-bg: rgb(251 211 211);
+    --tint-pink-fg: rgb(138 47 47);
+    --tint-yellow-bg: rgb(253 238 192);
+    --tint-yellow-fg: rgb(111 84 16);
   }
 
   /* Shapes are two shadows: light from the top-left, shade to the
@@ -1057,8 +1138,7 @@
     --neu-raised-low: -2px -2px 5px var(--neu-hi), 2px 2px 6px var(--neu-lo), inset 0 1px 0 var(--neu-top);
     --neu-raised-mid: -4px -4px 10px var(--neu-hi), 4px 4px 11px var(--neu-lo), inset 0 1px 0 var(--neu-top);
     --neu-raised-high: -6px -6px 16px var(--neu-hi), 7px 7px 18px var(--neu-lo), inset 0 1px 0 var(--neu-top);
-    /* Floating depth for the dock: the high raised shape plus a long ambient
-       shadow underneath, so it reads as hovering above the page. */
+    /* Floating depth for the dock: one long ambient shadow under a hairline. */
     --neu-float: var(--neu-raised-high), inset 0 1px 0 var(--neu-edge), 0 22px 36px -14px var(--neu-lo);
     --neu-pressed-low: inset -1px -1px 3px var(--neu-hi), inset 2px 2px 4px var(--neu-lo);
     --neu-pressed-mid: inset -2px -2px 6px var(--neu-hi), inset 3px 3px 7px var(--neu-lo);
@@ -1067,6 +1147,7 @@
     /* Existing plane tokens now read from the neumorphic ones, so every
        card and button that used them follows without editing call sites. */
     --plane-mid-bg: var(--neu-base);
+    /* Cards are raised, not flat: the same light-and-shade as the buttons, one step larger. */
     --plane-mid-shadow: var(--neu-raised-mid);
     --plane-front-shadow: var(--neu-raised-high);
   }
@@ -1110,7 +1191,7 @@
     --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);
     --surface-blur: 0px;
-    --surface-radius: 1.25rem;
+    --surface-radius: 1rem;
     /* Level-1 "wells" (inputs, chips, minor inline surfaces) are pressed in. */
     --subtle-bg: rgb(var(--neu-base));
     --subtle-border: var(--neu-edge);
@@ -1290,56 +1371,125 @@
   }
 }
 
-/* Desktop sidebar hidden by the top-bar toggle (SidebarToggle.tsx). It slides
-   out and fades while the page area glides over to fill the space. The
-   transitions only switch on after the saved choice has been applied
-   (`data-sidebar-anim`), so a page load never animates a sidebar that was
-   left closed. `visibility` flips at the end of the slide so a hidden
-   sidebar can never be tabbed into. */
+/* Desktop sidebar shrunk to a rail of icons by the top-bar toggle (SidebarToggle.tsx). The sidebar narrows from 13rem to 3.5rem, the
+   labels, group titles and the spotlight card drop out (each icon keeps its name as a tooltip), and the page area's left padding follows
+   so the content glides over. The transitions only switch on after the saved choice has been applied (`data-sidebar-anim`), so a page
+   load never animates a sidebar that was left shrunk. */
 @media (min-width: 1024px) {
-  html[data-sidebar-anim] .app-sidebar {
-    transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      visibility 0s linear 0s;
+  /* Everything that leaves when the rail closes is eased out, not switched off: the width glides on Apple's curve, the labels fade first
+     and then narrow to nothing, the group titles and the spotlight fold up, and a column of small alert icons fades in to take their
+     place. Hidden pieces also leave the reading order (visibility) once they are gone. */
+  .app-sidebar .sb-label {
+    max-width: 14rem;
+    opacity: 1;
+    overflow: hidden;
+    white-space: nowrap;
   }
-  html[data-sidebar-anim] .app-shell-col {
-    transition: padding-left 380ms var(--ease-ios);
+  .app-sidebar .sb-group-title {
+    max-height: 2rem;
+    opacity: 1;
+    overflow: hidden;
   }
-  html[data-sidebar="collapsed"] .app-sidebar {
-    translate: -100% 0;
+  .app-sidebar .sb-spotlight {
+    max-height: 40rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .app-sidebar .sb-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-height: 0;
     opacity: 0;
     visibility: hidden;
+    overflow: hidden;
     pointer-events: none;
   }
-  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar {
+  html[data-sidebar-anim] .app-sidebar {
     transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      visibility 0s linear 380ms;
+      width 240ms var(--ease-ios),
+      padding 240ms var(--ease-ios),
+      gap 240ms var(--ease-ios);
+  }
+  html[data-sidebar-anim] .app-shell-col {
+    transition: padding-left 240ms var(--ease-ios);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-item {
+    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 280ms var(--ease-spring);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-label {
+    transition: opacity 160ms var(--ease-ios) 80ms, max-width 240ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-group-title {
+    transition: opacity 160ms var(--ease-ios) 60ms, max-height 240ms var(--ease-ios), padding 240ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-spotlight {
+    transition: opacity 160ms var(--ease-ios) 60ms, max-height 240ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-rail {
+    transition: opacity 180ms var(--ease-ios), max-height 240ms var(--ease-ios), visibility 0s linear 240ms;
+  }
+  /* The "B" shortcut snaps the sidebar instead (lib/keyboardMotion.ts): a keyboard action should not animate. */
+  html[data-kb-motion="off"] .app-sidebar,
+  html[data-kb-motion="off"] .app-sidebar *,
+  html[data-kb-motion="off"] .app-shell-col {
+    transition: none !important;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar {
+    width: 3.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    gap: 0.75rem;
   }
   html[data-sidebar="collapsed"] .app-shell-col {
-    padding-left: 0;
+    padding-left: 3.5rem;
   }
-
-  /* Peek: while hidden, pointing at the sidebar toggle floats the sidebar out
-     over the page (no layout shift). It stays while the pointer is on the
-     toggle or the sidebar, and tucks away when it leaves both. */
-  html[data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
-  html[data-sidebar="collapsed"] .app-sidebar:hover {
-    translate: 0 0;
+  html[data-sidebar="collapsed"] .app-sidebar .sb-label {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-spotlight {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-rail {
+    max-height: 30rem;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    box-shadow: 0 16px 48px rgb(0 0 0 / 0.55);
   }
-  html[data-sidebar-anim][data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
-  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar:hover {
-    transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      box-shadow 260ms var(--ease-ios),
-      visibility 0s linear 0s;
+  html[data-sidebar="collapsed"] .app-sidebar .sb-item {
+    justify-content: center;
+    padding-inline: 0;
+    gap: 0;
+  }
+  /* A thin line between the groups stands in for their titles. */
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group + .sb-group {
+    border-top: 1px solid var(--neu-edge);
+    padding-top: 0.75rem;
+  }
+  /* The unread count becomes a small badge on the icon's corner. */
+  html[data-sidebar="collapsed"] .app-sidebar .sb-badge {
+    position: absolute;
+    top: 0.125rem;
+    right: 0.25rem;
+    margin: 0;
+    height: 0.875rem;
+    min-width: 0.875rem;
+    padding: 0 0.125rem;
+    font-size: 0.625rem;
+    line-height: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1460,15 +1610,1109 @@
    and cleans up the type: the system font like native iOS apps, small labels
    in sentence case instead of wide-tracked capitals.
    ========================================================================== */
-[data-surface="app"] .uppercase {
+/* `body:has(...)` also reaches sheets and dialogs, which are portalled to <body> outside the app area: without it the payment sheet
+   showed wide-tracked capitals in the public pages' font. */
+:is([data-surface="app"], body:has([data-surface="app"])) .uppercase {
   text-transform: none;
   font-weight: 500;
 }
-[data-surface="app"] [class*="tracking-"] {
+:is([data-surface="app"], body:has([data-surface="app"])) [class*="tracking-"] {
   letter-spacing: normal;
 }
-[data-surface="app"] {
+[data-surface="app"],
+body:has([data-surface="app"]) {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Confetti burst (components/ui/Celebrate.tsx): pieces fly out from the middle of the screen and fall away. */
+.confetti-piece {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-burst 1.7s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes confetti-burst {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(0.6); }
+  60% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 180px)) rotate(var(--rot)) scale(1); }
+}
+
+/* Pull to refresh (components/layout/PullToRefreshMain.tsx): twelve spokes that light up one by one as you pull, then turn into the
+   classic fading ring while it refreshes. The ring idea is the "iOS Spinner" on 21st.dev (yadwinder); the pull-driven fill is ours.
+   --p is the pull progress (0 to 1) and --i the spoke number, both set from the component. */
+.ptr-spoke {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 7px;
+  margin: -12px 0 0 -1px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: 50% 12px;
+  transform: rotate(calc(var(--i) * 30deg));
+  opacity: calc(var(--p, 0) * 12 - var(--i));
+}
+.ptr-well[data-phase="refreshing"] .ptr-spoke {
+  opacity: 1;
+  animation: ptr-fade 0.9s linear infinite;
+  animation-delay: calc(var(--i) * -0.075s);
+}
+@keyframes ptr-fade {
+  from { opacity: 1; }
+  to { opacity: 0.15; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptr-well[data-phase="refreshing"] .ptr-spoke {
+    animation: ptr-pulse 1.4s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+}
+@keyframes ptr-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+
+/* Sileo toasts: text and state colours follow the app's ramp, not Sileo's
+   defaults. Success is paper text (green means "tap this" only), errors use
+   the ramp red, and the description reads as secondary text. Sileo injects its
+   own stylesheet at runtime (after this one), so these selectors are doubled
+   up to win on specificity. */
+:root:root {
+  --sileo-state-success: rgb(var(--c-s-50, 250 250 250));
+  --sileo-state-error: rgb(248 113 113);
+  --sileo-state-warning: rgb(251 191 36);
+  --sileo-state-info: rgb(var(--c-s-300, 203 213 225));
+  --sileo-state-loading: rgb(var(--c-s-400, 148 163 184));
+  --sileo-state-action: rgb(var(--c-s-50, 250 250 250));
+}
+:root:root[data-mode="light"] {
+  /* Light-red and amber are too faint on the light surface (under 3:1). */
+  --sileo-state-error: rgb(185 28 28);
+  --sileo-state-warning: rgb(180 83 9);
+}
+[data-sileo-viewport][data-position] {
+  z-index: var(--z-toast);
+}
+[data-sileo-viewport] [data-sileo-svg] {
+  /* The body is the same colour as the page ground, so it needs a lift. */
+  filter: drop-shadow(0 10px 24px rgb(0 0 0 / 0.35)) drop-shadow(0 0 0.5px rgb(var(--c-s-400, 148 163 184) / 0.6));
+}
+[data-sileo-viewport] [data-sileo-description] {
+  color: rgb(var(--c-s-300, 203 213 225)) !important;
+}
+
+/* Sileo draws every toast 350px wide (a fixed number in its code). On phones narrower than that plus its edge gap the
+   body ran off both sides (320px showed it 15px past each edge). Scaling the whole viewport keeps the shape and the
+   spring intact; Sileo measures with layout sizes, so the scale does not disturb its own maths. The scale shares one
+   transform with Sileo's own centring (`translateX(-50%)`): the separate `scale` property would be applied before it
+   and push the toast off centre. */
+@media (max-width: 373px) {
+  :root [data-sileo-viewport][data-position$="center"] {
+    transform: translateX(-50%) scale(0.92);
+    transform-origin: top center;
+  }
+}
+@media (max-width: 345px) {
+  :root [data-sileo-viewport][data-position$="center"] {
+    transform: translateX(-50%) scale(0.82);
+  }
+}
+
+
+/* iPhone Safari zooms in when the same spot is tapped twice quickly. Flipping a two-button switch (Grid / List) does exactly that,
+   and the whole page looked zoomed. `manipulation` keeps scrolling and pinch-zoom but drops the double-tap zoom on every control. */
+a,
+button,
+summary,
+label,
+select,
+input[type="checkbox"],
+input[type="radio"],
+[role="button"],
+[role="tab"],
+[role="switch"] {
+  touch-action: manipulation;
+}
+
+/* Holding a finger on a button made iPhone select its label (and pop the copy bar), which no native control does. Controls only:
+   text people may want to copy (page copy, codes, links in running text) stays selectable. Touch screens only, so a computer is unchanged. */
+@media (pointer: coarse) {
+  button,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="switch"] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* ==========================================================================
+   Typographic and touch polish
+   - Balanced headlines: no lone last word on a heading; body copy avoids orphans.
+   - Tabular numbers: digits share one width, so prices, credits, times and counters never jiggle as they change.
+   - Continuous corners: where the browser supports `corner-shape`, rounded boxes use the smoother "squircle" curve.
+   - Hit slop: a control that must look small keeps a bigger invisible touch target.
+   ========================================================================== */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+  p,
+  li,
+  figcaption,
+  blockquote {
+    text-wrap: pretty;
+  }
+  time,
+  td,
+  th,
+  input[type="number"],
+  input[type="tel"],
+  input[inputmode="numeric"],
+  [data-surface="app"] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .rounded-control,
+  .rounded-card,
+  .rounded-sheet,
+  .rounded-t-sheet,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl {
+    corner-shape: squircle;
+  }
+}
+
+/** Extends the touch target of a small control by 8px on every side without changing how it looks or lays out. */
+@utility hit-slop {
+  &:where(:not(.absolute, .fixed, .sticky, .relative)) {
+    position: relative;
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+  }
+}
+
+/** The shell keeps clear of the notch and the home bar (landscape phones, installed app). */
+@utility pad-safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* View transitions between screens: a quick crossfade of the page; the dock, the top bar and the sidebar are named so they stay put. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+.app-sidebar {
+  view-transition-name: app-sidebar;
+}
+/* The dock is deliberately NOT given a view-transition-name: an element with one becomes a "backdrop root", which stops the glass in the
+   dock from seeing the page behind it, so it could neither blur nor bend anything. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+
+/* Pastel pills: a colored wash with matching ink. Use on small labels and rows that name a kind of thing (a class, practice,
+   a payment), never as the main button (that stays orange). */
+.tint-purple { background: var(--tint-purple-bg); color: var(--tint-purple-fg); }
+.tint-green { background: var(--tint-green-bg); color: var(--tint-green-fg); }
+.tint-peach { background: var(--tint-peach-bg); color: var(--tint-peach-fg); }
+.tint-blue { background: var(--tint-blue-bg); color: var(--tint-blue-fg); }
+.tint-pink { background: var(--tint-pink-bg); color: var(--tint-pink-fg); }
+.tint-yellow { background: var(--tint-yellow-bg); color: var(--tint-yellow-fg); }
+
+
+/* Skeleton loaders: a soft block with a lighter band sweeping across it, left to right, on a loop (the usual video-site look). The band
+   is a gradient that moves by transform, so it costs no layout. Reduced motion gets a still block. */
+:root,
+[data-mode="dark"] {
+  --skeleton-base: rgb(255 255 255 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.13);
+}
+[data-mode="light"] {
+  --skeleton-base: rgb(0 0 0 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.75);
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, var(--skeleton-shine) 50%, transparent 100%);
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  animation-delay: var(--skeleton-delay, 0s);
+}
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Wave reveal: anything laid out in a grid inside the signed-in app (cards, stat tiles, rows of buttons)
+   arrives one after another from left to right, a few milliseconds apart, so content loads like a wave
+   instead of all at once. The delay grows with the child's position and stops growing at the 12th, so a
+   long grid never waits more than about half a second. `backwards` fill leaves no transform behind (a
+   leftover transform would become the containing block of fixed children). Opt out with `no-wave` on the
+   grid (the calendar day cells do). Reduced motion gets none of it.
+   --------------------------------------------------------------------------- */
+@keyframes wave-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #app-scroll .grid:not(.no-wave) > * {
+    animation: wave-in 420ms var(--ease-ios, ease-out) backwards;
+    animation-delay: 540ms;
+  }
+  #app-scroll .grid:not(.no-wave) > :nth-child(1) { animation-delay: 0ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(2) { animation-delay: 45ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(3) { animation-delay: 90ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(4) { animation-delay: 135ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(5) { animation-delay: 180ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(6) { animation-delay: 225ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(7) { animation-delay: 270ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(8) { animation-delay: 315ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(9) { animation-delay: 360ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(10) { animation-delay: 405ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(11) { animation-delay: 450ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(12) { animation-delay: 495ms; }
+}
+
+/* ---------------------------------------------------------------------------
+   On-screen keyboard (phones and tablets only). KeyboardAvoider publishes the visible area's size while a field is
+   focused; these squeeze the full-screen shell, panels and sheets into it so the typing box is never hidden, and tuck
+   away the floating bars that would sit on top of the keyboard. Nothing here applies on a computer.
+   --------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  html[data-keyboard="open"] [data-surface="app"],
+  html[data-keyboard="open"] .kb-fit {
+    top: var(--vv-top, 0px) !important;
+    bottom: auto !important;
+    height: var(--vv-height, 100%) !important;
+  }
+  html[data-keyboard="open"] .kb-lift {
+    bottom: var(--kb-height, 0px) !important;
+    max-height: calc(var(--vv-height, 100svh) - 0.75rem) !important;
+  }
+  /* A tablet shows the sheet as a centered modal: center it in the visible area instead of sitting it on the keyboard. */
+  @media (min-width: 768px) {
+    html[data-keyboard="open"] .kb-lift {
+      bottom: auto !important;
+      top: calc(var(--vv-top, 0px) + var(--vv-height, 100svh) / 2) !important;
+    }
+  }
+  html[data-keyboard="open"] .kb-atom {
+    bottom: calc(var(--kb-height, 0px) + 0.75rem) !important;
+  }
+  html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] {
+    height: min(560px, calc(var(--vv-height, 100svh) - 1.5rem)) !important;
+  }
+  html[data-keyboard="open"] .kb-hide {
+    display: none !important;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Liquid Glass. Anything you can press is a small pane of glass: a see-through body that blurs and brightens what is behind it, a bright
+   hairline along the top edge where light catches, a soft glow along the bottom, and a thin shadow. The dock and the theme toggle also get
+   a faint rainbow rim, and (in browsers that can) the dock bends the page behind it like a lens. It stays thin: no heavy shadows, small radii
+   of light, and every blur is cheap. Anywhere the system asks for reduced transparency it becomes a plain solid control.
+   --------------------------------------------------------------------------- */
+:root {
+  --lg-body-top: rgb(255 255 255 / 0.16);
+  --lg-body-bottom: rgb(255 255 255 / 0.05);
+  --lg-edge: rgb(255 255 255 / 0.42);
+  --lg-glow: rgb(255 255 255 / 0.1);
+  --lg-drop: rgb(0 0 0 / 0.42);
+}
+[data-mode="light"] {
+  --lg-body-top: rgb(255 255 255 / 0.7);
+  --lg-body-bottom: rgb(255 255 255 / 0.32);
+  --lg-edge: rgb(255 255 255 / 0.95);
+  --lg-glow: rgb(255 255 255 / 0.5);
+  --lg-drop: rgb(40 40 60 / 0.16);
+}
+
+@utility liquid {
+  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
+  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 var(--lg-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 -6px 10px -8px var(--lg-glow),
+    0 5px 14px -8px var(--lg-drop);
+}
+.liquid:active {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    inset 0 3px 8px rgb(0 0 0 / 0.28);
+}
+
+/* The main action: orange glass, the same light on its edge. */
+@utility liquid-signal {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0) 55%),
+    rgb(var(--cta-bg, var(--primary)));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 0 0 1px rgb(255 255 255 / 0.18),
+    inset 0 -7px 12px -8px rgb(255 255 255 / 0.4),
+    0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
+}
+
+/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). A
+   control with its own solid fill keeps it (GlassButtons.tsx skips the same ones). */
+button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-8"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
+a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]) {
+  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
+  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 var(--lg-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 -6px 10px -8px var(--lg-glow),
+    0 5px 14px -8px var(--lg-drop);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid,
+  button[class*="shadow-raised-low"],
+  a[class*="shadow-raised-low"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(var(--neu-base));
+  }
+}
+
+/* A main action that cannot be used yet goes neutral instead of a faded orange (half-transparent orange on the dark page read as a
+   muddy brown "something is wrong" colour). Doubled class to win over the lens rules further down. */
+.liquid-signal.liquid-signal:is(:disabled, [aria-disabled="true"]),
+button.bg-signal:disabled {
+  background: rgb(var(--c-s-700)) !important;
+  color: rgb(var(--c-s-200)) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Switching between light and dark is a slow, even crossfade (the old look melts into the new one) instead of a blink. Where the
+   browser has no View Transitions, every color eases over the same time instead.
+   --------------------------------------------------------------------------- */
+html[data-theme-switching]::view-transition-group(*),
+html[data-theme-switching]::view-transition-old(*),
+html[data-theme-switching]::view-transition-new(*) {
+  animation-duration: 750ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-theme-fade] *,
+html[data-theme-fade] *::before,
+html[data-theme-fade] *::after {
+  transition:
+    background-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    fill 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 650ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Liquid press. Pressing a glass control makes it swell and light up (it does not dip like a plain button); letting go releases it with
+   a quick stretch and wobble that settles, like a drop of liquid. LiquidPress.tsx sets the two states; nothing here runs for people who
+   ask for reduced motion.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-lg-press] {
+    scale: 1.07 !important;
+    /* Brighter glass, through the lens itself: a filter on the button would wall its glass off from the page. */
+    --lg-bright: 1.32;
+    transition-duration: 130ms !important;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+  [data-lg-release] {
+    animation: lg-release 680ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+}
+@keyframes lg-release {
+  0% {
+    transform: scale(1.04, 0.95);
+  }
+  22% {
+    transform: scale(0.965, 1.05);
+  }
+  45% {
+    transform: scale(1.025, 0.985);
+  }
+  68% {
+    transform: scale(0.992, 1.006);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   A PhoneAccordion section (the admin overview's dropdowns, mostly) unfolds in 220ms when opened instead of appearing at once and
+   shoving the page down. The clip lives only in the keyframes, so once open nothing is clipped and sticky deck cards inside keep
+   working (overflow: hidden would break them). Radix skips this on first paint, so a section that starts open does not animate.
+   Closing stays instant.
+   --------------------------------------------------------------------------- */
+.phone-section[data-state="open"] {
+  animation: phone-section-open 220ms var(--ease-ios);
+}
+@keyframes phone-section-open {
+  from {
+    height: 0;
+    opacity: 0;
+    clip-path: inset(0);
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-section[data-state="open"] {
+    animation-name: page-enter-fade;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The search window. Opened by a click, it grows a little out of the button that opened it (the transform-origin is that button, the
+   offsets come from command.tsx) in 200ms, and leaves faster than it came. Opened or closed from the keyboard (Cmd/Ctrl-K, "/", Escape)
+   it does not animate at all (`data-kb-motion`, lib/keyboardMotion.ts): a shortcut used many times a day should feel instant.
+   Behind it the page is only softly blurred, not grayed out.
+   --------------------------------------------------------------------------- */
+.cmd-scrim {
+  background: rgb(0 0 0 / 0.04);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
+}
+.cmd-scrim[data-state="open"] {
+  animation: cmd-scrim-in 200ms var(--ease-ios) both;
+}
+.cmd-scrim[data-state="closed"] {
+  animation: cmd-scrim-out 140ms var(--ease-ios) both;
+}
+.cmd-window {
+  transform-origin: calc(50% + var(--cmd-dx, 0px)) calc(50% + var(--cmd-dy, 0px));
+}
+.cmd-window[data-state="open"] {
+  animation: cmd-in 200ms var(--ease-ios) backwards;
+}
+.cmd-window[data-state="closed"] {
+  animation: cmd-out 140ms var(--ease-ios) both;
+}
+html[data-kb-motion="off"] .cmd-scrim,
+html[data-kb-motion="off"] .cmd-window {
+  animation: none;
+}
+@keyframes cmd-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes cmd-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes cmd-scrim-in {
+  from {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+@keyframes cmd-scrim-out {
+  to {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* A plain fade, no growing: the window's opacity still says where it went. */
+  .cmd-window[data-state="open"] {
+    animation-duration: 120ms;
+    animation-name: cmd-scrim-in;
+  }
+  .cmd-window[data-state="closed"] {
+    animation-duration: 120ms;
+    animation-name: cmd-scrim-out;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Liquid Glass tokens: change the whole look from here. Read by GlassLens (refraction, blur) and by the .liquid styles above.
+     --lg-refraction   how hard the glass bends what is behind it (1 = as built, 0 = flat)
+     --lg-dispersion   the faint rainbow split along the glass edge (0 = none)
+     --lg-blur         blur of what is behind the middle of the glass, in px
+     --lg-ring         the faint outer ring around pressed or active glass
+   --------------------------------------------------------------------------- */
+:root {
+  --lg-refraction: 1;
+  --lg-dispersion: 1;
+  --lg-blur: 1.5px;
+  --lg-ring: rgb(255 255 255 / 0.28);
+}
+[data-mode="light"] {
+  --lg-ring: rgb(120 200 255 / 0.5);
+}
+/* Active or pressed glass gets a faint outer ring, like the back button in Apple's own shots. */
+.lg-ring {
+  position: relative;
+}
+.lg-ring::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  border: 1px solid var(--lg-ring);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 260ms var(--ease-ios), transform 420ms var(--ease-spring);
+  pointer-events: none;
+}
+.lg-ring:is([data-lg-press], [aria-current="page"], [aria-checked="true"], [data-state="checked"])::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* The body color of sheets, dialogs and the search window: glass that stays readable (mostly opaque; the lens still bends the edge). */
+:root {
+  --lg-sheet-tint: rgb(26 26 28 / 0.8);
+}
+[data-mode="light"] {
+  --lg-sheet-tint: rgb(250 250 253 / 0.8);
+}
+
+/* ---------------------------------------------------------------------------
+   The real lens on every glass button (GlassButtons.tsx picks them and sets --lg-filter, shared by size). The button itself becomes
+   clear (no painted gradient or sheen) and carries no backdrop or filter of its own, because either would wall its glass off from the
+   page; the lens is its ::after, under its label, refracting what is behind it. Hover and press brighten the glass through the lens.
+   --------------------------------------------------------------------------- */
+.lg-glass {
+  isolation: isolate;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  --lg-bright: 1;
+}
+:where(.lg-glass:not(.absolute):not(.fixed):not(.sticky)) {
+  position: relative;
+}
+/* A faint body so a clear button still reads as a button on a plain page (the lens refracts it along with what is behind). */
+.lg-glass:not(.liquid-signal) {
+  background: var(--lg-fill) !important;
+  /* The same 3D lift as the cards (light top left, shade bottom right, a rim along the top), on top of the bending lens. */
+  box-shadow: inset 0 0 0 1px var(--lg-hairline), var(--glass-edge3d, inset 0 1px 0 var(--lg-hairline)), -2px -2px 5px var(--glass-hi, transparent),
+    3px 3px 8px var(--glass-lo, transparent) !important;
+}
+:root {
+  --lg-fill: rgb(255 255 255 / 0.07);
+}
+[data-mode="light"] {
+  --lg-fill: rgb(255 255 255 / 0.6);
+}
+.lg-glass.liquid-signal {
+  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
+  box-shadow: 0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.6) !important;
+}
+@media (hover: hover) {
+  .lg-glass:hover {
+    --lg-bright: 1.1;
+  }
+}
+.lg-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: none;
+  transform: none;
+  opacity: 1;
+  transition: none;
+  -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
+  backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
+  clip-path: inset(0 round var(--lg-r, 9999px));
+}
+
+/* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
+:root {
+  --lg-hairline: rgb(255 255 255 / 0.14);
+}
+[data-mode="light"] {
+  --lg-hairline: rgb(0 0 0 / 0.1);
+}
+
+/* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
+   still begins below the bar, by padding inside the scroll area. A notice banner, when there is one, takes the bar's room instead. */
+.app-scroll-under-bar {
+  padding-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3rem + 1rem);
+}
+@media (min-width: 768px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.25rem);
+  }
+}
+@media (min-width: 1024px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.5rem);
+  }
+}
+.app-shell-col > .announcement-banner {
+  margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
+}
+.app-shell-col:has(> .announcement-banner) .app-scroll-under-bar {
+  padding-top: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+   The card material inside the app: 3D glass. Solid cards on a plain page, with the neumorphic depth the app started with (light from
+   the top left, shade to the bottom right) plus a glass rim and sheen. Every card, panel, button and field still uses the same classes
+   (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*); only what those mean changes here:
+     - the page is a soft near-black (dark) or light gray (light), cards are one solid step lighter (dark) or white (light);
+     - "raised" lifts off the page (two soft shadows, a bright top rim, a faint dark bottom edge) and lays a faint wash over the fill,
+       so a card inside a card is one more step lighter and still reads as its own box;
+     - "pressed" (fields, wells, a held control) sinks in: a soft inner shadow and a faint shade over the fill.
+   The washes are inset shadows wide enough to fill the box: they tint the background and never the content.
+   --------------------------------------------------------------------------- */
+[data-surface="app"],
+body:has([data-surface="app"]) {
+  /* Sampled from the owner's reference app: page #121212, cards #222121, dock #333. Cards are solid: stacked cards (the phone card
+     deck) must never show the one behind through them. */
+  --ground: 18 18 18;
+  --neu-base: 27 26 26;
+  --neu-lift: 38 37 37;
+  --neu-alpha: 1;
+  --card-wash: rgb(255 255 255 / 0.035);
+  --card-shade: rgb(0 0 0 / 0.24);
+  --card-line: rgb(255 255 255 / 0.07);
+  /* 3D glass (2026-10-30): the neumorphic light-and-shade the owner liked, on the glass. Light from the top left, shade to the
+     bottom right, a bright rim along the top edge and a faint dark one along the bottom (the thickness of the glass), and a soft
+     sheen across the face (--glass-sheen, see the rule below). */
+  --glass-hi: rgb(255 255 255 / 0.07);
+  --glass-lo: rgb(0 0 0 / 0.72);
+  --glass-rim: rgb(255 255 255 / 0.13);
+  --glass-floor: rgb(0 0 0 / 0.35);
+  --glass-sheen: linear-gradient(158deg, rgb(255 255 255 / 0.09) 0%, rgb(255 255 255 / 0.02) 38%, transparent 62%);
+  --glass-edge3d: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-floor);
+  --neu-hi: var(--card-line);
+  --neu-lo: var(--card-line);
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -2px -2px 5px var(--glass-hi), 3px 3px 7px var(--glass-lo);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -4px -4px 11px var(--glass-hi), 6px 7px 16px var(--glass-lo);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), var(--glass-edge3d), -6px -6px 16px var(--glass-hi), 10px 12px 28px var(--glass-lo);
+  --neu-float: var(--neu-raised-high);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade), inset 2px 2px 5px var(--glass-lo), inset -1px -1px 3px var(--glass-hi);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade), inset 3px 3px 7px var(--glass-lo), inset -2px -2px 5px var(--glass-hi);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade), inset 4px 4px 10px var(--glass-lo), inset -2px -2px 6px var(--glass-hi);
+  --plane-mid-shadow: var(--neu-raised-mid);
+  --plane-front-shadow: var(--neu-raised-high);
+  --surface-bg: rgb(var(--neu-base) / var(--neu-alpha));
+  --surface-shadow: var(--neu-raised-mid);
+  --surface-blur: 0px;
+  --subtle-bg: rgb(var(--neu-base) / var(--neu-alpha));
+  --subtle-border: transparent;
+  --subtle-shadow: var(--neu-pressed-low);
+  --subtle-blur: 0px;
+  --elev-bg: rgb(var(--neu-lift));
+  --elev-shadow: var(--neu-raised-high);
+  --elev-blur: 0px;
+}
+[data-mode="light"] [data-surface="app"],
+[data-mode="light"] body:has([data-surface="app"]) {
+  --ground: 242 242 245;
+  --neu-base: 255 255 255;
+  --neu-lift: 255 255 255;
+  --neu-alpha: 1;
+  --card-wash: rgb(0 0 0 / 0.018);
+  --card-shade: rgb(0 0 0 / 0.045);
+  --card-line: rgb(0 0 0 / 0.07);
+  /* Light mode is flat (2026-10-30, owner: "too much glow"): no white highlight and no wide soft shadow around cards, buttons or the
+     dock; a hairline edge and a tight 1px shadow are all that separate them from the page. */
+  --glass-hi: transparent;
+  --glass-lo: rgb(0 0 0 / 0.06);
+  --glass-rim: rgb(255 255 255 / 0.6);
+  --glass-floor: rgb(0 0 0 / 0.04);
+  --glass-sheen: none;
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 3px var(--glass-lo);
+  --neu-float: 0 8px 24px -12px rgb(0 0 0 / 0.18);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
+  --plane-mid-shadow: var(--neu-raised-mid);
+  --plane-front-shadow: var(--neu-raised-high);
+  --surface-shadow: var(--neu-raised-mid);
+  --subtle-shadow: var(--neu-pressed-low);
+  --elev-shadow: var(--neu-raised-high);
+}
+/* No glow under the main (orange or white) buttons in light mode either. */
+[data-mode="light"] .liquid-signal,
+[data-mode="light"] .lg-glass.liquid-signal {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06) !important;
+}
+[data-mode="light"] .liquid {
+  box-shadow: inset 0 0 0 1px var(--card-line, rgb(0 0 0 / 0.07));
+}
+/* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
+   picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
+[data-surface="app"] :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], .glass-surface, .glass-surface-elevated):not(.lg-glass):not([data-glass]):not(.color-tile):not([class*="bg-signal"]):not([class*="bg-gradient"]):not([class*="bg-["]):not([class*="bg-red"]):not([class*="bg-amber"]) {
+  background-image: var(--glass-sheen);
+}
+
+/* Home's colored cards (ColorCard): the card's own color, a soft light across the top left, and the same look in both themes. Inside,
+   the gray text ramp turns white, the accent turns white (buttons become white pills with dark ink, rings and ticks go white) and
+   wells and rows become a faint white tint, so everything reads on the color. */
+.color-tile {
+  background: linear-gradient(158deg, rgb(255 255 255 / 0.14) 0%, rgb(255 255 255 / 0.03) 40%, transparent 62%),
+    linear-gradient(150deg, var(--tile-from) 0%, var(--tile-via) 58%, var(--tile-to) 100%);
+  color: #fff;
+  --c-s-50: 255 255 255;
+  --c-s-100: 250 249 251;
+  --c-s-200: 242 240 244;
+  --c-s-300: 236 233 238;
+  --c-s-400: 222 218 226;
+  --c-s-500: 204 199 209;
+  --c-s-600: 186 181 192;
+  --c-s-800: 0 0 0;
+  --c-s-950: 24 20 28;
+  --c-ink: 255 255 255;
+  --signal: 255 255 255;
+  --signal-fg: 255 255 255;
+  --signal-ink: 24 20 28;
+  --cta-bg: 255 255 255;
+  --cta-ink: 24 20 28;
+  --lg-fill: rgb(255 255 255 / 0.16);
+  --neu-base: 255 255 255;
+  --neu-alpha: 0.13;
+}
+
+/* Dialogs and menus that open over the page get a soft border so they stand off what is under them. */
+body:has([data-surface="app"]) .glass-surface-modal {
+  border-color: var(--card-line);
+}
+/* Engraved grooves become plain hairlines. */
+[data-surface="app"] .neu-groove-t {
+  box-shadow: inset 0 1px 0 var(--card-line);
+}
+[data-surface="app"] .neu-groove-b {
+  box-shadow: inset 0 -1px 0 var(--card-line);
+}
+[data-surface="app"] .neu-groove-r {
+  box-shadow: inset -1px 0 0 var(--card-line);
+}
+
+/* The bottom dock: a solid pill with a light blur, and a darker capsule behind the page you are on. */
+.app-dock {
+  background: rgb(51 51 51 / 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+}
+.app-dock-active {
+  background: rgb(24 24 24 / 0.8);
+}
+[data-mode="light"] .app-dock {
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+}
+[data-mode="light"] .app-dock-active {
+  background: rgb(0 0 0 / 0.07);
+}
+/* The dock (a copy of Instagram's tab bar), made of the same 3D glass as the cards around it so it belongs to the page: the card color
+   as a frosted tint, the cards' lift, rim and sheen, and the tab you are on pressed into it the way a pressed control sinks into a card.
+   The lens (GlassLens) frosts and bends the page under it, so the pill carries no blur of its own (that would wall the lens off). */
+/* Flat (2026-10-30, owner: "too rounded, like neumorphic", then "make the dock rounded too"): a pill again, but a frosted fill with a
+   fine grain, a hairline and one tight shadow; no 3D rim, no light and shade. The grain is an SVG noise tile at low strength, so it reads as a matte surface, not a pattern. */
+:root {
+  --dock-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.app-dock.app-dock-lens {
+  background-color: rgb(var(--neu-base) / 0.86);
+  background-image: var(--dock-grain);
+  background-size: 120px 120px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 6px 18px -10px rgb(0 0 0 / 0.6);
+}
+[data-mode="light"] .app-dock.app-dock-lens {
+  background-color: rgb(var(--neu-base) / 0.9);
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+.app-dock-lens .app-dock-active {
+  background: rgb(var(--neu-lift));
+  box-shadow: inset 0 0 0 1px var(--card-line);
+}
+[data-mode="light"] .app-dock-lens .app-dock-active {
+  background: rgb(0 0 0 / 0.06);
+}
+/* The filled icon's cut-out details take the pressed capsule's color. */
+.app-dock-lens .dock-icon {
+  --dock-cut: rgb(20 19 19);
+}
+[data-mode="light"] .app-dock-lens .dock-icon {
+  --dock-cut: rgb(240 240 243);
+}
+
+
+/* The faded picture behind each scale card (ScaleArt): the card color over the photo, thinner toward the top right where the
+   photo's subject sits, thicker on the left and at the bottom where the text is. */
+.scale-art-fade {
+  background:
+    linear-gradient(90deg, rgb(var(--neu-base) / 0.74) 0%, rgb(var(--neu-base) / 0.4) 55%, rgb(var(--neu-base) / 0.18) 100%),
+    linear-gradient(180deg, transparent 45%, rgb(var(--neu-base) / 0.5) 100%);
+}
+.scale-art-fade-locked {
+  background: rgb(var(--neu-base) / 0.7);
+}
+
+/* No scrollbars on the page itself (the owner's choice, 2026-10-30): the page and the signed-in app's scroll area hide theirs and
+   show how far down you are as a thin orange line across the top instead, filled by the browser's own scroll-driven animation (no
+   script runs while scrolling). Browsers without it simply show no line. Lists inside a page keep their own scrollbars. */
+html,
+#app-scroll {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+#app-scroll::-webkit-scrollbar {
+  display: none;
+}
+body {
+  timeline-scope: --app-scroll;
+}
+#app-scroll {
+  scroll-timeline: --app-scroll y;
+}
+.scroll-progress {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  height: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, rgb(var(--c-a-400) / 0.55), rgb(var(--c-a-400)));
+  box-shadow: 0 0 10px rgb(var(--c-a-400) / 0.55);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    animation: scroll-progress-fill linear both;
+  }
+  .scroll-progress-page {
+    animation-timeline: scroll(root block);
+  }
+  .scroll-progress-app {
+    animation-timeline: --app-scroll;
+  }
+}
+@keyframes scroll-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Every page heading stays put (2026-10-30, owner: "keep that consistent across all pages"): the eyebrow and title marked
+   `deck-header` stick just under the top bar at every width while the page scrolls under them. While pinned (DeckStack marks it
+   `data-stuck`) the strip above it, under the see-through top bar, is filled with the ground too, and what passes under it fades out softly,
+   so nothing that scrolls under it shows above or through it. A sticky heading must be a direct child of the page's long column. */
+.deck-header {
+  position: sticky;
+  top: var(--deck-top, -16px);
+  z-index: 40;
+  padding-bottom: 0.75rem;
+  /* The ground reaches past the page's side margins to the screen edges (the scroll area clips the rest), so a shelf that runs edge to
+     edge never shows a sliver beside the pinned heading (owner's report, 2026-10-31). */
+  border-image: conic-gradient(rgb(var(--ground)) 0 0) fill 0 / / 0 100vw;
+}
+.deck-header::before,
+.deck-header::after {
+  content: "";
+  position: absolute;
+  inset-inline: -100vw;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms cubic-bezier(0.2, 0, 0, 1);
+}
+/* Above the heading, under the see-through top bar: filled with the ground while pinned, so nothing shows above it. */
+.deck-header::before {
+  bottom: 100%;
+  height: 8rem;
+  background: rgb(var(--ground));
+}
+/* Below the heading: what scrolls under it fades and softens gradually over 3rem (a soft blur that eases out with the fade), instead
+   of meeting a hard edge. It eases in when the heading pins rather than appearing at once. */
+.deck-header::after {
+  top: 100%;
+  height: 3rem;
+  background: linear-gradient(
+    rgb(var(--ground)) 0%,
+    rgb(var(--ground) / 0.82) 22%,
+    rgb(var(--ground) / 0.52) 48%,
+    rgb(var(--ground) / 0.22) 74%,
+    rgb(var(--ground) / 0) 100%
+  );
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
+  mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
+}
+.deck-header[data-stuck]::before,
+.deck-header[data-stuck]::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-header::before,
+  .deck-header::after {
+    transition: none;
+  }
+}
+
+/* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
+   slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
+   of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
+   computer only the screens marked `data-deck-desktop` (Home, Streak, Leaderboard) keep the deck, one stack per column, with the
+   greeting staying put above it; card grids (Roadmap's scales, the admin overview) scroll normally there. */
+@media (min-width: 1024px) {
+  [data-deck-desktop] .deck-card {
+    position: sticky;
+    top: var(--deck-top, 72px);
+    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
+  }
+  [data-mode="light"] [data-deck-desktop] .deck-card {
+    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
+  }
+}
+@media (max-width: 1023px) {
+  .deck-card {
+    position: sticky;
+    top: var(--deck-top, 72px);
+    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
+  }
+  [data-mode="light"] .deck-card {
+    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
+  }
+}
+
+/* Shelves (Shelf.tsx) scroll sideways without a scrollbar, like Spotify's rows; the next card peeking in shows there is more. */
+.shelf {
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar {
+  display: none;
+}
+/* Every sideways-scrolling strip (tabs, filters, chips) keeps its swipe to itself, so reaching its end never triggers the browser's
+   back or forward swipe (the clash the owner worried about, 2026-10-30). */
+.overflow-x-auto {
+  overscroll-behavior-x: contain;
+}
+
+/* The phone's status bar strip (time, Wi-Fi, battery). Newer iPhone Safari no longer reads <meta name="theme-color">: it colors that
+   strip from a fixed element touching the top of the screen, or else the page's own background. The thin scroll line sits up there,
+   so the strip came out black in light mode (owner's report, 2026-10-30). A solid strip in the page's own ground, exactly the height
+   of the status bar, gives it the right color in both themes; the page background matches as the fallback. */
+.status-bar-fill {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 69;
+  height: env(safe-area-inset-top, 0px);
+  background: rgb(var(--ground));
+  pointer-events: none;
+}
+html:has(body [data-surface="app"]) {
+  background-color: rgb(var(--ground));
+}
+
+/* No internet (OfflineNotice.tsx): the top banners step aside while the offline pill is up. */
+html[data-offline] [data-top-banner] {
+  display: none;
+}
+
+/* Admin pages have no visible title (only a screen-reader one): their first block starts right under the pinned menu instead of
+   keeping the gap it had under a title. */
+[data-admin-page] h1.sr-only + * {
+  margin-top: 0.25rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Printing a receipt (/billing/receipt/[id]): only the receipt is printed, in dark ink on white, whatever theme is on screen.
+   --------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-only-receipt,
+  .print-only-receipt * {
+    visibility: visible;
+    color: #111 !important;
+    background: transparent !important;
+    border-color: #ddd !important;
+  }
+  .print-only-receipt {
+    position: absolute;
+    inset: 0 0 auto 0;
+    padding: 0 !important;
+  }
 }

@@ -9,6 +9,7 @@ import type { ZelleReferenceSubmission } from "@/lib/payments";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { precheckReceiptAction } from "@/app/(dashboard)/billing/receipt-actions";
 
 export interface ZelleUnlockGateProps {
   status: ZellePaymentStatus;
@@ -73,7 +74,7 @@ export function ZelleUnlockGate({
   return (
     <>
       {status === "REJECTED" && (
-        <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-small text-red-300">
+        <div className="mb-4 rounded-xl border border-red-400/20 bg-neu-base shadow-pressed-low p-4 text-small text-red-300">
           Your last submission couldn&apos;t be verified{rejectionReason ? `: ${rejectionReason}` : "."} Double-check
           the reference code and try again.
         </div>
@@ -97,6 +98,7 @@ export function ZelleUnlockGate({
         zelleHandle={zelleHandle}
         paymentId={paymentId}
         onSubmit={handleSubmit}
+        onPrecheck={(base64, mimeType) => precheckReceiptAction(paymentId, base64, mimeType)}
         checkStatus={checkStatus}
         onVerified={() => {
           announceChange("payments");

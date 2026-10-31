@@ -5,6 +5,7 @@ import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { SPRING } from "@/lib/motionTokens";
+import type { PricingConfig } from "@/lib/classCreditPricing";
 
 const container = {
   hidden: {},
@@ -16,7 +17,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: SPRING.smooth },
 };
 
-export function PricingPageContent() {
+export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <MarketingNav />
@@ -33,9 +34,9 @@ export function PricingPageContent() {
       >
         <motion.h1
           variants={item}
-          className="text-balance font-serif text-hero leading-[1.02] tracking-[-0.025em] text-slate-50 sm:text-hero"
+          className="text-balance font-serif text-hero leading-[1.02] tracking-tight text-slate-50 sm:text-hero"
         >
-          Learn Live with us on discord.
+          Learn live with us on Discord.
         </motion.h1>
       </motion.section>
 
@@ -48,12 +49,12 @@ export function PricingPageContent() {
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly classes</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly classes</p>
           <h2 className="mt-1.5 font-serif text-body text-slate-50">Live one-on-one coaching on Discord</h2>
         </div>
 
         <div className="mt-10">
-          <PaymentPlanTierGrid />
+          <PaymentPlanTierGrid pricing={pricing} />
         </div>
       </motion.section>
       </main>

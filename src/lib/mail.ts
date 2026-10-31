@@ -93,6 +93,7 @@ export async function sendAdminMessage(
       type: "MAIL_MESSAGE",
       title: "New message from Bass Note Piano",
       body: options.supportCta ? `${title}. Click here to contact support.` : title,
+      href: `/mail/${mail.id}`,
     },
   });
 
@@ -106,6 +107,7 @@ export async function sendAdminMessage(
         await sendPersonalEmail(recipient.email, title, body, {
           firstName,
           link: options.supportCta ? { label: "Click here to contact support", url: getAppUrl(`/mail/${mail.id}`) } : undefined,
+          unsubscribe: { userId: recipient.id, category: "social" },
         });
         email = "sent";
       } catch (err) {

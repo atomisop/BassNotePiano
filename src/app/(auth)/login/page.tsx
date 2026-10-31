@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { safeCallbackPath } from "@/lib/safeRedirect";
@@ -18,20 +18,37 @@ function LoginCard() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   // Already signed in: this screen has nothing for you, go straight into the app. Checked
   // against the server's own view of the session, so a stale cookie cannot cause a loop.
   useEffect(() => {
-    if (status !== "authenticated") return;
-    const safe = safeCallbackPath(callbackUrl);
-    startNavigation();
-    router.replace(safe === "/" ? "/dashboard" : safe);
-  }, [status, callbackUrl, router]);
+    // An ended session can still read as "authenticated" with an empty user; only a real user id counts.
+    if (status !== "authenticated" || !session?.user?.id) return;
+    let cancelled = false;
+    // Ask the server whether this session is still good. The browser's copy can outlive the account (deleted, banned,
+    // demoted and signed out): without this check the app sends it to a page, the page sends it back here, and it loops.
+    // A session the server no longer accepts is cleared, so the form shows and signing in again starts clean.
+    fetch("/api/me/status", { cache: "no-store" })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          void signOut({ redirect: false });
+          return;
+        }
+        const safe = safeCallbackPath(callbackUrl);
+        startNavigation();
+        router.replace(safe === "/" ? "/dashboard" : safe);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session, callbackUrl, router]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Welcome back</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Welcome back</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Log in to continue</h1>
       <div className="mt-6">
         <LoginForm callbackUrl={callbackUrl} />

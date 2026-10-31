@@ -19,6 +19,8 @@ export interface ScaleListRowsProps {
   /** Slug of the one "you're here" scale, or null if it is not in this list. */
   currentSlug: string | null;
   onRowClick: (scale: ScaleAccessState) => void;
+  /** On phones, rows from this position on are hidden (the roadmap's "Show all" button reveals them). */
+  phoneHiddenFrom?: number;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface ScaleListRowsProps {
  * grid, not a re-skin of it, so a student can scan all 15 without heavy
  * scrolling.
  */
-export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRowsProps) {
+export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFrom }: ScaleListRowsProps) {
   return (
     <motion.ol
       variants={listContainer}
@@ -36,29 +38,29 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRow
       animate="visible"
       className="divide-y divide-ink/[0.08] overflow-hidden rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] shadow-plane-mid"
     >
-      {roadmap.map((scale) => {
+      {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
         const doneCount = [scale.moduleRead, scale.practiceCompleted, scale.quizPassed].filter(Boolean).length;
 
         return (
-          <motion.li key={scale.scaleGroup.slug} variants={listItem}>
+          <motion.li key={scale.scaleGroup.slug} variants={listItem} className={phoneHiddenFrom !== undefined && index >= phoneHiddenFrom ? "max-md:hidden" : undefined}>
             <button
               type="button"
               onClick={() => onRowClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
-              className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--c-s-50)/0.7)] ${
-                isCurrent ? "bg-[rgb(var(--signal)/0.06)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
+              className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-50/70 ${
+                isCurrent ? "bg-signal/6 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
               }`}
             >
-              <span className="w-14 shrink-0 text-small font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-caps">
                 {scale.scaleGroup.code.replace("Scale ", "#")}
               </span>
 
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                  <span className={`truncate text-body font-semibold ${locked ? "text-slate-400" : "text-slate-50"}`}>
+                  <span className={`line-clamp-2 min-w-0 text-body font-semibold leading-snug sm:truncate ${locked ? "text-slate-400" : "text-slate-50"}`}>
                     {scale.scaleGroup.title}
                   </span>
                   {scale.scaleGroup.kinitName && (
@@ -68,18 +70,20 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRow
               </span>
 
               {!locked && (
-                <span className="hidden shrink-0 items-center gap-1.5 sm:flex" aria-hidden>
+                <span className="flex shrink-0 items-center gap-1 sm:gap-1.5" aria-hidden>
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className={`h-1.5 w-4 rounded-full ${
-                        i < doneCount ? "bg-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low"
+                      className={`h-1.5 w-2.5 rounded-full sm:w-4 ${
+                        i < doneCount ? "bg-slate-50" : "bg-neu-base shadow-pressed-low"
                       }`}
                     />
                   ))}
                 </span>
               )}
 
+              {/* On a phone the row is the name and a small mark (a lock, a check, or just the bars); the words come back from sm up.
+                  The words stay in the page for screen readers either way. */}
               <span
                 className={`flex shrink-0 items-center gap-1 text-small font-medium ${
                   isCurrent || isCompleted ? "text-slate-50" : locked ? "text-slate-500" : "text-slate-400"
@@ -87,7 +91,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRow
               >
                 {locked && <LockIcon />}
                 {isCompleted && <CheckIcon />}
-                {isCurrent ? "You're here" : STATUS_LABEL[scale.status]}
+                <span className="sr-only sm:not-sr-only">{isCurrent ? "You're here" : STATUS_LABEL[scale.status]}</span>
               </span>
             </button>
           </motion.li>

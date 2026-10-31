@@ -9,6 +9,7 @@ import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
+import { GuardedButton } from "@/components/ui/GuardedButton";
 import { buttonVariants } from "@/components/ui/button";
 
 const cardVariants = {
@@ -78,7 +79,7 @@ function OptionButton({
       disabled={comingSoon}
       className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow disabled:cursor-not-allowed disabled:opacity-50 ${
         selected
-          ? "text-signal shadow-pressed-low ring-1 ring-signal"
+          ? "text-signal-fg shadow-pressed-low ring-1 ring-signal"
           : "text-slate-300 shadow-raised-low hover:text-slate-50"
       }`}
     >
@@ -189,7 +190,7 @@ export function OnboardingWizard() {
         />
       </div>
 
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         Step {step + 1} of {STEP_TITLES.length}
         {optional ? " · optional" : ""}
       </p>
@@ -198,7 +199,7 @@ export function OnboardingWizard() {
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
+            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-slate-50/60">
               <span className="text-small text-slate-500">@</span>
               <input
                 type="text"
@@ -251,7 +252,6 @@ export function OnboardingWizard() {
       </AnimatePresence>
 
       {error && <p className="mt-4 text-small text-red-400">{error}</p>}
-      {step === 0 && <p className="mt-4 text-small text-slate-500">Only your username and instrument are needed. The rest is optional, and you can change any of it later in your profile.</p>}
 
       {step === LAST_REQUIRED_STEP && instrument !== null && (
         <button type="button" onClick={save} disabled={submitting} className="mt-4 text-small font-medium text-slate-400 underline-offset-4 transition hover:text-slate-100 hover:underline disabled:opacity-60">
@@ -270,15 +270,16 @@ export function OnboardingWizard() {
             Back
           </button>
         )}
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!canAdvance || submitting || checkingUsername}
+        <GuardedButton
+          reason={submitting || checkingUsername ? null : step === 0 && !canAdvance ? "Username needs 3 or more characters" : step === 1 && !canAdvance ? "Pick your instrument" : null}
+          onClick={() => {
+            if (!submitting && !checkingUsername) void handleNext();
+          }}
           className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
         >
           {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
-        </button>
+        </GuardedButton>
         {optional && (
           <button
             type="button"

@@ -51,15 +51,15 @@ export function PaymentWaitNotice({ paymentId, submittedAt: initial = null, comp
   }
 
   return (
-    <div className={compact ? "mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low" : "rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center"}>
-      <p className={compact ? "text-small font-medium text-slate-100" : "text-small font-medium text-[rgb(var(--c-s-50))]"}>{notice.headline}</p>
+    <div className={compact ? "mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low" : "rounded-2xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-6 text-center"}>
+      <p className={compact ? "text-small font-medium text-slate-100" : "text-small font-medium text-slate-50"}>{notice.headline}</p>
       <p className={`mt-1 text-small ${compact ? "text-slate-400" : "text-slate-300"}`}>{notice.detail}</p>
       <button
         type="button"
         onClick={ask}
         disabled={busy}
-        className={`tap mt-3 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${
-          notice.slow ? "ring-1 ring-[rgb(var(--signal)/0.5)]" : ""
+        className={`tap mt-3 inline-flex items-center justify-center gap-2 rounded-full px-3 py-1.5 text-small font-medium text-slate-100 transition disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${
+          notice.slow ? "ring-1 ring-signal/50" : ""
         }`}
       >
         {busy && <MorphingSquare size={12} className="shrink-0" />}

@@ -4,11 +4,12 @@ import { OPEN_STUDENT_NOTES, listen } from "@/lib/topBarEvents";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, NotebookPen, Search } from "lucide-react";
+import { ArrowLeft, NotebookPen, Search } from "@/components/ui/appIcons";
 import { getTodaysNotesRosterAction, searchStudentsForNotesAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { NotesRosterRow } from "@/lib/studentNotes";
 import type { BookableStudent } from "@/lib/admin";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -28,6 +29,7 @@ export function StudentNotesPanel() {
   const [results, setResults] = useState<BookableStudent[] | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus<HTMLDivElement>(open, undefined, { trap: false, ref: panelRef });
 
   useEffect(() => setMounted(true), []);
   // The profile menu (the only way in on phones) opens this panel.
@@ -70,7 +72,7 @@ export function StudentNotesPanel() {
         title="Student notes"
         aria-expanded={open}
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
-          open ? "text-signal shadow-pressed-low" : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
+          open ? "text-signal-fg shadow-pressed-low" : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >
         <NotebookPen className="h-[18px] w-[18px]" strokeWidth={1.5} />
@@ -81,6 +83,7 @@ export function StudentNotesPanel() {
         createPortal(
           <div
             ref={panelRef}
+            tabIndex={-1}
             role="dialog"
             aria-label="Student notes"
             className="fixed right-3 top-12 z-[60] max-h-[80vh] w-[min(28rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"

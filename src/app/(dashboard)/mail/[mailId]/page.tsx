@@ -8,7 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ContactSupportButton } from "./ContactSupportButton";
 import { AnnounceOnMount } from "@/components/layout/AnnounceOnMount";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 const KIND_LABEL = { ADMIN_MESSAGE: "Message", PAYMENT: "Payment", BILLING: "Billing" } as const;
 const DEFAULT_ACTION = { ADMIN_MESSAGE: null, PAYMENT: { label: "View billing history", href: "/billing/history" }, BILLING: { label: "View your plan", href: "/billing/plans" } } as const;
@@ -30,12 +30,10 @@ export default async function MailDetailPage(props: { params: Promise<{ mailId: 
       {/* Opening a message marks it read: the bell and mail count drop right now. */}
       <AnnounceOnMount kinds={["notifications"]} />
       <div className="mx-auto grid max-w-2xl gap-(--space-group)">
-        <BackLink href="/mail" className="tap inline-flex items-center text-small font-medium text-slate-400 hover:text-slate-200">
-          Back
-        </BackLink>
+        <PageBack href="/mail" />
         <Card>
           <Eyebrow>{KIND_LABEL[mail.kind]}</Eyebrow>
-          <h1 className="mt-2 text-body font-semibold text-slate-50">{mail.title}</h1>
+          <h1 className="mt-2 text-title font-semibold text-slate-50">{mail.title}</h1>
           <p className="mt-1 text-small text-slate-500">
             {mail.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })} ET
           </p>

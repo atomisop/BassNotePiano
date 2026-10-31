@@ -29,7 +29,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "roadmap",
     target: "nav-roadmap",
     title: "Your roadmap",
-    body: "Six Ethiopian scales, one connected path. Read each module, log your practice, and pass an 80% quiz to unlock the next one.",
+    body: "Your course, one scale at a time. Read each module, practice, take the quiz, and your teacher opens the next scale.",
   },
   {
     id: "lessons",
@@ -41,7 +41,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "friends",
     target: "nav-friends",
     title: "Friends",
-    body: "Add friends by username and keep an eye on each other's progress.",
+    body: "Up in the top bar: add friends by username and keep an eye on each other's progress.",
   },
   {
     id: "messages",

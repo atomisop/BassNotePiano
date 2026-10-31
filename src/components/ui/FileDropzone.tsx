@@ -3,6 +3,7 @@
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { UploadSimple } from "@/components/ui/appIcons";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -111,24 +112,12 @@ export function FileDropzone({
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-9 text-center transition",
           dragging
-            ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)]"
-            : "border-ink/15 hover:border-[rgb(var(--c-s-50)/0.5)] hover:bg-[rgb(var(--c-s-50))]/[0.04]",
+            ? "border-slate-50 bg-slate-50/10"
+            : "border-ink/15 hover:border-slate-50/50 hover:bg-slate-50/[0.04]",
           disabled && "pointer-events-none opacity-50",
         )}
       >
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          className="text-[rgb(var(--c-s-50))]"
-          aria-hidden
-        >
-          <path d="M12 16V4m0 0L7 9m5-5 5 5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
-        </svg>
+        <UploadSimple className="text-slate-50" size={22} />
         <span className="mt-3 text-small font-medium text-slate-100">
           {dragging ? "Drop to upload" : "Drag a file here, or click to choose"}
         </span>

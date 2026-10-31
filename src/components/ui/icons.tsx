@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ArrowLeft, Check, Eye, EyeOff, Reply, Smiley, X } from "@/components/ui/appIcons";
 
 /**
  * Shared inline icons.
@@ -12,24 +13,12 @@ import { cn } from "@/lib/utils";
  * in the middle of a sentence.
  *
  * All of these are `aria-hidden`, they are always decorative here, sitting
- * beside text that already carries the meaning.
+ * beside text that already carries the meaning. The everyday ones (check, close, arrow, eye, reply, smiley) are the app's soft
+ * Phosphor icons from appIcons.tsx; the spinner and the Discord mark stay drawn here.
  */
 
 export function CheckIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className={className}
-      aria-hidden
-    >
-      <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Check size={size} weight="bold" className={className} />;
 }
 
 /**
@@ -65,56 +54,21 @@ export function SpinnerIcon({ className, size = 14 }: { className?: string; size
 
 
 export function ArrowLeftIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={className}
-      aria-hidden
-    >
-      <path d="M19 12H5M11 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <ArrowLeft size={size} className={className} />;
 }
 
 export function XIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className={className}
-      aria-hidden
-    >
-      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <X size={size} weight="bold" className={className} />;
 }
 
 /** Show-password toggle, "visible" state. */
 export function EyeIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
-      <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Eye size={size} className={className} />;
 }
 
 /** Show-password toggle, "hidden" state, matching EyeIcon's own outline plus a strike-through rather than an unrelated glyph. */
 export function EyeOffIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
-      <path d="M3 3l18 18M10.6 10.6a3 3 0 004.24 4.24M9.9 5.2A10.7 10.7 0 0112 5c7 0 10.5 7 10.5 7a13.5 13.5 0 01-3.1 3.9M6.5 6.6C3.6 8.4 1.5 12 1.5 12s3.5 7 10.5 7c1.4 0 2.7-.28 3.9-.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <EyeOff size={size} className={className} />;
 }
 
 /**
@@ -132,38 +86,9 @@ export function DiscordIcon({ className, size = 14 }: { className?: string; size
 }
 
 export function ReplyArrowIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={className}
-      aria-hidden
-    >
-      <path d="M9 17 4 12l5-5M4 12h11a5 5 0 0 1 5 5v1" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Reply size={size} className={className} />;
 }
 
 export function SmileyPlusIcon({ className, size = 14 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      className={className}
-      aria-hidden
-    >
-      <path d="M8.5 10.5v.01M13.5 10.5v.01" strokeLinecap="round" />
-      <path d="M8 15c.8 1 1.9 1.5 3 1.5s2.2-.5 3-1.5" strokeLinecap="round" />
-      <path d="M14.5 3.5A9 9 0 1 0 20.5 9.5" strokeLinecap="round" />
-      <path d="M18 2v5M15.5 4.5h5" strokeLinecap="round" />
-    </svg>
-  );
+  return <Smiley size={size} className={className} />;
 }

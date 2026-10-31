@@ -1,92 +1,34 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  Briefcase,
-  CalendarDays,
-  ClipboardList,
-  CreditCard,
-  Headphones,
-  LayoutDashboard,
-  LifeBuoy,
-  Megaphone,
-  BookOpen,
-  Repeat,
-  Settings,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type AppIcon } from "@/components/ui/appIcons";
+import { Dialog } from "@/components/ui/Dialog";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
 
 /**
- * The one admin menu. Every admin page is a single entry in one grouped list,
- * the way YouTube Studio and Google's admin consoles lay theirs out: nothing is
- * hidden behind a second row of tabs or a dropdown, and each name matches the
- * heading of the page it opens. From md up it is a list on the left (Settings
- * pinned underneath); on phones the same entries are one swipeable row.
- * Pages keep their own tabs for what is inside them (statuses, filters).
+ * The admin menu: six choices (Overview, Billing, People, Classes, Inbox, Setup). Each one holds its related pages as tabs
+ * (`AdminSectionTabs`, drawn under the menu on every admin page), so seventeen pages are one tap away without seventeen choices
+ * on screen. From md up the six are a list on the left; on phones they are one bar naming where you are, which opens a sheet of six
+ * equal rows. The shape of the menu lives in `lib/adminNav.ts`.
  */
-interface AdminNavLeaf {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-}
+export type { AdminNavBadges };
 
-interface AdminNavGroup {
-  label: string;
-  leaves: AdminNavLeaf[];
-}
-
-const NAV_GROUPS: AdminNavGroup[] = [
-  { label: "Overview", leaves: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
-  {
-    label: "Billing",
-    leaves: [
-      { href: "/admin/payments", label: "Payments", icon: CreditCard },
-      { href: "/admin/payment-plans", label: "Payment Plans", icon: Repeat },
-    ],
-  },
-  {
-    label: "People",
-    leaves: [
-      { href: "/admin/students", label: "Applications", icon: ClipboardList },
-      { href: "/admin/users", label: "Accounts", icon: Users },
-      { href: "/admin/employees", label: "Employees", icon: Briefcase },
-    ],
-  },
-  {
-    label: "Teaching",
-    leaves: [
-      { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
-      { href: "/admin/lessons", label: "Lessons", icon: BookOpen },
-      { href: "/admin/discord", label: "Discord", icon: Headphones },
-    ],
-  },
-  {
-    label: "Inbox",
-    leaves: [
-      { href: "/admin/support", label: "Support Chat", icon: LifeBuoy },
-      { href: "/admin/messages", label: "Messages", icon: Megaphone },
-    ],
-  },
-];
-
-/** Pinned under the groups, set apart, like the settings entry in Google's consoles. */
-const SETTINGS_LEAF: AdminNavLeaf = { href: "/admin/settings", label: "Settings", icon: Settings };
-
-/** What is waiting, by page address. Pages with nothing waiting have no entry. */
-export type AdminNavBadges = Record<string, number>;
-
-function isLeafActive(href: string, pathname: string): boolean {
-  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
-}
+export const HUB_ICON: Record<AdminHubId, AppIcon> = {
+  overview: LayoutDashboard,
+  billing: CreditCard,
+  people: Users,
+  classes: CalendarDays,
+  inbox: Inbox,
+  setup: Settings,
+};
 
 function Count({ count, className = "" }: { count: number; className?: string }) {
   if (count <= 0) return null;
   return (
     <span
-      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal ${className}`}
+      className={`rounded-full bg-signal/18 px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
       aria-label={`${count} waiting`}
     >
       {count > 99 ? "99+" : count}
@@ -94,98 +36,155 @@ function Count({ count, className = "" }: { count: number; className?: string })
   );
 }
 
-/** md and up: the grouped list on the left. */
-function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
+/** Where you are: the hub of the current address, or the Overview for an address that is in none. */
+function useCurrentHub(): AdminHub {
   const pathname = usePathname();
+  return locateAdminPage(pathname)?.hub ?? ADMIN_HUBS[0];
+}
 
-  function Item({ leaf }: { leaf: AdminNavLeaf }) {
-    const active = isLeafActive(leaf.href, pathname);
-    const Icon = leaf.icon;
-    return (
-      <Link
-        href={leaf.href}
-        aria-current={active ? "page" : undefined}
-        className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-          active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
-        }`}
-      >
-        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
-        <span className="truncate">{leaf.label}</span>
-        <Count count={badges[leaf.href] ?? 0} className="ml-auto" />
-      </Link>
-    );
-  }
-
+/**
+ * Tablets (md up to lg): the six choices as a list on the left. From lg the app's own sidebar lists them under "Admin", so this one
+ * steps aside and there is one menu, not two. Each one opens its first page; the section's other pages are the tabs drawn under
+ * the menu on every admin page (`AdminSectionTabs`), so nothing pops out when the pointer rests on a row.
+ */
+export function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
+  const current = useCurrentHub();
   return (
-    <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-4 md:sticky md:top-0 md:flex md:self-start">
-      {NAV_GROUPS.map((group) => (
-        <div key={group.label}>
-          {/* A lone entry that shares its group's name needs no heading. */}
-          {!(group.leaves.length === 1 && group.leaves[0].label === group.label) && (
-            <p className="px-2.5 pb-1 text-small font-medium text-slate-500">{group.label}</p>
-          )}
-          <ul className="grid gap-0.5">
-            {group.leaves.map((leaf) => (
-              <li key={leaf.href}>
-                <Item leaf={leaf} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-      <div className="border-t border-(--neu-edge) pt-3">
-        <Item leaf={SETTINGS_LEAF} />
-      </div>
+    <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-1 md:sticky md:top-0 md:flex md:self-start lg:hidden">
+      {ADMIN_HUBS.map((hub) => {
+        const active = hub.id === current.id;
+        const Icon = HUB_ICON[hub.id];
+        return (
+          <Link
+            key={hub.id}
+            href={hub.pages[0].href}
+            prefetch
+            aria-current={active ? "page" : undefined}
+            className={`press-soft flex h-10 items-center gap-2.5 rounded-control px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              active ? "liquid text-slate-50" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
+            }`}
+          >
+            <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+            <span className="truncate">{hub.label}</span>
+            <Count count={hubWaiting(hub, badges)} className="ml-auto" />
+          </Link>
+        );
+      })}
     </nav>
   );
 }
 
-/** Phones: the same entries in one row you swipe, the current one scrolled into view. A thin divider marks each group. */
-function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
-  const pathname = usePathname();
-  const activeRef = useRef<HTMLAnchorElement | null>(null);
-
-  useEffect(() => {
-    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
-  }, [pathname]);
-
-  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF] }];
+/**
+ * Phones: one bar that names the section you are on and opens a sheet of the six. Nothing scrolls, and each row says what is inside
+ * it, so nobody has to guess where a page went.
+ */
+export function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
+  const current = useCurrentHub();
+  const [open, setOpen] = useState(false);
+  const CurrentIcon = HUB_ICON[current.id];
+  const waiting = ADMIN_HUBS.reduce((sum, hub) => sum + hubWaiting(hub, badges), 0);
 
   return (
-    <nav aria-label="Admin sections" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
-      <ul className="flex w-max items-center gap-1.5">
-        {groups.map((group, gi) =>
-          group.leaves.map((leaf, li) => {
-            const active = isLeafActive(leaf.href, pathname);
-            const Icon = leaf.icon;
-            return (
-              <li key={leaf.href} className={`flex items-center ${li === 0 && gi > 0 ? "ml-1.5 border-l border-(--neu-edge) pl-3" : ""}`}>
-                <Link
-                  href={leaf.href}
-                  ref={active ? activeRef : undefined}
-                  aria-current={active ? "page" : undefined}
-                  className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    active ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />
-                  {leaf.label}
-                  <Count count={badges[leaf.href] ?? 0} />
-                </Link>
-              </li>
-            );
-          }),
-        )}
-      </ul>
-    </nav>
+    <div className="mb-2 md:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-label={`Admin menu, you are in ${current.label}${waiting > 0 ? `, ${waiting} waiting` : ""}`}
+        className="tap press-soft flex h-11 w-full items-center gap-2.5 rounded-full bg-neu-base px-4 text-left text-small font-medium text-slate-100 shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <CurrentIcon className="h-4 w-4 shrink-0 text-signal-fg" strokeWidth={2.1} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{current.label}</span>
+        <Count count={waiting} />
+        <span className="flex items-center gap-1 text-slate-400">
+          Menu
+          <ChevronDown aria-hidden className="h-4 w-4" />
+        </span>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen} title="Admin menu">
+        <nav aria-label="Admin sections">
+          <ul className="grid grid-cols-1 gap-2">
+            {ADMIN_HUBS.map((hub) => {
+              const active = hub.id === current.id;
+              const Icon = HUB_ICON[hub.id];
+              const count = hubWaiting(hub, badges);
+              return (
+                <li key={hub.id}>
+                  <Link
+                    href={hub.pages[0].href}
+                    prefetch
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`press-soft flex h-12 w-full items-center gap-3 rounded-2xl px-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      active ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-100 shadow-raised-low"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-body font-semibold leading-tight">{hub.label}</span>
+                        <Count count={count} />
+                      </span>
+                      {hub.pages.length > 1 && (
+                        <span className="block truncate text-small leading-tight text-slate-400">{hub.pages.map((p) => p.label).join(", ")}</span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </Dialog>
+    </div>
   );
 }
 
 export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
-      <AdminSwipeRow badges={badges} />
+      <AdminPhoneMenu badges={badges} />
       <AdminSideRail badges={badges} />
     </>
+  );
+}
+
+/**
+ * The pages inside the current section, as one row of tabs above the page (nothing for a section with a single page). Evenly
+ * spaced across a phone so none of it scrolls sideways; underlined, so it never reads as the page's own filter pills below it.
+ */
+export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
+  const pathname = usePathname();
+  const located = locateAdminPage(pathname);
+  if (!located || located.hub.pages.length < 2) return null;
+  const { hub, page: currentPage } = located;
+
+  return (
+    <nav aria-label={`${hub.label} pages`} className="border-b border-(--neu-edge)">
+      <ul className="flex">
+        {hub.pages.map((page) => {
+          const active = page.href === currentPage.href;
+          const count = badges[page.href] ?? 0;
+          return (
+            <li key={page.href} className="min-w-0 flex-auto md:flex-none">
+              <Link
+                href={page.href}
+                prefetch
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-11 items-center justify-center gap-1 whitespace-nowrap px-1 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5 ${
+                  active
+                    ? "text-signal-fg after:absolute after:inset-x-1 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-signal md:after:inset-x-3"
+                    : "text-slate-400 hover:text-slate-100"
+                }`}
+              >
+                <span className="min-w-0 truncate">{page.label}</span>
+                {count > 0 && <span aria-label={`${count} waiting`} className="h-2 w-2 shrink-0 rounded-full bg-signal" />}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

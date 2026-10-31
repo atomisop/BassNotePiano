@@ -10,7 +10,9 @@ import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { EmptyState } from "@/components/messaging/EmptyState";
 import { EmptyState as StartState } from "@/components/ui/EmptyState";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/components/ui/appIcons";
+import type { SupportChat } from "@/lib/messagesSupport";
+import { SupportChatWindow } from "./components/SupportChatWindow";
 import { GroupChatWindow } from "./components/GroupChatWindow";
 import { NewGroupPanel } from "./components/NewGroupPanel";
 import {
@@ -30,6 +32,9 @@ import {
   createGroupAction,
   leaveGroupAction,
   reactToGroupMessageAction,
+  getSupportChatAction,
+  sendSupportChatMessageAction,
+  markSupportChatReadAction,
   type MessageRow,
   type GroupMessageRow,
 } from "./actions";
@@ -44,15 +49,19 @@ const ACTIVE_CONVERSATION_POLL_MS = 2_500;
 function MessagesInner({
   initialConversations,
   initialGroups,
+  initialSupport,
 }: {
   initialConversations: ConversationSummary[];
   initialGroups: GroupSummary[];
+  initialSupport: SupportChat | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const activeFriendId = searchParams.get("with");
   const activeGroupId = searchParams.get("group");
+  const supportOpen = searchParams.get("support") === "1" && initialSupport !== null;
+  const [support, setSupport] = useState(initialSupport);
 
   const [conversations, setConversations] = useState(initialConversations);
   const [groups, setGroups] = useState(initialGroups);
@@ -60,13 +69,15 @@ function MessagesInner({
   const [groupMessages, setGroupMessages] = useState<GroupMessageRow[]>([]);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [groupTypers, setGroupTypers] = useState<string[]>([]);
+  // Which thread's messages are on screen: until the open one has answered once, its pane shows placeholder bubbles.
+  const [loadedThread, setLoadedThread] = useState<string | null>(null);
 
   // activeChatId is a real, intentional null state (no auto-selecting the
   // first conversation), that's what makes the empty state and the mobile
   // sidebar/chat split meaningful.
   const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
-  const hasActivePane = Boolean(activeFriendId || activeGroupId);
+  const hasActivePane = Boolean(activeFriendId || activeGroupId || supportOpen);
   // Captured as their own primitives so the two polling effects below can
   // depend on (and reference) only these, never `active`/`activeGroup`
   // themselves, both are recomputed fresh every render, so depending on
@@ -78,10 +89,28 @@ function MessagesInner({
   const listPoll = usePoll(async (signal) => {
     const nextConversations = await getConversationsAction();
     const nextGroups = await getGroupsAction();
+    const nextSupport = support ? await getSupportChatAction() : null;
     if (signal.aborted) return;
     setConversations(nextConversations);
     setGroups(nextGroups);
+    if (nextSupport) setSupport(nextSupport);
   }, CONVERSATION_LIST_POLL_MS);
+
+  // Open Support: refresh quickly and mark the team's replies read while it is on screen.
+  const supportPoll = usePoll(
+    async (signal) => {
+      const next = await getSupportChatAction();
+      if (signal.aborted) return;
+      if (document.visibilityState === "visible" && next.unread > 0) {
+        await markSupportChatReadAction();
+        announceChange("messages");
+        next.unread = 0;
+      }
+      setSupport(next);
+    },
+    ACTIVE_CONVERSATION_POLL_MS,
+    { enabled: supportOpen, resetKey: supportOpen ? "support" : null },
+  );
 
   // null = haven't loaded this conversation yet, so don't chime on first load.
   const previousConversationLastId = useRef<string | null>(null);
@@ -115,6 +144,7 @@ function MessagesInner({
       previousConversationLastId.current = newest?.id ?? previous;
 
       setMessages(rows);
+      setLoadedThread(`dm:${friendId}`);
       // Seen means the chat is open AND on screen. A background tab keeps
       // polling but must not tell the sender "Seen" (see visibility effect below).
       if (document.visibilityState === "visible") {
@@ -145,6 +175,7 @@ function MessagesInner({
       previousGroupLastId.current = newest?.id ?? previous;
 
       setGroupMessages(rows);
+      setLoadedThread(`group:${groupId}`);
       if (document.visibilityState === "visible") {
         await markGroupReadAction(groupId);
         announceChange("messages");
@@ -157,7 +188,7 @@ function MessagesInner({
     { enabled: Boolean(activeGroupPollId), resetKey: activeGroupPollId },
   );
 
-  const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed;
+  const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed || supportPoll.failed;
   // Coming back to the tab with a chat open is the moment those messages are
   // actually seen, so run a tick right away instead of waiting out the interval.
   useEffect(() => {
@@ -175,6 +206,7 @@ function MessagesInner({
     listPoll.retry();
     conversationPoll.retry();
     groupPoll.retry();
+    supportPoll.retry();
   }
 
   function handleSelect(friendId: string) {
@@ -183,6 +215,16 @@ function MessagesInner({
 
   function handleSelectGroup(groupId: string) {
     router.push(`/messages?group=${groupId}`);
+  }
+
+  function handleSelectSupport() {
+    router.push("/messages?support=1");
+  }
+
+  async function handleSendSupport(body: string) {
+    const result = await sendSupportChatMessageAction(body);
+    if (result.ok) setSupport(await getSupportChatAction());
+    return result;
   }
 
   function handleMinimize() {
@@ -254,10 +296,10 @@ function MessagesInner({
     router.push("/messages");
   }
 
-  if (conversations.length === 0 && groups.length === 0) {
+  if (conversations.length === 0 && groups.length === 0 && !support) {
     return (
       <WideLayout>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Messages</h1>
         <StartState
           className="mt-6"
@@ -272,27 +314,11 @@ function MessagesInner({
   }
 
   return (
-    // 100dvh, not 100vh: unlike the app shell (which deliberately stays put
-    // through Safari's toolbar auto-hide, see (dashboard)/layout.tsx's own
-    // comment on that choice), this pane *should* shrink when the on-screen
-    // keyboard opens for the message input below. 100vh is measured against
-    // the large viewport and never accounts for the keyboard at all, so
-    // this box stayed its full height with the keyboard covering the
-    // bottom of it, and the only way anything could bring the now-hidden
-    // input back into view was scrolling the whole pane up, taking the
-    // header (the person you're actually talking to) off the top of the
-    // screen with it. 100dvh tracks the real visible viewport continuously,
-    // keyboard included, so the header and input (both fixed-size flex
-    // children, see ChatWindow's own h-full flex-col) stay pinned in place
-    // and only the message list in between actually shrinks.
-    //
-    // The 13.5rem (14.5rem from md:) is the shell's real chrome: 4rem TopBar,
-    // the <main> top padding, and its pb-32 that clears the floating dock.
-    // It was 9rem, which only fit because chat auto-scroll used to shove the
-    // whole shell upward to compensate; that is fixed, so the pane must fit.
+    // Full screen under the top bar (TwoPaneLayout `bleed`): 100dvh, not 100vh, so the box shrinks with the on-screen keyboard and the
+    // header and the input stay pinned while only the message list in between gives way.
     <>
       <TwoPaneLayout
-        className="glass-surface h-[calc(100dvh-13.5rem)] overflow-hidden md:h-[calc(100dvh-14.5rem)]"
+        bleed
         showDetail={hasActivePane}
         list={
           <ConversationSidebar
@@ -304,6 +330,9 @@ function MessagesInner({
             onTogglePin={handleTogglePin}
             onSelectGroup={handleSelectGroup}
             onNewGroup={() => setNewGroupOpen(true)}
+            support={support ? { preview: support.messages.at(-1)?.body ?? null, unread: support.unread } : null}
+            supportActive={supportOpen}
+            onSelectSupport={handleSelectSupport}
           />
         }
         detail={
@@ -312,6 +341,7 @@ function MessagesInner({
               key={active.friendId}
               conversation={active}
               messages={messages}
+              loading={loadedThread !== `dm:${active.friendId}`}
               currentUserId={session?.user?.id ?? ""}
               onSend={handleSend}
               onMinimize={handleMinimize}
@@ -324,6 +354,7 @@ function MessagesInner({
               group={activeGroup}
               currentUserId={session?.user?.id ?? ""}
               messages={groupMessages}
+              loading={loadedThread !== `group:${activeGroup.id}`}
               onSend={handleSendGroup}
               onMinimize={handleMinimize}
               onLeave={handleLeaveGroup}
@@ -331,6 +362,8 @@ function MessagesInner({
               typingNames={groupTypers}
               onTyping={(groupId, typing) => void setGroupTypingAction(groupId, typing)}
             />
+          ) : supportOpen && support ? (
+            <SupportChatWindow chat={support} onSend={handleSendSupport} onMinimize={handleMinimize} />
           ) : (
             <EmptyState />
           )
@@ -358,13 +391,15 @@ function MessagesInner({
 export function MessagesClient({
   initialConversations,
   initialGroups,
+  initialSupport,
 }: {
   initialConversations: ConversationSummary[];
   initialGroups: GroupSummary[];
+  initialSupport: SupportChat | null;
 }) {
   return (
     <Suspense fallback={null}>
-      <MessagesInner initialConversations={initialConversations} initialGroups={initialGroups} />
+      <MessagesInner initialConversations={initialConversations} initialGroups={initialGroups} initialSupport={initialSupport} />
     </Suspense>
   );
 }

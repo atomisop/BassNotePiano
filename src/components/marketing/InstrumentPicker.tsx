@@ -2,7 +2,9 @@ import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { ElasticGallery } from "@/components/ui/elastic-gallery";
 import { BACKDROPS } from "@/lib/backdrops";
 
-const small = (url: string) => url.replace("w=2400", "w=1400");
+// Gallery cards are at most about 700px wide even when opened; 900px at q=70 (Unsplash picks WebP or AVIF) is sharp on a phone and
+// about a quarter of the old 1400px download (2026-10-31 speed pass).
+const small = (url: string) => url.replace("w=2400&q=80", "w=900&q=70");
 
 // Piano, guitar and bass are all real photos of those instruments.
 const ITEMS = [
@@ -14,10 +16,10 @@ const ITEMS = [
 export function InstrumentPicker() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-24 md:pb-40 md:pt-40">
-      <h2 className="mb-8">
+      <h2 className="mb-10 text-center">
         <WordsPullUp
           text="Choose your instrument"
-          className="text-[clamp(2rem,5vw,4rem)] font-medium leading-[0.95] tracking-[-0.05em] text-[#E1E0CC]"
+          className="justify-center text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1] tracking-display text-cream"
         />
       </h2>
       <ElasticGallery items={ITEMS} />

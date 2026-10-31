@@ -1,5 +1,6 @@
 "use client";
 
+import { useWebOtp } from "@/lib/useWebOtp";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { startNavigation } from "@/lib/navigationState";
 import { confirmPhoneAction, resendPhoneCodeAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -28,6 +30,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cooldown = useResendCooldown();
+  useWebOtp(step === "code", setCode);
 
   async function submitNumber(e: FormEvent) {
     e.preventDefault();
@@ -68,7 +71,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Last step</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Last step</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your phone</h1>
 
       {step === "number" && (
@@ -117,11 +120,11 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 required
                 autoFocus
                 aria-invalid={Boolean(error)}
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className={cn("h-12 text-center font-mono text-body tracking-[0.5em] font-semibold", error && fieldInvalid)}
                 placeholder="······"
@@ -148,7 +151,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           </button>
           {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
             <p className="mt-3 text-center text-small text-slate-500">
-              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
             </p>
           )}
         </>

@@ -3,7 +3,7 @@
 
 import { notifyAdmins } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
-import { livePaymentPlanConditions } from "@/lib/classSchedule";
+import { livePaymentPlanConditions, ONE_OFF_LABEL } from "@/lib/classSchedule";
 import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
 
 // ---------------------------------------------------------------------------
@@ -60,7 +60,8 @@ export function resolveDurationMin(startTime: string, endTime: string): number {
 
 /** Every schedule row, active or not, unlike getUpcomingOccurrences(), which only ever shows what's currently bookable. */
 export async function getAllClassSchedules() {
-  return prisma.classSchedule.findMany({ orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] });
+  // The hidden one-off rows behind custom-time moves are not weekly slots.
+  return prisma.classSchedule.findMany({ where: { OR: [{ label: null }, { label: { not: ONE_OFF_LABEL } }] }, orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] });
 }
 
 export async function createClassSchedule(input: ClassScheduleInput) {
