@@ -4,6 +4,7 @@ import { getAllSettings } from "@/lib/siteSettings";
 import { CLIENT_SETTING_DEFS, SETTING_CATEGORIES, SETTING_DEFS } from "@/lib/siteSettingsDefs";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { saveSettingAction, resetSettingAction } from "./actions";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Settings" };
 
@@ -23,8 +24,11 @@ export default async function AdminSettingsPage() {
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">
         {SETTING_DEFS.length} controls across {SETTING_CATEGORIES.length} areas. Switches save the moment you flip them. Every change is recorded in the audit log.
       </p>

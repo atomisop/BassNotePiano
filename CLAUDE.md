@@ -168,7 +168,7 @@ message, and the widget then offers the handoff to a person. `recordAtomFailure`
 (`src/lib/atomHealth.ts`) emails the owner at once for credits or key problems
 (or after 5 temporary failures in 10 minutes), at most every 12 hours, with one
 "answering again" email on recovery; the state is `atom-alert` rows in `JobRun`
-and shows as an item in the Overview's "Needs you now".
+and shows as an item in the admin alerts button ("Needs you").
 
 A **separate** persistence mechanism now also exists for ordinary (non-
 escalated) Atom chats, per the current system prompt in
@@ -315,7 +315,7 @@ proves nothing about the line being active or theirs; only a text code or a paid
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
-notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
+notification and show one at a time, **only on Home and at most one per slot in all (2026-10-30; the practice banner never shows, Home's hero says it)**, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
 Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
 (`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
 `/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
@@ -346,7 +346,7 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
 - **Signed-in devices** (Settings > "Where you are signed in"): `KnownDevice` rows (browser + OS, never the IP) with city/region/country from the host's geo headers
   (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
   Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
-- **Follow-ups** (`adminFollowUps.ts`, Overview + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
+- **Follow-ups** (`adminFollowUps.ts`, People > Accounts (`FollowUpList`) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
   expiring, stale applications. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
 - **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
 - **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
@@ -561,7 +561,7 @@ The old "family plan" is now called **Group plan** everywhere a person reads it 
 
 ## Owner reservations (added 2026-10-25)
 
-Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAdmin.ts`, table `OwnerReservation`): the owner keeps a day (every window, `chunkIndex` null) or chosen hours for a named customer (name, email and phone required). Unlike a `SlotHold` (a reminder that never blocks), this BLOCKS: `bookClass`, `adminBookClass`, `bookFamilyClass`, `rescheduleClassBooking` and `bookExtraSessionOccurrence` refuse it ("reserved by the owner"), a plan's weekly auto-booking skips that week (`createReservedBookingIfAbsent`), and `getUpcomingOccurrences` marks it `isBooked` (+ `reservedByOwner`), so students just see the time as taken and never see the customer. Creating one is refused when someone already has a class in it. Release (two taps) frees it. Audited as `reservation.create` / `reservation.release`. The overview (`/admin`) sections are dropdowns at every width (`PhoneAccordion alwaysCollapsible`).
+Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAdmin.ts`, table `OwnerReservation`): the owner keeps a day (every window, `chunkIndex` null) or chosen hours for a named customer (name, email and phone required). Unlike a `SlotHold` (a reminder that never blocks), this BLOCKS: `bookClass`, `adminBookClass`, `bookFamilyClass`, `rescheduleClassBooking` and `bookExtraSessionOccurrence` refuse it ("reserved by the owner"), a plan's weekly auto-booking skips that week (`createReservedBookingIfAbsent`), and `getUpcomingOccurrences` marks it `isBooked` (+ `reservedByOwner`), so students just see the time as taken and never see the customer. Creating one is refused when someone already has a class in it. Release (two taps) frees it. Audited as `reservation.create` / `reservation.release`.
 
 ## Staging and smoke checks (added 2026-10-27, `docs/STAGING.md`)
 
@@ -570,6 +570,10 @@ Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAd
 ## Catching a broken change before CI (added 2026-10-27)
 
 A file that starts with `"use server"` may only export async functions and types; a constant or class there fails `next build` but not `tsc` or lint, so it once reached CI and emailed the owner. `tests/useServerExports.test.ts` reads every such file under `src` (part of `npm test`, so CI too). `.githooks/pre-push` runs the type check, lint and all tests before every push; turn it on once per checkout with `npm run hooks:on` (`git push --no-verify` skips it). Still run `npm run build` before opening a PR that touches routes or actions.
+
+## Admin Overview (reworked 2026-10-30)
+
+`/admin` shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
 
 ## Activity log (added 2026-10-21)
 
@@ -591,6 +595,10 @@ only when its `emailCategory` is `reminders` or `classes` and the person's own s
 browser; the push service saying 404/410 deletes the row. The endpoint a browser sends must be on an allow-list of real push hosts (`isAllowedPushEndpoint`), because our server POSTs to it.
 **Needs three env vars to turn on**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (make a pair with `npx web-push generate-vapid-keys`) and optionally `VAPID_SUBJECT` (`mailto:...`). Without the keys the card is
 hidden and nothing is sent. On iPhone/iPad push only works once the site is on the Home Screen, so the card shows those steps first (the "Add to Home Screen" prompt).
+
+## Offline (added 2026-10-31)
+
+`OfflineNotice` (providers.tsx) shows a red "No internet connection" pill while the device is offline (the top banners step aside) and a short "Back online". `public/sw.js` is now installed on every visit (`ServiceWorkerSetup`, production only) and, besides push, serves the self-contained `public/offline.html` when a page is opened with no internet; it caches only that page and `/logo-mark.png` (`bnp-offline-v1`, bump the name when the page changes). Never add other caching there without a plan for stale pages.
 
 ## Referrals (added 2026-10-21)
 

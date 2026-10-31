@@ -6,7 +6,6 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { getPricingConfig } from "@/lib/pricing";
@@ -14,7 +13,7 @@ import { getDiscountPercent } from "@/lib/accountDiscounts";
 import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
 import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
 import { listInvitesForPerson } from "@/lib/familyInvites";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
 
@@ -132,10 +131,7 @@ export default async function BillingPlansPage(
   return (
     <div className="mx-auto w-full max-w-2xl md:max-w-6xl">
       <div className="mb-4 flex items-center justify-between">
-        <BackLink href="/lessons" className="tap flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-          <ArrowLeftIcon size={16} />
-          Back
-        </BackLink>
+        <PageBack href="/lessons" />
         <PlanHistoryButton
           plans={pastPlans.map((plan) => ({
             id: plan.id,
@@ -147,7 +143,7 @@ export default async function BillingPlansPage(
           }))}
         />
       </div>
-      <div className="text-center md:text-left">
+      <div data-deck-header className="deck-header -mt-4 pt-4 text-center md:text-left">
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>

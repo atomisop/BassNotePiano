@@ -114,10 +114,19 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true, discordUsername: true } });
   const card = <DiscordConnectCard link={discordLinkState({ discordId: me?.discordId ?? null, discordUsername: me?.discordUsername ?? null })} flag={searchParams.discord} />;
 
+  // One title at the top of Lessons, pinned like every page's heading, above the Discord card and the plan (it used to sit halfway down).
+  // Not wrapped in a layout box: a pinned heading only stays pinned while its parent is the whole page.
+  const heading = (
+    <div data-deck-header className="deck-header mx-auto -mt-4 mb-4 w-full max-w-wide pt-4">
+      <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Lessons</h1>
+    </div>
+  );
+
   const parentControlled = await hasParentControl(session.user.id);
   if (!activePlan)
     return (
       <>
+        {heading}
         {card}
         <ParentLockedArea locked={parentControlled}>{bookingClient}</ParentLockedArea>
       </>
@@ -137,6 +146,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
 
   return (
     <>
+      {heading}
       {card}
       <MyPlanSummary userId={session.user.id} />
     <ParentLockedArea locked={parentControlled}>

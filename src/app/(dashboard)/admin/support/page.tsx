@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { PageBack } from "@/components/ui/BackLink";
 
 const FILTERS: { label: string; value: SupportListFilter; param: string }[] = [
   { label: "Open", value: "OPEN", param: "open" },
@@ -57,8 +58,11 @@ export default async function AdminSupportPage(
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Support Chat</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Support Chat</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">
         {threads.length} {noun}
         {threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}

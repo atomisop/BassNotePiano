@@ -116,6 +116,8 @@ import { Users as PUsers } from "@phosphor-icons/react/dist/ssr/Users";
 import { VideoCamera as PVideoCamera } from "@phosphor-icons/react/dist/ssr/VideoCamera";
 import { Warning as PWarning } from "@phosphor-icons/react/dist/ssr/Warning";
 import { WarningCircle as PWarningCircle } from "@phosphor-icons/react/dist/ssr/WarningCircle";
+import { WifiHigh as PWifiHigh } from "@phosphor-icons/react/dist/ssr/WifiHigh";
+import { WifiSlash as PWifiSlash } from "@phosphor-icons/react/dist/ssr/WifiSlash";
 import { Wrench as PWrench } from "@phosphor-icons/react/dist/ssr/Wrench";
 import { X as PX } from "@phosphor-icons/react/dist/ssr/X";
 
@@ -259,6 +261,8 @@ export const Users = soft(PUsers, "Users");
 export const Video = soft(PVideoCamera, "Video");
 export const Volume2 = soft(PSpeakerHigh, "Volume2");
 export const VolumeX = soft(PSpeakerX, "VolumeX");
+export const Wifi = soft(PWifiHigh, "Wifi");
+export const WifiOff = soft(PWifiSlash, "WifiOff");
 export const Wrench = soft(PWrench, "Wrench");
 export const X = soft(PX, "X");
 export const ZoomIn = soft(PMagnifyingGlassPlus, "ZoomIn");

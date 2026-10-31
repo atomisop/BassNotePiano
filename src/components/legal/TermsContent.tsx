@@ -100,7 +100,7 @@ export function TermsContent() {
         <p>
           <span className="font-medium text-slate-50">It is not a group class.</span> The weekly time chosen when the plan is set up is
           the payer&apos;s own. Everyone else gets their class credits on their own account when the payer pays, and then picks their own class times
-          with them, one class a week, in Online Lessons. Each person has their own teacher time. Nobody is booked into someone else&apos;s class.
+          with them, one class a week, in Lessons. Each person has their own teacher time. Nobody is booked into someone else&apos;s class.
         </p>
         <p>
           <span className="font-medium text-slate-50">Credits expire.</span> The same rule applies to everyone in the group: credits are

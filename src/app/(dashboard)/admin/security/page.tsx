@@ -4,8 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { isBrowserNoise } from "@/lib/csp";
 import { CspClearButton } from "@/components/admin/CspClearButton";
 import { clearCspViolationsAction } from "./actions";
+import { getJobStatuses, isStopped } from "@/lib/jobRun";
+import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
+import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
+import { PageBack } from "@/components/ui/BackLink";
 
-export const metadata = { title: "Admin: Security" };
+export const metadata = { title: "Admin: System" };
 
 const DAY = 86_400_000;
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -15,13 +19,20 @@ export default async function AdminSecurityPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
       </div>
     );
   }
 
-  const rows = await prisma.cspViolation.findMany({ orderBy: { lastSeenAt: "desc" }, take: 200 });
+  const [rows, jobs, visits] = await Promise.all([
+    prisma.cspViolation.findMany({ orderBy: { lastSeenAt: "desc" }, take: 200 }),
+    getJobStatuses(),
+    prisma.pageHit.groupBy({ by: ["path"], where: { day: { gte: new Date(Date.now() - 7 * DAY) } }, _sum: { count: true }, orderBy: { _sum: { count: "desc" } } }),
+  ]);
+  const stoppedJobs = jobs.filter((j) => isStopped(j.state)).length;
+  const pausedJobs = jobs.filter((j) => j.state === "paused").length;
+  const viewsWeek = visits.reduce((n, v) => n + (v._sum.count ?? 0), 0);
   const classified = rows.map((r) => ({ ...r, noise: isBrowserNoise(r) }));
   const since = new Date(Date.now() - 3 * DAY);
   const realRecent = classified.filter((r) => !r.noise && r.lastSeenAt >= since);
@@ -31,8 +42,46 @@ export default async function AdminSecurityPage() {
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
+      </div>
+      {/* The site's machinery (moved here from the Overview 2026-10-30): the scheduled jobs and the page views, then the content
+          security policy reports. */}
+      <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <PhoneAccordion
+          id="tasks"
+          alwaysCollapsible
+          defaultOpen={stoppedJobs > 0}
+          title="Automatic tasks"
+          summary={stoppedJobs > 0 ? `${stoppedJobs} stopped` : pausedJobs > 0 ? `${pausedJobs} paused` : "All running"}
+          warn={stoppedJobs > 0}
+          className="glass-surface scroll-mt-20"
+        >
+          <AutomaticTasks
+            jobs={jobs.map((j) => ({ name: j.name, state: j.state, lastRanAt: j.lastRanAt ? new Date(j.lastRanAt).toISOString() : null, note: j.note }))}
+            checkedAt={new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })}
+            canPause
+          />
+        </PhoneAccordion>
+        <PhoneAccordion alwaysCollapsible title="Page views, last 7 days" summary={`${viewsWeek.toLocaleString()} views`} className="glass-surface">
+          {visits.length === 0 ? (
+            <p className="text-small text-slate-500">No views yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-50/10">
+              {visits.map((v) => (
+                <li key={v.path} className="flex items-center justify-between gap-3 py-2.5 text-small">
+                  <span className="min-w-0 truncate text-slate-200">{v.path}</span>
+                  <span className="tabular-nums text-slate-400">{v._sum.count ?? 0}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PhoneAccordion>
+      </div>
+
+      <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy</h2>
       <p className="mt-2 text-small text-slate-500">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</p>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">

@@ -7,6 +7,7 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
 import { LeaderboardRows } from "@/components/home/LeaderboardRows";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Leaderboard" };
 
@@ -21,6 +22,7 @@ export default async function LeaderboardPage() {
     <WideLayout deckDesktop>
       <div className="mx-auto grid max-w-2xl gap-3">
         <div data-deck-header className="deck-header pt-4 md:pt-6">
+          <PageBack href="/dashboard" />
           <Eyebrow>Studio</Eyebrow>
           <h1 className="mt-1 text-hero font-semibold text-slate-50">Leaderboard</h1>
           <p className="mt-1 text-body text-slate-400">Practice minutes this week. A new week starts every Sunday.</p>

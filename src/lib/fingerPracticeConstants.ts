@@ -23,6 +23,8 @@ export interface FingerPracticeStatus {
   todaySeconds: number;
   completedToday: boolean;
   streak: number;
+  /** The best streak ever, in whole days of finished practice. */
+  longest?: number;
 }
 
 

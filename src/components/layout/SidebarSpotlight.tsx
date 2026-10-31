@@ -133,7 +133,7 @@ function railFor(card: SidebarCard): Rail | undefined {
     case "todayClasses":
       return { icon: CalendarDays, label: `Today: ${card.count} ${card.count === 1 ? "class" : "classes"}`, href: "/admin/today", count: card.count };
     case "jobsStopped":
-      return { icon: AlertTriangle, label: `${card.count} automatic ${card.count === 1 ? "task" : "tasks"} stopped`, href: "/admin#tasks", count: card.count, warn: true };
+      return { icon: AlertTriangle, label: `${card.count} automatic ${card.count === 1 ? "task" : "tasks"} stopped`, href: "/admin/security#tasks", count: card.count, warn: true };
   }
 }
 
@@ -272,7 +272,7 @@ function rawSlotFor(card: SidebarCard): Slot {
       return {
         id: "jobsStopped",
         node: () => (
-          <Shell href="/admin#tasks" icon={AlertTriangle} label="System" tone="warn" cta="Look">
+          <Shell href="/admin/security#tasks" icon={AlertTriangle} label="System" tone="warn" cta="Look">
             <Big>{card.count === 1 ? "An automatic task stopped" : `${card.count} automatic tasks stopped`}</Big>
             <Sub>Emails, backups or reminders may not be running.</Sub>
           </Shell>

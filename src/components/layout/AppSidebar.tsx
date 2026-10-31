@@ -26,7 +26,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/dashboard", label: "Home", icon: Home },
       { href: "/roadmap", label: "Roadmap", icon: Map, dataTour: "nav-roadmap", match: ["/scales"] },
       { href: "/practice", label: "Practice", icon: Music2 },
-      { href: "/lessons", label: "Online Lessons", icon: CalendarCheck, dataTour: "nav-lessons" },
+      { href: "/lessons", label: "Lessons", icon: CalendarCheck, dataTour: "nav-lessons" },
     ],
   },
   {

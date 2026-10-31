@@ -6,6 +6,7 @@ import { DiscordMembersList } from "@/components/admin/DiscordMembersList";
 import { createVisibleTestChannelAction, testDiscordBotAction } from "../schedule/actions";
 import { disconnectDiscordForUserAction, notifyDiscordAction } from "./actions";
 import { discordLinkState } from "@/lib/discordLinkState";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Discord" };
 
@@ -19,8 +20,11 @@ export default async function AdminDiscordPage() {
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Discord</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Discord</h1>
+      </div>
       <p className="mt-2 max-w-[70ch] text-small text-slate-500">
         Class calls are made in Discord, so each student connects their account once. Joining the server by the invite link does not connect them: they must press Connect Discord on their Lessons page. Here you can see who has and who has not, tell them how, and disconnect anyone.
       </p>

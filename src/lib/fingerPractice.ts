@@ -28,6 +28,24 @@ export function computeStreak(completedDays: Set<string>, today: string = etDayK
   return streak;
 }
 
+/** The longest run of consecutive completed days ever (the best streak). */
+export function longestStreak(completedDays: Set<string>): number {
+  let best = 0;
+  for (const day of completedDays) {
+    // Count only from the first day of each run.
+    const before = new Date(Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10) - 1)).toISOString().slice(0, 10);
+    if (completedDays.has(before)) continue;
+    let run = 0;
+    let cursor = day;
+    while (completedDays.has(cursor)) {
+      run++;
+      cursor = new Date(Date.UTC(+cursor.slice(0, 4), +cursor.slice(5, 7) - 1, +cursor.slice(8, 10) + 1)).toISOString().slice(0, 10);
+    }
+    best = Math.max(best, run);
+  }
+  return best;
+}
+
 export async function getFingerPracticeStatus(userId: string): Promise<FingerPracticeStatus> {
   const today = etDayKey();
   const rows = await prisma.fingerPracticeDay.findMany({
@@ -43,6 +61,7 @@ export async function getFingerPracticeStatus(userId: string): Promise<FingerPra
     todaySeconds: Math.min(todayRow?.seconds ?? 0, DAILY_GOAL_SECONDS),
     completedToday: completed.has(today),
     streak,
+    longest: longestStreak(completed),
   };
 }
 

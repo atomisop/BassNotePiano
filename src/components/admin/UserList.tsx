@@ -114,21 +114,24 @@ export function UserList({
             <li key={row.id} className="flex items-center gap-2">
               <RowCheck checked={picked.has(row.id)} onChange={(on) => toggle(row.id, on)} label={`Select ${row.name ?? row.email}`} />
               <Link href={`/admin/users/${row.id}`} className="tap flex min-w-0 flex-1 items-center gap-3 py-3.5">
+                {/* Name first with the room it needs; the facts about the account sit on their own line under it, so a badge never
+                    squeezes the name on a phone (Law of Proximity: each fact sits next to the person it is about). */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body text-slate-50">{row.name ?? row.email}</p>
                   {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
+                  {(row.roleLabel || row.complimentary || row.practiceDays !== null || row.progress) && (
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-slate-400">
+                      {row.roleLabel && <span>{row.roleLabel}</span>}
+                      {row.complimentary && <span className="rounded-full bg-signal/12 px-2 py-0.5 font-medium text-signal-fg">Complimentary</span>}
+                      {row.practiceDays !== null && (
+                        <span title="Days this week with the full 10 minutes of practice" className={`tabular-nums ${row.practiceDays === 0 ? "text-amber-400" : ""}`}>
+                          {row.practiceDays}/7 practice
+                        </span>
+                      )}
+                      {row.progress && <span className="tabular-nums">{row.progress} scales</span>}
+                    </p>
+                  )}
                 </div>
-                {row.roleLabel && <span className="shrink-0 text-small text-slate-400">{row.roleLabel}</span>}
-                {row.complimentary && <span className="shrink-0 rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">Complimentary</span>}
-                {row.practiceDays !== null && (
-                  <span
-                    title="Days this week with the full 10 minutes of practice"
-                    className={`shrink-0 text-small tabular-nums ${row.practiceDays === 0 ? "text-amber-400" : "text-slate-400"}`}
-                  >
-                    {row.practiceDays}/7 practice
-                  </span>
-                )}
-                {row.progress && <span className="shrink-0 text-small tabular-nums text-slate-400">{row.progress}</span>}
                 {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />}
               </Link>
               {row.readyScale && (

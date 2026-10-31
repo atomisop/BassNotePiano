@@ -26,10 +26,11 @@ export interface TopBannersProps {
  * the practice page itself. The owner's timing settings are untouched; a banner held back here simply comes back elsewhere.
  */
 function alreadyShown(which: Which, pathname: string): boolean {
-  const on = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
-  if (which === "phone") return on("/account");
-  if (which === "practice") return on("/practice");
-  return on("/lessons") || (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches);
+  // Pop-ups only on Home (2026-10-30, the UX laws pass: Flow and Selective Attention): never over a task on another screen. Home's own
+  // hero already says to practice, so the practice banner never needs to show; its reminder still reaches the bell and push.
+  if (pathname !== "/dashboard") return true;
+  if (which === "practice") return true;
+  return which === "discord" && typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 }
 
 function read(key: string): string | null {
@@ -65,6 +66,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   function show(which: Which) {
     const slot = bannerSlotId(new Date());
     write(SLOT_KEY(which), slot);
+    write(SLOT_KEY("any"), slot);
     activeRef.current = which;
     setActive(which);
     // Keep the reminder in the notifications whether or not they close the banner. Best effort: a failure changes nothing on screen.
@@ -76,6 +78,8 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
       if (activeRef.current || document.visibilityState !== "visible") return;
       const { phone: p, discord: d, practice: r, status: s, pathname: path } = latest.current;
       const slot = bannerSlotId(new Date());
+      // At most one pop-up per time slot in all, not one of each kind.
+      if (read(SLOT_KEY("any")) === slot) return;
       const due = (which: Which) => read(SLOT_KEY(which)) !== slot;
       if (p && !alreadyShown("phone", path) && due("phone")) return show("phone");
       if (d && s && !s.discordConnected && !alreadyShown("discord", path) && due("discord")) return show("discord");

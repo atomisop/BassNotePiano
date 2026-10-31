@@ -279,7 +279,7 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
     userId: input.userId,
     type: "RESERVED_SLOT_CHANGED",
     title: "Your class schedule was set up",
-    body: `The studio set up your weekly classes starting ${input.startDate}. Check Online Lessons for your schedule.`,
+    body: `The studio set up your weekly classes starting ${input.startDate}. Check Lessons for your schedule.`,
     emailCategory: "classes",
   }).catch(() => undefined);
   await logAudit({ actorId: adminId, action: "plan.build", targetType: "PaymentPlan", targetId: planId, detail: `${r.plan ? "re-anchored" : "created"} start ${input.startDate}, ${r.installmentsPaid} paid, ${input.taughtDates.length} taught` });

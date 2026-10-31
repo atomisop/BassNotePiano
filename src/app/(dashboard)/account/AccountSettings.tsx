@@ -604,7 +604,9 @@ function AccountSettingsInner({
     <>
       <SettingsLayout
         header={
-          <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Settings</h1>
+          <div data-deck-header className="deck-header -mt-4 pt-4">
+            <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Settings</h1>
+          </div>
         }
         menu={
           <>

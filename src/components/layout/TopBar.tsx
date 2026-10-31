@@ -93,7 +93,10 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
             menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted
             (md:contents just removes their wrapper from the layout), so their panels still open from the menu and keep counting. */}
-        <StreakBadge />
+        {/* Phones keep the bar to the logo, credits, Ask AI and the picture (Hick's law); the streak shows on Home there. */}
+        <span className="hidden md:contents">
+          <StreakBadge />
+        </span>
         <CreditsBadge />
         {/* Ask AI lives at the foot of the sidebar on a computer; search and the light/dark switch take its place here. */}
         <span className="contents lg:hidden">
