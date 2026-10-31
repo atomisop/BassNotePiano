@@ -96,17 +96,19 @@ export async function resumePlanAdminAction(planId: string, notify = true): Prom
 }
 
 /** Owner only: move a running plan's next bill to another day (YYYY-MM-DD, Eastern). */
-export async function changeBillDateAction(planId: string, day: string): Promise<{ ok: boolean; error: string | null }> {
-  const admin = await requireAdmin();
-  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a bill date." };
-  try {
-    await changePlanBillDate(String(planId), admin.id, String(day));
-  } catch (err) {
-    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
-    throw err;
-  }
-  revalidatePath("/", "layout");
-  return { ok: true, error: null };
+export async function changeBillDateAction(planId: string, day: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a bill date." };
+    try {
+      await changePlanBillDate(String(planId), admin.id, String(day));
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+    revalidatePath("/", "layout");
+    return { ok: true, error: null };
+  });
 }
 
 /** Owner only: what settling a late payer would do (the bill, the classes taught on credit, the new due date). Changes nothing. */

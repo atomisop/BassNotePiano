@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock } from "@/components/ui/appIcons";
@@ -20,11 +21,12 @@ export function AdminBillDateButton({ planId, currentDay, compact = false }: { p
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(currentDay);
   const [busy, setBusy] = useState(false);
+  const [notify, setNotify] = useNotifyStudent("student-changes");
   const pretty = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
   async function save() {
     setBusy(true);
-    const result = await changeBillDateAction(planId, day).catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
+    const result = await changeBillDateAction(planId, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
     setBusy(false);
     if (!result.ok) {
       toast.warning(result.error ?? "Could not change the date.");
@@ -50,9 +52,10 @@ export function AdminBillDateButton({ planId, currentDay, compact = false }: { p
         Bill date
       </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Move the next bill">
+        <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="grid gap-4">
           <p className="text-small text-slate-400">
-            Now due {pretty(currentDay)}. Only the bill date changes: credits, classes and the weekly time stay as they are. The student is told.
+            Now due {pretty(currentDay)}. Only the bill date changes: credits, classes and the weekly time stay as they are. The student is told only if Notify is on.
           </p>
           <label className="grid gap-1.5">
             <span className="text-small font-medium text-slate-200">New date</span>
