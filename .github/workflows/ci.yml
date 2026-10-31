@@ -40,7 +40,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
       # step this session), same Node version in CI as in dev and on
