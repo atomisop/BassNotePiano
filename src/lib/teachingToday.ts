@@ -103,3 +103,26 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
   }
   return { dayKey, slots: [...slots.values()].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime()) };
 }
+
+/** How many students have a class on each of the next 7 days (today first, Eastern time): the Overview's week strip. */
+export async function getWeekSchedule(now: Date = new Date()): Promise<{ dayKey: string; weekday: string; day: number; students: number }[]> {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.getTime() + i * 86_400_000);
+    return {
+      dayKey: etDayKey(d),
+      weekday: d.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short" }),
+      day: Number(d.toLocaleDateString("en-US", { timeZone: "America/New_York", day: "numeric" })),
+      students: 0,
+    };
+  });
+  const bookings = await prisma.classBooking.findMany({
+    where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: new Date(now.getTime() - 24 * 3_600_000), lte: new Date(now.getTime() + 8 * 86_400_000) } },
+    select: { scheduledAt: true },
+  });
+  const index = new Map(days.map((d, i) => [d.dayKey, i]));
+  for (const b of bookings) {
+    const i = index.get(etDayKey(b.scheduledAt));
+    if (i !== undefined) days[i].students += 1;
+  }
+  return days;
+}

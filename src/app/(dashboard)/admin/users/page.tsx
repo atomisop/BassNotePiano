@@ -7,6 +7,8 @@ import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { buttonVariants } from "@/components/ui/button";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
+import { getFollowUps } from "@/lib/adminFollowUps";
+import { FollowUpList } from "@/components/admin/FollowUpList";
 
 export const metadata = { title: "Admin: Accounts" };
 
@@ -18,7 +20,12 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const needsApproval = searchParams.filter === "approval";
   const notPracticing = searchParams.filter === "idle";
   const complimentary = searchParams.filter === "comped";
-  const [users, progress] = await Promise.all([searchUsers(query, { complimentaryOnly: complimentary }), getAdminProgressOverview(query)]);
+  const showFollowUps = !query.trim() && !needsApproval && !notPracticing && !complimentary;
+  const [users, progress, followUps] = await Promise.all([
+    searchUsers(query, { complimentaryOnly: complimentary }),
+    getAdminProgressOverview(query),
+    showFollowUps ? getFollowUps() : Promise.resolve([]),
+  ]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
   // Practice is only expected from students with full access (not the admin, not a lapsed or never-paid account).
   const expectedToPractice = (id: string) => {
@@ -53,6 +60,9 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Accounts</h1>
       </div>
+
+      {/* Who needs a nudge, with one-tap reminders (moved here from the Overview). */}
+      <FollowUpList followUps={followUps} className="mt-6" />
 
       <div className="mt-6">
         <AdminFilterTabs

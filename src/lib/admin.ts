@@ -3,6 +3,7 @@ import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { summariseRevenue, type RevenueSummary } from "@/lib/revenueSummary";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
@@ -515,7 +516,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       label:
         stoppedJobs.length === 1 ? "An automatic task stopped" : `${stoppedJobs.length} automatic tasks stopped`,
       count: stoppedJobs.length,
-      href: "/admin#tasks",
+      href: "/admin/security#tasks",
     },
     { label: "Studio email is not arriving", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
     {
@@ -540,4 +541,17 @@ export async function getAdminNavBadges(): Promise<Record<string, number>> {
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(Date.now() - 3 * 3_600_000) } } }),
   ]);
   return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked };
+}
+
+/**
+ * Money that came in by week and by month (the Overview's Money section): every approved payment, dated by when it was approved
+ * (the last change, for older rows that never recorded one).
+ */
+export async function getRevenueSummary(now: Date = new Date()): Promise<RevenueSummary> {
+  const since = new Date(now.getTime() - 220 * 86_400_000);
+  const rows = await prisma.zellePayment.findMany({
+    where: { status: "VERIFIED", OR: [{ reviewedAt: { gte: since } }, { reviewedAt: null, updatedAt: { gte: since } }] },
+    select: { reviewedAt: true, updatedAt: true, amountCents: true },
+  });
+  return summariseRevenue(rows.map((r) => ({ at: r.reviewedAt ?? r.updatedAt, amountCents: r.amountCents })), now);
 }

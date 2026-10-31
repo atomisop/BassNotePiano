@@ -24,9 +24,9 @@ export type Glance = {
  * a quiet line and a tiny chart, so the page has something to read before the rows without turning back into a wall of cards. Every
  * tile opens the page behind it.
  */
-export function GlanceTiles({ items, className }: { items: Glance[]; className?: string }) {
+export function GlanceTiles({ items, columns = 3, className }: { items: Glance[]; columns?: 2 | 3; className?: string }) {
   return (
-    <ul className={cn("grid grid-cols-3 gap-2.5 sm:gap-3", className)}>
+    <ul className={cn("grid gap-2.5 sm:gap-3", columns === 2 ? "grid-cols-2" : "grid-cols-3", className)}>
       {items.map((g) => (
         <li key={g.label} className="min-w-0">
           <Link
