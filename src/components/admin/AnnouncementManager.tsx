@@ -1,5 +1,6 @@
 "use client";
 
+import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminAnnouncementRow } from "@/lib/announcements";
@@ -22,24 +23,7 @@ function relativeTime(iso: Date): string {
 }
 
 function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label="Also send this announcement by email"
-      onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-        checked ? "bg-amber-400" : "bg-slate-700"
-      }`}
-    >
-      <span
-        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-slate-50 transition-transform ${
-          checked ? "translate-x-[20px]" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
+  return <Switch checked={checked} onCheckedChange={onChange} aria-label="Also send this announcement by email" />;
 }
 
 function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublished: () => void }) {
