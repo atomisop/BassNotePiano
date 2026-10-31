@@ -670,3 +670,20 @@ The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is the Instagram dock (#319, brought back 2026-10-31 at the owner's request after the flat matte
 versions):** a 53pt pill whose GlassLens frosts and bends the page, a smoky dark tint on Ink and a milky white one on Paper (`.app-dock.app-dock-lens` in globals.css), the BNP hand-drawn icons
 filled on the current tab, and scrolling down narrows it sideways (same height, icons closer) instead of shrinking it. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
+
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
+
+## Notify student switch and Reschedule (added 2026-10-31)
+
+Every studio action that changes something for a student takes a final `notify` argument and runs inside `withStudentNotice(notify, ...)`
+(`src/lib/notifyScope.ts`, AsyncLocalStorage). With it off, `createNotification` and `sendEmail` skip anyone who is not an admin (the email is
+logged as SKIPPED, "The studio chose not to notify the student"), so the change happens but no bell, Mail, email or push reaches the student;
+the owner's own alerts and copies still arrive. The screens show `NotifyToggle` (`useNotifyStudent(place)`, off by default, remembered per
+place on the device; `payments` and `applicants` default on). A list of quick buttons gets one switch at the top (`NotifyPlaceToggle`), and the
+student page, the Plans list, Pause and the plan builder share the `student-changes` place. A new admin action that can reach a student must
+take `notify` and show the switch. Tested in `tests/db/notifyScope.test.ts`.
+
+Reschedule (the arrows on a student's class, `StudentScheduler`) replaced Move: any class not yet marked Present or No-show, past ones too, moves to
+any time, past ones too (`rescheduleClassBooking(..., { byAdmin: true, anyTime: true })`; the calendar's `allowPast` opens the last 180 days). A class
+booked on the wrong day is put on the right one and marked there, with no refund and re-charge; a marked class must be undone first. A move into the
+past never tells the student.
