@@ -571,6 +571,15 @@ Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAd
 
 A file that starts with `"use server"` may only export async functions and types; a constant or class there fails `next build` but not `tsc` or lint, so it once reached CI and emailed the owner. `tests/useServerExports.test.ts` reads every such file under `src` (part of `npm test`, so CI too). `.githooks/pre-push` runs the type check, lint and all tests before every push; turn it on once per checkout with `npm run hooks:on` (`git push --no-verify` skips it). Still run `npm run build` before opening a PR that touches routes or actions.
 
+## Payment receipts (added 2026-10-31)
+
+Approving a payment (`approveZellePayment`) keeps the bell notice but sends a real receipt instead of the old plain "Payment approved" email
+(`sendPaymentReceipt` in `src/lib/paymentReceipt.ts`, wording in `paymentReceiptRules.ts`, tested; email in `renderPaymentReceiptEmail`): the
+BNP code as the receipt number, amount, date, payer (a bank's all-capitals name is title-cased), method, account, what it was for, the 28 days
+it covers, classes added and the next bill. It goes out whatever the payments switch says (a payment result is the documented exception) and
+never to a banned account. The same receipt is a printable page at `/billing/receipt/[paymentId]` (the payer or an admin; anyone else gets a 404),
+linked from Payment history; only a VERIFIED payment has one.
+
 ## Data page (added 2026-10-31)
 
 Admin > Setup > Data (`/admin/data`, owner only, read only; `src/lib/adminData.ts`): four views in `?tab=`. Scales: a checklist funnel per scale (open, module read,

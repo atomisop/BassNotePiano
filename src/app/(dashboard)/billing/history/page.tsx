@@ -6,6 +6,7 @@ import { getUserPaymentHistory } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -119,6 +120,12 @@ export default async function BillingHistoryPage() {
               )}
               {payment.referenceCode && (
                 <p className="mt-3 font-mono text-small text-slate-500">Ref: {payment.referenceCode}</p>
+              )}
+              {payment.status === "VERIFIED" && (
+                <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center gap-1 text-small font-medium text-signal-fg hover:underline">
+                  Receipt
+                  <ChevronRight aria-hidden className="h-4 w-4" />
+                </Link>
               )}
               {payment.status === "REJECTED" && payment.rejectionReason && (
                 <p className="mt-2 text-small text-red-400">Reason: {payment.rejectionReason}</p>

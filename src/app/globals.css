@@ -2695,3 +2695,24 @@ html[data-offline] [data-top-banner] {
 [data-admin-page] h1.sr-only + * {
   margin-top: 0.25rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Printing a receipt (/billing/receipt/[id]): only the receipt is printed, in dark ink on white, whatever theme is on screen.
+   --------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-only-receipt,
+  .print-only-receipt * {
+    visibility: visible;
+    color: #111 !important;
+    background: transparent !important;
+    border-color: #ddd !important;
+  }
+  .print-only-receipt {
+    position: absolute;
+    inset: 0 0 auto 0;
+    padding: 0 !important;
+  }
+}
