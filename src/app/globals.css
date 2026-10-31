@@ -2475,39 +2475,31 @@ body:has([data-surface="app"]) .glass-surface-modal {
 [data-mode="light"] .app-dock-active {
   background: rgb(0 0 0 / 0.07);
 }
-/* The dock (a copy of Instagram's tab bar), made of the same 3D glass as the cards around it so it belongs to the page: the card color
-   as a frosted tint, the cards' lift, rim and sheen, and the tab you are on pressed into it the way a pressed control sinks into a card.
-   The lens (GlassLens) frosts and bends the page under it, so the pill carries no blur of its own (that would wall the lens off). */
-/* Flat (2026-10-30, owner: "too rounded, like neumorphic", then "make the dock rounded too"): a pill again, but a frosted fill with a
-   fine grain, a hairline and one tight shadow; no 3D rim, no light and shade. The grain is an SVG noise tile at low strength, so it reads as a matte surface, not a pattern. */
-:root {
-  --dock-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-}
+/* The dock (a copy of Instagram's tab bar): the lens (GlassLens) frosts and bends the page, so the pill itself only adds a smoky dark or
+   milky white tint, a hairline rim and a soft shadow, and carries no blur of its own (a backdrop-filter here would wall the lens off).
+   Brought back 2026-10-31 at the owner's request ("bring back the Instagram dock"), after the flat matte versions. */
 .app-dock.app-dock-lens {
-  background-color: rgb(var(--neu-base) / 0.86);
-  background-image: var(--dock-grain);
-  background-size: 120px 120px;
+  background: rgb(44 44 47 / 0.66);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: inset 0 0 0 1px var(--card-line), 0 6px 18px -10px rgb(0 0 0 / 0.6);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 28px -10px rgb(0 0 0 / 0.7);
 }
 [data-mode="light"] .app-dock.app-dock-lens {
-  background-color: rgb(var(--neu-base) / 0.9);
-  box-shadow: inset 0 0 0 1px var(--card-line), 0 1px 3px rgb(0 0 0 / 0.08);
+  background: rgb(252 252 253 / 0.72);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 28px -12px rgb(30 30 60 / 0.3);
 }
 .app-dock-lens .app-dock-active {
-  background: rgb(var(--neu-lift));
-  box-shadow: inset 0 0 0 1px var(--card-line);
+  background: rgb(255 255 255 / 0.16);
 }
 [data-mode="light"] .app-dock-lens .app-dock-active {
-  background: rgb(0 0 0 / 0.06);
+  background: rgb(0 0 0 / 0.07);
 }
-/* The filled icon's cut-out details take the pressed capsule's color. */
+/* The filled icon's cut-out details take the capsule's look over the pill. */
 .app-dock-lens .dock-icon {
-  --dock-cut: rgb(20 19 19);
+  --dock-cut: rgb(78 78 81);
 }
 [data-mode="light"] .app-dock-lens .dock-icon {
-  --dock-cut: rgb(240 240 243);
+  --dock-cut: rgb(232 232 234);
 }
 
 
