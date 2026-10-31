@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
+import { OfflineNotice } from "@/components/ui/OfflineNotice";
 import { NavigationOverlay } from "@/components/layout/NavigationOverlay";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
@@ -39,6 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               ramp, they're rendered in a portal, but the CSS variables they
               resolve against come from <html data-theme>, which this sets. */}
           <Toaster />
+          <OfflineNotice />
           {/* Same reasoning as Toaster: mounted here (not in a single route)
               so it appears on every page, marketing, auth, and the
               authenticated app, using whatever theme is active on each. */}

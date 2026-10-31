@@ -2602,3 +2602,8 @@ body {
 html:has(body [data-surface="app"]) {
   background-color: rgb(var(--ground));
 }
+
+/* No internet (OfflineNotice.tsx): the top banners step aside while the offline pill is up. */
+html[data-offline] [data-top-banner] {
+  display: none;
+}

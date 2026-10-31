@@ -92,6 +92,7 @@ export function IosBanner({
 
   return (
     <div
+      data-top-banner
       className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-2"
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
     >
