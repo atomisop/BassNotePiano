@@ -49,3 +49,18 @@ profile of Home loading, a count of what keeps running on idle pages, and every 
 6. Remove unused JavaScript from the shared bundle.
 
 Then measure again with the same tools and compare.
+
+## After the fixes (same tools, same pages)
+
+| | Before | After |
+| --- | --- | --- |
+| Homepage video | 17 MB (4K HEVC) | 1.2 MB phones, 2.3 MB computers |
+| Home, phone busy with scripts (Lighthouse, slowed 4x) | 35.6 s | 6.8 s |
+| Lessons, phone busy with scripts | 17.4 s | 2.7 s |
+| Admin Overview, phone busy with scripts | 10.9 s | 5.1 s |
+| Lessons on an idle page | an animation loop 60 times a second | nothing |
+| Database queries, signed-in Home | about 75 | 49 |
+| Database queries, admin Overview | about 120 | 52 |
+
+Not changed yet (needs a decision): the cold start. The first visit after a quiet spell waited 11 s on the live home page while
+the server and the database woke up; later visits answer in 0.2 to 0.3 s.
