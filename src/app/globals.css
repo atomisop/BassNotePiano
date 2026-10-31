@@ -91,6 +91,15 @@
   /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
   --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
+  /* Fixed colours that are not part of the theme ramps: Discord's own brand blue, the dock's unread dot, the near-black text on
+     the white Roadmap button, and the drawn iPhone's titanium rim (the same in both themes). */
+  --color-discord: #5865f2;
+  --color-unread: #ff3040;
+  --color-on-white: #1d1a22;
+  --color-titanium: #3a3a3d;
+  --color-titanium-hi: #5a5a5e;
+  --color-titanium-mid: #2b2b2d;
+  --color-titanium-lo: #4a4a4d;
 
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
@@ -896,10 +905,10 @@
    ========================================================================== */
   @keyframes page-enter {
     from {
-      transform: translateY(14px) scale(0.985);
+      transform: translateY(6px);
     }
     to {
-      transform: translateY(0) scale(1);
+      transform: translateY(0);
     }
   }
 
@@ -912,14 +921,19 @@
     }
   }
 
-  /* Springy arrival: opacity eases out while the page rises and settles
-     with the same spring as button presses. Fill is `backwards` (not `both`)
-     so no transform is left on the page afterwards, which would otherwise
-     become the containing block for fixed-position children. */
+  /* A quick arrival: the page fades in while it rises 6px, both in 200ms
+     with no overshoot, because this plays on every dock tap and every
+     navigation. A page reached by a keyboard shortcut does not animate
+     (`data-kb-motion`, lib/keyboardMotion.ts). Fill is `backwards` (not
+     `both`) so no transform is left on the page afterwards, which would
+     otherwise become the containing block for fixed-position children. */
   .page-enter {
     animation:
-      page-enter-opacity 260ms var(--ease-ios) backwards,
-      page-enter 560ms var(--ease-spring) backwards;
+      page-enter-opacity 200ms var(--ease-ios) backwards,
+      page-enter 200ms var(--ease-ios) backwards;
+  }
+  html[data-kb-motion="off"] .page-enter {
+    animation: none;
   }
   @keyframes page-enter-opacity {
     from {
@@ -1061,6 +1075,8 @@
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
     --neu-edge: rgb(255 255 255 / 0.12);
+    /* A text field's outline: strong enough to read as a field (3:1 against the card it sits on, WCAG 1.4.11). */
+    --field-edge: rgb(255 255 255 / 0.36);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
@@ -1088,6 +1104,7 @@
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
     --neu-edge: rgb(0 0 0 / 0.08);
+    --field-edge: rgb(0 0 0 / 0.45);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
@@ -1391,27 +1408,33 @@
   }
   html[data-sidebar-anim] .app-sidebar {
     transition:
-      width 380ms var(--ease-ios),
-      padding 380ms var(--ease-ios),
-      gap 380ms var(--ease-ios);
+      width 240ms var(--ease-ios),
+      padding 240ms var(--ease-ios),
+      gap 240ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-shell-col {
-    transition: padding-left 380ms var(--ease-ios);
+    transition: padding-left 240ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-sidebar .sb-item {
-    transition: padding 380ms var(--ease-ios), gap 380ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 420ms var(--ease-spring);
+    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 280ms var(--ease-spring);
   }
   html[data-sidebar-anim] .app-sidebar .sb-label {
-    transition: opacity 240ms var(--ease-ios) 130ms, max-width 380ms var(--ease-ios), visibility 0s;
+    transition: opacity 160ms var(--ease-ios) 80ms, max-width 240ms var(--ease-ios), visibility 0s;
   }
   html[data-sidebar-anim] .app-sidebar .sb-group-title {
-    transition: opacity 220ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), padding 380ms var(--ease-ios), visibility 0s;
+    transition: opacity 160ms var(--ease-ios) 60ms, max-height 240ms var(--ease-ios), padding 240ms var(--ease-ios), visibility 0s;
   }
   html[data-sidebar-anim] .app-sidebar .sb-spotlight {
-    transition: opacity 240ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), visibility 0s;
+    transition: opacity 160ms var(--ease-ios) 60ms, max-height 240ms var(--ease-ios), visibility 0s;
   }
   html[data-sidebar-anim] .app-sidebar .sb-rail {
-    transition: opacity 260ms var(--ease-ios), max-height 380ms var(--ease-ios), visibility 0s linear 380ms;
+    transition: opacity 180ms var(--ease-ios), max-height 240ms var(--ease-ios), visibility 0s linear 240ms;
+  }
+  /* The "B" shortcut snaps the sidebar instead (lib/keyboardMotion.ts): a keyboard action should not animate. */
+  html[data-kb-motion="off"] .app-sidebar,
+  html[data-kb-motion="off"] .app-sidebar *,
+  html[data-kb-motion="off"] .app-shell-col {
+    transition: none !important;
   }
   html[data-sidebar="collapsed"] .app-sidebar {
     width: 3.5rem;
@@ -1717,6 +1740,20 @@ input[type="radio"],
 [role="tab"],
 [role="switch"] {
   touch-action: manipulation;
+}
+
+/* Holding a finger on a button made iPhone select its label (and pop the copy bar), which no native control does. Controls only:
+   text people may want to copy (page copy, codes, links in running text) stays selectable. Touch screens only, so a computer is unchanged. */
+@media (pointer: coarse) {
+  button,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="switch"] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
 }
 
 /* ==========================================================================
@@ -2063,8 +2100,37 @@ html[data-theme-fade] *::after {
 }
 
 /* ---------------------------------------------------------------------------
-   The search window: a Mac-style minimize and maximize. It grows out of the button that opened it (the offsets come from command.tsx) with a
-   soft overshoot, and folds back into the same button when it closes. Behind it the page is only softly blurred, not grayed out.
+   A PhoneAccordion section (the admin overview's dropdowns, mostly) unfolds in 220ms when opened instead of appearing at once and
+   shoving the page down. The clip lives only in the keyframes, so once open nothing is clipped and sticky deck cards inside keep
+   working (overflow: hidden would break them). Radix skips this on first paint, so a section that starts open does not animate.
+   Closing stays instant.
+   --------------------------------------------------------------------------- */
+.phone-section[data-state="open"] {
+  animation: phone-section-open 220ms var(--ease-ios);
+}
+@keyframes phone-section-open {
+  from {
+    height: 0;
+    opacity: 0;
+    clip-path: inset(0);
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-section[data-state="open"] {
+    animation-name: page-enter-fade;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The search window. Opened by a click, it grows a little out of the button that opened it (the transform-origin is that button, the
+   offsets come from command.tsx) in 200ms, and leaves faster than it came. Opened or closed from the keyboard (Cmd/Ctrl-K, "/", Escape)
+   it does not animate at all (`data-kb-motion`, lib/keyboardMotion.ts): a shortcut used many times a day should feel instant.
+   Behind it the page is only softly blurred, not grayed out.
    --------------------------------------------------------------------------- */
 .cmd-scrim {
   background: rgb(0 0 0 / 0.04);
@@ -2072,48 +2138,34 @@ html[data-theme-fade] *::after {
   backdrop-filter: blur(6px) saturate(1.1);
 }
 .cmd-scrim[data-state="open"] {
-  animation: cmd-scrim-in 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: cmd-scrim-in 200ms var(--ease-ios) both;
 }
 .cmd-scrim[data-state="closed"] {
-  animation: cmd-scrim-out 260ms cubic-bezier(0.4, 0, 0.6, 1) both;
+  animation: cmd-scrim-out 140ms var(--ease-ios) both;
 }
 .cmd-window {
-  transform-origin: center center;
+  transform-origin: calc(50% + var(--cmd-dx, 0px)) calc(50% + var(--cmd-dy, 0px));
 }
 .cmd-window[data-state="open"] {
-  /* "backwards", not "both": a filter left on the window after it opens (even blur(0)) would wall its glass off from the page. */
-  animation: cmd-max 460ms cubic-bezier(0.22, 1.08, 0.36, 1) backwards;
+  animation: cmd-in 200ms var(--ease-ios) backwards;
 }
 .cmd-window[data-state="closed"] {
-  animation: cmd-min 300ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+  animation: cmd-out 140ms var(--ease-ios) both;
 }
-@keyframes cmd-max {
-  0% {
+html[data-kb-motion="off"] .cmd-scrim,
+html[data-kb-motion="off"] .cmd-window {
+  animation: none;
+}
+@keyframes cmd-in {
+  from {
     opacity: 0;
-    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
-    filter: blur(4px);
-  }
-  25% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-    filter: none;
+    transform: scale(0.96);
   }
 }
-@keyframes cmd-min {
-  0% {
-    opacity: 1;
-    transform: translate(0, 0) scale(1, 1);
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
+@keyframes cmd-out {
+  to {
     opacity: 0;
-    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
-    filter: blur(4px);
+    transform: scale(0.97);
   }
 }
 @keyframes cmd-scrim-in {
@@ -2131,10 +2183,14 @@ html[data-theme-fade] *::after {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cmd-window[data-state="open"],
-  .cmd-window[data-state="closed"] {
+  /* A plain fade, no growing: the window's opacity still says where it went. */
+  .cmd-window[data-state="open"] {
     animation-duration: 120ms;
     animation-name: cmd-scrim-in;
+  }
+  .cmd-window[data-state="closed"] {
+    animation-duration: 120ms;
+    animation-name: cmd-scrim-out;
   }
 }
 

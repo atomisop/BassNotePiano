@@ -56,10 +56,12 @@ export function ProgressBar({
       aria-label={label}
       className={cn("h-2.5 w-full overflow-hidden rounded-full bg-neu-base p-0.5 shadow-pressed-low", !readout && className)}
     >
-      <div
-        className="h-full rounded-full bg-slate-50 transition-[width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
-        style={{ width: `${pct}%` }}
-      />
+      <div className="h-full overflow-hidden rounded-full">
+        <div
+          className="h-full rounded-full bg-slate-50 transition-transform duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
+          style={{ transform: `translateX(${pct - 100}%)` }}
+        />
+      </div>
     </div>
   );
   if (!readout) return bar;

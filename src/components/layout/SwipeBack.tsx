@@ -89,7 +89,7 @@ export function SwipeBack() {
       if (dx > COMMIT_PX || velocity > COMMIT_VELOCITY) {
         const el = main();
         if (el) {
-          el.style.transition = "transform 160ms ease-in, opacity 160ms";
+          el.style.transition = "transform 160ms var(--ease-ios), opacity 160ms var(--ease-ios)";
           el.style.transform = `translateX(${window.innerWidth}px)`;
           el.style.opacity = "0";
         }

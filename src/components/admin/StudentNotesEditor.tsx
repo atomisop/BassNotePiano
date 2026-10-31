@@ -7,6 +7,7 @@ import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction 
 import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -21,6 +22,8 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
   const [notes, setNotes] = useState<StudentNoteRow[] | null>(null);
   const [draft, setDraft] = useState("");
   const [hidden, setHidden] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +63,10 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this note for good?")) return;
+    setDeleting(true);
     const r = await deleteStudentNoteAction(id);
+    setDeleting(false);
+    setConfirmingDelete(null);
     if (r.ok) setNotes((prev) => (prev ?? []).filter((n) => n.id !== id));
     else setError(r.error);
   }
@@ -156,7 +161,8 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => remove(n.id)}
+                    onClick={() => setConfirmingDelete((cur) => (cur === n.id ? null : n.id))}
+                    aria-expanded={confirmingDelete === n.id}
                     aria-label="Delete note"
                     title="Delete note"
                     className="tap flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:text-red-300"
@@ -165,6 +171,18 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   </button>
                 </span>
               </div>
+              {confirmingDelete === n.id && (
+                <InlineConfirm
+                  className="mt-3"
+                  danger
+                  question="Delete this note for good?"
+                  confirmLabel="Yes, delete it"
+                  busyLabel="Deleting…"
+                  busy={deleting}
+                  onCancel={() => setConfirmingDelete(null)}
+                  onConfirm={() => void remove(n.id)}
+                />
+              )}
             </div>
           ))
         )}

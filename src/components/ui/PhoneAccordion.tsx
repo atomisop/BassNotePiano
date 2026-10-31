@@ -59,7 +59,7 @@ export function PhoneAccordion({
               </AccordionPrimitive.Trigger>
             </h2>
           </AccordionPrimitive.Header>
-          <AccordionPrimitive.Content forceMount className={cn("mt-3", alwaysCollapsible ? "data-[state=closed]:hidden" : "data-[state=closed]:max-md:hidden")}>
+          <AccordionPrimitive.Content forceMount className={cn("phone-section mt-3", alwaysCollapsible ? "data-[state=closed]:hidden" : "data-[state=closed]:max-md:hidden")}>
             {children}
           </AccordionPrimitive.Content>
         </AccordionPrimitive.Item>

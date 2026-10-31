@@ -102,8 +102,8 @@ export function Tabs<const T extends string>({
       {thumb && (
         <span
           aria-hidden
-          className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-neu-base shadow-raised-low transition-[left,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
-          style={{ left: thumb.left, width: thumb.width }}
+          className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-neu-base shadow-raised-low transition-[transform,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
+          style={{ transform: `translateX(${thumb.left}px)`, width: thumb.width }}
         />
       )}
       {items.map((item, i) => {

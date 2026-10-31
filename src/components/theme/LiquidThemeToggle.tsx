@@ -23,7 +23,7 @@ export function LiquidThemeToggle({ className = "" }: { className?: string }) {
       <span className="absolute inset-x-0 top-2.5 bottom-2.5 rounded-full bg-neu-base shadow-pressed-mid" aria-hidden />
       <span
         aria-hidden
-        className={`absolute top-1/2 -translate-y-1/2 text-body font-medium text-slate-300 transition-[left,right,opacity] duration-300 ${dark ? "left-5" : "right-5"}`}
+        className={`absolute top-1/2 -translate-y-1/2 text-body font-medium text-slate-300 transition-opacity duration-300 ${dark ? "left-5" : "right-5"}`}
       >
         {dark ? "Dark" : "Light"}
       </span>

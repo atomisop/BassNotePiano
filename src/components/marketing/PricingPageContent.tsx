@@ -36,7 +36,7 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
           variants={item}
           className="text-balance font-serif text-hero leading-[1.02] tracking-tight text-slate-50 sm:text-hero"
         >
-          Learn Live with us on discord.
+          Learn live with us on Discord.
         </motion.h1>
       </motion.section>
 
