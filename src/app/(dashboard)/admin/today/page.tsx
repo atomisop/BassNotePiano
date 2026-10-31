@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NotifyPlaceToggle } from "@/components/admin/NotifyToggle";
 import { getTeachingDay } from "@/lib/teachingToday";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -39,6 +40,7 @@ export default async function AdminTodayPage() {
         />
       ) : (
         <div className="mt-6 space-y-6">
+          <NotifyPlaceToggle place="attendance" label="Notify students when I mark or undo" />
           {slots.map((slot) => {
             const past = slot.startsAt.getTime() + 45 * 60_000 < now.getTime();
             return (

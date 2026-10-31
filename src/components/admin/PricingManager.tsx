@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -30,8 +31,8 @@ interface Props {
   discounts: PricingDiscountRow[];
   onSavePricing: (values: PricingFormValues) => Promise<{ ok: true } | { ok: false; error: string }>;
   onSearch: (query: string) => Promise<DiscountCandidate[]>;
-  onSetDiscount: (userId: string, percent: number, note: string) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
-  onClearDiscount: (userId: string) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
+  onSetDiscount: (userId: string, percent: number, note: string, notify?: boolean) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
+  onClearDiscount: (userId: string, notify?: boolean) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
 }
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -393,11 +394,15 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
   );
 }
 
-export function PricingManager({ initial, discounts, onSavePricing, onSearch, onSetDiscount, onClearDiscount }: Props) {
+export function PricingManager({ initial, discounts, onSavePricing, onSearch, onSetDiscount: setDiscount, onClearDiscount: clearDiscount }: Props) {
+  const [notify, setNotify] = useNotifyStudent("discounts");
+  const onSetDiscount: Props["onSetDiscount"] = (userId, percent, note) => setDiscount(userId, percent, note, notify);
+  const onClearDiscount: Props["onClearDiscount"] = (userId) => clearDiscount(userId, notify);
   return (
     <div className="space-y-5">
       <PricesCard initial={initial} onSave={onSavePricing} />
       <Card title="Discounts for individual accounts" blurb="A percent off one person's plan, on top of the prices above. It prices every solo plan they start or change, and moves their running plan too (bills already paid never change). A family plan keeps the family rate.">
+        <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I set, change or remove a discount" className="mb-4" />
         <AddDiscount onSearch={onSearch} onSet={onSetDiscount} />
         <div className="mt-6">
           <h3 className="text-small font-medium uppercase tracking-wide text-slate-500">Accounts with a discount ({discounts.length})</h3>

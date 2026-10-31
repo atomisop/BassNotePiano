@@ -83,9 +83,10 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         <div className="mt-6">
           <BulkConfirmButton
             label={`Approve all ${rows.length} ready`}
-            question={`Release the next scale for all ${rows.length} students who are ready? Each one is told right away. Nobody is forced past a rule.`}
+            question={`Release the next scale for all ${rows.length} students who are ready? Each one is told only if "Notify students" below is on. Nobody is forced past a rule.`}
             confirmLabel="Yes, approve them all"
             onConfirm={approveAllReadyScalesAction}
+            notifyPlace="scales"
           />
         </div>
       )}

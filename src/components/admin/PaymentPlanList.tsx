@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import Link from "next/link";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
@@ -17,9 +18,9 @@ import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
-  onCancel: (planId: string, note: string) => Promise<void>;
+  onCancel: (planId: string, note: string, notify?: boolean) => Promise<void>;
   /** Owner only: records money that was received but is not showing in revenue. */
-  onRecordPayment?: (planId: string) => Promise<{ ok: boolean; error: string | null }>;
+  onRecordPayment?: (planId: string, notify?: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Sends the open bill to the student again. */
   onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
   emptyMessage?: string;
@@ -69,6 +70,7 @@ function formatTimeLabel(hhmm: string): string {
  */
 export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
+  const [notify, setNotify] = useNotifyStudent("student-changes");
   const shown = plans.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -83,7 +85,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
     setBusyId(id);
     setRecordError(null);
     try {
-      const result = await onRecordPayment(id);
+      const result = await onRecordPayment(id, notify);
       if (!result.ok) {
         setRecordError(result.error);
         return;
@@ -110,7 +112,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
     if (!note.trim()) return;
     setBusyId(id);
     try {
-      await onCancel(id, note.trim());
+      await onCancel(id, note.trim(), notify);
       router.refresh();
       setCancelingId(null);
       setNote("");
@@ -126,6 +128,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   return (
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I cancel or record a payment" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {recordError && <p className="text-small text-red-400">{recordError}</p>}
       <ViewMore items={shown} initial={8}>

@@ -15,7 +15,7 @@ describe("createNotification stores where a tap goes", () => {
   it("an exact href wins, then the button's page, then the type's page, and never an outside link", async () => {
     const u = await makeUser(`${tag}u`, "Some Person");
     ids.push(u.id);
-    const make = (extra: object) => createNotification({ userId: u.id, type: "ADMIN_ALERT", title: "t", ...extra });
+    const make = async (extra: object) => (await createNotification({ userId: u.id, type: "ADMIN_ALERT", title: "t", ...extra }))!;
 
     const exact = await make({ href: "/admin/users/abc", cta: { label: "x", path: "/admin/payments" } });
     const viaCta = await make({ cta: { label: "x", path: "/admin/payments" } });

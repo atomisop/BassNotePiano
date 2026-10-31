@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useState, useEffect, useRef, type FormEvent } from "react";
@@ -26,7 +27,7 @@ export interface AdminCreditGrantPanelProps {
   initialUsers: CreditUserSearchRow[];
   recentAdjustments: RecentAdjustmentRow[];
   onSearch: (query: string) => Promise<CreditUserSearchRow[]>;
-  onAdjust: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
+  onAdjust: (userId: string, amount: number, reasonNote: string, notify?: boolean) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
   onGetHistory: (userId: string) => Promise<CreditAdjustmentRow[]>;
 }
 
@@ -51,6 +52,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
   const [mode, setMode] = useState<"grant" | "revoke">("grant");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  const [notify, setNotify] = useNotifyStudent("credits");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     const parsed = creditsToStored(mode === "revoke" ? -Number(amount) : Number(amount));
     setSubmitting(true);
     try {
-      const result = await onAdjust(selected.id, parsed, reason.trim());
+      const result = await onAdjust(selected.id, parsed, reason.trim(), notify);
       if (!result.ok) {
         setError(result.error);
         setConfirming(false);
@@ -274,6 +276,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                     {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?
                   </p>
+                  <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(selected.name ?? "them").split(" ")[0]}`} />
                   <div className="flex gap-2">
                     <button
                       type="button"
