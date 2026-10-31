@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { logAudit } from "@/lib/audit";
-import { JOB_MAX_SILENCE_HOURS } from "@/lib/jobRun";
+import { JOB_MAX_SILENCE_HOURS, getJobStatuses, type JobState } from "@/lib/jobRun";
+import { runProbes } from "@/lib/jobCheckNow";
+import { jobVerdict, type JobVerdict } from "@/lib/jobCheckRules";
 import { setJobPaused } from "@/lib/jobPause";
 
 /** Owner only: stops one automatic task from running until it is resumed (its scheduled run still arrives and does nothing). */
@@ -19,4 +21,25 @@ export async function setJobPausedAction(name: string, paused: boolean): Promise
   await logAudit({ actorId: session.user.id, actorEmail: session.user.email, action: paused ? "job.pause" : "job.resume", targetType: "Job", targetId: name, detail: name });
   revalidatePath("/admin");
   return { ok: true, error: null };
+}
+
+/**
+ * Owner only: the Refresh on the automatic tasks list. Tests, live and read only, everything the tasks depend on (src/lib/jobCheckNow.ts)
+ * and answers with each task's verdict plus its freshly read recorded state. No task is run, and nothing is written.
+ */
+export async function checkJobsAction(): Promise<{
+  ok: boolean;
+  error: string | null;
+  jobs?: Record<string, { verdict: JobVerdict; state: JobState; lastRanAt: string | null; note: string | null }>;
+}> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/admin");
+  if (session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!isOwnerEmail(session.user.email)) return { ok: false, error: "Only the owner can check the automatic tasks." };
+  const [results, statuses] = await Promise.all([runProbes(), getJobStatuses()]);
+  const jobs: NonNullable<Awaited<ReturnType<typeof checkJobsAction>>["jobs"]> = {};
+  for (const s of statuses) {
+    jobs[s.name] = { verdict: jobVerdict(s.name, results), state: s.state, lastRanAt: s.lastRanAt ? s.lastRanAt.toISOString() : null, note: s.note };
+  }
+  return { ok: true, error: null, jobs };
 }
