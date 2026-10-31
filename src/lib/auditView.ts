@@ -9,6 +9,7 @@ const LABELS: Record<string, string> = {
   "setting.reset": "Reset a setting",
   "plan.cancel": "Canceled a plan",
   "plan.pause": "Paused a plan",
+  "plan.bill-date": "Moved a plan's next bill date",
   "plan.move-time": "Moved a plan to a new weekly time",
   "booking.move-custom": "Moved a class to a custom date and time",
   "plan.build": "Built or re-anchored a plan from a start date",
