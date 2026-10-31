@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "@/components/ui/appIcons";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
@@ -436,7 +437,7 @@ export function PaymentPlanEnrollmentFlow({
         <div className="mt-6 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
           <Link href="/billing/plans?who=parent" className="tap flex items-center justify-between gap-3 text-small font-medium text-slate-100 hover:text-slate-50">
             Pay for your child&apos;s plan
-            <span aria-hidden className="text-slate-500">→</span>
+            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500" />
           </Link>
         </div>
         {familyBills.length > 0 && (

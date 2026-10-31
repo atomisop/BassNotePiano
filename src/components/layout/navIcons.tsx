@@ -1,6 +1,6 @@
 export function NavIcon({ path, className = "h-5 w-5 shrink-0" }: { path: string; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
       <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

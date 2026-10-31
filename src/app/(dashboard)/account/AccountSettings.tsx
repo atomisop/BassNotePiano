@@ -649,7 +649,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
           className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment plan
-          <span className="text-slate-500">→</span>
+          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
         </Link>
 
         <Link
@@ -657,7 +657,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
           className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment history
-          <span className="text-slate-500">→</span>
+          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
         </Link>
       </SectionCard>
 

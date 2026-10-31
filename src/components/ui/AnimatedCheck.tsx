@@ -18,7 +18,7 @@ export function AnimatedCheck({ size = 28, className = "" }: { size?: number; cl
       animate={{ opacity: 1, transform: "scale(1)" }}
       transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+      <svg aria-hidden xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
         <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1], delay: 0.05 }} d="M5 13l4 4L19 7" />
       </svg>
     </motion.span>

@@ -83,6 +83,7 @@ export function Hero() {
           playsInline
           preload="auto"
           src={HERO_VIDEO_URL}
+          poster="/marketing/hero-poster.jpg"
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
 

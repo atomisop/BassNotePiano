@@ -254,7 +254,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
               >
                 <DockGlyphIcon glyph={glyph} active={active} />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040]" />}
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-unread" />}
               </motion.span>
 
             </Link>

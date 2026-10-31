@@ -248,7 +248,7 @@ export function MarketingNav() {
               aria-label="Join our Discord"
               className="neu-btn tap flex h-9 w-9 items-center justify-center !rounded-full duration-200"
             >
-              <DiscordIcon size={16} className="text-[#5865F2]" />
+              <DiscordIcon size={16} className="text-discord" />
             </a>
             {/* Sits immediately next to the Dashboard button, by direct
                 instruction, replaces the old plain "Account" text pill
@@ -433,7 +433,7 @@ export function MarketingNav() {
                 onClick={() => setMenuOpen(false)}
                 className="display-3 flex items-center gap-3 border-b border-slate-50/8 py-6"
               >
-                <DiscordIcon size={28} className="text-[#5865F2]" />
+                <DiscordIcon size={28} className="text-discord" />
                 Discord
               </a>
               <Link

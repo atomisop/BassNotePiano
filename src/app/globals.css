@@ -91,6 +91,15 @@
   /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
   --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
+  /* Fixed colours that are not part of the theme ramps: Discord's own brand blue, the dock's unread dot, the near-black text on
+     the white Roadmap button, and the drawn iPhone's titanium rim (the same in both themes). */
+  --color-discord: #5865f2;
+  --color-unread: #ff3040;
+  --color-on-white: #1d1a22;
+  --color-titanium: #3a3a3d;
+  --color-titanium-hi: #5a5a5e;
+  --color-titanium-mid: #2b2b2d;
+  --color-titanium-lo: #4a4a4d;
 
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
@@ -1066,6 +1075,8 @@
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
     --neu-edge: rgb(255 255 255 / 0.12);
+    /* A text field's outline: strong enough to read as a field (3:1 against the card it sits on, WCAG 1.4.11). */
+    --field-edge: rgb(255 255 255 / 0.36);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
@@ -1093,6 +1104,7 @@
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
     --neu-edge: rgb(0 0 0 / 0.08);
+    --field-edge: rgb(0 0 0 / 0.45);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
