@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
-import { getFingerPracticeStatus } from "@/lib/fingerPractice";
+import { getFingerPracticeStatusOnce } from "@/lib/fingerPractice";
 import { getTotalUnreadMessageCount } from "@/lib/messages";
 import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getSupportUnreadCount } from "@/lib/messagesSupport";
@@ -28,7 +28,7 @@ export async function getMeStatus(userId: string): Promise<MeStatus> {
   const [user, held, practice, direct, group, support] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { classCredits: true, discordId: true } }),
     prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
-    getFingerPracticeStatus(userId),
+    getFingerPracticeStatusOnce(userId),
     getTotalUnreadMessageCount(userId),
     getTotalUnreadGroupMessageCount(userId),
     getSupportUnreadCount(userId),
