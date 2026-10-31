@@ -15,7 +15,6 @@ import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
 import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
 import { buttonVariants } from "@/components/ui/button";
-import { PageBack } from "@/components/ui/BackLink";
 
 const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
@@ -49,11 +48,7 @@ export default async function AdminPaymentsPage(
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
-      </div>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 text-small text-slate-500">
@@ -158,11 +153,7 @@ async function EmailsTab() {
   const isOwner = isOwnerEmail(session?.user?.email);
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
-      </div>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 max-w-[70ch] text-small text-slate-500">
@@ -205,11 +196,7 @@ async function CreditsTab() {
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
-      </div>
+      <h1 className="sr-only">Payments</h1>
       <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} />
 
       <div className="mt-6">

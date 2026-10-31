@@ -4,7 +4,6 @@ import { getOverviewStats } from "@/lib/admin";
 import { MessageComposer } from "@/components/admin/MessageComposer";
 import { AnnouncementManager } from "@/components/admin/AnnouncementManager";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
-import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Messages" };
 
@@ -14,11 +13,7 @@ export default async function AdminMessagesPage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Messages</h1>
-      </div>
+      <h1 className="sr-only">Messages</h1>
 
       <div className="mt-6">
         <AdminFilterTabs

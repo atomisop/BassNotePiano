@@ -573,7 +573,7 @@ A file that starts with `"use server"` may only export async functions and types
 
 ## Admin Overview (reworked 2026-10-30)
 
-`/admin` shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
+`/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
 
 ## Activity log (added 2026-10-21)
 

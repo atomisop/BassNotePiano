@@ -63,7 +63,8 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
+      {/* Only the admin menu pins; a student's name and Back scroll with their page. */}
+      <div>
         <PageBack href="/admin/users" />
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>

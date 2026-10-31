@@ -4,7 +4,6 @@ import { getLessonsForScale } from "@/lib/courseContent";
 import { isObjectStorageConfigured } from "@/lib/storage";
 import { AdminLessonManager } from "@/components/admin/AdminLessonManager";
 import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction } from "./actions";
-import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Lessons" };
 
@@ -19,11 +18,7 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Lessons</h1>
-      </div>
+      <h1 className="sr-only">Lessons</h1>
 
       {!storageConfigured && (
         <div className="mt-6 rounded-xl border border-slate-50/30 bg-neu-base shadow-pressed-low px-4 py-3 text-small text-slate-50">

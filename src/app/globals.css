@@ -2633,3 +2633,9 @@ html:has(body [data-surface="app"]) {
 html[data-offline] [data-top-banner] {
   display: none;
 }
+
+/* Admin pages have no visible title (only a screen-reader one): their first block starts right under the pinned menu instead of
+   keeping the gap it had under a title. */
+[data-admin-page] h1.sr-only + * {
+  margin-top: 0.25rem;
+}
