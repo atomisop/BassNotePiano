@@ -14,6 +14,7 @@ import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
 import { AdminWeeklyTimeButton } from "@/components/admin/AdminWeeklyTimeButton";
 import { AdminAccountTools } from "@/components/admin/AdminAccountTools";
+import { AdminPlanSettingsButton, AdminRestartPlanButton } from "@/components/admin/AdminPlanSettingsButton";
 import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
@@ -32,10 +33,12 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
-  const [plan, discord, changes] = await Promise.all([
-    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true } }),
+  const [plan, discord, changes, lastCanceled, discountRow] = await Promise.all([
+    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true, installmentAmountCents: true, installmentsPaid: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true, trialEndsAt: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "CANCELED" }, orderBy: { canceledAt: "desc" }, select: { id: true, cadence: true, term: true } }),
+    prisma.accountDiscount.findUnique({ where: { userId: params.userId }, select: { percent: true } }),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
   const viewer = await getServerAuthSession();
@@ -51,6 +54,10 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         {plan && !planPaused && <AdminWeeklyTimeButton planId={plan.id} compact />}
         {/* Each person's bill has its own date, group and parent plans included, so the owner can move any running one. */}
         {plan && isOwner && !planPaused && <AdminBillDateButton planId={plan.id} currentDay={etDayKey(plan.nextDueDate)} compact />}
+        {plan && isOwner && !planPaused && (
+          <AdminPlanSettingsButton planId={plan.id} term={plan.term} priceCents={plan.installmentAmountCents} installmentsPaid={plan.installmentsPaid} hasDiscount={(discountRow?.percent ?? 0) > 0} compact />
+        )}
+        {!plan && isOwner && lastCanceled && <AdminRestartPlanButton planId={lastCanceled.id} label={describePaymentPlan(lastCanceled.cadence, lastCanceled.term)} compact />}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}
       </>
     ) : null;

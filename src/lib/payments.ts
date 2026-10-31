@@ -966,7 +966,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
  * due) and moves the plan forward (installments paid, next due date, completed). Used by an ordinary installment and,
  * once per member, by a family plan's combined first payment.
  */
-async function applyPlanInstallment(
+export async function applyPlanInstallment(
   tx: Prisma.TransactionClient,
   args: { userId: string; paymentPlanId: string; lessonQuantity: number; /** True for a plan created inside this same transaction: the ledger row is written outside it, so the link is added after commit. */ planIsNew?: boolean },
 ): Promise<void> {

@@ -10,6 +10,8 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
+import { restartPlan, setPlanLength, setPlanPrice, waiveNextBill } from "@/lib/adminPlanTools";
+import type { PaymentPlanTerm } from "@prisma/client";
 import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 
@@ -216,5 +218,45 @@ export async function moveWeeklyTimeAction(planId: string, scheduleId: string, c
       if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
       throw err;
     }
+  });
+}
+
+type PlanToolResult = { ok: true; message: string } | { ok: false; error: string };
+
+// The owner only, like the bill date and the plan builder: these change what a student pays.
+async function ownerPlanTool(notify: boolean, work: (adminId: string) => Promise<string>): Promise<PlanToolResult> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can do this." };
+    try {
+      const message = await work(admin.id);
+      revalidatePath("/", "layout");
+      return { ok: true, message };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+  });
+}
+
+export async function setPlanLengthAction(planId: string, term: PaymentPlanTerm, newPrice: boolean, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Now ${await setPlanLength(adminId, String(planId), term, Boolean(newPrice))}`);
+}
+
+export async function setPlanPriceAction(planId: string, dollars: number, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Each bill is now ${await setPlanPrice(adminId, String(planId), Math.round(Number(dollars) * 100))}`);
+}
+
+export async function waiveNextBillAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => {
+    const next = await waiveNextBill(adminId, String(planId));
+    return next ? `Next 28 days are free. Next bill ${next.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : "Last bill waived, the plan is complete";
+  });
+}
+
+export async function restartPlanAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => {
+    const { keptTime } = await restartPlan(adminId, String(planId));
+    return keptTime ? "Plan restarted with its weekly time" : "Plan restarted. Its weekly time was taken, so pick a new one with Weekly time";
   });
 }
