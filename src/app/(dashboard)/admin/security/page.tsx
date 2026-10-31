@@ -7,8 +7,9 @@ import { clearCspViolationsAction } from "./actions";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
+import { PageBack } from "@/components/ui/BackLink";
 
-export const metadata = { title: "Admin: Security" };
+export const metadata = { title: "Admin: System" };
 
 const DAY = 86_400_000;
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -18,7 +19,7 @@ export default async function AdminSecurityPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
       </div>
     );
@@ -42,8 +43,9 @@ export default async function AdminSecurityPage() {
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
       </div>
       {/* The site's machinery (moved here from the Overview 2026-10-30): the scheduled jobs and the page views, then the content
           security policy reports. */}

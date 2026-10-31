@@ -7,7 +7,7 @@ import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction, getOpenSlotsAction, markAttendanceAction, undoAttendanceAction, setClassInPersonAction } from "../../schedule/actions";
 import { StudentScheduler } from "@/components/admin/StudentScheduler";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
@@ -63,11 +63,11 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   return (
     <div>
-      <BackLink href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
-        ← Back
-      </BackLink>
-      <p className="mt-3 text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin/users" />
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
+      </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-neu-base p-3 shadow-raised-low sm:grid-cols-4 lg:grid-cols-7">
         {facts.map((f) => (

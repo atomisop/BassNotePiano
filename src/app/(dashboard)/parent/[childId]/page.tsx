@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { ChildSwitcher } from "@/components/parent/ChildSwitcher";
 import { prisma } from "@/lib/prisma";
 import { ChildView } from "@/components/parent/ChildView";
@@ -30,10 +30,8 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
 
   return (
     <WideLayout>
-      <BackLink href="/parent" className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        Back
-      </BackLink>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/parent" />
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Parent mode</p>
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>

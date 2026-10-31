@@ -2,6 +2,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listRoadmapsForAdmin } from "@/lib/roadmaps";
 import { RoadmapsAdmin } from "@/components/admin/RoadmapsAdmin";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Roadmaps" };
 
@@ -20,6 +21,7 @@ export default async function AdminRoadmapsPage() {
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
       </div>

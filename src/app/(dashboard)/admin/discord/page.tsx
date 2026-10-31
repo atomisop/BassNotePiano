@@ -6,6 +6,7 @@ import { DiscordMembersList } from "@/components/admin/DiscordMembersList";
 import { createVisibleTestChannelAction, testDiscordBotAction } from "../schedule/actions";
 import { disconnectDiscordForUserAction, notifyDiscordAction } from "./actions";
 import { discordLinkState } from "@/lib/discordLinkState";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Discord" };
 
@@ -20,6 +21,7 @@ export default async function AdminDiscordPage() {
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Discord</h1>
       </div>

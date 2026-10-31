@@ -123,7 +123,7 @@ export async function parentBookClassAction(childId: string, scheduleId: string,
   try {
     const { parentName } = await actingFor(childId);
     await bookClass(childId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { isAdminAssisted: false });
-    await createNotification({ userId: childId, type: "LESSON_BOOKING_CONFIRMED", title: "A class was booked for you", body: `${parentName} booked a class for you. See it under Online Lessons.`, emailCategory: "classes", cta: { label: "See your classes", path: "/lessons" } }).catch(() => undefined);
+    await createNotification({ userId: childId, type: "LESSON_BOOKING_CONFIRMED", title: "A class was booked for you", body: `${parentName} booked a class for you. See it under Lessons.`, emailCategory: "classes", cta: { label: "See your classes", path: "/lessons" } }).catch(() => undefined);
     revalidatePath("/", "layout");
     return { ok: true };
   } catch (err) {

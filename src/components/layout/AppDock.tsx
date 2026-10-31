@@ -99,7 +99,7 @@ export interface AppDockProps {
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
-  { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
+  { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;

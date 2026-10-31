@@ -4,9 +4,8 @@ import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -77,11 +76,8 @@ export default async function BillingHistoryPage() {
 
   return (
     <div>
-      <BackLink href="/account" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/account" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Billing</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
       </div>

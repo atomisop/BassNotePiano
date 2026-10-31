@@ -4,6 +4,7 @@ import { getAllSettings } from "@/lib/siteSettings";
 import { listAccountDiscounts } from "@/lib/accountDiscounts";
 import { PricingManager, type PricingDiscountRow } from "@/components/admin/PricingManager";
 import { clearAccountDiscountAction, savePricingAction, searchDiscountCandidatesAction, setAccountDiscountAction, type PricingFormValues } from "./actions";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Pricing" };
 
@@ -41,6 +42,7 @@ export default async function AdminPricingPage() {
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
       </div>

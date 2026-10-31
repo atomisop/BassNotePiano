@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { FollowUpList } from "@/components/admin/FollowUpList";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Accounts" };
 
@@ -57,6 +58,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Accounts</h1>
       </div>

@@ -9,6 +9,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Your streak" };
 
@@ -46,6 +47,7 @@ export default async function StreakPage() {
   return (
     <WideLayout deckDesktop>
       <div data-deck-header className="deck-header pt-4 md:pt-6">
+        <PageBack href="/dashboard" />
         <Eyebrow>Practice</Eyebrow>
         <h1 className="mt-1 text-hero font-semibold text-slate-50">Your streak</h1>
       </div>

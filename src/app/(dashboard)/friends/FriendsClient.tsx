@@ -18,6 +18,7 @@ import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { PageBack } from "@/components/ui/BackLink";
 
 interface PublicProfile {
   id: string;
@@ -183,6 +184,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
     return (
       <WideLayout className="space-y-6">
         <div data-deck-header className="deck-header -mt-4 pt-4">
+          <PageBack href="/dashboard" />
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
         </div>
@@ -202,7 +204,8 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
     <TwoPaneLayout
       mobile="stack"
       header={
-        <div>
+        <div data-deck-header className="deck-header -mt-4 pt-4">
+          <PageBack href="/dashboard" />
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
           <p className="mt-1 text-small text-slate-500">

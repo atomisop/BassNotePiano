@@ -838,7 +838,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
             userId: plan.userId,
             type: "PAYMENT_APPROVED",
             title: parentPaid ? "Your plan started" : "Your group plan started",
-            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account. Pick your own class times in Online Lessons. These credits expire on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })} (the end of this 28-day cycle), so book your classes before then.`,
+            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account. Pick your own class times in Lessons. These credits expire on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })} (the end of this 28-day cycle), so book your classes before then.`,
             emailCategory: "payments",
             cta: { label: "Pick your class time", path: "/lessons" },
           }).catch((err) => console.error(`Failed to notify family member ${plan.userId} (non-blocking):`, err)),

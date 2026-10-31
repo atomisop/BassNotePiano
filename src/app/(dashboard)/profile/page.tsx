@@ -6,10 +6,9 @@ import { isObjectStorageConfigured } from "@/lib/storage";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Profile" };
 
@@ -45,13 +44,7 @@ export default async function ProfilePage() {
           friend's own profile link, so there's no single page it "belongs"
           to. Back to the roadmap rather than guessing a referrer, so this
           never reads as a dead end reachable only via the dock icons. */}
-      <BackLink
-        href="/dashboard"
-        className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
-      >
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
+      <PageBack href="/dashboard" />
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">
           {user.image ? (

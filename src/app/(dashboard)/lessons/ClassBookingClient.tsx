@@ -896,7 +896,7 @@ export function ClassBookingClient({
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
       <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
-          {extraMode ? "Extra sessions" : "Live Lessons"}
+          {extraMode ? "Extra sessions" : "Lessons"}
         </p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
           {extraMode ? "Book an extra class" : "Book a class"}

@@ -17,6 +17,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { AdminReservations } from "@/components/admin/AdminReservations";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
+import { PageBack } from "@/components/ui/BackLink";
 
 type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
 
@@ -58,6 +59,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
     return (
       <div>
         <div data-deck-header className="deck-header -mt-4 pt-4">
+          <PageBack href="/admin" />
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
         </div>

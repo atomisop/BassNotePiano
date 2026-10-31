@@ -10,6 +10,7 @@ import { Hint } from "@/components/ui/Hint";
 import { listChildSummaries, listParentBills } from "@/lib/parentChildren";
 import { submitPlanInstallmentPaymentAction } from "../billing/plans/actions";
 import { formatDateTime } from "@/lib/classScheduleLabels";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Parent mode" };
 
@@ -22,6 +23,7 @@ export default async function ParentPage() {
   return (
     <WideLayout>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/account" />
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Account</p>
         <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Parent mode</h1>
       </div>

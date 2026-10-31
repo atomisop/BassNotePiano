@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { PageBack } from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/Card";
@@ -299,8 +300,6 @@ export function ContactSessions({
 
 export function BackToContacts() {
   return (
-    <Link href="/admin/contacts" className="text-small font-medium text-slate-400 hover:text-slate-100">
-      All contacts
-    </Link>
+    <PageBack href="/admin/contacts" />
   );
 }

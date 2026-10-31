@@ -20,7 +20,7 @@ import { usePoll } from "@/hooks/usePoll";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCommands";
 import { buttonVariants } from "@/components/ui/button";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { StatusDot } from "@/components/ui/StatusDot";
 
 const THREAD_POLL_MS = 2_500;
@@ -174,9 +174,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
 
   return (
     <div className="flex flex-col gap-3">
-      <BackLink href={backHref} className="tap inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-small font-medium text-slate-300 transition hover:text-slate-50">
-        <span aria-hidden>←</span> Back
-      </BackLink>
+      <PageBack href={backHref} />
 
       {/* Tall enough to use the screen, short enough that the reply box ends above the floating dock. */}
       <div className="glass-surface flex h-[calc(100dvh-21rem)] min-h-[360px] min-w-0 flex-col overflow-hidden lg:h-[calc(100dvh-19rem)]">

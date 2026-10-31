@@ -9,11 +9,11 @@ export const CANNED_REPLIES: { label: string; text: string }[] = [
   },
   {
     label: "How payment works",
-    text: "Pick a plan under Online Lessons, then Payment plan. You will get a payment code to put in the note when you send the Zelle, Venmo or bank payment. Once the payment arrives it is matched automatically and your classes are booked. If it has not shown up after a few hours, reply here with the date and amount and I will check.",
+    text: "Pick a plan under Lessons, then Payment plan. You will get a payment code to put in the note when you send the Zelle, Venmo or bank payment. Once the payment arrives it is matched automatically and your classes are booked. If it has not shown up after a few hours, reply here with the date and amount and I will check.",
   },
   {
     label: "Cancel or change a class",
-    text: "You can move or cancel a single class under Online Lessons up to 24 hours before it starts. Inside 24 hours I cannot move it automatically, but write me the day you need and I will see what I can do.",
+    text: "You can move or cancel a single class under Lessons up to 24 hours before it starts. Inside 24 hours I cannot move it automatically, but write me the day you need and I will see what I can do.",
   },
   {
     label: "Cancel my plan",

@@ -7,9 +7,9 @@ import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
-import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
+import { CheckIcon } from "@/components/ui/icons";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { BackLink } from "@/components/ui/BackLink";
+import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { ChevronRight, Clock, FileText, Info, ShieldCheck, type AppIcon } from "@/components/ui/appIcons";
 
 const TAB_ICONS = {
@@ -179,10 +179,7 @@ function AboutClientInner() {
   return (
     <WideLayout>
       {/* Only ever linked from Settings, see AccountSettings.tsx. */}
-      <BackLink href="/account" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
+      <PageBack href="/account" />
       <div>
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Info</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>

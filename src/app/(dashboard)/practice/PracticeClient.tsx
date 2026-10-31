@@ -17,6 +17,7 @@ import {
 import { DAILY_GOAL_SECONDS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { announceChange } from "@/lib/liveEvents";
+import { PageBack } from "@/components/ui/BackLink";
 
 type Instrument = "PIANO" | "GUITAR";
 
@@ -301,6 +302,7 @@ export function PracticeClient({
   return (
     <div className="grid gap-4 md:gap-(--space-group)">
       <div data-deck-header className="deck-header -mt-4 pt-6">
+        <PageBack href="/dashboard" />
         <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
       </div>
 

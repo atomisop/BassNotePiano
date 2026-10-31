@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CalendarCheck } from "@/components/ui/appIcons";
 import { TodayAttendance } from "@/components/admin/TodayAttendance";
 import { markAttendanceAction, undoAttendanceAction } from "../schedule/actions";
+import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Today" };
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function AdminTodayPage() {
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Today</h1>
       </div>

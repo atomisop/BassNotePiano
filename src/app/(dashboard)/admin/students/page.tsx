@@ -4,6 +4,7 @@ import { getAdminClassRegistrations } from "@/lib/classRegistration";
 import { StudentQueue } from "@/components/admin/StudentQueue";
 import { approveRegistrationAction, rejectRegistrationAction } from "./actions";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { PageBack } from "@/components/ui/BackLink";
 
 const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
   { label: "Pending", value: "PENDING" },
@@ -24,6 +25,7 @@ export default async function AdminStudentsPage(props: { searchParams: Promise<{
   return (
     <div>
       <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Applicants</h1>
       </div>
