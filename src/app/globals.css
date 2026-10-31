@@ -2475,31 +2475,56 @@ body:has([data-surface="app"]) .glass-surface-modal {
 [data-mode="light"] .app-dock-active {
   background: rgb(0 0 0 / 0.07);
 }
-/* The dock (a copy of Instagram's tab bar): the lens (GlassLens) frosts and bends the page, so the pill itself only adds a smoky dark or
-   milky white tint, a hairline rim and a soft shadow, and carries no blur of its own (a backdrop-filter here would wall the lens off).
-   Brought back 2026-10-31 at the owner's request ("bring back the Instagram dock"), after the flat matte versions. */
-.app-dock.app-dock-lens {
-  background: rgb(44 44 47 / 0.66);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 28px -10px rgb(0 0 0 / 0.7);
-}
-[data-mode="light"] .app-dock.app-dock-lens {
-  background: rgb(252 252 253 / 0.72);
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 28px -12px rgb(30 30 60 / 0.3);
-}
-.app-dock-lens .app-dock-active {
-  background: rgb(255 255 255 / 0.16);
-}
-[data-mode="light"] .app-dock-lens .app-dock-active {
-  background: rgb(0 0 0 / 0.07);
-}
-/* The filled icon's cut-out details take the capsule's look over the pill. */
-.app-dock-lens .dock-icon {
+/* The dock: an exact copy of Instagram's floating tab bar (measured from the owner's screenshots, 2026-10-31, after the lens version
+   drew as a square grey bar). A dark smoky tint over a heavy frost, a glass rim that is brightest along the top, a soft drop shadow, and a
+   light capsule behind the current tab. White icons on Ink, near-black on Paper. Keep this look unless the owner asks. */
+.ig-dock {
+  isolation: isolate;
+  corner-shape: round;
+  background: rgb(26 27 30 / 0.72);
+  -webkit-backdrop-filter: blur(26px) saturate(1.7);
+  backdrop-filter: blur(26px) saturate(1.7);
+  box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
+  --ig-icon: rgb(255 255 255);
   --dock-cut: rgb(78 78 81);
 }
-[data-mode="light"] .app-dock-lens .dock-icon {
-  --dock-cut: rgb(232 232 234);
+/* The rim: a 1px ring, bright at the top, faint down the sides, catching a little light again along the bottom curve. */
+.ig-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.32) 0%, rgb(255 255 255 / 0.1) 35%, rgb(255 255 255 / 0.06) 65%, rgb(255 255 255 / 0.16) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+.ig-dock-active {
+  corner-shape: round;
+  background: rgb(255 255 255 / 0.2);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.12);
+}
+.ig-dock-icon {
+  color: var(--ig-icon);
+}
+.ig-dock-dot {
+  background: rgb(255 48 64);
+}
+[data-mode="light"] .ig-dock {
+  background: rgb(250 250 252 / 0.78);
+  box-shadow: 0 10px 30px -10px rgb(30 30 60 / 0.28), 0 2px 6px rgb(30 30 60 / 0.08);
+  --ig-icon: rgb(10 10 12);
+  --dock-cut: rgb(226 226 230);
+}
+[data-mode="light"] .ig-dock::before {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.95) 0%, rgb(0 0 0 / 0.06) 40%, rgb(0 0 0 / 0.06) 70%, rgb(255 255 255 / 0.6) 100%);
+}
+[data-mode="light"] .ig-dock-active {
+  background: rgb(0 0 0 / 0.08);
+  box-shadow: none;
 }
 
 
