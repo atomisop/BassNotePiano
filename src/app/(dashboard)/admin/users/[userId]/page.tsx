@@ -11,6 +11,8 @@ import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
+import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
+import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getServerAuthSession } from "@/lib/auth";
@@ -38,13 +40,13 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const isOwner = isOwnerEmail(viewer?.user?.email);
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
   const planControls =
-    (plan && !plan.familyGroupId) || (isOwner && !plan) ? (
+    (plan && !plan.familyGroupId) || isOwner ? (
       <>
         {plan && !plan.familyGroupId && (
-          <>
-            <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-          </>
+          <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
         )}
+        {/* Each person's bill has its own date, group and parent plans included, so the owner can move any running one. */}
+        {plan && isOwner && !planPaused && <AdminBillDateButton planId={plan.id} currentDay={etDayKey(plan.nextDueDate)} compact />}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}
       </>
     ) : null;

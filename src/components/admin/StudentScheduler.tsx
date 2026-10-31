@@ -232,7 +232,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {planControls}
-          {planControls && <Hint label="About plan controls">Pause the plan, or move the standing weekly time and every upcoming class on it together.</Hint>}
+          {planControls && <Hint label="About plan controls">Pause the plan, move the standing weekly time and every upcoming class on it together, or (owner) move the next bill to another day.</Hint>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${studentName.split(" ")[0]}`} />

@@ -4,7 +4,7 @@ import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { adminPausePlan, adminResumePlan, cancelPaymentPlan, PaymentPlanError, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
+import { adminPausePlan, adminResumePlan, cancelPaymentPlan, changePlanBillDate, PaymentPlanError, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
@@ -86,6 +86,22 @@ export async function resumePlanAdminAction(planId: string, notify = true): Prom
     const admin = await requireAdmin();
     try {
       await adminResumePlan(String(planId), admin.id);
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+    revalidatePath("/", "layout");
+    return { ok: true, error: null };
+  });
+}
+
+/** Owner only: move a running plan's next bill to another day (YYYY-MM-DD, Eastern). */
+export async function changeBillDateAction(planId: string, day: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a bill date." };
+    try {
+      await changePlanBillDate(String(planId), admin.id, String(day));
     } catch (err) {
       if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
       throw err;

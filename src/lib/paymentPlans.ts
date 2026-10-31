@@ -27,6 +27,8 @@ import { createNotification } from "@/lib/notifications";
 import { grantCredits } from "@/lib/creditLedger";
 import { adminPauseBlockedReason, INDEFINITE_PAUSE_MS, isPausedNow, PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
 import { logAudit } from "@/lib/audit";
+import { billDateBlockedReason, movedDueDate } from "@/lib/billDateRules";
+import { etDayKey } from "@/lib/fingerPractice";
 
 export class PaymentPlanError extends Error {}
 
@@ -935,6 +937,40 @@ export async function adminResumePlan(planId: string, adminId: string): Promise<
     body: "Your plan is running again. Your weekly classes are back on the calendar and your next payment is due on the new date.",
     emailCategory: "payments",
   }).catch((err) => console.error("Studio resume notice failed (non-blocking):", err));
+}
+
+/**
+ * Moves a running plan's next bill to another day (owner only, for fixing a date that went wrong). Only the bill moves: credits,
+ * classes and the weekly time stay as they are. An unpaid bill already sent for the old date is closed so the new date gets a fresh
+ * one. Audited as plan.bill-date; the student is told.
+ */
+export async function changePlanBillDate(planId: string, adminId: string, newDay: string): Promise<{ from: Date; to: Date }> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new PaymentPlanError("That plan was not found.");
+  const currentKey = etDayKey(plan.nextDueDate);
+  const blocked = billDateBlockedReason({ newDay, todayKey: etDayKey(now), currentKey, status: plan.status, paused: isPausedNow(plan, now) });
+  if (blocked) throw new PaymentPlanError(blocked);
+  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: plan.id, status: "PENDING_REVIEW" }, select: { id: true } });
+  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it first.");
+
+  const to = movedDueDate(plan.nextDueDate, currentKey, newDay);
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.paymentPlan.updateMany({ where: { id: plan.id, status: "ACTIVE", nextDueDate: plan.nextDueDate }, data: { nextDueDate: to } });
+    if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
+    await tx.zellePayment.updateMany({ where: { paymentPlanId: plan.id, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+  });
+
+  const label = (d: Date) => d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+  await logAudit({ actorId: adminId, action: "plan.bill-date", targetType: "PaymentPlan", targetId: plan.id, detail: `Next bill moved from ${label(plan.nextDueDate)} to ${label(to)}` }).catch(() => undefined);
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_UPDATED",
+    title: "Your next payment date changed",
+    body: `Your next payment is now due on ${label(to)}. Your classes and credits are unchanged.`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Bill date notice failed (non-blocking):", err));
+  return { from: plan.nextDueDate, to };
 }
 
 /** Days a plan may sit past due before the system cancels it. */
