@@ -596,6 +596,10 @@ browser; the push service saying 404/410 deletes the row. The endpoint a browser
 **Needs three env vars to turn on**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (make a pair with `npx web-push generate-vapid-keys`) and optionally `VAPID_SUBJECT` (`mailto:...`). Without the keys the card is
 hidden and nothing is sent. On iPhone/iPad push only works once the site is on the Home Screen, so the card shows those steps first (the "Add to Home Screen" prompt).
 
+## Offline (added 2026-10-31)
+
+`OfflineNotice` (providers.tsx) shows a red "No internet connection" pill while the device is offline (the top banners step aside) and a short "Back online". `public/sw.js` is now installed on every visit (`ServiceWorkerSetup`, production only) and, besides push, serves the self-contained `public/offline.html` when a page is opened with no internet; it caches only that page and `/logo-mark.png` (`bnp-offline-v1`, bump the name when the page changes). Never add other caching there without a plan for stale pages.
+
 ## Referrals (added 2026-10-21)
 
 Settings > "Invite a friend": each account has a `referralCode` (made on first view, `referrals.ts`); `/register?ref=CODE` carries it into sign-up, which records a `Referral` (own, unknown or banned-referrer codes are ignored; one referral per invited person).
