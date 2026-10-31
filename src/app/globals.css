@@ -2572,3 +2572,16 @@ body {
     filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
   }
 }
+
+/* Shelves (Shelf.tsx) scroll sideways without a scrollbar, like Spotify's rows; the next card peeking in shows there is more. */
+.shelf {
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar {
+  display: none;
+}
+/* Every sideways-scrolling strip (tabs, filters, chips) keeps its swipe to itself, so reaching its end never triggers the browser's
+   back or forward swipe (the clash the owner worried about, 2026-10-30). */
+.overflow-x-auto {
+  overscroll-behavior-x: contain;
+}

@@ -19,13 +19,13 @@ export interface PickerRoadmap {
  */
 export function RoadmapPicker({ roadmaps, selectedId }: { roadmaps: PickerRoadmap[]; selectedId: string }) {
   return (
-    <nav aria-label="Your roadmaps" className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+    <nav aria-label="Your roadmaps" className="shelf -mx-4 snap-x snap-mandatory scroll-px-4 overflow-x-auto overscroll-x-contain px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0">
       <ol className="flex gap-2.5">
         {roadmaps.map((r) => {
           const selected = r.id === selectedId;
           const s = r.summary;
           return (
-            <li key={r.id} className="shrink-0">
+            <li key={r.id} className="shrink-0 snap-start">
               <Link
                 href={`/roadmap?roadmap=${encodeURIComponent(r.slug)}`}
                 scroll={false}

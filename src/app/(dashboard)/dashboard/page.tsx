@@ -20,6 +20,8 @@ import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeRow, HomeRows } from "@/components/home/HomeRow";
 import { GlanceTiles } from "@/components/home/GlanceTiles";
+import { PathCard, ShelfCard } from "@/components/home/ShelfCards";
+import { Shelf, ShelfItem } from "@/components/ui/Shelf";
 import { BADGES } from "@/lib/badges";
 
 export const metadata = { title: "Home" };
@@ -173,6 +175,15 @@ export default async function HomePage() {
               },
             ]}
           />
+          {data.path.length > 0 && (
+            <Shelf title="Your path" aside={`${data.progress.completedScales} of ${data.progress.totalScales} done`}>
+              {data.path.map((p, i) => (
+                <ShelfItem key={p.slug} className="w-36 sm:w-40">
+                  <PathCard step={i + 1} {...p} />
+                </ShelfItem>
+              ))}
+            </Shelf>
+          )}
           {data.gettingStarted.length > 0 && <GettingStarted items={data.gettingStarted} />}
           <TeacherNotesCard studentId={session.user.id} />
           <TipLine tip={data.tip} className="hidden lg:flex" />
@@ -198,33 +209,37 @@ export default async function HomePage() {
             </li>
           </HomeRows>
 
-          <HomeRows title="Studio">
-            <li>
-              <HomeRow
+          {/* Studio as a shelf you swipe through, the way Spotify shows its rows. */}
+          <Shelf title="Studio">
+            <ShelfItem>
+              <ShelfCard
                 href="/leaderboard"
                 icon={<Trophy />}
                 title={myRow ? `You're ${ordinal(myRow.place)} this week` : "Leaderboard"}
-                detail={leader ? `${leader.name} leads with ${leader.minutes} min` : "Nobody has practiced yet this week"}
+                detail={leader ? `${leader.name} leads with ${leader.minutes} min` : "Nobody has practiced yet"}
               />
-            </li>
-            <li>
-              <HomeRow
+            </ShelfItem>
+            <ShelfItem>
+              <ShelfCard
                 href="/friends"
                 icon={<Users />}
                 title={data.friendCount > 0 ? `${data.friendCount} friend${data.friendCount === 1 ? "" : "s"}` : "Friends"}
                 detail={
                   data.friendsPracticing.length > 0
-                    ? `${data.friendsPracticing.slice(0, 2).join(", ")} ${data.friendsPracticing.length === 1 ? "is" : "are"} practicing now`
+                    ? `${data.friendsPracticing.slice(0, 2).join(", ")} ${data.friendsPracticing.length === 1 ? "is" : "are"} practicing`
                     : data.friendCount > 0
                       ? "Nobody is practicing right now"
                       : "Practice is more fun with friends"
                 }
               />
-            </li>
-            <li>
-              <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} />
-            </li>
-          </HomeRows>
+            </ShelfItem>
+            <ShelfItem>
+              <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} card />
+            </ShelfItem>
+            <ShelfItem>
+              <ShelfCard href="/streak" icon={<Flame />} title={`${practice.streak} day streak`} detail={practice.completedToday ? "Done for today" : "Practice today to keep it"} />
+            </ShelfItem>
+          </Shelf>
 
           <TipLine tip={data.tip} className="lg:hidden" />
         </div>

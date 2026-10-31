@@ -29,6 +29,8 @@ export interface HomeData {
   weekMinutes: number;
   /** Minutes on each day of this week, Sunday first. */
   weekDays: number[];
+  /** The current roadmap's scales in order, for Home's path shelf. */
+  path: { slug: string; code: string; title: string; done: boolean; open: boolean; current: boolean }[];
   /** Today's place in `weekDays`. */
   todayIndex: number;
   friendCount: number;
@@ -147,6 +149,14 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     practice,
     weekMinutes: minutesThisWeek(weekRows, today),
     weekDays: weekDayMinutes(weekRows, today),
+    path: inCurrent.map((s) => ({
+      slug: s.scaleGroup.slug,
+      code: s.scaleGroup.code,
+      title: s.scaleGroup.title,
+      done: s.status === "COMPLETED",
+      open: s.canAccess,
+      current: !!current && s.scaleGroup.slug === current.scaleGroup.slug,
+    })),
     todayIndex: weekDayIndex(today),
     friendCount: friendIds.length,
     friendsPracticing: live.map((r) => r.user.name?.split(" ")[0] ?? r.user.username ?? "A friend"),
