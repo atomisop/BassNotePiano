@@ -30,7 +30,7 @@ cases, payments, login codes, the mail check, backups): `npm run test:db`, which
 refuses to run against anything but a local database, and which CI runs after the
 build has migrated its throwaway Postgres. `tsc --noEmit`, `next lint`, `next build`
 and both test runs are the correctness gates, plus manual verification (see below). Every
-scheduled Netlify function wraps its body in `runJob` (`src/lib/jobRun.ts`) so
+scheduled Netlify function (except `keep-warm`, which requests `/login` every 5 minutes so the server never sleeps and must never touch the database; see docs/SPEED-AUDIT.md) wraps its body in `runJob` (`src/lib/jobRun.ts`) so
 the owner overview and the morning email can show a job that stopped. A job that
 never ran counts as stopped once the system has been recording longer than its
 window. `job-watchdog` (every 30 minutes) checks them all, emails the owner at
