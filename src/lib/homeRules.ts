@@ -24,6 +24,22 @@ export function minutesThisWeek(rows: { day: string; seconds: number }[], today:
   return Math.floor(seconds / 60);
 }
 
+/** Which day of the week a day key is, 0 for Sunday. */
+export function weekDayIndex(today: string): number {
+  const [y, m, d] = today.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+/** Minutes practiced on each day of this week, Sunday first (seven numbers; days still ahead are 0). */
+export function weekDayMinutes(rows: { day: string; seconds: number }[], today: string): number[] {
+  const start = weekStartKey(today);
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = shiftDay(start, i);
+    if (day > today) return 0;
+    return Math.floor(rows.filter((r) => r.day === day).reduce((sum, r) => sum + r.seconds, 0) / 60);
+  });
+}
+
 export const TIPS: { title: string; body: string }[] = [
   { title: "Slow is fast", body: "Play a scale at half speed until it is clean three times in a row, then speed up a little." },
   { title: "Scale of the day: C major", body: "No black keys at all. Say each note name out loud as you play it, up and back down." },

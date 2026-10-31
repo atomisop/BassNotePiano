@@ -23,7 +23,7 @@ export default async function MailPage() {
   return (
     <WideLayout>
       <div className="grid grid-cols-1 gap-(--space-group)">
-        <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+        <div data-deck-header className="deck-header -mt-4 flex flex-wrap items-end justify-between gap-3 pt-6">
           <div>
             <Eyebrow>Inbox</Eyebrow>
             <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Mail</h1>

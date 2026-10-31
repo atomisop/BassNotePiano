@@ -894,12 +894,14 @@ export function ClassBookingClient({
     <WideLayout>
       {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
-        {extraMode ? "Extra sessions" : "Live Lessons"}
-      </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
-        {extraMode ? "Book an extra class" : "Book a class"}
-      </h1>
+          {extraMode ? "Extra sessions" : "Live Lessons"}
+        </p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
+          {extraMode ? "Book an extra class" : "Book a class"}
+        </h1>
+      </div>
 
       <div className="mt-(--space-group)">
         <Tabs<TabId>

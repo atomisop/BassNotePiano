@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TIPS, minutesThisWeek, pickCelebration, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
+import { TIPS, minutesThisWeek, pickCelebration, tipOfTheDay, weekDayIndex, weekDayMinutes, weekStartKey, type Win } from "@/lib/homeRules";
 
 describe("weekStartKey", () => {
   it("is the Sunday on or before the day", () => {
@@ -41,5 +41,21 @@ describe("pickCelebration", () => {
   it("ignores wins older than the window", () => {
     expect(pickCelebration([win("old", 9)], now)).toBeNull();
     expect(pickCelebration([], now)).toBeNull();
+  });
+});
+
+describe("weekDayMinutes", () => {
+  it("gives each day of the week from Sunday, nothing after today and nothing from last week", () => {
+    // 2026-10-29 is a Thursday; the week started Sunday 2026-10-25.
+    const rows = [
+      { day: "2026-10-24", seconds: 900 },
+      { day: "2026-10-25", seconds: 600 },
+      { day: "2026-10-27", seconds: 300 },
+      { day: "2026-10-27", seconds: 330 },
+      { day: "2026-10-29", seconds: 59 },
+    ];
+    expect(weekDayMinutes(rows, "2026-10-29")).toEqual([10, 0, 10, 0, 0, 0, 0]);
+    expect(weekDayIndex("2026-10-29")).toBe(4);
+    expect(weekDayIndex("2026-10-25")).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, CalendarCheck, Check, Flame, Lightbulb, Map, Sparkles, Trophy, Users, Video } from "@/components/ui/appIcons";
+import { ArrowRight, CalendarCheck, Check, Clock, Flame, Lightbulb, Map, Sparkles, Ticket, Trophy, Users, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";
@@ -19,6 +19,7 @@ import { CelebrationCard } from "@/components/home/CelebrationCard";
 import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeRow, HomeRows } from "@/components/home/HomeRow";
+import { GlanceTiles } from "@/components/home/GlanceTiles";
 import { BADGES } from "@/lib/badges";
 
 export const metadata = { title: "Home" };
@@ -44,8 +45,9 @@ export default async function HomePage() {
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
   const data = await getHomeData({ id: session.user.id, role: session.user.role, email: session.user.email ?? null });
 
+  // The greeting stays put while the page scrolls under it (every page's heading does), so it sits above both columns.
   const greeting = (
-    <div className="pt-4 md:pt-6">
+    <div data-deck-header className="deck-header -mt-4 pt-8 md:pt-10 lg:pb-6">
       <TodayGreeting name={data.name} />
     </div>
   );
@@ -53,9 +55,9 @@ export default async function HomePage() {
   if (data.isNew) {
     return (
       <WideLayout>
+        {greeting}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
-          <div className="grid min-w-0 gap-6">
-            {greeting}
+          <div className="grid min-w-0 grid-cols-1 gap-6">
             <HomeHero
               artwork={data.roadmap.artwork}
               eyebrow="Start here"
@@ -76,7 +78,7 @@ export default async function HomePage() {
               }
             />
           </div>
-          <div className="grid min-w-0 gap-8 lg:pt-24">
+          <div className="grid min-w-0 grid-cols-1 gap-8">
             <HomeRows title="How it works">
               <li>
                 <HomeRow href="/lessons" icon={<Video />} title="Live classes on Discord" detail="A real teacher every week, at a time you pick." />
@@ -108,9 +110,9 @@ export default async function HomePage() {
    */
   return (
     <WideLayout>
+      {greeting}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
-        <div className="grid min-w-0 gap-6">
-          {greeting}
+        <div className="grid min-w-0 grid-cols-1 gap-6">
           {data.celebration && <CelebrationCard win={data.celebration} />}
           <HomeHero
             artwork={data.roadmap.artwork}
@@ -140,12 +142,43 @@ export default async function HomePage() {
               percent: data.progress.percent,
             }}
           />
+          <GlanceTiles
+            items={[
+              {
+                href: "/practice",
+                label: "Streak",
+                icon: <Flame />,
+                value: String(practice.streak),
+                unit: practice.streak === 1 ? "day" : "days",
+                hint: practice.completedToday ? "Done today" : `${minutesLeft} min left today`,
+                meter: { value: Math.min(practice.todaySeconds, DAILY_GOAL_SECONDS), max: DAILY_GOAL_SECONDS, label: practice.completedToday ? "Today's practice is done" : `${minutesLeft} minutes of practice left today` },
+              },
+              {
+                href: "/streak",
+                label: "This week",
+                icon: <Clock />,
+                value: String(data.weekMinutes),
+                unit: "min",
+                hint: `Goal ${WEEKLY_GOAL_MINUTES} min`,
+                bars: { values: data.weekDays, current: data.todayIndex, label: `Practice minutes each day this week: ${data.weekDays.join(", ")}` },
+              },
+              {
+                href: "/lessons",
+                label: "Credits",
+                icon: <Ticket />,
+                value: formatCredits(data.credits),
+                unit: data.credits === 1 ? "class" : "classes",
+                hint: nextClass ? `Next ${untilLabel(nextClass.scheduledAt)}` : "No class booked",
+                alert: data.credits === 0,
+              },
+            ]}
+          />
           {data.gettingStarted.length > 0 && <GettingStarted items={data.gettingStarted} />}
           <TeacherNotesCard studentId={session.user.id} />
           <TipLine tip={data.tip} className="hidden lg:flex" />
         </div>
 
-        <div className="grid min-w-0 gap-8 lg:pt-24">
+        <div className="grid min-w-0 grid-cols-1 gap-8">
           <HomeRows title="This week">
             <li>
               <HomeRow
@@ -153,15 +186,6 @@ export default async function HomePage() {
                 icon={<CalendarCheck />}
                 title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
                 detail={nextClass ? `Next class, ${untilLabel(nextClass.scheduledAt)}` : "Book your weekly class"}
-              />
-            </li>
-            <li>
-              <HomeRow
-                href="/practice"
-                icon={<Flame />}
-                title={`${practice.streak} day streak`}
-                detail={practice.completedToday ? "Done for today" : `${minutesLeft} minutes of practice left today`}
-                trailing={<MiniRing value={Math.min(data.weekMinutes, WEEKLY_GOAL_MINUTES)} max={WEEKLY_GOAL_MINUTES} label={`This week: ${data.weekMinutes} of ${WEEKLY_GOAL_MINUTES} practice minutes`} />}
               />
             </li>
             <li>
@@ -215,21 +239,6 @@ function ordinal(n: number): string {
   return `${n}${s}`;
 }
 
-/** A small ring at the end of a row (the week's practice). */
-function MiniRing({ value, max, label }: { value: number; max: number; label: string }) {
-  const size = 32;
-  const stroke = 3.5;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const filled = c * Math.min(1, Math.max(0, max > 0 ? value / max : 0));
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" role="img" aria-label={label}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="text-slate-50/12" stroke="currentColor" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${filled} ${c - filled}`} className="text-signal-fg" stroke="currentColor" />
-    </svg>
-  );
-}
-
 /** The tip of the day as a quiet line on the page, not a card. */
 function TipLine({ tip, className }: { tip: { title: string; body: string }; className?: string }) {
   return (
@@ -248,8 +257,8 @@ function GettingStarted({ items }: { items: { done: boolean; label: string; deta
     <HomeRows title="Get started" aside={`${items.filter((g) => g.done).length} of ${items.length}`}>
       {items.map((g) =>
         g.done ? (
-          <li key={g.label} className="flex min-h-14 items-center gap-3.5 py-2">
-            <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-50/8 text-slate-400">
+          <li key={g.label} className="flex min-h-14 items-center gap-3.5 px-4 py-2">
+            <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-slate-50/8 text-slate-400">
               <Check className="h-4 w-4" strokeWidth={3} />
             </span>
             <span className="text-body text-slate-500 line-through">

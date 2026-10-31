@@ -18,8 +18,10 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Lessons</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Lessons</h1>
+      </div>
 
       {!storageConfigured && (
         <div className="mt-6 rounded-xl border border-slate-50/30 bg-neu-base shadow-pressed-low px-4 py-3 text-small text-slate-50">

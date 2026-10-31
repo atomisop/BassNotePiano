@@ -81,8 +81,10 @@ export default async function BillingHistoryPage() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Billing</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
+      </div>
 
       {payments.length === 0 ? (
         <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">

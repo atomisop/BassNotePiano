@@ -38,8 +38,10 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
     const feedback = await getPlanCancellationFeedback();
     return (
       <div>
+        <div data-deck-header className="deck-header -mt-4 pt-4">
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Plans</h1>
+          <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Plans</h1>
+        </div>
         <p className="mt-2 text-small text-slate-500">
           {feedback.length} cancellation{feedback.length === 1 ? "" : "s"}
         </p>

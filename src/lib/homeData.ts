@@ -8,7 +8,7 @@ import { gettingStartedStep } from "@/lib/lockedScale";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { BADGES } from "@/lib/badges";
 import { STREAK_GOALS } from "@/lib/streakRules";
-import { minutesThisWeek, pickCelebration, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
+import { minutesThisWeek, pickCelebration, weekDayMinutes, weekDayIndex, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
 import { roadmapsForViewer } from "@/lib/roadmaps";
 import { storedToCredits } from "@/lib/classCreditPricing";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
@@ -27,6 +27,10 @@ export interface HomeData {
   nextClass: { scheduledAt: Date; creditsSpent: number; discordChannelId: string | null; inPerson: boolean } | null;
   practice: FingerPracticeStatus;
   weekMinutes: number;
+  /** Minutes on each day of this week, Sunday first. */
+  weekDays: number[];
+  /** Today's place in `weekDays`. */
+  todayIndex: number;
   friendCount: number;
   /** First names of friends practicing right now. */
   friendsPracticing: string[];
@@ -142,6 +146,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     nextClass,
     practice,
     weekMinutes: minutesThisWeek(weekRows, today),
+    weekDays: weekDayMinutes(weekRows, today),
+    todayIndex: weekDayIndex(today),
     friendCount: friendIds.length,
     friendsPracticing: live.map((r) => r.user.name?.split(" ")[0] ?? r.user.username ?? "A friend"),
     celebration: pickCelebration(wins, now),

@@ -300,7 +300,9 @@ export function PracticeClient({
 
   return (
     <div className="grid gap-4 md:gap-(--space-group)">
-      <h1 className="pt-2 font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
+      <div data-deck-header className="deck-header -mt-4 pt-6">
+        <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
+      </div>
 
       {/* ---- Today ---- */}
       <Card className="!p-4 md:!p-6">

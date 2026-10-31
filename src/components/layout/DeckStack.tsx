@@ -15,7 +15,7 @@ const HEADER_TOP = -16;
 const DOCK_SPACE = 104;
 
 /**
- * The card deck (Home, Roadmap, the admin overview on phones and tablets; Home, Streak and Leaderboard on a computer too): every
+ * Page headings that stay put (every signed-in page, `data-deck-header`) and the card deck (Home, Roadmap, the admin overview on phones and tablets; Home, Streak and Leaderboard on a computer too): every
  * `.deck-card` slides up and stops under the top bar, the next one is drawn over it, and the earlier cards' top edges stay showing as a
  * stack of tips (globals.css makes them sticky). This works out where each card stops: its tip's place in the stack, or, for a card
  * too tall to fit, low enough that its bottom is seen before it stops. Cards are taken in the order they appear on screen (Home
@@ -40,10 +40,6 @@ export function DeckStack() {
         c.style.removeProperty("z-index");
       });
       const headerEls = [...main.querySelectorAll<HTMLElement>("[data-deck-header]")];
-      if (cards.length === 0) {
-        headerEls.forEach((h) => h.style.removeProperty("--deck-top"));
-        return;
-      }
       const ordered = cards
         .filter((card) => card.offsetHeight > 0)
         .map((card, index) => ({ card, index, order: Number(getComputedStyle(card).order) || 0 }))
@@ -64,6 +60,7 @@ export function DeckStack() {
         });
         start = edge + 4;
       }
+      if (cards.length === 0) return;
       // One stack per column: cards that start at the same left edge share a stack (a phone has just the one).
       const column = new Map<number, number>();
       ordered.forEach(({ card }, n) => {
@@ -85,7 +82,7 @@ export function DeckStack() {
     const watch = () => {
       sizes.disconnect();
       sizes.observe(main);
-      main.querySelectorAll(".deck-card").forEach((c) => sizes.observe(c));
+      main.querySelectorAll(".deck-card, [data-deck-header]").forEach((c) => sizes.observe(c));
       schedule();
     };
     // Cards stream in (and lists grow) after the first paint: pick them up as they arrive.
@@ -94,11 +91,32 @@ export function DeckStack() {
     phone.addEventListener("change", schedule);
     watch();
 
+    // A heading that stays put is marked `data-stuck` while it is pinned, so globals.css fills the strip above it (under the
+    // see-through top bar) only then. Filled all the time, it would cover whatever sits above the heading before you scroll.
+    let stuckFrame = 0;
+    const markStuck = () => {
+      stuckFrame = 0;
+      const top = main.getBoundingClientRect().top + (parseFloat(getComputedStyle(main).paddingTop) || 0);
+      main.querySelectorAll<HTMLElement>("[data-deck-header]").forEach((h) => {
+        const stop = parseFloat(h.style.getPropertyValue("--deck-top")) || HEADER_TOP;
+        const pinned = main.scrollTop > 0 && h.getBoundingClientRect().top <= top + stop + 1;
+        if (pinned) h.dataset.stuck = "";
+        else delete h.dataset.stuck;
+      });
+    };
+    const onScroll = () => {
+      if (!stuckFrame) stuckFrame = requestAnimationFrame(markStuck);
+    };
+    main.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
     return () => {
       sizes.disconnect();
       added.disconnect();
       phone.removeEventListener("change", schedule);
+      main.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
+      if (stuckFrame) cancelAnimationFrame(stuckFrame);
     };
   }, [pathname]);
 

@@ -19,8 +19,10 @@ export default async function AdminRoadmapsPage() {
   const roadmaps = await listRoadmapsForAdmin();
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
+      </div>
       <p className="mt-2 max-w-2xl text-small text-slate-500">
         Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you
         already give. A new roadmap starts hidden: add its scales (and their lessons under Classes &gt; Lessons), then turn it on.

@@ -31,8 +31,10 @@ export default async function AdminSecurityPage() {
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</p>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">

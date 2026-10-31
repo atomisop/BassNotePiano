@@ -40,8 +40,10 @@ export default async function AdminPricingPage() {
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</p>
       <div className="mt-6">
         <PricingManager

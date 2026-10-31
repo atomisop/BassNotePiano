@@ -147,7 +147,7 @@ export default async function BillingPlansPage(
           }))}
         />
       </div>
-      <div className="text-center md:text-left">
+      <div data-deck-header className="deck-header -mt-4 pt-4 text-center md:text-left">
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>

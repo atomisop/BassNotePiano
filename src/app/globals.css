@@ -2517,6 +2517,36 @@ body {
   }
 }
 
+/* Every page heading stays put (2026-10-30, owner: "keep that consistent across all pages"): the eyebrow and title marked
+   `deck-header` stick just under the top bar at every width while the page scrolls under them. While pinned (DeckStack marks it
+   `data-stuck`) the strip above it, under the see-through top bar, is filled with the ground too, and a hairline marks its edge,
+   so nothing that scrolls under it shows above or through it. A sticky heading must be a direct child of the page's long column. */
+.deck-header {
+  position: sticky;
+  top: var(--deck-top, -16px);
+  z-index: 40;
+  background: rgb(var(--ground));
+  padding-bottom: 0.75rem;
+}
+.deck-header[data-stuck]::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: 8rem;
+  background: rgb(var(--ground));
+  pointer-events: none;
+}
+.deck-header[data-stuck]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 1.25rem;
+  background: linear-gradient(rgb(var(--ground)), rgb(var(--ground) / 0));
+  pointer-events: none;
+}
+
 /* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
    slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
    of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
@@ -2528,12 +2558,6 @@ body {
     top: var(--deck-top, 72px);
     filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
   }
-  [data-deck-desktop] .deck-header {
-    position: sticky;
-    top: var(--deck-top, -16px);
-    z-index: 40;
-    background: rgb(var(--ground));
-  }
   [data-mode="light"] [data-deck-desktop] .deck-card {
     filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
   }
@@ -2543,12 +2567,6 @@ body {
     position: sticky;
     top: var(--deck-top, 72px);
     filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
-  }
-  .deck-header {
-    position: sticky;
-    top: var(--deck-top, -16px);
-    z-index: 40;
-    background: rgb(var(--ground));
   }
   [data-mode="light"] .deck-card {
     filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));

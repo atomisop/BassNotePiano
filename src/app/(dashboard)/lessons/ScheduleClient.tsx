@@ -140,7 +140,7 @@ export function ScheduleClient({
 
   return (
     <WideLayout className="space-y-6">
-      <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Your schedule</h1>
       </div>

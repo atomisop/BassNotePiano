@@ -20,6 +20,7 @@ import { getDueWeek } from "@/lib/adminDue";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeRow, HomeRows } from "@/components/home/HomeRow";
+import { GlanceTiles } from "@/components/home/GlanceTiles";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { buttonVariants } from "@/components/ui/button";
 import { getTeachingDay } from "@/lib/teachingToday";
@@ -30,6 +31,12 @@ function formatUsd(cents: number) {
     style: "currency",
     currency: "USD",
   });
+}
+
+/** Whole dollars, short: $1,240 or $12.4k. */
+function formatUsdShort(cents: number) {
+  const dollars = Math.round(cents / 100);
+  return dollars >= 10_000 ? `$${(dollars / 1000).toFixed(1).replace(/\.0$/, "")}k` : `$${dollars.toLocaleString("en-US")}`;
 }
 
 export const metadata = { title: "Admin: Overview" };
@@ -67,12 +74,14 @@ export default async function AdminOverviewPage() {
    * Computer: hero and payments on the left, the rows on the right.
    */
   return (
+    <div>
+      {/* The greeting stays put while the page scrolls under it, like every page's heading, so it sits above both columns. */}
+      <div data-deck-header className="deck-header -mt-4 pt-8 lg:pb-6">
+        <p className="text-small font-medium text-slate-400">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
+      </div>
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
-      <div className="grid min-w-0 gap-6">
-        <div className="pt-4 lg:pt-0">
-          <p className="text-small font-medium text-slate-400">Admin</p>
-          <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
-        </div>
+      <div className="grid min-w-0 grid-cols-1 gap-6">
 
         <HomeHero
           artwork="dusk"
@@ -105,6 +114,36 @@ export default async function AdminOverviewPage() {
           }
         />
 
+        <GlanceTiles
+          items={[
+            {
+              href: top ? top.href : "/admin/payments",
+              label: "Waiting",
+              icon: <Inbox />,
+              value: String(attention.reduce((n, a) => n + a.count, 0)),
+              unit: "items",
+              hint: top ? top.label : "All caught up",
+              alert: waitingTotal > 0,
+            },
+            {
+              href: "/admin/today",
+              label: "Today",
+              icon: <CalendarCheck />,
+              value: String(classesToday),
+              unit: classesToday === 1 ? "student" : "students",
+              hint: today.slots.length > 0 ? `${today.slots.length} ${today.slots.length === 1 ? "class" : "classes"}` : "No classes",
+            },
+            {
+              href: "/admin/payments",
+              label: "Revenue",
+              icon: <Coins />,
+              value: formatUsdShort(revenueNow * 100),
+              hint: revenueDelta !== null ? `${revenueDelta >= 0 ? "Up" : "Down"} ${Math.abs(revenueDelta)}% this month` : "This month",
+              bars: { values: trends.revenue.map((r) => r.value), label: `Revenue, last ${trends.revenue.length} months` },
+            },
+          ]}
+        />
+
         {waiting.payments.length > 0 && (
           <section aria-label="Payments to approve">
             <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -128,7 +167,7 @@ export default async function AdminOverviewPage() {
         </section>
       </div>
 
-      <div className="grid min-w-0 gap-8 lg:pt-24">
+      <div className="grid min-w-0 grid-cols-1 gap-8">
         {attention.length > 1 && (
           <HomeRows title="Needs you" aside={`${waitingTotal} ${waitingTotal === 1 ? "item" : "items"}`}>
             {attention.map((item) => (
@@ -196,7 +235,7 @@ export default async function AdminOverviewPage() {
         {followUps.length > 0 && (
           <HomeRows title="Follow up" aside={`${followUpPeople} ${followUpPeople === 1 ? "person" : "people"}`}>
             {followUps.map((f) => (
-              <li key={f.key} className="py-3">
+              <li key={f.key} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <Link href={f.href} className="text-body font-semibold text-slate-50 hover:underline">
                     {f.title}
@@ -263,6 +302,7 @@ export default async function AdminOverviewPage() {
           </Suspense>
         </OverviewStats>
       </div>
+    </div>
     </div>
   );
 }

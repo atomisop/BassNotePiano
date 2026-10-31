@@ -52,8 +52,10 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Sent</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Sent</h1>
+      </div>
 
       <div role="group" aria-label="How to list them" className="mt-5 flex w-fit gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
         {[

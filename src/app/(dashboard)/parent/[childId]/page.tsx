@@ -33,10 +33,12 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
       <BackLink href="/parent" className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Parent mode</p>
-      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>
-        <ChildSwitcher currentId={childId} kids={kids} />
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Parent mode</p>
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>
+          <ChildSwitcher currentId={childId} kids={kids} />
+        </div>
       </div>
       {bills.length > 0 && (
         <section className="mt-5 space-y-4" aria-label="To pay">

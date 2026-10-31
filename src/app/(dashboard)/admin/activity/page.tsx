@@ -59,8 +59,10 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
 
   return (
     <div>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</p>
 
       <form method="get" action="/admin/activity" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Filter the activity log">
