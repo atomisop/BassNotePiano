@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { studentNoticeMutedFor } from "@/lib/notifyScope";
 import { isStaging, stagingMayEmail } from "@/lib/appEnv";
 import { tagAppLinks } from "@/lib/recipientTag";
 import { reservationEmailBody } from "@/lib/reservationEmail";
@@ -69,6 +70,11 @@ interface SendEmailParams {
 async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsubscribePostUrl }: SendEmailParams): Promise<void> {
   // Every link into the app is tagged with who the email is for, so opening it signed in as someone else is caught
   // (see recipientTag.ts and the middleware) instead of showing that other account's screen.
+  // A quiet studio action (the "Notify student" switch off, notifyScope.ts) sends a student nothing; admins still get theirs.
+  if (await studentNoticeMutedFor({ email: to })) {
+    await recordEmail({ to, subject, status: "SKIPPED", detail: "The studio chose not to notify the student" });
+    return;
+  }
   const html = await tagAppLinks(rawHtml, to);
   const text = await tagAppLinks(rawText, to);
   const client = getResendClient();

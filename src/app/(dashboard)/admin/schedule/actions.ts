@@ -1,5 +1,6 @@
 "use server";
 
+import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
@@ -59,10 +60,12 @@ export async function setClassScheduleActiveAction(scheduleId: string, active: b
 // Schedule as its "Bookings & attendance" tab instead of its own top-level
 // nav slot, by direct instruction: both act on the exact same weekly-
 // schedule data, one defining it, the other operating on it day to day.
-export async function markAttendanceAction(bookingId: string, attendance: AttendanceStatus) {
-  await requireAdmin();
-  await markAttendance(bookingId, attendance);
-  revalidatePath("/", "layout");
+export async function markAttendanceAction(bookingId: string, attendance: AttendanceStatus, notify = true) {
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    await markAttendance(bookingId, attendance);
+    revalidatePath("/", "layout");
+  });
 }
 
 /**
@@ -72,15 +75,17 @@ export async function markAttendanceAction(bookingId: string, attendance: Attend
  * direct instruction: marking attendance charges a real credit, so it
  * needed a genuine undo, not just a re-pick.
  */
-export async function undoAttendanceAction(bookingId: string) {
-  await requireAdmin();
-  try {
-    await undoAttendance(bookingId);
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+export async function undoAttendanceAction(bookingId: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    try {
+      await undoAttendance(bookingId);
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
 /** Feeds the TopBar's class-bookings panel: every active booking, soonest first. */
@@ -90,15 +95,17 @@ export async function getBookingFeedAction(): Promise<BookingFeedRow[]> {
   return getBookingFeed();
 }
 
-export async function adminCancelBookingAction(bookingId: string, reason?: string) {
-  await requireAdmin();
-  try {
-    await adminCancelClassBooking(bookingId, reason);
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+export async function adminCancelBookingAction(bookingId: string, reason?: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    try {
+      await adminCancelClassBooking(bookingId, reason);
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
 /**
@@ -110,10 +117,11 @@ export async function getOpenSlotsAction() {
   const [upcoming, booked, windows] = await Promise.all([
     getUpcomingOccurrences(),
     prisma.classBooking.findMany({
-      where: { status: "SCHEDULED", scheduledAt: { gte: new Date(), lte: new Date(Date.now() + 400 * 86_400_000) } },
+      // From 180 days back (a class can be rescheduled into the past, and past classes may be marked already) to a year ahead.
+      where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: new Date(Date.now() - 180 * 86_400_000), lte: new Date(Date.now() + 400 * 86_400_000) } },
       select: { id: true, scheduledAt: true, student: { select: { name: true, email: true } } },
       orderBy: { scheduledAt: "asc" },
-      take: 1000,
+      take: 3000,
     }),
     prisma.classSchedule.findMany({ where: { active: true }, select: { dayOfWeek: true } }),
   ]);
@@ -127,43 +135,52 @@ export async function getOpenSlotsAction() {
   };
 }
 
-/** Moves a student's class to another open time in one step: the old class is freed and the new one booked together, or nothing changes. */
-export async function adminMoveBookingAction(bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) {
-  await requireAdmin();
-  try {
-    const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
-    await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true });
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+/**
+ * Reschedule: moves a student's class to another open time in one step (the old class is freed and the new one booked together, or nothing
+ * changes). Any class not yet marked Present or No-show can move, a past one too (`anyTime`).
+ */
+export async function adminMoveBookingAction(bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify = true) {
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    try {
+      const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
+      await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true, anyTime: true });
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
-/** Moves a class to any future date and start time (ET), as long as its 45 minutes overlap no other class. */
-export async function adminMoveBookingToTimeAction(bookingId: string, date: string, time: string) {
-  const admin = await requireAdmin();
-  try {
-    const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
-    await rescheduleClassBooking(booking.studentId, bookingId, "", 0, 0, undefined, { byAdmin: true, customTime: { date, time } });
-    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-custom", targetType: "ClassBooking", targetId: bookingId, detail: `${date} ${time} ET` });
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+/** Reschedule to any date and start time (ET), past or future, as long as its 45 minutes overlap no other class. */
+export async function adminMoveBookingToTimeAction(bookingId: string, date: string, time: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    try {
+      const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
+      await rescheduleClassBooking(booking.studentId, bookingId, "", 0, 0, undefined, { byAdmin: true, anyTime: true, customTime: { date, time } });
+      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-custom", targetType: "ClassBooking", targetId: bookingId, detail: `${date} ${time} ET` });
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
 /** The Online / In person switch on the attendance list. In person means no Discord call for that class. */
-export async function setClassInPersonAction(bookingId: string, inPerson: boolean) {
-  await requireAdmin();
-  try {
-    await setClassInPerson(bookingId, inPerson);
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+export async function setClassInPersonAction(bookingId: string, inPerson: boolean, notify = true) {
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    try {
+      await setClassInPerson(bookingId, inPerson);
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
 export async function searchStudentsForBookingAction(query: string): Promise<BookableStudent[]> {
@@ -177,15 +194,18 @@ export async function adminBookClassAction(
   occurrenceDateMs: number,
   chunkIndex: number,
   creditsToBook: number,
+  notify = true,
 ) {
-  await requireAdmin();
-  try {
-    await adminBookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+  return withStudentNotice(notify, async () => {
+    await requireAdmin();
+    try {
+      await adminBookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
+      revalidatePath("/", "layout");
+      return { ok: true as const };
+    } catch (err) {
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    }
+  });
 }
 
 /** Owner only: checks every step the Discord bot needs, and makes then removes a test channel. */

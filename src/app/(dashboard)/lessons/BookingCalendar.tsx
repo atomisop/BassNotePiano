@@ -46,10 +46,13 @@ export function BookingCalendar({
   occurrences,
   selectedDateKey,
   onSelectDate,
+  allowPast = false,
 }: {
   occurrences: OccurrenceLike[];
   selectedDateKey: string | null;
   onSelectDate: (key: string | null) => void;
+  /** The studio's Reschedule only: past days stay on the calendar and can be tapped. Students never get this. */
+  allowPast?: boolean;
 }) {
   // One entry per distinct calendar day that has at least one occurrence,
   // multiple schedules landing on the same day just add to the day's own
@@ -81,7 +84,8 @@ export function BookingCalendar({
   // on a mostly-empty current month is a worse first impression than just
   // starting where the classes actually are.
   const [viewMonth, setViewMonth] = useState<{ year: number; monthIndex: number }>(() => {
-    const first = sortedDayKeys[0] ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
+    // With past days on (Reschedule) the first day is months back: open on this month instead.
+    const first = sortedDayKeys[0] && !allowPast ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
     return { year: first.getUTCFullYear(), monthIndex: first.getUTCMonth() };
   });
 
@@ -123,7 +127,7 @@ export function BookingCalendar({
   for (let i = 0; i < allCells.length; i += 7) {
     const week = allCells.slice(i, i + 7);
     const allPast = week.every((d) => d === null || utcMidnight(viewMonth.year, viewMonth.monthIndex, d) < todayMidnight);
-    if (!allPast) cells.push(...week);
+    if (!allPast || allowPast) cells.push(...week);
   }
 
   return (
@@ -168,7 +172,7 @@ export function BookingCalendar({
           const ms = utcMidnight(viewMonth.year, viewMonth.monthIndex, day);
           const key = dayKey(ms);
           const info = dayInfo.get(key);
-          const isPast = ms < todayMidnight;
+          const isPast = !allowPast && ms < todayMidnight;
           const isToday = ms === todayMidnight;
           const isSelected = selectedDateKey === key;
           const clickable = !!info && !isPast && info.hasOpenSlot;

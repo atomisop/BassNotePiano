@@ -1,5 +1,6 @@
 "use client";
 
+import { useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -11,13 +12,17 @@ export function BulkConfirmButton({
   question,
   confirmLabel,
   onConfirm,
+  notifyPlace,
 }: {
   label: string;
   question: string;
   confirmLabel: string;
-  onConfirm: () => Promise<{ message: string }>;
+  onConfirm: (notify?: boolean) => Promise<{ message: string }>;
+  /** When given, the action is told the "Notify" choice of this place (useNotifyStudent). */
+  notifyPlace?: string;
 }) {
   const router = useRouter();
+  const [notify] = useNotifyStudent(notifyPlace ?? "bulk");
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -25,7 +30,7 @@ export function BulkConfirmButton({
   async function run() {
     setBusy(true);
     try {
-      const { message } = await onConfirm();
+      const { message } = await (notifyPlace ? onConfirm(notify) : onConfirm());
       setResult({ ok: true, text: message });
       router.refresh();
     } catch (err) {

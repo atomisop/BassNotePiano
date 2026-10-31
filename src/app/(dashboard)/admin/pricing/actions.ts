@@ -1,5 +1,6 @@
 "use server";
 
+import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
@@ -108,30 +109,34 @@ export async function searchDiscountCandidatesAction(query: string): Promise<Dis
   });
 }
 
-export async function setAccountDiscountAction(userId: string, percent: number, note: string): Promise<Ok<{ message: string }>> {
-  try {
-    const admin = await requireOwner();
-    const result = await setAccountDiscount({ userId, percent, note, actor: { id: admin.id, email: admin.email ?? null } });
-    revalidatePath("/", "layout");
-    const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
-      ? `${percent}% off saved. Their price per payment is now ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
-      : `${percent}% off saved. It applies when they start or change a plan.`;
-    return { ok: true, message };
-  } catch (err) {
-    return err instanceof AccountDiscountError ? { ok: false, error: err.message } : fail(err, "Could not save the discount.");
-  }
+export async function setAccountDiscountAction(userId: string, percent: number, note: string, notify = true): Promise<Ok<{ message: string }>> {
+  return withStudentNotice(notify, async () => {
+    try {
+      const admin = await requireOwner();
+      const result = await setAccountDiscount({ userId, percent, note, actor: { id: admin.id, email: admin.email ?? null } });
+      revalidatePath("/", "layout");
+      const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
+        ? `${percent}% off saved. Their price per payment is now ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
+        : `${percent}% off saved. It applies when they start or change a plan.`;
+      return { ok: true, message };
+    } catch (err) {
+      return err instanceof AccountDiscountError ? { ok: false, error: err.message } : fail(err, "Could not save the discount.");
+    }
+  });
 }
 
-export async function clearAccountDiscountAction(userId: string): Promise<Ok<{ message: string }>> {
-  try {
-    const admin = await requireOwner();
-    const result = await clearAccountDiscount({ userId, actor: { id: admin.id, email: admin.email ?? null } });
-    revalidatePath("/", "layout");
-    const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
-      ? `Discount removed. Their price per payment is back to ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
-      : "Discount removed.";
-    return { ok: true, message };
-  } catch (err) {
-    return err instanceof AccountDiscountError ? { ok: false, error: err.message } : fail(err, "Could not remove the discount.");
-  }
+export async function clearAccountDiscountAction(userId: string, notify = true): Promise<Ok<{ message: string }>> {
+  return withStudentNotice(notify, async () => {
+    try {
+      const admin = await requireOwner();
+      const result = await clearAccountDiscount({ userId, actor: { id: admin.id, email: admin.email ?? null } });
+      revalidatePath("/", "layout");
+      const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
+        ? `Discount removed. Their price per payment is back to ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
+        : "Discount removed.";
+      return { ok: true, message };
+    } catch (err) {
+      return err instanceof AccountDiscountError ? { ok: false, error: err.message } : fail(err, "Could not remove the discount.");
+    }
+  });
 }

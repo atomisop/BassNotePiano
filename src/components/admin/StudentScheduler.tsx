@@ -12,6 +12,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 export interface SchedulerSlot {
   scheduleId: string;
@@ -41,21 +42,27 @@ export interface StudentSchedulerProps {
   /** The plan's own controls (pause, move the weekly time), drawn by the page. */
   planControls?: React.ReactNode;
   loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
-  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) => Promise<Result>;
-  onMoveToTime: (bookingId: string, date: string, time: string) => Promise<Result>;
-  onCancel: (bookingId: string, reason?: string) => Promise<Result>;
-  onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number) => Promise<Result>;
-  onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
-  onUndo: (bookingId: string) => Promise<Result>;
-  onSetInPerson: (bookingId: string, inPerson: boolean) => Promise<Result>;
+  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify?: boolean) => Promise<Result>;
+  onMoveToTime: (bookingId: string, date: string, time: string, notify?: boolean) => Promise<Result>;
+  onCancel: (bookingId: string, reason?: string, notify?: boolean) => Promise<Result>;
+  onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number, notify?: boolean) => Promise<Result>;
+  onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW", notify?: boolean) => Promise<void>;
+  onUndo: (bookingId: string, notify?: boolean) => Promise<Result>;
+  onSetInPerson: (bookingId: string, inPerson: boolean, notify?: boolean) => Promise<Result>;
 }
 
 const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 
-/** One student's whole schedule on one screen: their classes (attendance, move, cancel), a new booking, and the plan's weekly time. */
+/**
+ * One student's whole schedule on one screen: their classes (attendance, reschedule, cancel), a new booking, and the plan's weekly time.
+ * Reschedule (the arrows) is on every class not yet marked Present or No-show, past ones too, and can put it on a past day: a class
+ * booked on the wrong day is moved to the right one and marked there, with no refund and re-charge. Undo a mark first to move a marked class.
+ */
 export function StudentScheduler(props: StudentSchedulerProps) {
   const { studentId, studentName, bookings, planControls, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
+  // One "Notify student" switch for everything on this card (reschedule, cancel, book, attendance); off by default.
+  const [notify, setNotify] = useNotifyStudent("student-changes");
   const [times, setTimes] = useState<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
   const [slotsBusy, setSlotsBusy] = useState(false);
   const [moving, setMoving] = useState<SchedulerBooking | null>(null);
@@ -117,10 +124,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     }
     setBusy(true);
     setError(null);
-    const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex);
+    const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime, notify) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
-    toast.success("Class moved.");
+    toast.success("Class rescheduled.");
     setMoving(null);
     setPicked(null);
     setDay(null);
@@ -133,7 +140,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   async function doCancel() {
     if (!canceling) return;
     setBusy(true);
-    const result = await onCancel(canceling.id, reason.trim() || undefined);
+    const result = await onCancel(canceling.id, reason.trim() || undefined, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     toast.success("Class canceled and refunded.");
@@ -148,7 +155,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     if (!booking) return;
     setBusy(true);
     setError(null);
-    const result = await onBook(studentId, booking.scheduleId, booking.occurrenceDateMs, booking.chunkIndex, booking.creditCost);
+    const result = await onBook(studentId, booking.scheduleId, booking.occurrenceDateMs, booking.chunkIndex, booking.creditCost, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     toast.success("Class booked.");
@@ -176,16 +183,17 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           scheduledAt={b.scheduledAt}
           creditsSpent={b.creditsSpent}
           inPerson={b.inPerson}
-          onMark={onMark}
-          onUndo={onUndo}
-          onSetInPerson={onSetInPerson}
+          onMark={(id, a) => onMark(id, a, notify)}
+          onUndo={(id) => onUndo(id, notify)}
+          onSetInPerson={(id, v) => onSetInPerson(id, v, notify)}
         />
+        {b.status === "SCHEDULED" && !b.attendance && (
+          <button type="button" className={`${iconBtn} w-8 px-0`} onClick={() => openMove(b)} aria-label="Reschedule this class" title="Reschedule">
+            <ArrowRightLeft aria-hidden className="h-4 w-4" />
+          </button>
+        )}
         {actions && (
           <>
-            <button type="button" className={iconBtn} onClick={() => openMove(b)} aria-label="Move this class">
-              <ArrowRightLeft aria-hidden className="h-3.5 w-3.5" />
-              Move
-            </button>
             <button type="button" className="tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-red-600 px-2.5 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low" onClick={() => { setError(null); setCanceling(b); }} aria-label="Cancel this class">
               <X aria-hidden className="h-3.5 w-3.5" />
               Cancel
@@ -204,19 +212,22 @@ export function StudentScheduler(props: StudentSchedulerProps) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {planControls}
-          {planControls && <Hint label="About plan controls">Pause the plan, or move the standing weekly time and every upcoming class on it together.</Hint>}
+          {planControls && <Hint label="About plan controls">Pause the plan, move the standing weekly time and every upcoming class on it together, or (owner) move the next bill to another day.</Hint>}
         </div>
-        <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
-          <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
-          Book a class
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${studentName.split(" ")[0]}`} />
+          <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
+            <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
+            Book a class
+          </Button>
+        </div>
       </div>
 
       {needs.length > 0 && (
         <section>
           <h2 className="mb-1.5 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-amber-300">
             Needs a call · {needs.length}
-            <Hint label="About needs a call">These classes already happened and still need Present or No-show. Oldest first.</Hint>
+            <Hint label="About needs a call">These classes already happened and still need Present or No-show. Oldest first. Booked on the wrong day? Reschedule it with the arrows, then mark it.</Hint>
           </h2>
           <div className="space-y-1.5">
             <ViewMore items={needs} initial={4}>{(b) => row(b, false)}</ViewMore>
@@ -246,7 +257,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         onOpenChange={(open) => {
           if (!open) closeMove();
         }}
-        title={`Move ${studentName}'s class`}
+        title={`Reschedule ${studentName}'s class`}
         description={moving ? `Now: ${formatEtShort(moving.scheduledAt)}` : undefined}
         footer={
           <div className="flex flex-wrap justify-end gap-2">
@@ -256,7 +267,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
                   Back
                 </Button>
                 <Button type="button" disabled={busy} loading={busy} onClick={doMove}>
-                  Yes, create it and move
+                  Yes, create it and reschedule
                 </Button>
               </>
             ) : (
@@ -265,7 +276,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
                   Never mind
                 </Button>
                 <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={doMove}>
-                  {useOwn ? `Move to ${day} at ${ownTime}` : picked ? `Move to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
+                  {useOwn ? `Reschedule to ${day} at ${ownTime}` : picked ? `Reschedule to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
                 </Button>
               </>
             )}
@@ -276,13 +287,13 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           <div className="rounded-xl border border-slate-50/35 bg-neu-base shadow-pressed-low p-4">
             <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
             <p className="mt-1 text-small text-slate-300">
-              {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and move {studentName} there?
+              {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and reschedule {studentName} there?
             </p>
           </div>
         ) : times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
+          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay allowPast day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>

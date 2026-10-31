@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -24,18 +25,18 @@ export interface CustomerProfileProps {
   changeLog?: React.ReactNode;
   /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
   scheduler?: React.ReactNode;
-  onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
-  onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
+  onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
+  onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
-  onSetRole: (userId: string, role: Role) => Promise<void>;
-  onAdjustCredits: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
+  onSetRole: (userId: string, role: Role, notify?: boolean) => Promise<void>;
+  onAdjustCredits: (userId: string, amount: number, reasonNote: string, notify?: boolean) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
   /** Frees this account's phone number (a number belongs to one account). */
-  onClearPhone: (userId: string) => Promise<void>;
+  onClearPhone: (userId: string, notify?: boolean) => Promise<void>;
   /** Bans the account for good (it can never sign in). The reason is a private note. */
-  onBan: (userId: string, reason: string) => Promise<{ ok: true; summary: string } | { ok: false; error: string }>;
-  onUnban: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onBan: (userId: string, reason: string, notify?: boolean) => Promise<{ ok: true; summary: string } | { ok: false; error: string }>;
+  onUnban: (userId: string, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function formatUsd(cents: number) {
@@ -156,6 +157,8 @@ export function CustomerProfile({
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
+  // One "Notify" switch for every change made on this page (credits, access, scales, phone, role, ban), shared with the class card's own.
+  const [notify, setNotify] = useNotifyStudent("student-changes");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -232,7 +235,7 @@ export function CustomerProfile({
     setBusy(true);
     setError(null);
     setCreditSuccess(null);
-    const result = await onAdjustCredits(user.id, amount, creditReason.trim());
+    const result = await onAdjustCredits(user.id, amount, creditReason.trim(), notify);
     if (!result.ok) {
       setError(result.error);
       setBusy(false);
@@ -249,7 +252,7 @@ export function CustomerProfile({
   async function handleBan() {
     setBusy(true);
     setError(null);
-    const result = await onBan(user.id, banReason);
+    const result = await onBan(user.id, banReason, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingBan(false);
@@ -261,7 +264,7 @@ export function CustomerProfile({
   async function handleUnban() {
     setBusy(true);
     setError(null);
-    const result = await onUnban(user.id);
+    const result = await onUnban(user.id, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingUnban(false);
@@ -324,6 +327,7 @@ export function CustomerProfile({
           <CreditCard aria-hidden className="h-4 w-4" />
           Payments
         </button>
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="ml-auto" />
       </div>
 
       <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
@@ -410,7 +414,7 @@ export function CustomerProfile({
                     busyLabel="Clearing…"
                     busy={busy}
                     onCancel={() => setConfirmingClearPhone(false)}
-                    onConfirm={() => void withBusy(() => onClearPhone(user.id)).then(() => setConfirmingClearPhone(false))}
+                    onConfirm={() => void withBusy(() => onClearPhone(user.id, notify)).then(() => setConfirmingClearPhone(false))}
                   />
                 )}
                 <p className="mt-1 text-small text-slate-500">
@@ -448,7 +452,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
+                    onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -477,7 +481,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
+                    onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -582,7 +586,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED"))}
+                    onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED", notify))}
                     className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
                         ? "border-slate-50/30 text-slate-50 hover:bg-slate-50/10"

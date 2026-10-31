@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -46,13 +47,14 @@ export function UnmatchedEmailList({
   onIgnoreSender,
 }: {
   rows: UnmatchedEmailRow[];
-  onMatch: (receiptId: string, paymentId: string) => Promise<Result>;
+  onMatch: (receiptId: string, paymentId: string, notify?: boolean) => Promise<Result>;
   onDismiss: (receiptId: string) => Promise<Result>;
   /** Owner only: skip every bank email from this sender's full name from now on (their own transfers). */
   onIgnoreSender?: (receiptId: string) => Promise<Result>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [notify, setNotify] = useNotifyStudent("payments", true);
   // Attaching approves real money, so it takes a second click, like Approve in the payment list.
   const [confirming, setConfirming] = useState<{ receiptId: string; paymentId: string | "dismiss" | "ignore" } | null>(null);
   const [error, setError] = useState<{ receiptId: string; message: string } | null>(null);
@@ -83,6 +85,8 @@ export function UnmatchedEmailList({
   }
 
   return (
+    <div className="space-y-3">
+    <NotifyToggle on={notify} onChange={setNotify} label="Notify the student (result and receipt) when I attach an email" />
     <ul className="space-y-3">
       {rows.map((row) => (
         <li key={row.id} className="glass-surface p-4">
@@ -120,7 +124,7 @@ export function UnmatchedEmailList({
                         <button
                           type="button"
                           disabled={busy === row.id}
-                          onClick={() => run(row.id, () => onMatch(row.id, c.id), { title: "Email attached, payment approved", description: who })}
+                          onClick={() => run(row.id, () => onMatch(row.id, c.id, notify), { title: "Email attached, payment approved", description: who })}
                           className={buttonVariants({ variant: "primary", size: "sm" })}
                         >
                           {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
@@ -210,5 +214,6 @@ export function UnmatchedEmailList({
         </li>
       ))}
     </ul>
+    </div>
   );
 }

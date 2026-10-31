@@ -557,6 +557,8 @@ The old "family plan" is now called **Group plan** everywhere a person reads it 
 - **Scrolling** (2026-10-30): the page and `#app-scroll` hide their scrollbars; a thin orange `.scroll-progress` line at the top shows how far down you are (scroll-driven CSS, no script). On phones and tablets, cards tagged `deck-card` (Home, Roadmap) form a deck (the admin overview does NOT: under its greeting it scrolls as a plain list, decided 2026-10-30): each sticks under the top bar and the next is drawn over it, earlier cards' tips showing (up to 5); `DeckStack.tsx` sets each card's stopping place (tall cards stop once their bottom is seen). A page heading marked `data-deck-header` (class `deck-header`) stays put above the deck (Home, Roadmap, Streak, Leaderboard, admin overview). Tag a new screen's heading and top-level cards the same way. Menus that open over page text use `glass-menu` (mostly solid matte glass), not `glass-surface-elevated`.
 - Toasts: `toast.undo(title, onUndo)` and `toast.run(promise, { loading, success, error })` in `ui/Toaster.tsx`.
 
+**Moving the next bill (2026-10-31)**: "Bill date" on the student page's Scheduler tab (owner only, any running plan that is not paused, group and parent plans included) moves the next bill to a day from today to a year out (`changePlanBillDate`, rules in `billDateRules.ts`, tested). Only `nextDueDate` changes, by whole days so the bill keeps its time of day; credits, classes and the weekly time stay. An unpaid bill already sent for the old date is expired so the new date gets a fresh one. The student is told when Notify is on; audited as `plan.bill-date`. Made for fixing a date that went wrong; a paused plan is moved back with Resume instead.
+
 **Moving a whole plan (2026-10-25)**: "Move time" next to Pause (Admin > Billing > Plans and the student page) opens the free weekly times and calls `changeReservedSlot(..., { byAdmin: true })`: the standing slot and every upcoming class on it move together (the old weeks are canceled with no charge and rebooked on the new day inside the paid period), with no 24 hour cutoff and family payers allowed. The student is told; audited as `plan.move-time`. The one-class mover on the attendance list is unchanged.
 
 ## Owner reservations (added 2026-10-25)
@@ -665,4 +667,23 @@ naming the account), including the rare old curriculum payment that is approved 
 card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).
 
 The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is the Instagram dock (#319, brought back 2026-10-31 at the owner's request after the flat matte
+versions):** a 53pt pill whose GlassLens frosts and bends the page, a smoky dark tint on Ink and a milky white one on Paper (`.app-dock.app-dock-lens` in globals.css), the BNP hand-drawn icons
+filled on the current tab, and scrolling down narrows it sideways (same height, icons closer) instead of shrinking it. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
+
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
+
+## Notify student switch and Reschedule (added 2026-10-31)
+
+Every studio action that changes something for a student takes a final `notify` argument and runs inside `withStudentNotice(notify, ...)`
+(`src/lib/notifyScope.ts`, AsyncLocalStorage). With it off, `createNotification` and `sendEmail` skip anyone who is not an admin (the email is
+logged as SKIPPED, "The studio chose not to notify the student"), so the change happens but no bell, Mail, email or push reaches the student;
+the owner's own alerts and copies still arrive. The screens show `NotifyToggle` (`useNotifyStudent(place)`, off by default, remembered per
+place on the device; `payments` and `applicants` default on). A list of quick buttons gets one switch at the top (`NotifyPlaceToggle`), and the
+student page, the Plans list, Pause and the plan builder share the `student-changes` place. A new admin action that can reach a student must
+take `notify` and show the switch. Tested in `tests/db/notifyScope.test.ts`.
+
+Reschedule (the arrows on a student's class, `StudentScheduler`) replaced Move: any class not yet marked Present or No-show, past ones too, moves to
+any time, past ones too (`rescheduleClassBooking(..., { byAdmin: true, anyTime: true })`; the calendar's `allowPast` opens the last 180 days). A class
+booked on the wrong day is put on the right one and marked there, with no refund and re-charge; a marked class must be undone first. A move into the
+past never tells the student.

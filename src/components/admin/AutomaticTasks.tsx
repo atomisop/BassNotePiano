@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Pause, Play, RefreshCw } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toaster";
-import { setJobPausedAction } from "@/app/(dashboard)/admin/jobActions";
+import { checkJobsAction, setJobPausedAction } from "@/app/(dashboard)/admin/jobActions";
 
 export interface TaskRow {
   name: string;
@@ -18,39 +17,48 @@ export interface TaskRow {
 const stopped = (s: TaskRow["state"]) => s === "failed" || s === "late" || s === "never";
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
+interface Fresh {
+  verdict: { ok: boolean; summary: string; problems: string[] };
+  row: Pick<TaskRow, "state" | "lastRanAt" | "note">;
+}
+
 /**
  * The automatic tasks: one row each with its last run, a Pause / Resume button per task (owner only, two taps to pause), and a
- * Refresh that runs down the list: each row shows a shimmer, then a spinner while it is being looked at, then a check, and
- * finally its fresh result.
+ * Refresh that checks, live and without running anything, that each task COULD work right now: the database tables, email, Discord,
+ * backup storage, mail chain and outside monitor it depends on are each tested (src/lib/jobCheckNow.ts), and every row shows what
+ * answered or what is broken, next to its last real run (which a check never changes). The rows fill in one after another.
  */
 export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[]; checkedAt: string; canPause: boolean }) {
   const router = useRouter();
-  const [pending, start] = useTransition();
   const [checking, setChecking] = useState(false);
-  const [idx, setIdx] = useState(0);
+  const [fresh, setFresh] = useState<Record<string, Fresh>>({});
+  const [checkedNow, setCheckedNow] = useState<string | null>(null);
   const [sure, setSure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pausedNow, setPausedNow] = useState<Record<string, boolean>>({});
-  const timer = useRef<number | undefined>(undefined);
 
-  // The run-down: step through the rows a beat apart, and finish once the fresh data has arrived too.
-  useEffect(() => {
-    if (!checking) return;
-    timer.current = window.setInterval(() => setIdx((i) => (i < jobs.length ? i + 1 : i)), 140);
-    return () => window.clearInterval(timer.current);
-  }, [checking, jobs.length]);
-  useEffect(() => {
-    if (checking && idx >= jobs.length && !pending) {
-      const t = window.setTimeout(() => setChecking(false), 260);
-      return () => window.clearTimeout(t);
-    }
-  }, [checking, idx, jobs.length, pending]);
-
-  function refresh() {
+  async function refresh() {
     if (checking) return;
-    setIdx(0);
+    setFresh({});
     setChecking(true);
-    start(() => router.refresh());
+    const res = await checkJobsAction().catch(() => null);
+    if (!res?.ok || !res.jobs) {
+      setChecking(false);
+      return void toast.warning(res?.error ?? "Could not reach the server to check the tasks.");
+    }
+    // The results are all real and arrive together; showing them row by row only makes them easy to follow.
+    for (const job of jobs) {
+      const got = res.jobs[job.name];
+      if (!got) continue;
+      setFresh((f) => ({ ...f, [job.name]: { verdict: got.verdict, row: { state: got.state, lastRanAt: got.lastRanAt, note: got.note } } }));
+      await new Promise((r) => window.setTimeout(r, 90));
+    }
+    setChecking(false);
+    setCheckedNow(new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" }));
+    router.refresh();
+    const broken = Object.values(res.jobs).filter((j) => !j.verdict.ok).length;
+    if (broken > 0) toast.warning(`${broken} task${broken === 1 ? " can't" : "s can't"} work right now. The reason is under ${broken === 1 ? "it" : "each"}.`);
+    else toast.success("Everything the tasks need is working.");
   }
 
   async function toggle(job: TaskRow, isPaused: boolean) {
@@ -80,7 +88,7 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-small text-slate-500">Checked {checkedAt} ET</p>
+        <p className="text-small text-slate-500">Checked {checkedNow ?? checkedAt} ET</p>
         <button
           type="button"
           onClick={refresh}
@@ -89,32 +97,28 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
           className="tap inline-flex min-h-9 items-center gap-2 rounded-full bg-neu-base px-3 text-small font-medium text-slate-200 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low disabled:opacity-70"
         >
           <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} aria-hidden />
-          {checking ? "Checking…" : "Refresh"}
+          {checking ? "Checking…" : "Check now"}
         </button>
       </div>
       <ul className="mt-3 divide-y divide-slate-50/10">
-        {jobs.map((job, i) => {
+        {jobs.map((listed) => {
+          let job = listed;
+          const got = fresh[job.name];
+          if (got?.row) job = { ...job, ...got.row };
           const isPaused = pausedNow[job.name] ?? job.state === "paused";
           const bad = stopped(job.state) && !isPaused;
           const when = job.lastRanAt ? fmt(job.lastRanAt) : null;
           const text = isPaused ? "paused" : job.state === "never" ? "has never run" : job.state === "failed" ? `failed, ${when}` : job.state === "late" ? `late, last ran ${when}` : when ?? "not run yet";
-          const phase = !checking ? "done" : i < idx ? "checked" : i === idx ? "looking" : "waiting";
+          const phase = got ? "done" : checking ? "looking" : "done";
           return (
             <li key={job.name} className="py-2 text-small">
               <div className="flex items-center justify-between gap-3">
                 <span className={isPaused ? "text-slate-500" : "text-slate-200"}>{job.name}</span>
                 <span className="flex items-center gap-2">
-                  {phase === "waiting" && <Skeleton className="h-4 w-24" />}
                   {phase === "looking" && (
                     <span className="inline-flex items-center gap-1.5 text-slate-400">
                       <MorphingSquare size={12} />
                       checking
-                    </span>
-                  )}
-                  {phase === "checked" && (
-                    <span className="inline-flex items-center gap-1 text-emerald-300">
-                      <Check aria-hidden className="h-3.5 w-3.5" />
-                      checked
                     </span>
                   )}
                   {phase === "done" && <span className={isPaused ? "text-amber-300" : bad ? "text-red-300" : "text-slate-500"}>{text}</span>}
@@ -135,7 +139,13 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                   )}
                 </span>
               </div>
-              {phase === "done" && job.state === "failed" && job.note && !isPaused && <p className="mt-1 break-words text-red-300/80">{job.note}</p>}
+              {got && (
+                <p className={`mt-1 flex items-start gap-1 break-words ${got.verdict.ok ? "text-emerald-300" : "text-red-300"}`}>
+                  {got.verdict.ok && <Check aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                  <span>{got.verdict.ok ? got.verdict.summary : got.verdict.problems.join(" ")}</span>
+                </p>
+              )}
+              {phase === "done" && job.state === "failed" && job.note && !isPaused && <p className="mt-1 break-words text-red-300/80">Last run: {job.note}</p>}
             </li>
           );
         })}

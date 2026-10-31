@@ -10,6 +10,7 @@ import { BookingAttendance } from "@/components/admin/BookingAttendance";
 import { CalendarCog } from "@/components/ui/appIcons";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardCheck } from "@/components/ui/appIcons";
+import { NotifyPlaceToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -45,10 +46,10 @@ interface OccurrenceGroup {
 
 export interface AdminAttendanceRosterProps {
   occurrences: OccurrenceGroup[];
-  onMarkAttendance: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
-  onUndoAttendance: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onMarkAttendance: (bookingId: string, attendance: "PRESENT" | "NO_SHOW", notify?: boolean) => Promise<void>;
+  onUndoAttendance: (bookingId: string, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
   /** The Online / In person switch: in person means no Discord call for that class. */
-  onSetInPerson?: (bookingId: string, inPerson: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onSetInPerson?: (bookingId: string, inPerson: boolean, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 type Bucket = "needs" | "upcoming" | "done";
@@ -67,6 +68,8 @@ const SECTIONS: { id: Bucket; title: string; hint: string }[] = [
 ];
 
 function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: { occ: OccurrenceGroup } & Omit<AdminAttendanceRosterProps, "occurrences">) {
+  // Follows the "Notify students" switch at the top of the roster.
+  const [notify] = useNotifyStudent("attendance");
   const active = occ.roster.filter((r) => r.status !== "CANCELED");
   const isFamily = active.length > 0 && active[0]!.familyBookingGroupId !== null;
   return (
@@ -112,9 +115,9 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                   scheduledAt={occ.scheduledAt}
                   creditsSpent={entry.creditsSpent}
                   inPerson={entry.inPerson}
-                  onMark={onMarkAttendance}
-                  onUndo={onUndoAttendance}
-                  onSetInPerson={onSetInPerson}
+                  onMark={(id, a) => onMarkAttendance(id, a, notify)}
+                  onUndo={(id) => onUndoAttendance(id, notify)}
+                  onSetInPerson={onSetInPerson ? (id, v) => onSetInPerson(id, v, notify) : undefined}
                 />
                 {entry.status === "SCHEDULED" && (
                   <Link
@@ -148,6 +151,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAtt
 
   return (
     <div className="space-y-6">
+      <NotifyPlaceToggle place="attendance" label="Notify students when I mark, undo or switch in person" />
       {SECTIONS.filter((s) => buckets[s.id].length > 0).map((s) => (
         <section key={s.id}>
           <h2 className="mb-2 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-slate-400">

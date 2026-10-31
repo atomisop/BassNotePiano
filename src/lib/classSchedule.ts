@@ -1566,13 +1566,27 @@ export async function rescheduleClassBooking(
   newChunkIndex: number,
   newCreditsToBook?: number,
   /** byAdmin: the studio moves the class for the student. The student-facing switch, the cancellation cutoff, the booking-request mode and the weekly limit do not apply. */
-  options: { byAdmin?: boolean; /** Admin only: move to this exact ET date (YYYY-MM-DD) and start time (HH:mm) instead of a weekly slot. */ customTime?: { date: string; time: string } } = {},
+  options: {
+    byAdmin?: boolean;
+    /** Admin only: move to this exact ET date (YYYY-MM-DD) and start time (HH:mm) instead of a weekly slot. */
+    customTime?: { date: string; time: string };
+    /**
+     * Admin only (the studio's Reschedule): a class whose time has passed can be moved, and to a past time too, so a class booked on
+     * the wrong day is fixed in place and marked on the right one, with no refund and re-charge. Only a class not yet marked Present or
+     * No-show moves (undo the mark first). The student is told only when the new time is still ahead.
+     */
+    anyTime?: boolean;
+  } = {},
 ) {
   const byAdmin = Boolean(options.byAdmin);
+  const anyTime = byAdmin && Boolean(options.anyTime);
   const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
-  if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
-  if (byAdmin && oldBooking.scheduledAt.getTime() <= Date.now()) throw new ClassBookingError("That class has already started or passed.");
+  if (oldBooking.status !== "SCHEDULED") {
+    throw new ClassBookingError(oldBooking.status === "COMPLETED" ? "This class is already marked. Undo Present or No-show first, then reschedule it." : "This booking isn't active.");
+  }
+  if (oldBooking.attendance) throw new ClassBookingError("This class is already marked. Undo Present or No-show first, then reschedule it.");
+  if (byAdmin && !anyTime && oldBooking.scheduledAt.getTime() <= Date.now()) throw new ClassBookingError("That class has already started or passed.");
 
   if (!byAdmin && !(await getBoolSetting("cancel.studentCanReschedule"))) {
     throw new ClassBookingError("Classes can't be rescheduled in the app right now. Message us and we'll help.");
@@ -1600,7 +1614,8 @@ export async function rescheduleClassBooking(
 
   const newOccurrenceDate = custom ? custom.occurrenceDate : new Date(newOccurrenceDateMs);
   const newScheduledAt = custom ? custom.scheduledAt : computeScheduledAt(newSchedule!, newOccurrenceDate, chunk);
-  if (newScheduledAt.getTime() <= Date.now()) {
+  const newIsPast = newScheduledAt.getTime() <= Date.now();
+  if (newIsPast && !anyTime) {
     throw new ClassBookingError("That class has already started or passed.");
   }
   if (!byAdmin) await assertBookingAllowed(newScheduledAt);
@@ -1735,6 +1750,9 @@ export async function rescheduleClassBooking(
     }
     throw err;
   }
+
+  // A class moved into the past is the studio correcting its records: nothing for the student to act on.
+  if (newIsPast) return newBooking;
 
   await createNotification({
     userId: studentId,

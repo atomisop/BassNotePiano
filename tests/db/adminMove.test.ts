@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { ClassBookingError, computeScheduledAt, chunksForSchedule, rescheduleClassBooking, parseCustomTime, ONE_OFF_LABEL, classesOverlap } from "@/lib/classSchedule";
 import { getAllClassSchedules } from "@/lib/classScheduleManage";
+import { markAttendance } from "@/lib/classScheduleAdmin";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("am");
@@ -114,6 +115,49 @@ describe("an admin moves a class in one step", () => {
       const b = await bookingInside(24 * 42);
       await expect(rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: "2026-02-31", time: "10:00" } })).rejects.toThrow(/real date/);
       await expect(rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(-2), time: "10:00" } })).rejects.toThrow(/already started/);
+    });
+  });
+
+  describe("Reschedule (anyTime): a class not yet marked, past ones too, to any time, past ones too", () => {
+    const ymd = (daysAhead: number) => dateAt(daysAhead).toISOString().slice(0, 10);
+    const pastClass = (daysAgo: number) =>
+      prisma.classBooking.create({
+        data: { studentId: stu.id, scheduleId: from.id, occurrenceDate: dateAt(-daysAgo), scheduledAt: new Date(Date.now() - daysAgo * day), creditsSpent: 2 },
+      });
+    const credits = async () => (await prisma.user.findUniqueOrThrow({ where: { id: stu.id }, select: { classCredits: true } })).classCredits;
+
+    it("puts a class booked on the wrong past day on the right one, quietly, and it is charged once when marked there", async () => {
+      const wrong = await pastClass(20);
+      const before = await credits();
+      const notesBefore = await prisma.notification.count({ where: { userId: stu.id } });
+      const fixed = await rescheduleClassBooking(stu.id, wrong.id, "", 0, 0, undefined, { byAdmin: true, anyTime: true, customTime: { date: ymd(-18), time: "16:00" } });
+      expect(fixed.scheduledAt.getTime()).toBe(parseCustomTime(ymd(-18), "16:00")!.scheduledAt.getTime());
+      expect(fixed.status).toBe("SCHEDULED");
+      expect((await prisma.classBooking.findUniqueOrThrow({ where: { id: wrong.id } })).status).toBe("CANCELED");
+      expect(await credits()).toBe(before);
+      expect(await prisma.notification.count({ where: { userId: stu.id } })).toBe(notesBefore);
+      await markAttendance(fixed.id, "PRESENT");
+      expect(await credits()).toBe(before - 2);
+    });
+
+    it("refuses a marked class until the mark is undone", async () => {
+      const marked = await pastClass(25);
+      await markAttendance(marked.id, "NO_SHOW");
+      await expect(
+        rescheduleClassBooking(stu.id, marked.id, "", 0, 0, undefined, { byAdmin: true, anyTime: true, customTime: { date: ymd(-24), time: "16:00" } }),
+      ).rejects.toThrow(/Undo Present or No-show first/);
+    });
+
+    it("moves a missed class into the future as a make-up, and tells the student", async () => {
+      const missed = await pastClass(2);
+      const moved = await rescheduleClassBooking(stu.id, missed.id, to.id, target(30).ms, 0, undefined, { byAdmin: true, anyTime: true });
+      expect(moved.scheduledAt.getTime()).toBe(target(30).at.getTime());
+      expect(await prisma.notification.findFirst({ where: { userId: stu.id, title: "Your class was moved", createdAt: { gte: new Date(Date.now() - 60_000) } } })).toBeTruthy();
+    });
+
+    it("is the studio's alone: a plain admin move still refuses the past", async () => {
+      const past = await pastClass(4);
+      await expect(rescheduleClassBooking(stu.id, past.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(-3), time: "16:00" } })).rejects.toThrow(/already started/);
     });
   });
 });

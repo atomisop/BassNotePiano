@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#121212" />
+    <title>Under maintenance | Bass Note Piano</title>
+    <!-- Shown by the service worker (sw.js) when our host answers with its own "Site not available" page (the site paused for
+         usage limits), instead of that page. Everything is inline: the site cannot serve anything else while it is paused.
+         Follows the person's light or dark choice. -->
+    <style>
+      :root {
+        --ground: #121212;
+        --text: #f5f5f5;
+        --muted: #a3a3a3;
+        --accent: rgb(251 138 92);
+        --tile: rgb(255 255 255 / 0.06);
+        --line: rgb(255 255 255 / 0.1);
+        color-scheme: dark;
+      }
+      :root[data-mode="light"] {
+        --ground: #f2f2f5;
+        --text: #17140f;
+        --muted: #5f5b55;
+        --accent: rgb(214 92 44);
+        --tile: rgb(0 0 0 / 0.04);
+        --line: rgb(0 0 0 / 0.08);
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--ground);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+        text-align: center;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        position: fixed;
+        top: calc(env(safe-area-inset-top) + 16px);
+        left: 16px;
+      }
+      .icon {
+        width: 88px;
+        height: 88px;
+        border-radius: 28px;
+        display: grid;
+        place-items: center;
+        background: var(--tile);
+        box-shadow: inset 0 0 0 1px var(--line);
+        color: var(--accent);
+      }
+      h1 {
+        margin: 24px 0 0;
+        font-size: 28px;
+        line-height: 1.15;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 10px 0 0;
+        max-width: 22rem;
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--muted);
+        text-wrap: pretty;
+      }
+      button {
+        margin-top: 28px;
+        min-height: 48px;
+        padding: 0 28px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+      .hint {
+        margin-top: 16px;
+        font-size: 13px;
+      }
+    </style>
+    <script>
+      // The same light or dark choice as the app (Settings > Appearance), read before anything paints.
+      try {
+        var t = localStorage.getItem("bnp-theme") || "ink";
+        if (t === "system") t = matchMedia("(prefers-color-scheme: dark)").matches ? "ink" : "paper";
+        if (t === "paper") {
+          document.documentElement.setAttribute("data-mode", "light");
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f2f2f5");
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <img class="logo" src="/logo-mark.png" alt="Bass Note Piano" width="44" height="44" />
+    <main>
+      <div class="icon" aria-hidden="true">
+        <svg width="44" height="44" viewBox="0 0 256 256" fill="currentColor">
+          <path d="M226.76,69a8,8,0,0,0-12.84-2.88l-40.3,37.19-17.23-3.7-3.7-17.23,37.19-40.3A8,8,0,0,0,187,29.24,72,72,0,0,0,88,96,72.34,72.34,0,0,0,94,124.94L33.79,177c-.15.12-.29.26-.43.39a32,32,0,0,0,45.26,45.26c.13-.13.27-.28.39-.42L131.06,162A72,72,0,0,0,232,96,71.56,71.56,0,0,0,226.76,69ZM160,152a56.14,56.14,0,0,1-27.07-7,8,8,0,0,0-9.92,1.77L67.11,211.51a16,16,0,0,1-22.62-22.62L109.18,133a8,8,0,0,0,1.77-9.93,56,56,0,0,1,58.36-82.31l-31.2,33.81a8,8,0,0,0-1.94,7.1L141.83,108a8,8,0,0,0,6.14,6.14l26.35,5.66a8,8,0,0,0,7.1-1.94l33.81-31.2A56.06,56.06,0,0,1,160,152Z" />
+        </svg>
+      </div>
+      <h1>Under maintenance</h1>
+      <p>Sorry, the app is under maintenance. Please come back a little later.</p>
+      <button type="button" id="retry">Try again</button>
+      <p class="hint" id="hint" role="status" aria-live="polite"></p>
+    </main>
+    <script>
+      (function () {
+        var hint = document.getElementById("hint");
+        document.getElementById("retry").addEventListener("click", function () {
+          hint.textContent = "Checking...";
+          location.reload();
+        });
+        // Looks again every two minutes while the page is open, so it opens by itself once the app is back.
+        setInterval(function () {
+          if (document.visibilityState === "visible" && navigator.onLine) location.reload();
+        }, 120000);
+      })();
+    </script>
+  </body>
+</html>

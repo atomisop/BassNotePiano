@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Wrench, X } from "@/components/ui/appIcons";
@@ -37,6 +38,7 @@ const STATE: Record<TimelineClassState, { label: string; cls: string }> = {
 export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [notify, setNotify] = useNotifyStudent("student-changes");
   const [ctx, setCtx] = useState<PlanBuilderContext | null>(null);
   const [startDate, setStartDate] = useState(todayEt());
   const [term, setTerm] = useState<PlanBuilderContext["term"]>("TERM_6");
@@ -116,7 +118,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   async function apply() {
     if (!input || !preview) return;
     setBusy(true);
-    const result = await planBuilderApplyAction(input, key).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null, result: undefined }));
+    const result = await planBuilderApplyAction(input, key, notify).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null, result: undefined }));
     setBusy(false);
     if (!result.ok) return setError(result.error ?? "Could not apply.");
     const done = result.result;
@@ -142,7 +144,8 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
         onOpenChange={(next) => !busy && setOpen(next)}
         title={ctx ? `${ctx.mode === "new" ? "Build a plan for" : "Rebuild the plan for"} ${ctx.studentName}` : "Plan builder"}
         footer={
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:justify-end">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
+            <NotifyToggle on={notify} onChange={setNotify} className="col-span-2 sm:mr-auto" />
             <Button type="button" variant="secondary" disabled={busy} onClick={() => setOpen(false)} className="w-full sm:w-auto">
               Never mind
             </Button>

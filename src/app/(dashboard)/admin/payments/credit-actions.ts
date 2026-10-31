@@ -1,5 +1,6 @@
 "use server";
 
+import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -31,17 +32,19 @@ export async function getUserCreditHistoryAction(userId: string) {
   return getUserCreditHistory(userId);
 }
 
-export async function adjustUserCreditsAction(targetUserId: string, amount: number, reasonNote: string) {
-  const admin = await requireAdmin();
-  try {
-    const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
-    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
-    revalidatePath("/", "layout");
-    return { ok: true as const, balance: result.balance };
-  } catch (err) {
-    if (err instanceof CreditAdjustmentError) {
-      return { ok: false as const, error: err.message };
+export async function adjustUserCreditsAction(targetUserId: string, amount: number, reasonNote: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    try {
+      const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
+      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
+      revalidatePath("/", "layout");
+      return { ok: true as const, balance: result.balance };
+    } catch (err) {
+      if (err instanceof CreditAdjustmentError) {
+        return { ok: false as const, error: err.message };
+      }
+      throw err;
     }
-    throw err;
-  }
+  });
 }
