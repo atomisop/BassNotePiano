@@ -8,7 +8,8 @@ export type AdminHubId = "overview" | "billing" | "people" | "classes" | "inbox"
 
 export interface AdminPage {
   href: string;
-  /** The tab's name; it is also the page's own heading. Kept to one short word so four tabs fit across a phone. */
+  /** The tab's name; it is also the page's own heading. Kept to one short word so a hub's tabs fit across a 320px phone (four,
+      or five when one of them is as short as "Data"). */
   label: string;
 }
 
@@ -66,6 +67,7 @@ export const ADMIN_HUBS: AdminHub[] = [
       { href: "/admin/security", label: "System" },
       { href: "/admin/activity", label: "Activity" },
       { href: "/admin/roadmaps", label: "Roadmaps" },
+      { href: "/admin/data", label: "Data" },
     ],
   },
 ];
