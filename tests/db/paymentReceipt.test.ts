@@ -1,4 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+// A made-up owner, set before anything reads OWNER_EMAIL, so a test never mails the real one.
+vi.hoisted(() => {
+  process.env.OWNER_EMAIL = "receipt-owner@example.com";
+});
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { approveZellePayment } from "@/lib/payments";
 import { loadPaymentReceipt } from "@/lib/paymentReceipt";
@@ -16,6 +20,8 @@ async function pendingFor(userId: string) {
   return p;
 }
 
+const OWNER = "receipt-owner@example.com";
+const ownerCopies = () => prisma.emailLog.findMany({ where: { to: OWNER, subject: { startsWith: "Copy: receipt BNP-" } } });
 const receiptEmails = (to: string) => prisma.emailLog.findMany({ where: { to, subject: { startsWith: "Receipt BNP-" } } });
 
 beforeAll(async () => {
@@ -25,7 +31,8 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   const ids = [admin.id, stu.id, banned.id];
-  await prisma.emailLog.deleteMany({ where: { to: { in: [stu.email, banned.email] } } });
+  await prisma.emailLog.deleteMany({ where: { to: { in: [stu.email, banned.email, OWNER] } } });
+  await prisma.adminNotificationSetting.deleteMany({ where: { kind: "RECEIPT_COPY" } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: ids } } });
   await prisma.notification.deleteMany({ where: { userId: { in: ids } } });
   await prisma.mailMessage.deleteMany({ where: { userId: { in: ids } } });
@@ -57,5 +64,19 @@ describe("payment receipts", () => {
     await prisma.user.update({ where: { id: banned.id }, data: { bannedAt: new Date() } });
     await approveZellePayment(p.id, admin.id);
     expect(await receiptEmails(banned.email)).toEqual([]);
+  });
+
+  it("emails the owner a copy, until the owner switches copies off", async () => {
+    const before = (await ownerCopies()).length;
+    const p = await pendingFor(stu.id);
+    await approveZellePayment(p.id, admin.id);
+    const copies = await ownerCopies();
+    expect(copies.length).toBe(before + 1);
+    expect(copies.at(-1)?.subject).toMatch(/^Copy: receipt BNP-[A-Z0-9]{5}, \$110\.00 from Pay Student$/);
+
+    await prisma.adminNotificationSetting.upsert({ where: { kind: "RECEIPT_COPY" }, update: { ownerEnabled: false }, create: { kind: "RECEIPT_COPY", employeesEnabled: false, ownerEnabled: false } });
+    const q = await pendingFor(stu.id);
+    await approveZellePayment(q.id, admin.id);
+    expect((await ownerCopies()).length).toBe(before + 1);
   });
 });

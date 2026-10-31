@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { sendPaymentReceiptEmail } from "@/lib/email";
+import { getAdminNotificationSettings, OWNER_EMAIL } from "@/lib/adminNotifications";
 import { buildReceipt, type Receipt, type ReceiptFacts } from "@/lib/paymentReceiptRules";
 
 /** A grant made this close to the approval belongs to it. */
@@ -12,6 +13,7 @@ const GRANT_WINDOW_MS = 10 * 60_000;
 export interface LoadedReceipt {
   receipt: Receipt;
   userId: string;
+  name: string;
   email: string;
   banned: boolean;
 }
@@ -69,15 +71,21 @@ export async function loadPaymentReceipt(paymentId: string): Promise<LoadedRecei
     groupSize,
     extraClassAt: payment.extraSessionScheduledAt,
   };
-  return { receipt: buildReceipt(facts), userId: payment.user.id, email: payment.user.email, banned: Boolean(payment.user.bannedAt) };
+  return { receipt: buildReceipt(facts), userId: payment.user.id, name: facts.accountName, email: payment.user.email, banned: Boolean(payment.user.bannedAt) };
 }
 
 /**
  * Emails the receipt for an approved payment. A receipt is a record of money the person paid, so it goes out whatever their email
- * switches say (the same exception the old "Payment approved" email had); a banned account is sent nothing.
+ * switches say (the same exception the old "Payment approved" email had); a banned account is sent nothing. The owner gets a copy
+ * for their own records while the "RECEIPT_COPY" alert is on (Admin > People > Staff), including for a banned payer, but never a
+ * second copy of a payment they made themselves.
  */
 export async function sendPaymentReceipt(paymentId: string, note?: string): Promise<void> {
   const loaded = await loadPaymentReceipt(paymentId);
-  if (!loaded || loaded.banned) return;
-  await sendPaymentReceiptEmail(loaded.email, loaded.receipt, { paymentId, note });
+  if (!loaded) return;
+  if (!loaded.banned) await sendPaymentReceiptEmail(loaded.email, loaded.receipt, { paymentId, note });
+  if (loaded.email.toLowerCase() === OWNER_EMAIL) return;
+  const settings = await getAdminNotificationSettings();
+  if (!settings.RECEIPT_COPY.owner) return;
+  await sendPaymentReceiptEmail(OWNER_EMAIL, loaded.receipt, { paymentId, copyOf: { name: loaded.name, email: loaded.email } });
 }

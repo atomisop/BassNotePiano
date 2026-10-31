@@ -642,13 +642,18 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
  * the one line item and its total, then the details a receipt is kept for (number, date, payer, method, what it covers). A plain
  * "View receipt" button opens the printable copy in the app.
  */
-export function renderPaymentReceiptEmail(receipt: Receipt, opts: { paymentId: string; note?: string }): { subject: string; html: string; text: string } {
+export function renderPaymentReceiptEmail(
+  receipt: Receipt,
+  opts: { paymentId: string; note?: string; /** The owner's copy: who the original went to. */ copyOf?: { name: string; email: string } },
+): { subject: string; html: string; text: string } {
   const receiptUrl = getAppUrl(`/billing/receipt/${opts.paymentId}`);
   const rowBorder = `border-top:1px solid ${MAIL.line};`;
   const cell = "padding:10px 14px;font-size:13px;";
 
   const headlineHtml = `
-    <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">Thank you. Your payment is confirmed.</p>
+    <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">${
+      opts.copyOf ? `Your copy of the receipt sent to ${escapeHtml(opts.copyOf.name)} (${escapeHtml(opts.copyOf.email)}).` : "Thank you. Your payment is confirmed."
+    }</p>
     <p style="margin:0;color:${MAIL.ink};font-size:38px;font-weight:700;line-height:1.1;">${receipt.amountLabel}</p>
     <p style="margin:8px 0 22px;color:${MAIL.ink};font-size:16px;font-weight:600;">Paid ${escapeHtml(receipt.paidOn)}</p>
   `;
@@ -683,27 +688,36 @@ export function renderPaymentReceiptEmail(receipt: Receipt, opts: { paymentId: s
   const noteHtml = opts.note ? `<p style="margin:0 0 22px;">${escapeHtml(opts.note)}</p>` : "";
   const buttonHtml = `<a href="${receiptUrl}" style="display:inline-block;padding:13px 22px;border-radius:10px;background:${MAIL.card};border:1px solid ${MAIL.line};color:${MAIL.ink};font-size:15px;font-weight:600;text-decoration:none;">View or print receipt</a>`;
 
-  const html = emailShell(receipt.title, `${headlineHtml}${itemHtml}${detailsHtml}${noteHtml}${buttonHtml}`, {
-    footerNote: "You're getting this because you made a payment to Bass Note Piano. Keep it for your records.",
+  const html = emailShell(opts.copyOf ? "Receipt copy" : receipt.title, `${headlineHtml}${itemHtml}${detailsHtml}${opts.copyOf ? "" : noteHtml}${buttonHtml}`, {
+    footerNote: opts.copyOf
+      ? "You're getting this because receipt copies are on in Admin > People > Staff. Switch them off there."
+      : "You're getting this because you made a payment to Bass Note Piano. Keep it for your records.",
     preheader: `${receipt.amountLabel} paid ${receipt.paidOn}. Receipt ${receipt.number}.`,
   });
   const text = [
     `Receipt ${receipt.number}`,
-    `Thank you. Your payment is confirmed.`,
+    opts.copyOf ? `Your copy of the receipt sent to ${opts.copyOf.name} (${opts.copyOf.email}).` : `Thank you. Your payment is confirmed.`,
     "",
     `${receipt.item}: ${receipt.amountLabel}`,
     `Total paid: ${receipt.amountLabel}`,
     "",
     ...receipt.rows.map((r) => `${r.label}: ${r.value}`),
-    ...(opts.note ? ["", opts.note] : []),
+    ...(opts.note && !opts.copyOf ? ["", opts.note] : []),
     "",
     `View or print: ${receiptUrl}`,
   ].join("\n");
 
-  return { subject: `Receipt ${receipt.number}: ${receipt.amountLabel} paid`, html, text };
+  const subject = opts.copyOf
+    ? `Copy: receipt ${receipt.number}, ${receipt.amountLabel} from ${opts.copyOf.name}`
+    : `Receipt ${receipt.number}: ${receipt.amountLabel} paid`;
+  return { subject, html, text };
 }
 
-export async function sendPaymentReceiptEmail(to: string, receipt: Receipt, opts: { paymentId: string; note?: string }): Promise<void> {
+export async function sendPaymentReceiptEmail(
+  to: string,
+  receipt: Receipt,
+  opts: { paymentId: string; note?: string; copyOf?: { name: string; email: string } },
+): Promise<void> {
   await sendEmail({ to, ...renderPaymentReceiptEmail(receipt, opts) });
 }
 

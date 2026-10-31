@@ -578,7 +578,8 @@ Approving a payment (`approveZellePayment`) keeps the bell notice but sends a re
 BNP code as the receipt number, amount, date, payer (a bank's all-capitals name is title-cased), method, account, what it was for, the 28 days
 it covers, classes added and the next bill. It goes out whatever the payments switch says (a payment result is the documented exception) and
 never to a banned account. The same receipt is a printable page at `/billing/receipt/[paymentId]` (the payer or an admin; anyone else gets a 404),
-linked from Payment history; only a VERIFIED payment has one.
+linked from Payment history; only a VERIFIED payment has one. Admins reach every receipt from Billing > Payments and the student page's Money tab, and the owner is emailed
+a "Receipt copy" of each one while the owner-only `RECEIPT_COPY` alert is on (Admin > People > Staff; never for the owner's own payment).
 
 ## Data page (added 2026-10-31)
 
