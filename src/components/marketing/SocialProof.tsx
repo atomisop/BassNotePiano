@@ -41,7 +41,7 @@ export function SocialProof() {
         rel="noopener noreferrer"
         className="tap mt-8 inline-flex items-center gap-2 text-small font-medium text-slate-200 transition hover:opacity-70"
       >
-        <DiscordIcon size={16} className="text-[#5865F2]" />
+        <DiscordIcon size={16} className="text-discord" />
         See the community for yourself
       </a>
     </section>

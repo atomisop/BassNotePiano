@@ -1,25 +1,23 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 
 function Word({ word, progress, range }: { word: string; progress: MotionValue<number>; range: [number, number] }) {
   const opacity = useTransform(progress, range, [0.55, 1]);
   return (
-    <motion.span style={{ opacity }} className="inline-block">
+    <motion.span style={{ opacity }} className="inline-block motion-reduce:!opacity-100">
       {word}
     </motion.span>
   );
 }
 
-/** A paragraph whose words light up one after another as it scrolls up the screen. */
+/** A paragraph whose words light up one after another as it scrolls up the screen. With reduced motion every word is simply
+    shown at full strength by CSS: the markup stays the same on the server and in the browser, so the page hydrates cleanly. */
 export function ScrollText({ text, className = "" }: { text: string; className?: string }) {
   const ref = useRef<HTMLParagraphElement>(null);
-  const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.9", "end 0.45"] });
   const words = text.trim().split(/\s+/);
-
-  if (reduced) return <p className={className}>{text}</p>;
 
   return (
     <p ref={ref} className={className}>

@@ -320,7 +320,7 @@ export function ScheduleClient({
             onClick={openChangeTime}
             className={buttonVariants({ variant: "secondary", className: "mt-4 w-full text-left" })}
           >
-            Change weekly time →
+            Change weekly time
           </button>
         )}
       </div>

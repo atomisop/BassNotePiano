@@ -49,7 +49,7 @@ export function RoadmapCard({
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/20">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
           </div>
-          <span className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-small font-semibold text-[#1d1a22] transition group-hover:gap-3">
+          <span className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-small font-semibold text-on-white transition group-hover:gap-3">
             {percent > 0 ? "Continue" : "Start"}
             <ArrowRight aria-hidden className="h-4 w-4" />
           </span>
