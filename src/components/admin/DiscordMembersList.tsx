@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
@@ -28,7 +29,7 @@ export function DiscordMembersList({
   onNotify,
 }: {
   rows: DiscordMemberRow[];
-  onDisconnect: (userId: string) => Promise<{ ok: boolean; message: string }>;
+  onDisconnect: (userId: string, notify?: boolean) => Promise<{ ok: boolean; message: string }>;
   /** Tells this person to connect Discord, with the steps. */
   onNotify: (userId: string) => Promise<{ ok: boolean; message: string }>;
 }) {
@@ -37,6 +38,7 @@ export function DiscordMembersList({
   const [show, setShow] = useState<Show>("ALL");
   const [asking, setAsking] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [tellStudent, setTellStudent] = useNotifyStudent("discord");
   const [notifying, setNotifying] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -49,7 +51,7 @@ export function DiscordMembersList({
     setBusy(id);
     setNotice(null);
     try {
-      const res = await onDisconnect(id);
+      const res = await onDisconnect(id, tellStudent);
       setNotice({ ok: res.ok, text: res.message });
       router.refresh();
     } catch {
@@ -81,6 +83,7 @@ export function DiscordMembersList({
 
   return (
     <div>
+      <NotifyToggle on={tellStudent} onChange={setTellStudent} label="Notify the student when I disconnect them" className="mb-3" />
       <div role="group" aria-label="Show" className="mb-4 flex w-fit max-w-full flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
         {tabs.map((t) => (
           <button

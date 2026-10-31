@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 
@@ -15,8 +16,8 @@ import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface StudentQueueProps {
   registrations: AdminClassRegistration[];
-  onApprove: (registrationId: string) => Promise<void>;
-  onReject: (registrationId: string, reason: string) => Promise<void>;
+  onApprove: (registrationId: string, notify?: boolean) => Promise<void>;
+  onReject: (registrationId: string, reason: string, notify?: boolean) => Promise<void>;
   emptyMessage?: string;
 }
 
@@ -38,6 +39,7 @@ function Avatar({ image, name }: { image: string | null | undefined; name: strin
 
 export function StudentQueue({ registrations, onApprove, onReject, emptyMessage = "No registrations yet." }: StudentQueueProps) {
   const [query, setQuery] = useState("");
+  const [notify, setNotify] = useNotifyStudent("applicants", true);
   const shown = registrations.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
-      await onApprove(id);
+      await onApprove(id, notify);
       router.refresh();
       setApprovingId(null);
     } finally {
@@ -63,7 +65,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
     if (!reason.trim()) return;
     setBusyId(id);
     try {
-      await onReject(id, reason.trim());
+      await onReject(id, reason.trim(), notify);
       router.refresh();
       setRejectingId(null);
       setReason("");
@@ -79,6 +81,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   return (
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, instrument" shown={shown.length} total={registrations.length} />
+      <NotifyToggle on={notify} onChange={setNotify} label="Email the applicant when I approve or turn them down" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       <ViewMore items={shown} initial={8}>
       {(reg) => (

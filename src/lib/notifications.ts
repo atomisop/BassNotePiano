@@ -1,4 +1,5 @@
 import type { NotificationType } from "@prisma/client";
+import { studentNoticeMutedFor } from "@/lib/notifyScope";
 import { prisma } from "@/lib/prisma";
 import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
@@ -111,6 +112,8 @@ function pathOf(url: string): string | null {
  * here should never be allowed to look like the notification itself failed.
  */
 export async function createNotification(params: CreateNotificationParams) {
+  // The studio turned "Notify student" off for the action this comes from (notifyScope.ts): the change happened, the student is not told.
+  if (await studentNoticeMutedFor({ userId: params.userId })) return null;
   // Payment and billing notices go to the person's Mail, not the bell, so they
   // are not lost among everyday notifications. The email (if their preference
   // allows) is unchanged.

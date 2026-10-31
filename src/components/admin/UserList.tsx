@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -39,8 +40,9 @@ export function UserList({
 }: {
   rows: UserListRow[];
   initialQuery: string;
-  onApproveNext: (userId: string, force: boolean) => Promise<void>;
+  onApproveNext: (userId: string, force: boolean, notify?: boolean) => Promise<void>;
 }) {
+  const [notify, setNotify] = useNotifyStudent("scales");
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function UserList({
     setBusyId(userId);
     setError(null);
     try {
-      await onApproveNext(userId, false);
+      await onApproveNext(userId, false, notify);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -79,6 +81,7 @@ export function UserList({
   return (
     <div>
       <AdminListSearch value={query} onChange={handleSearchChange} placeholder="Search a name or email" shown={rows.length} total={rows.length} />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify students when I open their next scale" className="mt-3" />
 
       {error && <p className="mb-3 text-small text-red-400">{error}</p>}
 
@@ -91,7 +94,7 @@ export function UserList({
         }}
         actions={[
           ...(pickedList.length > 0 && pickedList.every((id) => rows.find((r) => r.id === id)?.readyScale)
-            ? [{ label: "Approve next scale", question: `Release the next scale for ${pickedList.length} student${pickedList.length === 1 ? "" : "s"}? Each one is told right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApproveNext(id, false) }]
+            ? [{ label: "Approve next scale", question: `Release the next scale for ${pickedList.length} student${pickedList.length === 1 ? "" : "s"}? ${notify ? "Each one is told right away." : "Nobody is told (Notify is off)."}`, confirmLabel: "Yes, approve", run: (id: string) => onApproveNext(id, false, notify) }]
             : []),
         ]}
         extra={

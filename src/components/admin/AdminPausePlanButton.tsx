@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pause, Play } from "@/components/ui/appIcons";
@@ -28,10 +29,12 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(tomorrow());
   const [busy, setBusy] = useState<"date" | "indefinite" | "resume" | null>(null);
+  // The same "Notify" choice as the student page and the Plans list this button sits on.
+  const [notify, setNotify] = useNotifyStudent("student-changes");
 
   async function run(kind: "date" | "indefinite" | "resume") {
     setBusy(kind);
-    const result = await (kind === "resume" ? resumePlanAdminAction(planId) : pausePlanAdminAction(planId, kind === "date" ? { kind: "until", date } : { kind: "indefinite" })).catch(() => ({
+    const result = await (kind === "resume" ? resumePlanAdminAction(planId, notify) : pausePlanAdminAction(planId, kind === "date" ? { kind: "until", date } : { kind: "indefinite" }, notify)).catch(() => ({
       ok: false,
       error: "Something went wrong. Try again.",
     }));
@@ -68,6 +71,7 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
         Pause
       </button>
       <Dialog open={open} onOpenChange={(next) => busy === null && setOpen(next)} title="Pause until when?">
+        <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="date"

@@ -12,6 +12,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 export interface SchedulerSlot {
   scheduleId: string;
@@ -41,13 +42,13 @@ export interface StudentSchedulerProps {
   /** The plan's own controls (pause, move the weekly time), drawn by the page. */
   planControls?: React.ReactNode;
   loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
-  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) => Promise<Result>;
-  onMoveToTime: (bookingId: string, date: string, time: string) => Promise<Result>;
-  onCancel: (bookingId: string, reason?: string) => Promise<Result>;
-  onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number) => Promise<Result>;
-  onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
-  onUndo: (bookingId: string) => Promise<Result>;
-  onSetInPerson: (bookingId: string, inPerson: boolean) => Promise<Result>;
+  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify?: boolean) => Promise<Result>;
+  onMoveToTime: (bookingId: string, date: string, time: string, notify?: boolean) => Promise<Result>;
+  onCancel: (bookingId: string, reason?: string, notify?: boolean) => Promise<Result>;
+  onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number, notify?: boolean) => Promise<Result>;
+  onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW", notify?: boolean) => Promise<void>;
+  onUndo: (bookingId: string, notify?: boolean) => Promise<Result>;
+  onSetInPerson: (bookingId: string, inPerson: boolean, notify?: boolean) => Promise<Result>;
 }
 
 const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
@@ -60,6 +61,8 @@ const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-f
 export function StudentScheduler(props: StudentSchedulerProps) {
   const { studentId, studentName, bookings, planControls, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
+  // One "Notify student" switch for everything on this card (reschedule, cancel, book, attendance); off by default.
+  const [notify, setNotify] = useNotifyStudent("student-changes");
   const [times, setTimes] = useState<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
   const [slotsBusy, setSlotsBusy] = useState(false);
   const [moving, setMoving] = useState<SchedulerBooking | null>(null);
@@ -121,7 +124,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     }
     setBusy(true);
     setError(null);
-    const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex);
+    const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime, notify) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     toast.success("Class rescheduled.");
@@ -137,7 +140,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   async function doCancel() {
     if (!canceling) return;
     setBusy(true);
-    const result = await onCancel(canceling.id, reason.trim() || undefined);
+    const result = await onCancel(canceling.id, reason.trim() || undefined, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     toast.success("Class canceled and refunded.");
@@ -152,7 +155,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     if (!booking) return;
     setBusy(true);
     setError(null);
-    const result = await onBook(studentId, booking.scheduleId, booking.occurrenceDateMs, booking.chunkIndex, booking.creditCost);
+    const result = await onBook(studentId, booking.scheduleId, booking.occurrenceDateMs, booking.chunkIndex, booking.creditCost, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     toast.success("Class booked.");
@@ -180,9 +183,9 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           scheduledAt={b.scheduledAt}
           creditsSpent={b.creditsSpent}
           inPerson={b.inPerson}
-          onMark={onMark}
-          onUndo={onUndo}
-          onSetInPerson={onSetInPerson}
+          onMark={(id, a) => onMark(id, a, notify)}
+          onUndo={(id) => onUndo(id, notify)}
+          onSetInPerson={(id, v) => onSetInPerson(id, v, notify)}
         />
         {b.status === "SCHEDULED" && !b.attendance && (
           <button type="button" className={`${iconBtn} w-8 px-0`} onClick={() => openMove(b)} aria-label="Reschedule this class" title="Reschedule">
@@ -211,10 +214,13 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           {planControls}
           {planControls && <Hint label="About plan controls">Pause the plan, move the standing weekly time and every upcoming class on it together, or (owner) move the next bill to another day.</Hint>}
         </div>
-        <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
-          <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
-          Book a class
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${studentName.split(" ")[0]}`} />
+          <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
+            <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
+            Book a class
+          </Button>
+        </div>
       </div>
 
       {needs.length > 0 && (

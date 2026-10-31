@@ -1,5 +1,6 @@
 "use server";
 
+import { withStudentNotice } from "@/lib/notifyScope";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,27 +10,29 @@ import { prisma } from "@/lib/prisma";
 import { notifyToConnectDiscord } from "@/lib/accountDiscordNotify";
 
 /** Admin only: disconnects one person's Discord account. They can connect again whenever they like. */
-export async function disconnectDiscordForUserAction(userId: string): Promise<{ ok: boolean; message: string }> {
-  const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/discord");
-  if (session.user.role !== "ADMIN") redirect("/dashboard");
+export async function disconnectDiscordForUserAction(userId: string, notify = true): Promise<{ ok: boolean; message: string }> {
+  return withStudentNotice(notify, async () => {
+    const session = await getServerAuthSession();
+    if (!session?.user) redirect("/login?callbackUrl=/admin/discord");
+    if (session.user.role !== "ADMIN") redirect("/dashboard");
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, discordId: true, discordUsername: true } });
-  if (!user) return { ok: false, message: "That person no longer exists." };
-  if (!user.discordId) return { ok: true, message: "They were already disconnected." };
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, discordId: true, discordUsername: true } });
+    if (!user) return { ok: false, message: "That person no longer exists." };
+    if (!user.discordId) return { ok: true, message: "They were already disconnected." };
 
-  await prisma.user.update({ where: { id: user.id }, data: { discordId: null, discordUsername: null } });
-  await logAudit({
-    actorId: session.user.id,
-    actorEmail: session.user.email,
-    action: "discord.disconnect",
-    targetType: "User",
-    targetId: user.id,
-    detail: `Disconnected ${user.email} from Discord (${user.discordUsername ?? "unknown name"})`,
+    await prisma.user.update({ where: { id: user.id }, data: { discordId: null, discordUsername: null } });
+    await logAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "discord.disconnect",
+      targetType: "User",
+      targetId: user.id,
+      detail: `Disconnected ${user.email} from Discord (${user.discordUsername ?? "unknown name"})`,
+    });
+    revalidatePath("/", "layout");
+    await noticeAccountChange(user.id, { kind: "discord-disconnected", by: "admin" });
+    return { ok: true, message: "Disconnected." };
   });
-  revalidatePath("/", "layout");
-  await noticeAccountChange(user.id, { kind: "discord-disconnected", by: "admin" });
-  return { ok: true, message: "Disconnected." };
 }
 
 /** Admin only: tells one student to connect Discord, with the steps (email and an in-app notice). */

@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "@/components/ui/appIcons";
 import { getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export function AdminAttendanceQuickPanel() {
   // Which day drop-downs the admin has toggled by hand; anything not in here
   // uses its default (open for today and anything that needs a call).
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
+  const [notify, setNotify] = useNotifyStudent("attendance");
   // Ticks so the greyed-out buttons light up on their own as a class nears.
   const [now, setNow] = useState(() => Date.now());
   // Rows just marked or canceled stay hidden for a minute, so a refresh that was already
@@ -174,7 +176,7 @@ export function AdminAttendanceQuickPanel() {
     setBusyId(bookingId);
     setError(null);
     try {
-      await markAttendanceAction(bookingId, attendance);
+      await markAttendanceAction(bookingId, attendance, notify);
       removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
     } catch (err) {
@@ -241,6 +243,7 @@ export function AdminAttendanceQuickPanel() {
               </Link>
             </div>
 
+            <NotifyToggle on={notify} onChange={setNotify} label="Notify students when I mark" className="mt-2 px-1" />
             {error && <p className="mt-2 px-1 text-small text-red-400">{error}</p>}
 
             {loading && rows.length === 0 ? (

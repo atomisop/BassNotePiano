@@ -1,5 +1,6 @@
 "use client";
 
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
@@ -21,11 +22,11 @@ import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
-  onApprove: (paymentId: string) => Promise<void>;
-  onReject: (paymentId: string, reason: string) => Promise<void>;
+  onApprove: (paymentId: string, notify?: boolean) => Promise<void>;
+  onReject: (paymentId: string, reason: string, notify?: boolean) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
   /** Owner only. Marks a verified payment refunded, optionally taking back its credits and ending its plan. */
-  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
+  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
@@ -127,6 +128,8 @@ export function PaymentQueue({
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
+  // On by default here: a student who paid is waiting for the answer (and the receipt).
+  const [notify, setNotify] = useNotifyStudent("payments", true);
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -171,7 +174,7 @@ export function PaymentQueue({
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
-      await onApprove(id);
+      await onApprove(id, notify);
       toast.success("Payment approved", { description: whoAndHow(id) });
       router.refresh();
       setApprovingId(null);
@@ -187,7 +190,7 @@ export function PaymentQueue({
     setBusyId(id);
     setRefundError(null);
     try {
-      const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan);
+      const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify);
       if (!result.ok) {
         setRefundError(result.error);
         toast.error("Couldn't refund that payment", { description: result.error ?? undefined });
@@ -226,7 +229,7 @@ export function PaymentQueue({
     if (!reason.trim()) return;
     setBusyId(id);
     try {
-      await onReject(id, reason.trim());
+      await onReject(id, reason.trim(), notify);
       toast.success("Payment rejected", { description: whoAndHow(id) });
       router.refresh();
       setRejectingId(null);
@@ -247,6 +250,7 @@ export function PaymentQueue({
   return (
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student (result and receipt) when I approve, reject or refund" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {shown.filter(canTick).length > 1 && (
         <label className="tap flex items-center gap-2 text-small text-slate-400">
@@ -268,7 +272,7 @@ export function PaymentQueue({
         }}
         actions={[
           ...(pickedPending.length === pickedList.length && pickedList.length > 0
-            ? [{ label: "Approve selected", question: `Approve ${pickedList.length} payment${pickedList.length === 1 ? "" : "s"}? Each one grants its credits or starts its plan right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApprove(id) }]
+            ? [{ label: "Approve selected", question: `Approve ${pickedList.length} payment${pickedList.length === 1 ? "" : "s"}? Each one grants its credits or starts its plan right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApprove(id, notify) }]
             : []),
           ...(onCheck && pickedUnchecked.length === pickedList.length && pickedList.length > 0
             ? [{ label: "Mark selected checked", run: (id: string) => onCheck(id) }]

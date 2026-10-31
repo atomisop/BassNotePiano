@@ -1,5 +1,6 @@
 "use server";
 
+import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -15,14 +16,18 @@ async function requireAdmin() {
   return session.user;
 }
 
-export async function approveRegistrationAction(registrationId: string) {
-  const admin = await requireAdmin();
-  await approveClassRegistration(registrationId, admin.id);
-  revalidatePath("/admin/students");
+export async function approveRegistrationAction(registrationId: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    await approveClassRegistration(registrationId, admin.id);
+    revalidatePath("/admin/students");
+  });
 }
 
-export async function rejectRegistrationAction(registrationId: string, reason: string) {
-  const admin = await requireAdmin();
-  await rejectClassRegistration(registrationId, admin.id, reason);
-  revalidatePath("/admin/students");
+export async function rejectRegistrationAction(registrationId: string, reason: string, notify = true) {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    await rejectClassRegistration(registrationId, admin.id, reason);
+    revalidatePath("/admin/students");
+  });
 }

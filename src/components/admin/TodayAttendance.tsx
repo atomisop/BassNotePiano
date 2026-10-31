@@ -7,6 +7,7 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+import { useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 type Mark = "PRESENT" | "NO_SHOW";
 
@@ -27,10 +28,12 @@ export function TodayAttendance({
   attendance: Mark | null;
   /** The class has begun, so it can be marked. */
   started: boolean;
-  onMark: (bookingId: string, attendance: Mark) => Promise<void>;
-  onUndo: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onMark: (bookingId: string, attendance: Mark, notify?: boolean) => Promise<void>;
+  onUndo: (bookingId: string, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
 }) {
   const router = useRouter();
+  // The "Notify students" switch at the top of the list (NotifyPlaceToggle place="attendance").
+  const [notify] = useNotifyStudent("attendance");
   const [mark, setMark] = useState<Mark | null>(attendance);
   const [busy, setBusy] = useState<Mark | "undo" | null>(null);
   const [, startTransition] = useTransition();
@@ -38,7 +41,7 @@ export function TodayAttendance({
   async function set(next: Mark) {
     setBusy(next);
     try {
-      await onMark(bookingId, next);
+      await onMark(bookingId, next, notify);
       setMark(next);
       toast.success(`${name}: ${next === "PRESENT" ? "present" : "no-show"}`);
       startTransition(() => router.refresh());
@@ -51,7 +54,7 @@ export function TodayAttendance({
 
   async function undo() {
     setBusy("undo");
-    const result = await onUndo(bookingId).catch(() => ({ ok: false as const, error: "Could not undo that. Try again." }));
+    const result = await onUndo(bookingId, notify).catch(() => ({ ok: false as const, error: "Could not undo that. Try again." }));
     setBusy(null);
     if (!result.ok) return void toast.error(result.error);
     setMark(null);
