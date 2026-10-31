@@ -52,10 +52,10 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="When credits expire">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         {grants === null ? (
-          <p className="inline-flex items-center gap-2 text-small text-slate-400">
+          <div className="inline-flex items-center gap-2 text-small text-slate-400">
             <MorphingSquare size={12} />
             Loading credits
-          </p>
+          </div>
         ) : grants.length === 0 ? (
           <p className="text-small text-slate-300">No unused credits right now.</p>
         ) : (

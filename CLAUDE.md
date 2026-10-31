@@ -696,3 +696,16 @@ Every on/off switch uses one look (`components/ui/switch.tsx`, the owner's reque
 with a small orange dot on the left; on is a full orange track with the dot grown into a white knob flipped right. Use `<Switch>`; a hand-built
 `role="switch"` button (one that carries its own label) draws `<SwitchLook on={...} />` inside it. Never style a switch some other way. The
 dark/light toggle in Appearance (`LiquidThemeToggle`) is a different control (a mode picker, not on/off) and keeps its own look.
+
+## Studio tools on the student page (added 2026-10-31)
+
+Each person on a group or parent plan has their own plan, so the studio manages it on its own: the plan builder, studio pause and late
+settling accept a group member's plan once the group's combined first payment is approved (`assertGroupPlanStarted` in `planBuilder.ts`).
+**Weekly time** (`AdminWeeklyTimeButton`, `adminWeeklyTime.ts`, any admin) moves one plan's standing time and every upcoming class on it
+(`changeReservedSlot(..., { byAdmin: true })`). Owner only: **Plan settings** (`AdminPlanSettingsButton`, `adminPlanTools.ts`: length,
+exact price per bill (refused while a personal discount sets it), next 28 days free as a $0 VERIFIED "Waived by the studio" installment
+through `applyPlanInstallment`), **Restart canceled plan**, and in the Account card **Edit details** / **Send reset code** / **Free trial**
+plus **Credit expiry** in the Class credits card (`adminAccountTools.ts`). Any admin: **Cancel all upcoming** (one notice) and Schedule >
+Reserved > **Close a day** (`adminClassTools.ts`: cancels the day's classes and keeps the day as a "Studio closed" owner reservation, released
+there to reopen). All take the Notify switch except the reset code, which always goes. Elements a server page passes into a client
+component's slot prop need a `key`, or React warns in development.

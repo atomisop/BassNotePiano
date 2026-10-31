@@ -73,10 +73,10 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
             already taught stay where they are. The student is told only if Notify is on.
           </p>
           {loading ? (
-            <p className="inline-flex items-center gap-2 text-small text-slate-400">
+            <div className="inline-flex items-center gap-2 text-small text-slate-400">
               <MorphingSquare size={12} />
               Finding free times
-            </p>
+            </div>
           ) : choices.length === 0 ? (
             <p className="text-small text-slate-300">No other weekly time is free. Add one on Classes &gt; Schedule first.</p>
           ) : (

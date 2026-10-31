@@ -127,10 +127,10 @@ export function AdminCloseDay() {
             <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="Holiday" className={field} />
           </label>
           {loading && (
-            <p className="inline-flex items-center gap-2 text-small text-slate-400">
+            <div className="inline-flex items-center gap-2 text-small text-slate-400">
               <MorphingSquare size={12} />
               Looking at that day
-            </p>
+            </div>
           )}
           {preview && (
             <div className="rounded-xl bg-neu-base p-3 text-small shadow-pressed-low">

@@ -71,7 +71,7 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
         <div className="grid gap-5">
           <section className="grid gap-2">
             <h3 className="text-body font-semibold text-slate-50">Length</h3>
-            <p className="text-small text-slate-400">{props.installmentsPaid} bills paid so far. A length has to be longer than that.</p>
+            <p className="text-small text-slate-400">{props.installmentsPaid} {props.installmentsPaid === 1 ? "bill" : "bills"} paid so far. A length has to be longer than that.</p>
             <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Plan length">
               {TERMS.map((t) => (
                 <button

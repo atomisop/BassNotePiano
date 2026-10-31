@@ -99,10 +99,10 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
-          creditTools={isOwner ? <AdminCreditExpiryButton userId={params.userId} /> : null}
+          creditTools={isOwner ? <AdminCreditExpiryButton key="credit-tools" userId={params.userId} /> : null}
           accountTools={
             isOwner ? (
-              <AdminAccountTools userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />
+              <AdminAccountTools key="account-tools" userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />
             ) : null
           }
           scheduler={
