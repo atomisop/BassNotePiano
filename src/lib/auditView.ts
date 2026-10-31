@@ -35,6 +35,7 @@ const LABELS: Record<string, string> = {
   "payment.dismiss_email": "Dismissed a bank email",
   "credits.grant": "Gave credits",
   "credits.revoke": "Took credits away",
+  "credits.expiry": "Changed when credits expire",
   "discord.notify": "Sent a Discord reminder",
   "discord.disconnect": "Disconnected Discord",
   "automation.set": "Changed an automatic approval",

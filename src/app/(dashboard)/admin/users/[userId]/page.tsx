@@ -14,6 +14,7 @@ import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
 import { AdminWeeklyTimeButton } from "@/components/admin/AdminWeeklyTimeButton";
 import { AdminAccountTools } from "@/components/admin/AdminAccountTools";
+import { AdminCreditExpiryButton } from "@/components/admin/AdminCreditExpiryButton";
 import { AdminCancelAllButton } from "@/components/admin/AdminClassTools";
 import { AdminPlanSettingsButton, AdminRestartPlanButton } from "@/components/admin/AdminPlanSettingsButton";
 import { etDayKey } from "@/lib/fingerPractice";
@@ -98,6 +99,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          creditTools={isOwner ? <AdminCreditExpiryButton userId={params.userId} /> : null}
           accountTools={
             isOwner ? (
               <AdminAccountTools userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />

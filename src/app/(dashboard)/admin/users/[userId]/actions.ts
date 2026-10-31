@@ -2,7 +2,7 @@
 
 import { withStudentNotice } from "@/lib/notifyScope";
 import { isOwnerEmail, notifyAdmins } from "@/lib/adminNotifications";
-import { AccountToolError, sendPasswordResetFor, setTrialFor, updateAccountDetails, type AccountDetails } from "@/lib/adminAccountTools";
+import { AccountToolError, listLiveCreditGrants, sendPasswordResetFor, setCreditGrantExpiry, setTrialFor, updateAccountDetails, type AccountDetails, type LiveCreditGrant } from "@/lib/adminAccountTools";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -152,6 +152,22 @@ export async function setTrialAction(targetUserId: string, days: number, notify 
     ownerTool(async (adminId) => {
       const until = await setTrialFor(adminId, String(targetUserId), Number(days));
       return until ? `Trial runs until ${until.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}` : "Trial ended";
+    }),
+  );
+}
+
+/** The student's usable credits, soonest to expire first. */
+export async function listCreditGrantsAction(targetUserId: string): Promise<LiveCreditGrant[]> {
+  await requireAdmin();
+  return listLiveCreditGrants(String(targetUserId));
+}
+
+/** Moves when one batch of credits expires, or makes it never expire (date null). */
+export async function setCreditExpiryAction(targetUserId: string, grantId: string, date: string | null, notify = true): Promise<ToolResult> {
+  return withStudentNotice(notify, () =>
+    ownerTool(async (adminId) => {
+      const label = await setCreditGrantExpiry(adminId, String(targetUserId), String(grantId), date === null ? null : String(date));
+      return label === "never" ? "Those credits never expire now" : `Those credits now expire ${label}`;
     }),
   );
 }

@@ -27,6 +27,8 @@ export interface CustomerProfileProps {
   scheduler?: React.ReactNode;
   /** Owner tools in the Account card (edit details, reset code, trial), built by the page. */
   accountTools?: React.ReactNode;
+  /** Owner tool in the Class credits card (when credits expire), built by the page. */
+  creditTools?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -147,6 +149,7 @@ export function CustomerProfile({
   changeLog,
   scheduler,
   accountTools,
+  creditTools,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -610,7 +613,7 @@ export function CustomerProfile({
 
         <div hidden={tab !== "classes"} className="space-y-5">
           {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
+          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuthSession: async () => null, authOptions: {} }));
 import { canonicalEmail } from "@/lib/canonicalEmail";
-import { AccountToolError, setTrialFor, updateAccountDetails } from "@/lib/adminAccountTools";
+import { AccountToolError, listLiveCreditGrants, setCreditGrantExpiry, setTrialFor, updateAccountDetails } from "@/lib/adminAccountTools";
 import { newTag, prisma } from "./helpers";
 
 const tag = newTag("aat");
@@ -17,6 +17,7 @@ afterAll(async () => {
   const users = await prisma.user.findMany({ where: { OR: [{ email: { in: emails } }, { email: { startsWith: tag } }] }, select: { id: true } });
   const ids = users.map((u) => u.id);
   await prisma.notification.deleteMany({ where: { userId: { in: ids } } });
+  await prisma.creditGrant.deleteMany({ where: { userId: { in: ids } } });
   await prisma.auditLog.deleteMany({ where: { actorId: { in: ids } } });
   await prisma.user.deleteMany({ where: { id: { in: ids } } });
 });
@@ -56,5 +57,22 @@ describe("the studio's account fixes", () => {
     expect((await prisma.user.findUniqueOrThrow({ where: { id: student.id } })).trialEndsAt!.getTime()).toBeLessThanOrEqual(Date.now());
     await expect(setTrialFor(admin.id, student.id, 0)).rejects.toThrow(/no running trial/);
     await expect(setTrialFor(admin.id, admin.id, 7)).rejects.toThrow(/admin/);
+  });
+
+  it("moves when a batch of credits expires, or makes it never expire, and resets the warning", async () => {
+    const admin = await account("admin", "ADMIN");
+    const student = await account("credits");
+    const grant = await prisma.creditGrant.create({ data: { userId: student.id, source: "ADMIN_ADJUSTMENT", creditsGranted: 4, creditsRemaining: 4, expiresAt: new Date(Date.now() + 3 * 86_400_000), expiringSoonNotifiedAt: new Date() } });
+    expect((await listLiveCreditGrants(student.id)).map((g) => g.id)).toEqual([grant.id]);
+    const later = new Date(Date.now() + 40 * 86_400_000).toISOString().slice(0, 10);
+    await setCreditGrantExpiry(admin.id, student.id, grant.id, later);
+    let after = await prisma.creditGrant.findUniqueOrThrow({ where: { id: grant.id } });
+    expect(after.expiresAt!.getTime()).toBeGreaterThan(Date.now() + 38 * 86_400_000);
+    expect(after.expiringSoonNotifiedAt).toBeNull();
+    await setCreditGrantExpiry(admin.id, student.id, grant.id, null);
+    after = await prisma.creditGrant.findUniqueOrThrow({ where: { id: grant.id } });
+    expect(after.expiresAt).toBeNull();
+    await expect(setCreditGrantExpiry(admin.id, student.id, grant.id, "2020-01-01")).rejects.toThrow(/after today/);
+    await expect(setCreditGrantExpiry(admin.id, admin.id, grant.id, later)).rejects.toThrow(/already used/);
   });
 });

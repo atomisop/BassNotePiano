@@ -6,6 +6,9 @@ import { isPhoneTaken } from "@/lib/phoneVerification";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
+import { createNotification } from "@/lib/notifications";
+import { etWallTimeToUtc } from "@/lib/classSchedule";
+import { formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 
 /**
  * Account fixes the studio makes for a student from their page: correct the name, email or phone they typed, send them a password
@@ -99,4 +102,49 @@ export async function setTrialFor(adminId: string, userId: string, days: number)
   await logAudit({ actorId: adminId, action: "user.trial", targetType: "User", targetId: userId, detail: days === 0 ? "Ended the free trial" : `Free trial set to end in ${days} days` }).catch(() => undefined);
   await noticeAccountChange(userId, { kind: "trial-set", until: days === 0 ? null : until });
   return days === 0 ? null : until;
+}
+
+export interface LiveCreditGrant {
+  id: string;
+  /** Stored half-classes left. */
+  remaining: number;
+  source: string;
+  /** ISO, or null for credits that never expire. */
+  expiresAt: string | null;
+}
+
+/** The student's credits that are still usable, soonest to expire first. */
+export async function listLiveCreditGrants(userId: string): Promise<LiveCreditGrant[]> {
+  const rows = await prisma.creditGrant.findMany({
+    where: { userId, expiredAt: null, creditsRemaining: { gt: 0 }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    orderBy: [{ expiresAt: { sort: "asc", nulls: "last" } }],
+    select: { id: true, creditsRemaining: true, source: true, expiresAt: true },
+  });
+  return rows.map((r) => ({ id: r.id, remaining: r.creditsRemaining, source: r.source, expiresAt: r.expiresAt?.toISOString() ?? null }));
+}
+
+/** Moves when one batch of credits expires ("YYYY-MM-DD", end of that Eastern day), or makes it never expire (null). */
+export async function setCreditGrantExpiry(adminId: string, userId: string, grantId: string, date: string | null): Promise<string> {
+  const grant = await prisma.creditGrant.findFirst({ where: { id: grantId, userId, expiredAt: null } });
+  if (!grant || grant.creditsRemaining <= 0) throw new AccountToolError("Those credits are already used or expired.");
+  let expiresAt: Date | null = null;
+  if (date !== null) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!m) throw new AccountToolError("Pick a date.");
+    expiresAt = etWallTimeToUtc(Number(m[1]), Number(m[2]), Number(m[3]), 23, 59);
+    if (expiresAt.getTime() <= Date.now()) throw new AccountToolError("Pick a day after today.");
+    if (expiresAt.getTime() > Date.now() + 3 * 365 * DAY) throw new AccountToolError("Pick a day within three years.");
+  }
+  // The "expiring soon" warning is reset, so the student is warned again before the new date.
+  await prisma.creditGrant.update({ where: { id: grant.id }, data: { expiresAt, expiringSoonNotifiedAt: null } });
+  const label = expiresAt ? expiresAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "never";
+  await logAudit({ actorId: adminId, action: "credits.expiry", targetType: "User", targetId: userId, detail: `Credits (${formatCredits(storedToCredits(grant.creditsRemaining))} classes) now expire ${label}` }).catch(() => undefined);
+  await createNotification({
+    userId,
+    type: "ACCOUNT_UPDATE",
+    title: "Your credits' expiry changed",
+    body: expiresAt ? `The studio moved when ${storedToCredits(grant.creditsRemaining) === 1 ? "1 class credit expires" : `${formatCredits(storedToCredits(grant.creditsRemaining))} class credits expire`}: now ${label}.` : "The studio made some of your class credits never expire.",
+    emailCategory: "roleUpdates",
+  }).catch(() => undefined);
+  return label;
 }
