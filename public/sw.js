@@ -1,9 +1,31 @@
 // Shows push reminders and opens the app when one is tapped, and shows our own "You're offline" page when a page is opened with no
-// internet (2026-10-31). Registered on every visit (ServiceWorkerSetup.tsx). Only the offline page and the logo are kept on the device:
+// internet (2026-10-31), and our own "Under maintenance" page instead of Netlify's "Site not available" when the host has paused the
+// site for usage limits. Registered on every visit (ServiceWorkerSetup.tsx). Only those two pages and the logo are kept on the device:
 // nothing else is cached, so the app is never served stale.
-const OFFLINE_CACHE = "bnp-offline-v1";
+const OFFLINE_CACHE = "bnp-offline-v2";
 const OFFLINE_URL = "/offline.html";
-const OFFLINE_FILES = [OFFLINE_URL, "/logo-mark.png"];
+const MAINTENANCE_URL = "/maintenance.html";
+const OFFLINE_FILES = [OFFLINE_URL, MAINTENANCE_URL, "/logo-mark.png"];
+
+/** A saved page, served as a fresh 200 so the browser shows it as the page. */
+function savedPage(url) {
+  return caches.match(url).then((saved) =>
+    saved ? saved.text().then((html) => new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } })) : null,
+  );
+}
+
+/**
+ * Netlify's own answer when the site is paused for usage limits: a 503 from Netlify (not from the app) whose page says so. Read only on
+ * a 503, so a normal page costs nothing extra.
+ */
+function isHostPaused(res) {
+  if (res.status !== 503) return Promise.resolve(false);
+  return res
+    .clone()
+    .text()
+    .then((body) => /usage limits|usage_exceeded|Site not available/i.test(body))
+    .catch(() => false);
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,23 +48,22 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-  // Opening a page: the network as always; only when that fails (no internet) the saved offline page.
+  // Opening a page: the network as always; the saved maintenance page when the host has paused the site, and the saved offline page
+  // when there is no internet at all.
   if (req.mode === "navigate") {
     event.respondWith(
-      fetch(req).catch(() =>
-        caches.match(OFFLINE_URL).then((saved) =>
-          saved
-            ? saved.text().then((html) => new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }))
-            : Response.error(),
-        ),
+      fetch(req).then(
+        (res) => isHostPaused(res).then((paused) => (paused ? savedPage(MAINTENANCE_URL).then((page) => page || res) : res)),
+        () => savedPage(OFFLINE_URL).then((page) => page || Response.error()),
       ),
     );
     return;
   }
-  // The offline page's own logo, when there is no network to fetch it from.
+  // The offline and maintenance pages' own logo, when there is no network to fetch it from or the paused host will not serve it.
   const url = new URL(req.url);
   if (url.origin === self.location.origin && url.pathname === "/logo-mark.png") {
-    event.respondWith(fetch(req).catch(() => caches.match("/logo-mark.png").then((r) => r || Response.error())));
+    const saved = () => caches.match("/logo-mark.png").then((r) => r || Response.error());
+    event.respondWith(fetch(req).then((res) => (res.ok ? res : saved()), saved));
   }
 });
 
