@@ -1767,6 +1767,8 @@ model ClassBooking {
   @@index([studentId, status])
   @@index([familyBookingGroupId])
   @@index([reservedByPlanId])
+  // Classes by status and time: classes to mark, today's classes and the next 7 days, on every admin page (2026-10-31 speed pass).
+  @@index([status, scheduledAt])
 }
 
 // Audit trail for every manual admin change to a student's classCredits

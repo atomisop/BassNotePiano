@@ -210,7 +210,9 @@ const nextConfig = {
 // currently-documented option; an earlier version of this used the
 // now-deprecated `disableLogger` flag, which Sentry's own dev-server output
 // flagged directly.
+// `removeTracing` (2026-10-31 speed pass): performance tracing is switched off (tracesSampleRate 0 in instrumentation-client.ts), so its
+// code is left out of every page's JavaScript; error reports are unaffected.
 export default withSentryConfig(nextConfig, {
   silent: true,
-  webpack: { treeshake: { removeDebugLogging: true } },
+  webpack: { treeshake: { removeDebugLogging: true, removeTracing: true } },
 });

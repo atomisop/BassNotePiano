@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { computeStreak, etDayKey } from "@/lib/fingerPractice";
+import { etDayKey, getFingerPracticeStatusOnce } from "@/lib/fingerPractice";
 import { getFifthClassOffer } from "@/lib/paymentPlans";
-import { findStoppedJobs } from "@/lib/jobRun";
+import { findStoppedJobsOnce } from "@/lib/jobRun";
 
 /**
  * The cards in the empty space at the bottom of the desktop sidebar. Each one is a small, true fact about the signed-in
@@ -31,7 +31,7 @@ export async function getSidebarCards(userId: string, role: string, isOwner: boo
 async function getStudentCards(userId: string): Promise<SidebarCard[]> {
   const now = new Date();
   const today = etDayKey(now);
-  const [booking, fifth, progress, practiceDays, todayRow, friendIds] = await Promise.all([
+  const [booking, fifth, progress, practice, friendIds] = await Promise.all([
     prisma.classBooking.findFirst({
       where: { studentId: userId, status: "SCHEDULED", scheduledAt: { gte: new Date(now.getTime() - CLASS_MINUTES * 60_000), lte: new Date(now.getTime() + 14 * DAY_MS) } },
       orderBy: { scheduledAt: "asc" },
@@ -43,8 +43,8 @@ async function getStudentCards(userId: string): Promise<SidebarCard[]> {
       select: { unlockedAt: true, completedAt: true, scaleGroup: { select: { id: true, slug: true, code: true, order: true } } },
       orderBy: { scaleGroup: { order: "asc" } },
     }),
-    prisma.fingerPracticeDay.findMany({ where: { userId, completedAt: { not: null } }, select: { day: true }, orderBy: { day: "desc" }, take: 400 }),
-    prisma.fingerPracticeDay.findUnique({ where: { userId_day: { userId, day: today } }, select: { seconds: true } }),
+    // Shared with Home and the top bar's status for this page load, instead of two more queries of its own.
+    getFingerPracticeStatusOnce(userId),
     prisma.friendRequest.findMany({
       where: { status: "ACCEPTED", OR: [{ senderId: userId }, { receiverId: userId }] },
       select: { senderId: true, receiverId: true },
@@ -65,10 +65,8 @@ async function getStudentCards(userId: string): Promise<SidebarCard[]> {
   }
 
   // Streak and today's minutes. Only people who have started practicing get the card.
-  const streak = computeStreak(new Set(practiceDays.map((r) => r.day)), today);
-  const practicedToday = practiceDays[0]?.day === today;
-  if (streak > 0 || (todayRow?.seconds ?? 0) > 0 || practiceDays.length > 0) {
-    cards.push({ kind: "streak", streak, practicedToday, todaySeconds: todayRow?.seconds ?? 0 });
+  if (practice.streak > 0 || practice.todaySeconds > 0 || (practice.longest ?? 0) > 0) {
+    cards.push({ kind: "streak", streak: practice.streak, practicedToday: practice.completedToday, todaySeconds: practice.todaySeconds });
   }
 
   // Continue where you left off: the first lesson of the newest open, unfinished scale they have not completed.
@@ -124,7 +122,7 @@ async function getAdminCards(userId: string, isOwner: boolean): Promise<SidebarC
       orderBy: { scheduledAt: "asc" },
       select: { scheduledAt: true },
     }),
-    isOwner ? findStoppedJobs(now).catch(() => []) : Promise.resolve([] as string[]),
+    isOwner ? findStoppedJobsOnce().catch(() => []) : Promise.resolve([] as string[]),
   ]);
 
   const cards: SidebarCard[] = [];

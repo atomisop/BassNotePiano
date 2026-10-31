@@ -2,7 +2,7 @@ import type { BadgeCode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getRoadmap } from "@/lib/access";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
-import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatus, type FingerPracticeStatus } from "@/lib/fingerPractice";
+import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatusOnce, type FingerPracticeStatus } from "@/lib/fingerPractice";
 import { putFingerPracticeFirst, resolveNextStep, summariseProgress, type NextStep } from "@/lib/next-step";
 import { gettingStartedStep } from "@/lib/lockedScale";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
@@ -58,7 +58,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
     prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
-    getFingerPracticeStatus(userId),
+    getFingerPracticeStatusOnce(userId),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
     prisma.classBooking.findFirst({
       where: { studentId: userId, status: "SCHEDULED", scheduledAt: { gt: new Date(now.getTime() - 60 * 60_000) } },

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { awardBadge } from "@/lib/gamification";
 import { DAILY_GOAL_SECONDS, FINGER_LEVELS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
@@ -64,6 +65,12 @@ export async function getFingerPracticeStatus(userId: string): Promise<FingerPra
     longest: longestStreak(completed),
   };
 }
+
+/**
+ * The same status, read once per page load: Home, the top bar's status and the sidebar card all ask for it while one page renders,
+ * and each used to run its own queries (2026-10-31 speed pass). Not for code that changes practice and then reads it back.
+ */
+export const getFingerPracticeStatusOnce = cache(getFingerPracticeStatus);
 
 /** Whether today's 10 minutes are done: the gate in front of the scale lessons. */
 export async function hasCompletedFingerPracticeToday(userId: string): Promise<boolean> {

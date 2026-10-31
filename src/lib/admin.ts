@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
@@ -8,7 +9,7 @@ import { getNumberSetting } from "@/lib/siteSettings";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
-import { findStoppedJobs } from "@/lib/jobRun";
+import { findStoppedJobsOnce } from "@/lib/jobRun";
 import { findMailChainProblem } from "@/lib/mailProbe";
 import { getAtomAlertState } from "@/lib/atomHealth";
 import { GEMINI_BILLING_URL } from "@/lib/atomFailure";
@@ -131,17 +132,15 @@ export interface ModuleHealthRow {
 
 /** Per-scale unlock/completion counts across the whole user base, where students drop off. */
 export async function getModuleHealth(): Promise<ModuleHealthRow[]> {
-  const scaleGroups = await prisma.scaleGroup.findMany({ orderBy: { order: "asc" } });
-
-  return Promise.all(
-    scaleGroups.map(async (sg) => {
-      const [unlockedCount, completedCount] = await Promise.all([
-        prisma.scaleProgress.count({ where: { scaleGroupId: sg.id, unlockedAt: { not: null } } }),
-        prisma.scaleProgress.count({ where: { scaleGroupId: sg.id, status: "COMPLETED" } }),
-      ]);
-      return { slug: sg.slug, code: sg.code, title: sg.title, unlockedCount, completedCount };
-    }),
-  );
+  // Three queries in all (grouped counts), not two counts per scale (28 for 14 scales; 2026-10-31 speed pass).
+  const [scaleGroups, unlocked, completed] = await Promise.all([
+    prisma.scaleGroup.findMany({ orderBy: { order: "asc" } }),
+    prisma.scaleProgress.groupBy({ by: ["scaleGroupId"], where: { unlockedAt: { not: null } }, _count: { _all: true } }),
+    prisma.scaleProgress.groupBy({ by: ["scaleGroupId"], where: { status: "COMPLETED" }, _count: { _all: true } }),
+  ]);
+  const unlockedBy = new Map(unlocked.map((r) => [r.scaleGroupId, r._count._all]));
+  const completedBy = new Map(completed.map((r) => [r.scaleGroupId, r._count._all]));
+  return scaleGroups.map((sg) => ({ slug: sg.slug, code: sg.code, title: sg.title, unlockedCount: unlockedBy.get(sg.id) ?? 0, completedCount: completedBy.get(sg.id) ?? 0 }));
 }
 
 // ---------------------------------------------------------------------------
@@ -502,7 +501,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     countUnmatchedReceipts(),
     getPaymentPipelineHealth(),
     // Employees are admins too and never saw this: the jobs table below is owner only.
-    findStoppedJobs(),
+    findStoppedJobsOnce(),
     getAtomAlertState(),
     findMailChainProblem(),
   ]);
@@ -533,7 +532,10 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
 }
 
 /** What is waiting, by admin page, for the small count badges in the admin menu. Four cheap counts. */
-export async function getAdminNavBadges(): Promise<Record<string, number>> {
+/** The admin menu's waiting counts, read once per page load (the app layout and the admin layout both need them). */
+export const getAdminNavBadges = cache(readAdminNavBadges);
+
+async function readAdminNavBadges(): Promise<Record<string, number>> {
   const [payments, applications, chats, unmarked] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
