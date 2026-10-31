@@ -2,7 +2,9 @@ import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { ElasticGallery } from "@/components/ui/elastic-gallery";
 import { BACKDROPS } from "@/lib/backdrops";
 
-const small = (url: string) => url.replace("w=2400", "w=1400");
+// Gallery cards are at most about 700px wide even when opened; 900px at q=70 (Unsplash picks WebP or AVIF) is sharp on a phone and
+// about a quarter of the old 1400px download (2026-10-31 speed pass).
+const small = (url: string) => url.replace("w=2400&q=80", "w=900&q=70");
 
 // Piano, guitar and bass are all real photos of those instruments.
 const ITEMS = [

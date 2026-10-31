@@ -8,10 +8,12 @@ import { PillCTA } from "@/components/ui/pill-cta";
 import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
-// Served from R2 (the same object storage the app already uses for lesson
-// videos and avatars, see lib/storage.ts), not the Next.js public folder: 17MB
-// is a lot of repo weight for one background loop, and R2 has no egress fees.
-const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/1788454184967-hero-piano.mp4";
+// Served from the site itself (Netlify's CDN), re-encoded 2026-10-31: the original was a 17 MB 4K HEVC file (HEVC does not even play
+// in Chrome on many devices). Now H.264 at 1080p for computers (2.3 MB) and 720p for phones (1.2 MB), looking the same under the dark
+// gradient and grain, plus a still poster so the first frame shows at once instead of a black box while the video loads.
+const HERO_VIDEO_LARGE = "/marketing/hero-piano-1080.mp4";
+const HERO_VIDEO_SMALL = "/marketing/hero-piano-720.mp4";
+const HERO_POSTER = "/marketing/hero-piano-poster.webp";
 
 /**
  * Keeps the background loop playing. autoPlay alone leaves it stopped on phones
@@ -81,10 +83,13 @@ export function Hero() {
           loop
           muted
           playsInline
-          preload="auto"
-          src={HERO_VIDEO_URL}
+          preload="metadata"
+          poster={HERO_POSTER}
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        />
+        >
+          <source media="(min-width: 1024px)" src={HERO_VIDEO_LARGE} type="video/mp4" />
+          <source src={HERO_VIDEO_SMALL} type="video/mp4" />
+        </video>
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/75" />
