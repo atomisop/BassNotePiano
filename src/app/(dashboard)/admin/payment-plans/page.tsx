@@ -73,8 +73,11 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment Plans</h1>
+      <div data-deck-header className="deck-header -mt-4 pt-4">
+        <PageBack href="/admin" />
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment Plans</h1>
+      </div>
       <p className="mt-2 text-small text-slate-500">
         {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>

@@ -6,6 +6,7 @@ import { isObjectStorageConfigured } from "@/lib/storage";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
+import { getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
@@ -16,15 +17,13 @@ export default async function ProfilePage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/profile");
 
-  const [user, badgeRows] = await Promise.all([
+  const [user, badgeRows, practice] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         name: true,
         image: true,
         username: true,
-        currentStreak: true,
-        longestStreak: true,
         primaryInstrument: true,
         skillLevel: true,
         genres: true,
@@ -32,6 +31,7 @@ export default async function ProfilePage() {
       },
     }),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
+    getFingerPracticeStatus(session.user.id),
   ]);
   if (!user) redirect("/login");
 
@@ -78,14 +78,15 @@ export default async function ProfilePage() {
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="glass-surface p-5">
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
-            {user.currentStreak > 0 ? `${user.currentStreak} day streak` : "Streak"}
+            {practice.streak > 0 ? `${practice.streak} day streak` : "Streak"}
           </p>
-          <StreakDots currentStreak={user.currentStreak} />
+          {/* The same practice streak as Home and the Streak page (one number everywhere, 2026-10-30). */}
+          <StreakDots currentStreak={practice.streak} />
         </div>
         <div className="glass-surface p-5">
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Longest streak</p>
           <p className="mt-2 text-body text-slate-50 font-semibold">
-            {user.longestStreak} day{user.longestStreak === 1 ? "" : "s"}
+            {practice.longest ?? 0} day{practice.longest === 1 ? "" : "s"}
           </p>
         </div>
       </div>
