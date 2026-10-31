@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
+import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 
 // The admin layout's redirect only protects rendering, Server Actions are
@@ -189,5 +190,31 @@ export async function planBuilderApplyAction(input: PlanBuilderInput, key?: stri
     );
     if (result.ok) revalidatePath("/", "layout");
     return result;
+  });
+}
+
+/** The plan's weekly time and the free times it could move to. Changes nothing. */
+export async function weeklyTimeChoicesAction(planId: string): Promise<{ ok: true; current: WeeklyTimeChoice | null; choices: WeeklyTimeChoice[] } | { ok: false; error: string }> {
+  await requireAdmin();
+  try {
+    return { ok: true, ...(await getWeeklyTimeChoices(String(planId))) };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+/** Moves one person's weekly time and every upcoming class on it, group and parent plans included. */
+export async function moveWeeklyTimeAction(planId: string, scheduleId: string, chunkIndex: number, notify = true): Promise<{ ok: boolean; error: string | null; label?: string }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    try {
+      const label = await moveWeeklyTime(String(planId), admin.id, String(scheduleId), Number(chunkIndex));
+      revalidatePath("/", "layout");
+      return { ok: true, error: null, label };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
   });
 }

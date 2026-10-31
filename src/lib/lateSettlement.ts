@@ -36,7 +36,7 @@ async function loadPlan(planId: string) {
   });
   if (!plan) throw new PaymentPlanError("That plan was not found.");
   if (plan.status !== "ACTIVE") throw new PaymentPlanError("Only an active plan can be settled.");
-  if (plan.familyGroupId) throw new PaymentPlanError("A group or parent plan bills the payer, so settle it from the payer's own plan.");
+  if (plan.familyGroupId && plan.installmentsPaid < 1) throw new PaymentPlanError("This group plan has not started yet. Approve its combined first payment on Billing > Payments first.");
   return plan;
 }
 
