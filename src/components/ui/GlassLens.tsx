@@ -12,6 +12,24 @@ import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
 
 const disperse = (amount: number) => Math.max(0, Math.min(3, amount));
 
+/**
+ * The lens look (the --lg-* variables in globals.css; "reduce transparency" switches the bending off), read once per page. Reading
+ * the page's computed style makes the browser work out every style first, and each lens on the page (dock, sidebar, switches) used to
+ * do that on its own as it appeared.
+ */
+let tokenMemo: { refraction: number; dispersion: number; blur: number } | null = null;
+function lensTokens() {
+  if (tokenMemo) return tokenMemo;
+  const style = getComputedStyle(document.documentElement);
+  const num = (name: string, fallback: number) => {
+    const v = parseFloat(style.getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  };
+  const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  tokenMemo = { refraction: reduced ? 0 : num("--lg-refraction", 1), dispersion: reduced ? 0 : num("--lg-dispersion", 1), blur: num("--lg-blur", 1.5) };
+  return tokenMemo;
+}
+
 function refractionSupported(): boolean {
   if (typeof navigator === "undefined") return false;
   const brands = (navigator as Navigator & { userAgentData?: { brands: { brand: string }[] } }).userAgentData?.brands;
@@ -49,19 +67,15 @@ export function GlassLens({
 
   const [tokens, setTokens] = useState({ refraction: 1, dispersion: 1, blur: 1.5 });
   useEffect(() => {
-    setRefract(refractionSupported());
-    // The look is set in one place (the --lg-* variables in globals.css), and "reduce transparency" switches the bending off.
-    const style = getComputedStyle(document.documentElement);
-    const num = (name: string, fallback: number) => {
-      const v = parseFloat(style.getPropertyValue(name));
-      return Number.isFinite(v) ? v : fallback;
-    };
-    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
-    setTokens({ refraction: reduced ? 0 : num("--lg-refraction", 1), dispersion: reduced ? 0 : num("--lg-dispersion", 1), blur: num("--lg-blur", 1.5) });
+    // Only browsers that can bend the backdrop (Chrome, Edge) do any lens work at all: elsewhere (Safari, Firefox) measuring the glass
+    // and drawing its maps was work for nothing (2026-10-31 speed pass).
+    if (!refractionSupported()) return;
+    setRefract(true);
+    setTokens(lensTokens());
   }, []);
   useEffect(() => {
     const el = host.current;
-    if (!el) return;
+    if (!el || !refract) return;
     let frame = 0;
     const measure = () => {
       frame = 0;
@@ -79,7 +93,7 @@ export function GlassLens({
       ro.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [refract]);
 
   const r = size ? (radius === "full" ? Math.min(size.w, size.h) / 2 : Math.min(radius, Math.min(size.w, size.h) / 2)) : 0;
   const bz = size ? Math.min(bezel, Math.min(size.w, size.h) / 2 - 1) : bezel;

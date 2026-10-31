@@ -4,7 +4,9 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
+// ScrollTrigger runs a loop every frame from the moment it is switched on. It used to be switched on as soon as this file loaded,
+// which (through a shared bundle) also happened on Lessons, where nothing scrolls sideways (2026-10-31 speed pass). Now it is
+// switched on when the timeline appears and off again when the last one leaves.
 
 export interface ScrollTimelineStep {
   marker: string;
@@ -34,6 +36,8 @@ export function ScrollTimeline({
     const section = sectionRef.current;
     const track = trackRef.current;
     if (!section || !track) return;
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.enable();
 
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -76,7 +80,10 @@ export function ScrollTimeline({
       });
     });
 
-    return () => mm.revert();
+    return () => {
+      mm.revert();
+      if (ScrollTrigger.getAll().length === 0) ScrollTrigger.disable();
+    };
   }, [steps]);
 
   return (
