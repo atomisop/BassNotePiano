@@ -143,8 +143,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
   // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
   const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
 
-  // Like Instagram's bar: scrolling down narrows the pill (same height, icons closer together); scrolling up or reaching the top
-  // widens it again. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
+  // Like Instagram's bar: scrolling down shrinks the pill in both directions; scrolling up or reaching the top brings it back. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     let last = 0;
@@ -192,8 +191,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
           screen edges, a dark smoky tint over a heavy frost with a bright glass rim, five icon slots 10pt in from the ends, and an
           82 by 50pt light capsule behind the current tab that slides to the next one. Colors in .ig-dock in globals.css, one set per theme. */}
       <div
-        style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
-        className="ig-dock pointer-events-auto relative grid h-[58px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
+        // Scrolling down shrinks the whole pill (both ways, like Instagram's), anchored at the bottom so it stays above the home bar.
+        style={{
+          transform: narrow ? "scale(0.84)" : "scale(1)",
+          transformOrigin: "50% 100%",
+          transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
+        }}
+        className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
       >
         {items.map((item) => {
           const at = pendingHref ?? pathname;

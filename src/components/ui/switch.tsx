@@ -4,7 +4,6 @@ import * as React from "react"
 import * as SwitchPrimitives from "@radix-ui/react-switch"
 
 import { cn } from "@/lib/utils"
-import { GlassLens } from "@/components/ui/GlassLens"
 
 /**
  * A real toggle-switch primitive, track + animated thumb, on
@@ -18,21 +17,29 @@ import { GlassLens } from "@/components/ui/GlassLens"
  * (track + thumb, translate-x transition, focus ring, disabled state) onto
  * the primitive already in use everywhere else here.
  *
- * The off state goes through the same shadcn token bridge as `Button`/
- * `Input` (`bg-input`), so it retints correctly under every theme
- * automatically. The on/checked state reads the accent ramp directly
- * (`bg-amber-400`) instead of `bg-primary`, a toggle's checked state is
- * exactly the "selection state" signal green is back for, by direct
- * instruction, while `--primary` itself stays the neutral every real CTA
- * still reads (see globals.css's own `--primary` comment).
+ * Off is a visible track with a small orange dot; on is a full orange track with a white knob flipped to the right (see the
+ * constants below). Both states read in either theme because the off track is a tint of the theme's own text color.
  */
+// One look for every on/off switch in the app (2026-10-31, the owner's request): off is a visible track with a small orange dot on the left;
+// on is a full orange track with the dot grown into a white knob, flipped to the right. Hand-built switches draw the same thing with SwitchLook.
+const TRACK =
+  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 ring-1 ring-inset motion-safe:transition-colors motion-safe:duration-200"
+const TRACK_OFF = "bg-slate-50/12 ring-slate-50/20"
+const TRACK_ON = "bg-signal ring-signal"
+// Transform only: the knob is always 20px, shown at 45% (the dot) when off, so the flip is one smooth scale and slide.
+const KNOB =
+  "pointer-events-none block h-5 w-5 rounded-full motion-safe:transition-[transform,background-color] motion-safe:duration-300 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
+const KNOB_OFF = "translate-x-0 scale-[0.45] bg-signal"
+const KNOB_ON = "translate-x-5 scale-100 bg-white shadow-[0_1px_3px_rgb(0_0_0/0.35)]"
+
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
 >(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
-      "lg-ring peer relative inline-flex h-5 w-9 shrink-0 before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-[''] cursor-pointer items-center rounded-full bg-neu-base p-[2px] shadow-pressed-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+      TRACK,
+      "peer cursor-pointer before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-[''] data-[state=unchecked]:bg-slate-50/12 data-[state=unchecked]:ring-slate-50/20 data-[state=checked]:bg-signal data-[state=checked]:ring-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
       className
     )}
     {...props}
@@ -40,13 +47,21 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        "pointer-events-none relative block h-4 w-4 rounded-full ring-0 motion-safe:transition-[transform,background-color] [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)] data-[state=checked]:translate-x-4 data-[state=checked]:bg-signal/70 data-[state=unchecked]:translate-x-0"
+        KNOB,
+        "data-[state=unchecked]:translate-x-0 data-[state=unchecked]:scale-[0.45] data-[state=unchecked]:bg-signal data-[state=checked]:translate-x-5 data-[state=checked]:scale-100 data-[state=checked]:bg-white data-[state=checked]:shadow-[0_1px_3px_rgb(0_0_0/0.35)]"
       )}
-    >
-      <GlassLens radius="full" bezel={5} strength={5} />
-    </SwitchPrimitives.Thumb>
+    />
   </SwitchPrimitives.Root>
 ))
 Switch.displayName = SwitchPrimitives.Root.displayName
 
-export { Switch }
+/** The same switch drawn inside a hand-built control (a button that carries its own label and role="switch"). Decorative only. */
+function SwitchLook({ on, className }: { on: boolean; className?: string }) {
+  return (
+    <span aria-hidden className={cn(TRACK, on ? TRACK_ON : TRACK_OFF, className)}>
+      <span className={cn(KNOB, on ? KNOB_ON : KNOB_OFF)} />
+    </span>
+  )
+}
+
+export { Switch, SwitchLook }

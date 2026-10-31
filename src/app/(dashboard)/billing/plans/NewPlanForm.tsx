@@ -1,5 +1,6 @@
 "use client";
 
+import { SwitchLook } from "@/components/ui/switch";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
@@ -390,9 +391,7 @@ export function NewPlanForm({
                   className="tap flex items-center gap-2 rounded-full text-slate-200 disabled:opacity-50"
                 >
                   <span>{includeSelf ? "I'm learning too" : "Just for them"}</span>
-                  <span aria-hidden className={`flex h-5 w-9 items-center rounded-full p-0.5 transition ${includeSelf ? "bg-signal" : "bg-slate-600"}`}>
-                    <span className={`h-4 w-4 rounded-full bg-white transition-transform ${includeSelf ? "translate-x-4" : ""}`} />
-                  </span>
+                  <SwitchLook on={includeSelf} />
                 </button>
               </li>
             ) : (
