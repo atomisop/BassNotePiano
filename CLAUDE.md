@@ -315,7 +315,7 @@ proves nothing about the line being active or theirs; only a text code or a paid
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
-notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
+notification and show one at a time, **only on Home and at most one per slot in all (2026-10-30; the practice banner never shows, Home's hero says it)**, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
 Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
 (`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
 `/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
