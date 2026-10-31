@@ -14,6 +14,7 @@ import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
 import { AdminWeeklyTimeButton } from "@/components/admin/AdminWeeklyTimeButton";
 import { AdminAccountTools } from "@/components/admin/AdminAccountTools";
+import { AdminCancelAllButton } from "@/components/admin/AdminClassTools";
 import { AdminPlanSettingsButton, AdminRestartPlanButton } from "@/components/admin/AdminPlanSettingsButton";
 import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
@@ -45,7 +46,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const isOwner = isOwnerEmail(viewer?.user?.email);
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
   const planControls =
-    plan || isOwner ? (
+    plan || isOwner || nextBooking ? (
       <>
         {/* Group and parent plans too: each person on one has their own plan, paused, moved and rebuilt on its own. */}
         {plan && (
@@ -59,6 +60,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         )}
         {!plan && isOwner && lastCanceled && <AdminRestartPlanButton planId={lastCanceled.id} label={describePaymentPlan(lastCanceled.cadence, lastCanceled.term)} compact />}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}
+        <AdminCancelAllButton userId={params.userId} firstName={(profile.user.name ?? "student").split(" ")[0]} upcoming={profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).length} />
       </>
     ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [

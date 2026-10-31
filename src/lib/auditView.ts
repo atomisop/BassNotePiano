@@ -11,6 +11,8 @@ const LABELS: Record<string, string> = {
   "plan.pause": "Paused a plan",
   "plan.bill-date": "Moved a plan's next bill date",
   "plan.move-time": "Moved a plan to a new weekly time",
+  "booking.cancel-all": "Canceled all of a student's upcoming classes",
+  "studio.close-day": "Closed the studio for a day",
   "plan.length": "Changed a plan's length",
   "plan.price": "Set a plan's price per bill",
   "plan.waive": "Gave a plan's next 28 days free",
