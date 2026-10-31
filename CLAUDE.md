@@ -667,9 +667,11 @@ naming the account), including the rare old curriculum payment that is approved 
 card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).
 
 The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
-down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is the Instagram dock (#319, brought back 2026-10-31 at the owner's request after the flat matte
-versions):** a 53pt pill whose GlassLens frosts and bends the page, a smoky dark tint on Ink and a milky white one on Paper (`.app-dock.app-dock-lens` in globals.css), the BNP hand-drawn icons
-filled on the current tab, and scrolling down narrows it sideways (same height, icons closer) instead of shrinking it. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
+grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
+its `::before` in globals.css; milky white with near-black icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
+current tab that slides, bold 26px BNP icons (filled on the current tab), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
+down narrows it sideways. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
 

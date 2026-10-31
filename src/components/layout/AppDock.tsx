@@ -1,7 +1,5 @@
 "use client";
 
-import { GlassLens } from "@/components/ui/GlassLens";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,9 +41,10 @@ const DOCK_GLYPHS: Record<string, DockGlyph> = {
 
 function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean }) {
   const s = glyph.scale ?? 1;
-  const stroke = { stroke: "currentColor", strokeWidth: (active ? 2 : 1.75) / s, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  // Instagram's weight: bold rounded lines (about 2.2pt at this size), the current tab filled.
+  const stroke = { stroke: "currentColor", strokeWidth: 2 / s, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[23px] w-[23px]">
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[26px] w-[26px]">
       <g transform={s === 1 ? undefined : `translate(12 12) scale(${s}) translate(-12 -12)`}>
       {active && glyph.fill ? (
         <>
@@ -54,7 +53,7 @@ function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean })
           {glyph.line && <path d={glyph.line} {...stroke} />}
         </>
       ) : (
-        <path d={glyph.outline} {...stroke} strokeWidth={(active ? 2.4 : 1.75) / s} />
+        <path d={glyph.outline} {...stroke} strokeWidth={(active ? 2.4 : 2) / s} />
       )}
       </g>
     </svg>
@@ -198,17 +197,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
     <div
       role="navigation"
       aria-label="Primary"
-      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
+      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-[22px]"
     >
-      {/* A copy of Instagram's floating tab bar: a 53pt glass pill 20pt from the edges, five icon slots with no names, and a lighter
-          capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
-          words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
+      {/* An exact copy of Instagram's floating tab bar (measured from the owner's screenshots, 2026-10-31): a 58pt pill 22pt from the
+          screen edges, a dark smoky tint over a heavy frost with a bright glass rim, five icon slots 10pt in from the ends, and an
+          82 by 50pt light capsule behind the current tab that slides to the next one. Colors in .ig-dock in globals.css, one set per theme. */}
       <div
-        data-glass=""
         style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
-        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
+        className="ig-dock pointer-events-auto relative grid h-[58px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
       >
-        <GlassLens radius="full" bezel={24} strength={30} magnify={0.45} blur={7} />
         {items.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
@@ -243,17 +240,18 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
                 <motion.span
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-full"
+                  className="ig-dock-active pointer-events-none absolute -inset-x-[4.5px] inset-y-0 rounded-full"
                 />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
+                className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
               >
                 <DockGlyphIcon glyph={glyph} active={active} />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-unread" />}
+                {/* Instagram's unread mark: a small red dot at the icon's lower right. */}
+                {Boolean(badge) && <span className="ig-dock-dot pointer-events-none absolute -bottom-[3px] -right-[3px] h-[7px] w-[7px] rounded-full" />}
               </motion.span>
 
             </Link>
