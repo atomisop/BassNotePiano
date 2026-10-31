@@ -19,6 +19,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -153,11 +154,11 @@ function ResetPasswordForm() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={CHUNKED_CODE_LENGTH}
             required
             autoFocus
             aria-invalid={Boolean(error)}
-            value={code}
+            value={chunkCode(code)}
             onChange={(e) => {
               setCode(e.target.value.replace(/\D/g, ""));
               setError(null);

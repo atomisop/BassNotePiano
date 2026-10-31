@@ -21,6 +21,8 @@ import {
 import { addBillingCycles } from "@/lib/billingCycle";
 import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
+import { sendPaymentReceipt } from "@/lib/paymentReceipt";
+import { reportError } from "@/lib/reportError";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { assertRateLimit } from "@/lib/rateLimit";
@@ -888,15 +890,16 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     notificationBody = `Your payment for ${scaleGroup.code}: ${scaleGroup.title} was verified. It's unlocked now.`;
   }
 
+  // The bell notice only: the email that goes with an approval is the receipt below (the old plain "Payment approved" email,
+  // which had no amount, date or receipt number, would have been a second email about the same payment).
   await createNotification({
     userId: payment.userId,
     type: "PAYMENT_APPROVED",
     title: "Payment approved",
     body: notificationBody,
-    emailCategory: "payments",
-    alwaysEmail: true,
     ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
   });
+  await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
 
   // A completed plan is a distinct milestone worth its own bell entry, on
   // top of the ordinary "payment approved" above, same "more than one

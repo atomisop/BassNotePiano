@@ -44,11 +44,12 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
             </Link>
           ))}
         </div>
-        <details className="group ml-auto">
+        {/* Open, the form takes its own row under the button, so it never runs past the edge of the screen. */}
+        <details className="group ml-auto text-right open:w-full">
           <summary className="press inline-flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-control bg-neu-base px-3.5 text-small font-semibold text-slate-100 shadow-raised-low [&::-webkit-details-marker]:hidden">
             <Plus className="h-4 w-4" aria-hidden /> Add person
           </summary>
-          <Card className="mt-3 w-[min(36rem,calc(100vw-2rem))]">
+          <Card className="mt-3 ml-auto w-full max-w-xl text-left">
             <ContactForm submitLabel="Save" onSave={createContactAction} openAfterSave />
           </Card>
         </details>

@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { Bell, ChevronRight, CreditCard, Info, KeyRound, Laptop, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Smartphone, Tablet, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -815,10 +816,10 @@ function PasswordSection() {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="6-digit code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 autoFocus
                 required
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 disabled={submitting}
                 className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-signal/60 disabled:opacity-60"
@@ -1315,10 +1316,10 @@ function DangerZoneSection() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="6-digit code"
-              maxLength={6}
+              maxLength={CHUNKED_CODE_LENGTH}
               autoFocus
               required
-              value={code}
+              value={chunkCode(code)}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               disabled={deleting}
               className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-red-400/60 disabled:opacity-60"

@@ -6,7 +6,7 @@ import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageBubble } from "./MessageBubble";
 import { XIcon } from "@/components/ui/icons";
-import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, layoutThread } from "./threadUi";
+import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, ThreadSkeleton, clockLabel, layoutThread } from "./threadUi";
 import { scrollWithin } from "@/lib/scrollWithin";
 
 export interface MessageReplyPreview {
@@ -48,6 +48,7 @@ const MAX_COMPOSE_HEIGHT_PX = 140;
 export function ChatWindow({
   conversation,
   messages,
+  loading = false,
   currentUserId,
   onSend,
   onMinimize,
@@ -56,6 +57,8 @@ export function ChatWindow({
 }: {
   conversation: ConversationSummary;
   messages: MessageRow[];
+  /** True until this thread's first fetch has answered: shows placeholder bubbles, not an empty pane. */
+  loading?: boolean;
   currentUserId: string;
   onSend: (body: string, replyToId?: string) => Promise<boolean>;
   onMinimize: () => void;
@@ -177,11 +180,12 @@ export function ChatWindow({
           visibly slide over that header for an instant on iOS. Same fix
           (dashboard)/layout.tsx already applies to its own <main>. */}
       <div data-chat-scroll className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+        {loading && messages.length === 0 && <ThreadSkeleton />}
         {layoutThread(messages).map((meta, i) => {
           const m = messages[i];
           const isMine = m.senderId !== conversation.friendId;
           return (
-            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-3" : "mt-0.5"}>
+            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-4" : "mt-0.5"}>
               {meta.showDay && <DayDivider iso={m.createdAt} />}
             <MessageBubble
               id={`msg-${m.id}`}

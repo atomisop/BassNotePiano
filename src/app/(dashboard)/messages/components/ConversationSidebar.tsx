@@ -8,6 +8,7 @@ import { PinnedGrid } from "@/components/messaging/PinnedGrid";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { GroupList } from "./GroupList";
 import { groupTitle } from "./GroupListItem";
+import { ListSectionLabel } from "./ListSectionLabel";
 
 export function ConversationSidebar({
   conversations,
@@ -80,7 +81,9 @@ export function ConversationSidebar({
           )}
         </button>
       )}
+      {pinned.length > 0 && <ListSectionLabel>Pinned</ListSectionLabel>}
       <PinnedGrid pinned={pinned} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
+      {rest.length > 0 && <ListSectionLabel>Direct messages</ListSectionLabel>}
       <ConversationList conversations={rest} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
       {nothingFound && <p className="px-4 py-6 text-center text-small text-slate-500">Nothing matches that search.</p>}
       <GroupList groups={filteredGroups} activeGroupId={activeGroupId} onSelect={onSelectGroup} onNewGroup={onNewGroup} filtering={q !== ""} />

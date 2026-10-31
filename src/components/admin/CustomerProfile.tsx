@@ -701,6 +701,11 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
+                  {p.status === "VERIFIED" && (
+                    <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
+                      Receipt
+                    </Link>
+                  )}
                 </div>
               )}
               </ViewMore>

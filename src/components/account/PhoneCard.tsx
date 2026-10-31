@@ -10,6 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useResendCooldown } from "@/hooks/useResendCooldown";
 import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, savePhoneAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
 import { announceChange } from "@/lib/liveEvents";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 export interface PhoneState {
   phone: string | null;
@@ -190,10 +191,10 @@ export function PhoneCard({ state }: { state: PhoneState }) {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 aria-label="6-digit code"
                 placeholder="······"
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className={`${input} h-12 text-center font-mono tracking-[0.5em] font-semibold`}
               />

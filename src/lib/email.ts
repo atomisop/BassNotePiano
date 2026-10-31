@@ -7,6 +7,7 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import type { EmailCategory } from "@/lib/emailPreferences";
 import { unsubscribeLinks } from "@/lib/unsubscribe";
 import { recordEmail } from "@/lib/emailLog";
+import type { Receipt } from "@/lib/paymentReceiptRules";
 
 // Falls back to the actual verified Resend sending domain (a subdomain, not
 // the root domain; see the deployment notes) so a missing env var fails
@@ -634,6 +635,90 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     text,
     unsubscribePostUrl: links?.post,
   });
+}
+
+/**
+ * The receipt sent when a payment is approved (paymentReceipt.ts builds it). Same layout as the bill above: the amount large, then
+ * the one line item and its total, then the details a receipt is kept for (number, date, payer, method, what it covers). A plain
+ * "View receipt" button opens the printable copy in the app.
+ */
+export function renderPaymentReceiptEmail(
+  receipt: Receipt,
+  opts: { paymentId: string; note?: string; /** The owner's copy: who the original went to. */ copyOf?: { name: string; email: string } },
+): { subject: string; html: string; text: string } {
+  const receiptUrl = getAppUrl(`/billing/receipt/${opts.paymentId}`);
+  const rowBorder = `border-top:1px solid ${MAIL.line};`;
+  const cell = "padding:10px 14px;font-size:13px;";
+
+  const headlineHtml = `
+    <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">${
+      opts.copyOf ? `Your copy of the receipt sent to ${escapeHtml(opts.copyOf.name)} (${escapeHtml(opts.copyOf.email)}).` : "Thank you. Your payment is confirmed."
+    }</p>
+    <p style="margin:0;color:${MAIL.ink};font-size:38px;font-weight:700;line-height:1.1;">${receipt.amountLabel}</p>
+    <p style="margin:8px 0 22px;color:${MAIL.ink};font-size:16px;font-weight:600;">Paid ${escapeHtml(receipt.paidOn)}</p>
+  `;
+
+  // The item and its total, the way a till receipt reads.
+  const itemHtml = `
+    <table role="presentation" width="100%" style="margin:0 0 18px;border-collapse:collapse;">
+      <tr>
+        <td style="padding:0 0 10px;font-size:14px;color:${MAIL.ink};">${escapeHtml(receipt.item)}</td>
+        <td style="padding:0 0 10px;font-size:14px;color:${MAIL.ink};text-align:right;white-space:nowrap;">${receipt.amountLabel}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0 0;font-size:14px;font-weight:700;color:${MAIL.ink};${rowBorder}">Total paid</td>
+        <td style="padding:10px 0 0;font-size:14px;font-weight:700;color:${MAIL.ink};text-align:right;white-space:nowrap;${rowBorder}">${receipt.amountLabel}</td>
+      </tr>
+    </table>
+  `;
+
+  const detailsHtml = `
+    <table role="presentation" width="100%" style="margin:0 0 22px;border-collapse:separate;background:${MAIL.panel};border:1px solid ${MAIL.line};border-radius:10px;">
+      ${receipt.rows
+        .map(
+          (row, i) => `<tr>
+        <td style="${cell}color:${MAIL.muted};${i ? rowBorder : ""}">${escapeHtml(row.label)}</td>
+        <td style="${cell}color:${MAIL.ink};text-align:right;${i ? rowBorder : ""}">${escapeHtml(row.value)}</td>
+      </tr>`,
+        )
+        .join("")}
+    </table>
+  `;
+
+  const noteHtml = opts.note ? `<p style="margin:0 0 22px;">${escapeHtml(opts.note)}</p>` : "";
+  const buttonHtml = `<a href="${receiptUrl}" style="display:inline-block;padding:13px 22px;border-radius:10px;background:${MAIL.card};border:1px solid ${MAIL.line};color:${MAIL.ink};font-size:15px;font-weight:600;text-decoration:none;">View or print receipt</a>`;
+
+  const html = emailShell(opts.copyOf ? "Receipt copy" : receipt.title, `${headlineHtml}${itemHtml}${detailsHtml}${opts.copyOf ? "" : noteHtml}${buttonHtml}`, {
+    footerNote: opts.copyOf
+      ? "You're getting this because receipt copies are on in Admin > People > Staff. Switch them off there."
+      : "You're getting this because you made a payment to Bass Note Piano. Keep it for your records.",
+    preheader: `${receipt.amountLabel} paid ${receipt.paidOn}. Receipt ${receipt.number}.`,
+  });
+  const text = [
+    `Receipt ${receipt.number}`,
+    opts.copyOf ? `Your copy of the receipt sent to ${opts.copyOf.name} (${opts.copyOf.email}).` : `Thank you. Your payment is confirmed.`,
+    "",
+    `${receipt.item}: ${receipt.amountLabel}`,
+    `Total paid: ${receipt.amountLabel}`,
+    "",
+    ...receipt.rows.map((r) => `${r.label}: ${r.value}`),
+    ...(opts.note && !opts.copyOf ? ["", opts.note] : []),
+    "",
+    `View or print: ${receiptUrl}`,
+  ].join("\n");
+
+  const subject = opts.copyOf
+    ? `Copy: receipt ${receipt.number}, ${receipt.amountLabel} from ${opts.copyOf.name}`
+    : `Receipt ${receipt.number}: ${receipt.amountLabel} paid`;
+  return { subject, html, text };
+}
+
+export async function sendPaymentReceiptEmail(
+  to: string,
+  receipt: Receipt,
+  opts: { paymentId: string; note?: string; copyOf?: { name: string; email: string } },
+): Promise<void> {
+  await sendEmail({ to, ...renderPaymentReceiptEmail(receipt, opts) });
 }
 
 /** First-time-only welcome email, fired the moment email verification succeeds (see verify-email/actions.ts). */

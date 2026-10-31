@@ -3,6 +3,7 @@
 import type { GroupSummary } from "@/lib/groupMessages";
 import { GroupListItem } from "./GroupListItem";
 import { Plus } from "@/components/ui/appIcons";
+import { ListSectionLabel } from "./ListSectionLabel";
 
 export function GroupList({
   groups,
@@ -19,9 +20,9 @@ export function GroupList({
   filtering?: boolean;
 }) {
   return (
-    <div className="p-2">
-      <div className="flex items-center justify-between px-2 pb-1.5 pt-3">
-        <p className="text-small font-semibold uppercase tracking-caps text-slate-500">Groups</p>
+    <div>
+      <ListSectionLabel
+        action={
         <button
           type="button"
           onClick={onNewGroup}
@@ -30,12 +31,25 @@ export function GroupList({
         >
           <Plus className="h-4 w-4" />
         </button>
-      </div>
+        }
+      >
+        Groups
+      </ListSectionLabel>
 
       {groups.length === 0 ? (
-        !filtering && <p className="px-2 py-2 text-small text-slate-500">No group chats yet.</p>
+        !filtering && (
+          <button type="button" onClick={onNewGroup} className="tap mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-neu-base/60">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-700 text-slate-400">
+              <Plus className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-body text-slate-100">Start a group</span>
+              <span className="block text-small text-slate-500">Chat with a few friends at once</span>
+            </span>
+          </button>
+        )
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1 p-2">
           {groups.map((g) => (
             <GroupListItem key={g.id} group={g} active={activeGroupId === g.id} onSelect={() => onSelect(g.id)} />
           ))}

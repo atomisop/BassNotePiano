@@ -54,10 +54,10 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
   Pricing), People (Accounts, Applicants, Contacts, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
-  Activity). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
+  Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
   `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
-  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word, four tabs must fit
-  across a 320px phone). Pages keep their own filter pills for statuses.
+  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
+  across a 320px phone, checked in `tests/adminNav.test.ts`). Pages keep their own filter pills for statuses.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
@@ -570,6 +570,24 @@ Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAd
 ## Catching a broken change before CI (added 2026-10-27)
 
 A file that starts with `"use server"` may only export async functions and types; a constant or class there fails `next build` but not `tsc` or lint, so it once reached CI and emailed the owner. `tests/useServerExports.test.ts` reads every such file under `src` (part of `npm test`, so CI too). `.githooks/pre-push` runs the type check, lint and all tests before every push; turn it on once per checkout with `npm run hooks:on` (`git push --no-verify` skips it). Still run `npm run build` before opening a PR that touches routes or actions.
+
+## Payment receipts (added 2026-10-31)
+
+Approving a payment (`approveZellePayment`) keeps the bell notice but sends a real receipt instead of the old plain "Payment approved" email
+(`sendPaymentReceipt` in `src/lib/paymentReceipt.ts`, wording in `paymentReceiptRules.ts`, tested; email in `renderPaymentReceiptEmail`): the
+BNP code as the receipt number, amount, date, payer (a bank's all-capitals name is title-cased), method, account, what it was for, the 28 days
+it covers, classes added and the next bill. It goes out whatever the payments switch says (a payment result is the documented exception) and
+never to a banned account. The same receipt is a printable page at `/billing/receipt/[paymentId]` (the payer or an admin; anyone else gets a 404),
+linked from Payment history; only a VERIFIED payment has one. Admins reach every receipt from Billing > Payments and the student page's Money tab, and the owner is emailed
+a "Receipt copy" of each one while the owner-only `RECEIPT_COPY` alert is on (Admin > People > Staff; never for the owner's own payment).
+
+## Data page (added 2026-10-31)
+
+Admin > Setup > Data (`/admin/data`, owner only, read only; `src/lib/adminData.ts`): four views in `?tab=`. Scales: a checklist funnel per scale (open, module read,
+practice done, finished), stuck 21+ days, first-try quiz pass, average quiz, median days to finish, lessons finished, and a student by scale grid. People: every
+student's figures in four column groups (account, learning, classes and money, help), cards on phones. Collected: every kind of record kept, with live counts.
+Insights: fixed checks over the studio's own numbers (`buildInsights` in `adminInsightsRules.ts`, pure and tested), each a finding with its numbers and one thing to
+try; nothing is sent to Gemini or anywhere else, and a check needs `MIN_SAMPLE` (3) people before it speaks. Add a new check there with a test.
 
 ## Admin Overview (reworked 2026-10-30)
 

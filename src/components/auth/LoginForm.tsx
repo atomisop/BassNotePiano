@@ -16,6 +16,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, requestLoginCodeAction } from "@/app/(auth)/login/actions";
 import { startNavigation } from "@/lib/navigationState";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 /**
  * The email-and-password login form, shared by the /login page and the Log in
@@ -217,12 +218,12 @@ export function LoginForm({
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  pattern="[0-9]*"
-                  maxLength={6}
+                  pattern="[0-9 ]*"
+                  maxLength={CHUNKED_CODE_LENGTH}
                   required
                   autoFocus
                   aria-invalid={Boolean(error)}
-                  value={code}
+                  value={chunkCode(code)}
                   onChange={(e) => {
                     const next = e.target.value.replace(/\D/g, "").slice(0, 6);
                     setCode(next);
