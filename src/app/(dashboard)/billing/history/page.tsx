@@ -5,7 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
-import { BackLink, PageBack } from "@/components/ui/BackLink";
+import { PageBack } from "@/components/ui/BackLink";
 import { ChevronRight } from "@/components/ui/appIcons";
 
 const STATUS_LABEL: Record<string, string> = {

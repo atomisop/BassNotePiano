@@ -2,8 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getServerAuthSession } from "@/lib/auth";
 import { loadPaymentReceipt } from "@/lib/paymentReceipt";
-import { BackLink } from "@/components/ui/BackLink";
-import { ArrowLeftIcon } from "@/components/ui/icons";
+import { PageBack } from "@/components/ui/BackLink";
 import { PrintReceiptButton } from "@/components/billing/PrintReceiptButton";
 
 export const metadata = { title: "Receipt" };
@@ -20,10 +19,7 @@ export default async function ReceiptPage(props: { params: Promise<{ paymentId: 
 
   return (
     <div className="mx-auto max-w-xl">
-      <BackLink href="/billing/history" className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
+      <PageBack href="/billing/history" className="mb-4" />
 
       {/* The paper: the same on screen and on the printed page. */}
       <article aria-labelledby="receipt-title" className="print-only-receipt rounded-card bg-neu-base p-6 sm:p-8">
