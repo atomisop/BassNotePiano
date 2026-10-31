@@ -27,6 +27,9 @@ const etMinutes = (iso: string) => {
   return h * 60 + m;
 };
 
+/** How far back Reschedule reaches. */
+const PAST_DAYS = 180;
+
 const slotKey = (s: PickerSlot) => `${s.scheduleId}:${s.occurrenceDateMs}:${s.chunkIndex}`;
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 
@@ -39,7 +42,8 @@ function todayEtMs(): number {
 /**
  * The booking calendar the students use, for the admin's Move and Book boxes: tap a day, then one of its open weekly times.
  * With `allowAnyDay` every day for the next year can be tapped and a start time typed in, so a class can go anywhere
- * (it only has to not overlap another class); without it only days with an open weekly time light up.
+ * (it only has to not overlap another class); without it only days with an open weekly time light up. `allowPast` (Reschedule) also
+ * opens the last 180 days, every day of the week, so a class booked on the wrong day can be put on the day it really happened.
  */
 export function SlotCalendarPicker({
   slots,
@@ -52,6 +56,7 @@ export function SlotCalendarPicker({
   onPick,
   ownTime,
   onOwnTime,
+  allowPast = false,
 }: {
   slots: PickerSlot[];
   /** Classes already booked, shown on the chosen day so a custom time can be picked around them. */
@@ -65,14 +70,15 @@ export function SlotCalendarPicker({
   onPick: (slot: PickerSlot | null) => void;
   ownTime: string;
   onOwnTime: (time: string) => void;
+  allowPast?: boolean;
 }) {
   const occurrences = useMemo(() => {
     if (!allowAnyDay) return slots.map((s) => ({ occurrenceDateMs: s.occurrenceDateMs, isBooked: false }));
     const start = todayEtMs();
-    return Array.from({ length: 366 }, (_, i) => start + i * 86_400_000)
-      .filter((ms) => weekdays.includes(new Date(ms).getUTCDay()))
-      .map((ms) => ({ occurrenceDateMs: ms, isBooked: false }));
-  }, [slots, allowAnyDay, weekdays]);
+    const past = allowPast ? Array.from({ length: PAST_DAYS }, (_, i) => start - (PAST_DAYS - i) * 86_400_000) : [];
+    const ahead = Array.from({ length: 366 }, (_, i) => start + i * 86_400_000).filter((ms) => weekdays.includes(new Date(ms).getUTCDay()));
+    return [...past, ...ahead].map((ms) => ({ occurrenceDateMs: ms, isBooked: false }));
+  }, [slots, allowAnyDay, allowPast, weekdays]);
 
   const dayBooked = useMemo(() => (day ? booked.filter((b) => etDay(b.scheduledAt) === day).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : []), [booked, day]);
   const clash = useMemo(() => {
@@ -87,6 +93,7 @@ export function SlotCalendarPicker({
   return (
     <div>
       <BookingCalendar
+        allowPast={allowPast}
         occurrences={occurrences}
         selectedDateKey={day}
         onSelectDate={(key) => {
