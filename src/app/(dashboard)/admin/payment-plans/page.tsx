@@ -6,7 +6,6 @@ import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellatio
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
-import { PageBack } from "@/components/ui/BackLink";
 
 // "Overdue" isn't a real PaymentPlanStatus, it's derived (ACTIVE && past its
 // nextDueDate) in getAdminPaymentPlans, never stored. This filter just
@@ -39,11 +38,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
     const feedback = await getPlanCancellationFeedback();
     return (
       <div>
-        <div data-deck-header className="deck-header -mt-4 pt-4">
-          <PageBack href="/admin" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-          <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Plans</h1>
-        </div>
+        <h1 className="sr-only">Plans</h1>
         <p className="mt-2 text-small text-slate-500">
           {feedback.length} cancellation{feedback.length === 1 ? "" : "s"}
         </p>
@@ -73,11 +68,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment Plans</h1>
-      </div>
+      <h1 className="sr-only">Payment Plans</h1>
       <p className="mt-2 text-small text-slate-500">
         {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>

@@ -7,7 +7,6 @@ import { clearCspViolationsAction } from "./actions";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
-import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: System" };
 
@@ -42,11 +41,7 @@ export default async function AdminSecurityPage() {
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
-      </div>
+      <h1 className="sr-only">System</h1>
       {/* The site's machinery (moved here from the Overview 2026-10-30): the scheduled jobs and the page views, then the content
           security policy reports. */}
       <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

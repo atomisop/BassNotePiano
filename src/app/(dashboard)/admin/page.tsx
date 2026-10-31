@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getOverviewStats, getRevenueSummary, getSubscriptionStats } from "@/lib/admin";
-import { getServerAuthSession } from "@/lib/auth";
 import { getDueWeek } from "@/lib/adminDue";
 import { getTeachingDay, getWeekSchedule } from "@/lib/teachingToday";
 import { changeLabel } from "@/lib/revenueSummary";
@@ -32,14 +31,13 @@ export const metadata = { title: "Admin: Overview" };
 
 /**
  * The Overview (reworked 2026-10-30, owner: "what I really want to see is my schedule, how things are doing, and the money I get per
- * week and per month"): a greeting that stays put, the schedule (today in the hero, the next 7 days, today's classes), the money (this
+ * week and per month"): no greeting (the admin menu pins above it), the schedule (today in the hero, the next 7 days, today's classes), the money (this
  * week, this month, what comes in every 28 days, what is due) and a rough look at how students are doing. Everything else lives where
  * it belongs: automatic tasks and page views on Setup > Security, follow-ups on People > Accounts, payments to approve on Billing >
  * Payments, and what is waiting shows as dots on the admin menu and in the alerts button.
  */
 export default async function AdminOverviewPage() {
-  const [session, stats, subs, dueWeek, revenue, today, week] = await Promise.all([
-    getServerAuthSession(),
+  const [stats, subs, dueWeek, revenue, today, week] = await Promise.all([
     getOverviewStats(),
     getSubscriptionStats(),
     getDueWeek(),
@@ -47,10 +45,6 @@ export default async function AdminOverviewPage() {
     getTeachingDay(),
     getWeekSchedule(),
   ]);
-  const firstName = (session?.user?.name ?? "").trim().split(/\s+/)[0] || null;
-  const hourEt = Number(new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }));
-  const greeting = hourEt < 12 ? "morning" : hourEt < 18 ? "afternoon" : "evening";
-  const todayLabel = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" });
 
   const classesToday = today.slots.reduce((n, slot) => n + slot.students.length, 0);
   const upcoming = today.slots.find((s) => s.startsAt.getTime() > Date.now() - 45 * 60_000) ?? null;
@@ -61,11 +55,8 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      {/* The greeting stays put while the page scrolls under it, like every page's heading, so it sits above both columns. */}
-      <div data-deck-header className="deck-header -mt-4 pt-8 lg:pb-6">
-        <p className="text-small font-medium text-slate-400">{todayLabel}</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
-      </div>
+      {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
+      <h1 className="sr-only">Overview</h1>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         {/* Schedule */}

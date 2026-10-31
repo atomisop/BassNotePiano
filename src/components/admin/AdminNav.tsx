@@ -47,7 +47,7 @@ function useCurrentHub(): AdminHub {
  * steps aside and there is one menu, not two. Each one opens its first page; the section's other pages are the tabs drawn under
  * the menu on every admin page (`AdminSectionTabs`), so nothing pops out when the pointer rests on a row.
  */
-function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
+export function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   const current = useCurrentHub();
   return (
     <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-1 md:sticky md:top-0 md:flex md:self-start lg:hidden">
@@ -78,14 +78,14 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
  * Phones: one bar that names the section you are on and opens a sheet of the six. Nothing scrolls, and each row says what is inside
  * it, so nobody has to guess where a page went.
  */
-function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
+export function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
   const current = useCurrentHub();
   const [open, setOpen] = useState(false);
   const CurrentIcon = HUB_ICON[current.id];
   const waiting = ADMIN_HUBS.reduce((sum, hub) => sum + hubWaiting(hub, badges), 0);
 
   return (
-    <div className="mb-3 md:hidden">
+    <div className="mb-2 md:hidden">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -161,7 +161,7 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
   const { hub, page: currentPage } = located;
 
   return (
-    <nav aria-label={`${hub.label} pages`} className="mb-5 border-b border-(--neu-edge)">
+    <nav aria-label={`${hub.label} pages`} className="border-b border-(--neu-edge)">
       <ul className="flex">
         {hub.pages.map((page) => {
           const active = page.href === currentPage.href;

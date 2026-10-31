@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/Card";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { ContactForm } from "@/components/admin/ContactPanels";
 import { createContactAction } from "./actions";
-import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Contacts" };
 
@@ -35,11 +34,7 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <div data-deck-header className="deck-header -mt-4 pt-4">
-        <PageBack href="/admin" />
-        <p className="text-small font-medium text-slate-400">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Contacts</h1>
-      </div>
+      <h1 className="sr-only">Contacts</h1>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <div className={TAB_TRACK}>
