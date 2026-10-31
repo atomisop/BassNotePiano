@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
 import { AdminWeeklyTimeButton } from "@/components/admin/AdminWeeklyTimeButton";
+import { AdminAccountTools } from "@/components/admin/AdminAccountTools";
 import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
@@ -33,7 +34,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   // Discord, last seen, and what an admin already changed on the account.
   const [plan, discord, changes] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true } }),
-    prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true } }),
+    prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true, trialEndsAt: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
@@ -88,6 +89,11 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          accountTools={
+            isOwner ? (
+              <AdminAccountTools userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />
+            ) : null
+          }
           scheduler={
             <StudentScheduler
               studentId={params.userId}

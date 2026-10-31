@@ -25,6 +25,8 @@ export interface CustomerProfileProps {
   changeLog?: React.ReactNode;
   /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
   scheduler?: React.ReactNode;
+  /** Owner tools in the Account card (edit details, reset code, trial), built by the page. */
+  accountTools?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -144,6 +146,7 @@ export function CustomerProfile({
   profile,
   changeLog,
   scheduler,
+  accountTools,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -444,6 +447,7 @@ export function CustomerProfile({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+              {accountTools}
               {pendingAction === "curriculum" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess

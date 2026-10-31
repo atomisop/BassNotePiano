@@ -1,7 +1,8 @@
 "use server";
 
 import { withStudentNotice } from "@/lib/notifyScope";
-import { notifyAdmins } from "@/lib/adminNotifications";
+import { isOwnerEmail, notifyAdmins } from "@/lib/adminNotifications";
+import { AccountToolError, sendPasswordResetFor, setTrialFor, updateAccountDetails, type AccountDetails } from "@/lib/adminAccountTools";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -112,4 +113,45 @@ export async function unbanUserAction(targetUserId: string, notify = true): Prom
     revalidatePath("/", "layout");
     return { ok: true };
   });
+}
+
+type ToolResult = { ok: true; message: string } | { ok: false; error: string };
+
+// The owner only: a changed email is where sign-in codes go, so a staff account must not be able to move it.
+async function ownerTool(work: (adminId: string) => Promise<string>): Promise<ToolResult> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can do this." };
+  try {
+    const message = await work(admin.id);
+    revalidatePath("/", "layout");
+    return { ok: true, message };
+  } catch (err) {
+    if (err instanceof AccountToolError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+/** Corrects a student's name, email or phone. */
+export async function updateAccountDetailsAction(targetUserId: string, input: AccountDetails, notify = true): Promise<ToolResult> {
+  return withStudentNotice(notify, () =>
+    ownerTool(async (adminId) => {
+      const what = await updateAccountDetails(adminId, String(targetUserId), { name: String(input.name ?? ""), email: String(input.email ?? ""), phone: String(input.phone ?? "") });
+      return what ? `Saved the new ${what}` : "Nothing changed";
+    }),
+  );
+}
+
+/** Emails the student a password reset code. Always sent: it is what they asked for, so the Notify switch does not apply. */
+export async function sendPasswordResetAction(targetUserId: string): Promise<ToolResult> {
+  return ownerTool(async (adminId) => `Reset code sent to ${await sendPasswordResetFor(adminId, String(targetUserId))}`);
+}
+
+/** Gives or extends a free trial to `days` from now, or ends it (0). */
+export async function setTrialAction(targetUserId: string, days: number, notify = true): Promise<ToolResult> {
+  return withStudentNotice(notify, () =>
+    ownerTool(async (adminId) => {
+      const until = await setTrialFor(adminId, String(targetUserId), Number(days));
+      return until ? `Trial runs until ${until.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}` : "Trial ended";
+    }),
+  );
 }
