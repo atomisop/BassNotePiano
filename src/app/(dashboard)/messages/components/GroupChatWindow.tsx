@@ -7,7 +7,7 @@ import { MessageBubble } from "@/components/messaging/MessageBubble";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { XIcon } from "@/components/ui/icons";
 import { TypingIndicator as GroupTypingIndicator } from "@/components/ui/typing-indicator";
-import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, layoutThread } from "@/components/messaging/threadUi";
+import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, ThreadSkeleton, clockLabel, layoutThread } from "@/components/messaging/threadUi";
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
 import { scrollWithin } from "@/lib/scrollWithin";
@@ -39,6 +39,7 @@ export function GroupChatWindow({
   group,
   currentUserId,
   messages,
+  loading = false,
   onSend,
   onMinimize,
   onLeave,
@@ -49,6 +50,8 @@ export function GroupChatWindow({
   group: GroupSummary;
   currentUserId: string;
   messages: GroupMessageRow[];
+  /** True until this thread's first fetch has answered: shows placeholder bubbles, not an empty pane. */
+  loading?: boolean;
   onSend: (body: string, replyToId?: string) => Promise<boolean>;
   onMinimize: () => void;
   onLeave: () => Promise<void>;
@@ -197,11 +200,12 @@ export function GroupChatWindow({
           visibly slide over that header for an instant, same fix as
           ChatWindow's own message list. */}
       <div data-chat-scroll className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+        {loading && messages.length === 0 && <ThreadSkeleton />}
         {layoutThread(messages).map((meta, i) => {
           const m = messages[i];
           const isMine = m.senderId === currentUserId;
           return (
-            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-3" : "mt-0.5"}>
+            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-4" : "mt-0.5"}>
               {meta.showDay && <DayDivider iso={m.createdAt} />}
               <div className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
                 {!isMine &&

@@ -150,8 +150,8 @@ export function MessageBubble({
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 select-none rounded-2xl px-3.5 py-2 text-body [-webkit-touch-callout:none] md:select-text ${
             isMine
-              ? `bg-signal/16 text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
-              : `bg-neu-base text-slate-100 shadow-raised-low ${endsCluster ? "rounded-bl-md" : ""}`
+              ? `bg-signal/16 text-slate-50 ${endsCluster ? "rounded-br-md" : ""}`
+              : `bg-neu-base text-slate-100 ${endsCluster ? "rounded-bl-md" : ""}`
           }`}
         >
           {reply && (

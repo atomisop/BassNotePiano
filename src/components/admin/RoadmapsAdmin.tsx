@@ -51,7 +51,7 @@ export function RoadmapsAdmin({ roadmaps }: { roadmaps: AdminRoadmap[] }) {
         <RoadmapCard key={r.id} roadmap={r} first={i === 0} last={i === roadmaps.length - 1} />
       ))}
       {adding ? (
-        <Card className="p-4 md:p-5">
+        <Card className="min-w-0 p-4 md:p-5">
           <p className="text-body font-semibold text-slate-50">New roadmap</p>
           <RoadmapForm onDone={() => setAdding(false)} />
         </Card>
@@ -74,7 +74,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
   const meta = [r.level, r.instrument ?? "Any instrument"].filter(Boolean).join(" · ");
 
   return (
-    <Card className="p-4 md:p-5">
+    <Card className="min-w-0 p-4 md:p-5">
       <div className="flex items-start gap-3">
         <RoadmapArtwork artwork={r.artwork} className="h-14 w-14 shrink-0" />
         <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
       {error && <p className="mt-2 text-small text-red-300">{error}</p>}
       {editing && <RoadmapForm roadmap={r} onDone={() => setEditing(false)} />}
 
-      <ol className="mt-4 grid gap-1.5">
+      <ol className="mt-4 grid grid-cols-1 gap-1.5">
         {r.scales.map((s, i) => (
           <li key={s.id} className="flex items-center gap-3 rounded-xl bg-neu-base px-3 py-2 shadow-pressed-low">
             <span className="min-w-0 flex-1">

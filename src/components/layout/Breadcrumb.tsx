@@ -59,7 +59,7 @@ export function Breadcrumb() {
       {crumbs.map((crumb, i) => {
         const last = i === crumbs.length - 1;
         return (
-          <span key={crumb.href} className="flex min-w-0 items-center gap-1.5">
+          <span key={`${i}:${crumb.href}`} className="flex min-w-0 items-center gap-1.5">
             <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
             {last ? (
               <span aria-current="page" className="truncate font-medium text-slate-50">

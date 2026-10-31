@@ -140,6 +140,9 @@ export function ClassRegistrationForm() {
           disappears the moment you start typing. It also means tapping the
           label now focuses the field, which is the behaviour people expect on
           a phone where the targets are small. */}
+      {/* Two short groups instead of one long form: how to reach you, then what you want to learn. */}
+      <fieldset className="space-y-4">
+        <legend className="mb-3 text-body font-semibold text-slate-100">How to reach you</legend>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="reg-full-name" className="mb-1.5 block text-small font-medium text-slate-400">
@@ -192,6 +195,10 @@ export function ClassRegistrationForm() {
         />
       </div>
 
+      </fieldset>
+
+      <fieldset className="space-y-5 border-t border-(--neu-edge) pt-5">
+        <legend className="float-left mb-3 w-full text-body font-semibold text-slate-100">What you want to learn</legend>
       {/* These two are single-select sets of buttons, not free text, so the
           heading above them can't be a <label> (there is no one field to point
           at). role="group" + aria-labelledby is the equivalent: it tells a
@@ -239,6 +246,8 @@ export function ClassRegistrationForm() {
           className={`${fieldClass()} resize-none`}
         />
       </div>
+
+      </fieldset>
 
       <TurnstileWidget action="class_form" onToken={setTurnstileToken} resetKey={captchaReset} />
 

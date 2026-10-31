@@ -69,6 +69,8 @@ function MessagesInner({
   const [groupMessages, setGroupMessages] = useState<GroupMessageRow[]>([]);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [groupTypers, setGroupTypers] = useState<string[]>([]);
+  // Which thread's messages are on screen: until the open one has answered once, its pane shows placeholder bubbles.
+  const [loadedThread, setLoadedThread] = useState<string | null>(null);
 
   // activeChatId is a real, intentional null state (no auto-selecting the
   // first conversation), that's what makes the empty state and the mobile
@@ -142,6 +144,7 @@ function MessagesInner({
       previousConversationLastId.current = newest?.id ?? previous;
 
       setMessages(rows);
+      setLoadedThread(`dm:${friendId}`);
       // Seen means the chat is open AND on screen. A background tab keeps
       // polling but must not tell the sender "Seen" (see visibility effect below).
       if (document.visibilityState === "visible") {
@@ -172,6 +175,7 @@ function MessagesInner({
       previousGroupLastId.current = newest?.id ?? previous;
 
       setGroupMessages(rows);
+      setLoadedThread(`group:${groupId}`);
       if (document.visibilityState === "visible") {
         await markGroupReadAction(groupId);
         announceChange("messages");
@@ -337,6 +341,7 @@ function MessagesInner({
               key={active.friendId}
               conversation={active}
               messages={messages}
+              loading={loadedThread !== `dm:${active.friendId}`}
               currentUserId={session?.user?.id ?? ""}
               onSend={handleSend}
               onMinimize={handleMinimize}
@@ -349,6 +354,7 @@ function MessagesInner({
               group={activeGroup}
               currentUserId={session?.user?.id ?? ""}
               messages={groupMessages}
+              loading={loadedThread !== `group:${activeGroup.id}`}
               onSend={handleSendGroup}
               onMinimize={handleMinimize}
               onLeave={handleLeaveGroup}

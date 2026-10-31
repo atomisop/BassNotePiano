@@ -13,6 +13,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { startNavigation } from "@/lib/navigationState";
 import { confirmPhoneAction, resendPhoneCodeAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
+import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -119,11 +120,11 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={CHUNKED_CODE_LENGTH}
                 required
                 autoFocus
                 aria-invalid={Boolean(error)}
-                value={code}
+                value={chunkCode(code)}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className={cn("h-12 text-center font-mono text-body tracking-[0.5em] font-semibold", error && fieldInvalid)}
                 placeholder="······"
