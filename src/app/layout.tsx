@@ -178,13 +178,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
+        {/* Marks this visit for the opening animation (installed app, phone, first load of a launch) before first paint. It is first in the head so it runs before the stylesheets can hold it back. */}
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: LAUNCH_SPLASH_SCRIPT }} />
         {/* Applies the saved theme before first paint. Without this the page
             renders in the default theme and then snaps to the stored one,
             the classic dark-mode flash. Has to be inline and synchronous;
             anything deferred is already too late. */}
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
-        {/* Marks this visit for the opening animation (installed app, phone, first load of a launch) before first paint. */}
-        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: LAUNCH_SPLASH_SCRIPT }} />
       </head>
       <body className="min-h-screen bg-ground font-sans text-slate-100 antialiased">
         {/* The opening animation of the installed phone app. Hidden unless the script above marked this visit; see globals.css. */}

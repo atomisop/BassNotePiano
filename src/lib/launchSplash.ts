@@ -1,3 +1,5 @@
+import { SPLASH_MARK_DATA_URI } from "@/lib/launchSplashMark";
+
 /**
  * The opening animation of the installed app (Add to Home Screen) on a phone.
  *
@@ -29,6 +31,10 @@ export const LAUNCH_SPLASH_SCRIPT = `
     }
     try { window.sessionStorage.setItem('${SPLASH_STORAGE_KEY}', '1'); } catch (e) {}
     document.documentElement.setAttribute('data-splash', '1');
+    // Painted before the stylesheet arrives: black behind and the logo in place, so the phone's launch image never gives way to white.
+    var st = document.createElement('style');
+    st.textContent = 'html[data-splash]{background:#000}html[data-splash] .bnp-splash-mark{background-image:url(${SPLASH_MARK_DATA_URI})}';
+    document.head.appendChild(st);
   } catch (e) {}
 })();
 `.trim();
