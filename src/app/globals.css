@@ -2618,22 +2618,24 @@ body {
   height: 8rem;
   background: rgb(var(--ground));
 }
-/* Below the heading: what scrolls under it fades and softens gradually over 3rem (a soft blur that eases out with the fade), instead
-   of meeting a hard edge. It eases in when the heading pins rather than appearing at once. */
+/* The pinned heading becomes a soft card (2026-11-01, owner: the blur under the greeting looked broken and did not fade in smoothly). While
+   pinned, a rounded card fades in behind the heading with a faint edge and a wide, soft shadow below it, so what scrolls underneath
+   meets a gentle halo instead of a band of blur that appears at once. It sits above the ground fill (a border-image is painted before
+   negative z-index children) and below the heading's own content. */
 .deck-header::after {
-  top: 100%;
-  height: 3rem;
-  background: linear-gradient(
-    rgb(var(--ground)) 0%,
-    rgb(var(--ground) / 0.82) 22%,
-    rgb(var(--ground) / 0.52) 48%,
-    rgb(var(--ground) / 0.22) 74%,
-    rgb(var(--ground) / 0) 100%
-  );
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  -webkit-mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
-  mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
+  top: 0.25rem;
+  bottom: 0.25rem;
+  inset-inline: -0.75rem;
+  z-index: -1;
+  border-radius: 16px;
+  background: rgb(var(--neu-base, 22 22 23) / 0.92);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.18);
+  transition: opacity 380ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+[data-mode="light"] .deck-header::after {
+  border-color: rgb(0 0 0 / 0.06);
+  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.22), 0 2px 6px rgb(0 0 0 / 0.08);
 }
 .deck-header[data-stuck]::before,
 .deck-header[data-stuck]::after {
