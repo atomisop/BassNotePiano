@@ -8,11 +8,12 @@ import { PillCTA } from "@/components/ui/pill-cta";
 import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
-// Served from the site itself (Netlify's CDN), re-encoded 2026-10-31: the original was a 17 MB 4K HEVC file (HEVC does not even play
-// in Chrome on many devices). Now H.264 at 1080p for computers (2.3 MB) and 720p for phones (1.2 MB), looking the same under the dark
-// gradient and grain, plus a still poster so the first frame shows at once instead of a black box while the video loads.
-const HERO_VIDEO_LARGE = "/marketing/hero-piano-1080.mp4";
-const HERO_VIDEO_SMALL = "/marketing/hero-piano-720.mp4";
+// The original 4K file, served from R2 (the same object storage the app uses for lesson files and avatars, see lib/storage.ts).
+// A smaller re-encode served from the site (2026-10-31) looked visibly softer, so the owner chose the original back (2026-11-01).
+// It is HEVC (10-bit), which Firefox and many Windows and Android browsers cannot play, so those fall back to the 1080p H.264 copy.
+// The still poster stays, so the first frame shows at once while the video loads.
+const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/1788454184967-hero-piano.mp4";
+const HERO_VIDEO_FALLBACK = "/marketing/hero-piano-1080.mp4";
 const HERO_POSTER = "/marketing/hero-piano-poster.webp";
 
 /**
@@ -87,8 +88,8 @@ export function Hero() {
           poster={HERO_POSTER}
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         >
-          <source media="(min-width: 1024px)" src={HERO_VIDEO_LARGE} type="video/mp4" />
-          <source src={HERO_VIDEO_SMALL} type="video/mp4" />
+          <source src={HERO_VIDEO_URL} type='video/mp4; codecs="hvc1.2.4.L150.B0"' />
+          <source src={HERO_VIDEO_FALLBACK} type="video/mp4" />
         </video>
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
