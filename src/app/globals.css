@@ -2746,13 +2746,13 @@ html[data-offline] [data-top-banner] {
   position: fixed;
   inset: 0;
   z-index: 2147483000;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
-  background: rgb(var(--ground));
+  /* Always true black with the logo dead centre, exactly like the phone's launch images (public/splash), so the hand-over from the
+     phone's own launch screen to this layer shows no change at all. */
+  background: #000;
   pointer-events: auto;
-  animation: bnp-splash-failsafe 4s linear forwards;
+  animation: bnp-splash-failsafe 6s linear forwards;
 }
 html[data-splash] .bnp-splash {
   display: flex;
@@ -2769,8 +2769,8 @@ html[data-splash] .bnp-splash {
   height: 112px;
   border-radius: 9999px;
   background: url("/icon.png") center / cover no-repeat;
-  opacity: 0;
-  animation: bnp-splash-mark-in 560ms cubic-bezier(0.23, 1, 0.32, 1) 60ms forwards;
+  /* Already there on the first frame; it only breathes slowly. */
+  animation: bnp-splash-breathe 3200ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
 }
 .bnp-splash-ring {
   position: absolute;
@@ -2778,32 +2778,38 @@ html[data-splash] .bnp-splash {
   border-radius: 9999px;
   border: 2px solid rgb(var(--signal, 255 138 76));
   opacity: 0;
-  animation: bnp-splash-ring 760ms cubic-bezier(0.23, 1, 0.32, 1) 380ms forwards;
+  animation: bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 300ms 1 forwards, bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 1700ms 1 forwards;
 }
 .bnp-splash-word {
+  position: absolute;
+  top: calc(50% + 56px + 28px);
+  left: 0;
+  right: 0;
+  text-align: center;
   margin: 0;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgb(var(--c-s-50, 245 245 245) / 0.72);
+  color: rgb(245 245 245 / 0.72);
   opacity: 0;
-  animation: bnp-splash-word-in 480ms cubic-bezier(0.23, 1, 0.32, 1) 300ms forwards;
+  animation: bnp-splash-word-in 800ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards;
 }
 .bnp-splash.is-leaving {
-  animation: bnp-splash-out 280ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: bnp-splash-out 320ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 .bnp-splash.is-leaving .bnp-splash-stage {
   transform: scale(1.06);
-  transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-@keyframes bnp-splash-mark-in {
-  from { opacity: 0; transform: scale(0.9) translateY(6px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+@keyframes bnp-splash-breathe {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.07); }
+  100% { transform: scale(1.03); }
 }
 @keyframes bnp-splash-ring {
   0% { opacity: 0.55; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.55); }
+  100% { opacity: 0; transform: scale(1.7); }
 }
 @keyframes bnp-splash-word-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -2818,8 +2824,8 @@ html[data-splash] .bnp-splash {
   100% { opacity: 0; visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bnp-splash-mark { animation: bnp-splash-fade 200ms ease forwards; }
-  .bnp-splash-word { animation: bnp-splash-fade 200ms ease 80ms forwards; }
+  .bnp-splash-mark { animation: none; }
+  .bnp-splash-word { animation: bnp-splash-fade 400ms ease 300ms forwards; }
   .bnp-splash-ring { display: none; }
   .bnp-splash.is-leaving .bnp-splash-stage { transform: none; transition: none; }
   .bnp-splash.is-leaving { animation-duration: 200ms; }

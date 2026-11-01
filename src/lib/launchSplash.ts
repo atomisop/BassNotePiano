@@ -9,9 +9,9 @@
  */
 
 /** The splash stays at least this long (from the start of the page load), so the animation reads as a whole even on a fast phone. */
-export const SPLASH_MIN_MS = 1100;
+export const SPLASH_MIN_MS = 3200;
 /** How long the way out takes. Keep in step with `bnp-splash-out` in globals.css. */
-export const SPLASH_EXIT_MS = 280;
+export const SPLASH_EXIT_MS = 320;
 
 export const SPLASH_STORAGE_KEY = "bnp-splash-shown";
 
