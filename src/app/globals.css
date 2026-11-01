@@ -2733,3 +2733,98 @@ html[data-offline] [data-top-banner] {
     padding: 0 !important;
   }
 }
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------
+   Opening animation of the installed phone app (see lib/launchSplash.ts). Only drawn while the boot script has set html[data-splash].
+   The mark settles in with a soft ring struck once behind it (a note played), the name follows, then the whole layer lifts away when
+   the app is ready (LaunchSplash adds .is-leaving). Opacity and transform only. If the script that lifts it never runs, the failsafe
+   animation hides it by itself, so it can never keep the app covered.
+   ------------------------------------------------------------------------------------------------------------------------------ */
+.bnp-splash {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: rgb(var(--ground));
+  pointer-events: auto;
+  animation: bnp-splash-failsafe 4s linear forwards;
+}
+html[data-splash] .bnp-splash {
+  display: flex;
+}
+.bnp-splash-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+}
+.bnp-splash-mark {
+  width: 112px;
+  height: 112px;
+  border-radius: 9999px;
+  background: url("/icon.png") center / cover no-repeat;
+  opacity: 0;
+  animation: bnp-splash-mark-in 560ms cubic-bezier(0.23, 1, 0.32, 1) 60ms forwards;
+}
+.bnp-splash-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgb(var(--signal, 255 138 76));
+  opacity: 0;
+  animation: bnp-splash-ring 760ms cubic-bezier(0.23, 1, 0.32, 1) 380ms forwards;
+}
+.bnp-splash-word {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(var(--c-s-50, 245 245 245) / 0.72);
+  opacity: 0;
+  animation: bnp-splash-word-in 480ms cubic-bezier(0.23, 1, 0.32, 1) 300ms forwards;
+}
+.bnp-splash.is-leaving {
+  animation: bnp-splash-out 280ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+.bnp-splash.is-leaving .bnp-splash-stage {
+  transform: scale(1.06);
+  transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes bnp-splash-mark-in {
+  from { opacity: 0; transform: scale(0.9) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes bnp-splash-ring {
+  0% { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+@keyframes bnp-splash-word-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bnp-splash-out {
+  from { opacity: 1; }
+  to { opacity: 0; visibility: hidden; }
+}
+@keyframes bnp-splash-failsafe {
+  0%, 92% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bnp-splash-mark { animation: bnp-splash-fade 200ms ease forwards; }
+  .bnp-splash-word { animation: bnp-splash-fade 200ms ease 80ms forwards; }
+  .bnp-splash-ring { display: none; }
+  .bnp-splash.is-leaving .bnp-splash-stage { transform: none; transition: none; }
+  .bnp-splash.is-leaving { animation-duration: 200ms; }
+}
+@keyframes bnp-splash-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
