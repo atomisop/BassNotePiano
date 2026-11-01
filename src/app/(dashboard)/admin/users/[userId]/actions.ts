@@ -3,6 +3,7 @@
 import { withStudentNotice } from "@/lib/notifyScope";
 import { isOwnerEmail, notifyAdmins } from "@/lib/adminNotifications";
 import { AccountToolError, listLiveCreditGrants, sendPasswordResetFor, setCreditGrantExpiry, setTrialFor, updateAccountDetails, type AccountDetails, type LiveCreditGrant } from "@/lib/adminAccountTools";
+import { PaymentEditError, editRecordedPayment } from "@/lib/adminPaymentTools";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -126,7 +127,7 @@ async function ownerTool(work: (adminId: string) => Promise<string>): Promise<To
     revalidatePath("/", "layout");
     return { ok: true, message };
   } catch (err) {
-    if (err instanceof AccountToolError) return { ok: false, error: err.message };
+    if (err instanceof AccountToolError || err instanceof PaymentEditError) return { ok: false, error: err.message };
     throw err;
   }
 }
@@ -170,4 +171,12 @@ export async function setCreditExpiryAction(targetUserId: string, grantId: strin
       return label === "never" ? "Those credits never expire now" : `Those credits now expire ${label}`;
     }),
   );
+}
+
+/** Corrects an approved payment's amount or the day it arrived. Only the record changes; the student is not told. */
+export async function editPaymentAction(paymentId: string, amountCents: number, paidOn: string): Promise<ToolResult> {
+  return ownerTool(async (adminId) => {
+    const { amount, paidOn: day } = await editRecordedPayment(adminId, String(paymentId), { amountCents: Number(amountCents), paidOn: String(paidOn) });
+    return `Payment saved: ${amount} on ${new Date(`${day}T17:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}`;
+  });
 }

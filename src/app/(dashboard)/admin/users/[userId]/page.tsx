@@ -16,6 +16,7 @@ import { AdminWeeklyTimeButton } from "@/components/admin/AdminWeeklyTimeButton"
 import { AdminAccountTools } from "@/components/admin/AdminAccountTools";
 import { AdminCreditExpiryButton } from "@/components/admin/AdminCreditExpiryButton";
 import { AdminCancelAllButton } from "@/components/admin/AdminClassTools";
+import { AdminGroupButton, AdminParentLinksButton } from "@/components/admin/AdminGroupTools";
 import { AdminPlanSettingsButton, AdminRestartPlanButton } from "@/components/admin/AdminPlanSettingsButton";
 import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
@@ -59,6 +60,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         {plan && isOwner && !planPaused && (
           <AdminPlanSettingsButton planId={plan.id} term={plan.term} priceCents={plan.installmentAmountCents} installmentsPaid={plan.installmentsPaid} hasDiscount={(discountRow?.percent ?? 0) > 0} compact />
         )}
+        {plan?.familyGroupId && isOwner && <AdminGroupButton groupId={plan.familyGroupId} planId={plan.id} userId={params.userId} />}
         {!plan && isOwner && lastCanceled && <AdminRestartPlanButton planId={lastCanceled.id} label={describePaymentPlan(lastCanceled.cadence, lastCanceled.term)} compact />}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}
         <AdminCancelAllButton userId={params.userId} firstName={(profile.user.name ?? "student").split(" ")[0]} upcoming={profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).length} />
@@ -100,9 +102,10 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         <CustomerProfile
           profile={profile}
           creditTools={isOwner ? <AdminCreditExpiryButton key="credit-tools" userId={params.userId} /> : null}
+          canEditPayments={isOwner}
           accountTools={
             isOwner ? (
-              <AdminAccountTools key="account-tools" userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />
+              [<AdminAccountTools key="account-tools" userId={params.userId} name={profile.user.name ?? ""} email={profile.user.email} phone={profile.user.phone ?? ""} trialEndsAt={discord?.trialEndsAt && discord.trialEndsAt > new Date() ? discord.trialEndsAt.toISOString() : null} />, <AdminParentLinksButton key="parent-links" userId={params.userId} />]
             ) : null
           }
           scheduler={

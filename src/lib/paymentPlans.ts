@@ -1469,7 +1469,7 @@ function money(cents: number): string {
 }
 
 /** A family member left and one person is left: that person pays the solo price from their next bill, and is told now. */
-async function noticeFamilyShrank(groupId: string): Promise<void> {
+export async function noticeFamilyShrank(groupId: string): Promise<void> {
   const remaining = await prisma.paymentPlan.findMany({
     where: { familyGroupId: groupId, status: "ACTIVE", installmentsPaid: { gt: 0 } },
     select: { userId: true, cadence: true, term: true, installmentAmountCents: true },

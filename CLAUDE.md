@@ -709,3 +709,12 @@ plus **Credit expiry** in the Class credits card (`adminAccountTools.ts`). Any a
 Reserved > **Close a day** (`adminClassTools.ts`: cancels the day's classes and keeps the day as a "Studio closed" owner reservation, released
 there to reopen). All take the Notify switch except the reset code, which always goes. Elements a server page passes into a client
 component's slot prop need a `key`, or React warns in development.
+
+Owner only, in `adminGroupTools.ts`: **Group** (Scheduler tab, `AdminGroupButton`) lists who is on a group or parent plan and who pays,
+moves one person onto their own plan (`separateFromGroup`: same time, term and credits, solo price with their discount from the next bill,
+their unpaid group bill closed; a group payer must hand over first) and changes the payer (`changeGroupPayer`: a running member of a group
+plan, or for a parent plan a parent linked to every child). **Parent links** (Account card, `AdminParentLinksButton`) shows a person's links
+both ways and links a parent and child directly as ACCEPTED (both told, the child can still end it) or ends one. **Fix** on an approved
+payment in the Money tab (`adminPaymentTools.ts`) corrects its amount or day (`reviewedAt`, noon Eastern) without touching what it paid
+for. Any admin: lessons can be renamed (`updateLessonText`) and announcements edited (`updateAnnouncement`, which also rewrites the bell
+entries still carrying the old words).

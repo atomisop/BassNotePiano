@@ -18,6 +18,7 @@ import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -29,6 +30,8 @@ export interface CustomerProfileProps {
   accountTools?: React.ReactNode;
   /** Owner tool in the Class credits card (when credits expire), built by the page. */
   creditTools?: React.ReactNode;
+  /** The owner can correct an approved payment's amount or day. */
+  canEditPayments?: boolean;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -150,6 +153,7 @@ export function CustomerProfile({
   scheduler,
   accountTools,
   creditTools,
+  canEditPayments = false,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -712,6 +716,7 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
+                  {p.status === "VERIFIED" && canEditPayments && <AdminEditPaymentButton paymentId={p.id} amountCents={p.amountCents} paidAt={p.reviewedAt ?? p.updatedAt} />}
                   {p.status === "VERIFIED" && (
                     <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
                       Receipt

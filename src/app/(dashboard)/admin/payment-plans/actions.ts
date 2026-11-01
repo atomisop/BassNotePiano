@@ -12,6 +12,7 @@ import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, 
 import { runOnce } from "@/lib/idempotency";
 import { restartPlan, setPlanLength, setPlanPrice, waiveNextBill } from "@/lib/adminPlanTools";
 import type { PaymentPlanTerm } from "@prisma/client";
+import { adminLinkParent, adminUnlinkParent, changeGroupPayer, getGroupView, listLinksFor, separateFromGroup, type AdminLinkRow, type GroupView } from "@/lib/adminGroupTools";
 import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 
@@ -259,4 +260,39 @@ export async function restartPlanAction(planId: string, notify = true): Promise<
     const { keptTime } = await restartPlan(adminId, String(planId));
     return keptTime ? "Plan restarted with its weekly time" : "Plan restarted. Its weekly time was taken, so pick a new one with Weekly time";
   });
+}
+
+/** Who is on this group or parent plan, who pays, and who could pay instead. Owner only. */
+export async function groupViewAction(groupId: string): Promise<{ ok: true; view: GroupView } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can do this." };
+  try {
+    return { ok: true, view: await getGroupView(String(groupId)) };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+export async function separateFromGroupAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Moved onto their own plan, ${await separateFromGroup(adminId, String(planId))} a bill`);
+}
+
+export async function changeGroupPayerAction(groupId: string, newPayerId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `${await changeGroupPayer(adminId, String(groupId), String(newPayerId))} pays for the group now`);
+}
+
+export async function listParentLinksAction(userId: string): Promise<AdminLinkRow[]> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return [];
+  return listLinksFor(String(userId));
+}
+
+export async function linkParentAction(userId: string, otherEmail: string, userIs: "parent" | "child", notify = true): Promise<PlanToolResult> {
+  if (userIs !== "parent" && userIs !== "child") return { ok: false, error: "Pick parent or child." };
+  return ownerPlanTool(notify, async (adminId) => `Linked to ${await adminLinkParent(adminId, String(userId), String(otherEmail), userIs)}`);
+}
+
+export async function unlinkParentAction(userId: string, linkId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Link with ${await adminUnlinkParent(adminId, String(userId), String(linkId))} ended`);
 }
