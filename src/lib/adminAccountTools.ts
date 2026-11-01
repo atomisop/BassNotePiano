@@ -7,6 +7,8 @@ import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
+import { sendEmailChangedEmail } from "@/lib/email";
+import { withStudentNotice } from "@/lib/notifyScope";
 import { etWallTimeToUtc } from "@/lib/classSchedule";
 import { formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 
@@ -18,6 +20,9 @@ import { formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 export class AccountToolError extends Error {}
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** "jane@gmail.com" to "j***@gmail.com", for the notice that goes to the old address. */
+const maskEmail = (email: string) => email.replace(/^(.)[^@]*/, "$1***");
 const DAY = 86_400_000;
 
 export interface AccountDetails {
@@ -66,7 +71,10 @@ export async function updateAccountDetails(adminId: string, userId: string, inpu
   }
   if (changed.length === 0) return null;
 
-  await prisma.user.update({ where: { id: userId }, data });
+  // A new email signs the account out everywhere (open sessions still carry the old address), and the OLD address is told even when the
+  // Notify switch is off, so a student whose email was changed on someone else's request can object before a reset code reaches the new one.
+  await prisma.user.update({ where: { id: userId }, data: { ...data, ...(data.email !== undefined ? { sessionVersion: { increment: 1 } } : {}) } });
+  if (data.email !== undefined) await withStudentNotice(true, () => sendEmailChangedEmail(user.email, user.name, maskEmail(email))).catch(() => undefined);
   const what = changed.length === 1 ? changed[0] : `${changed.slice(0, -1).join(", ")} and ${changed[changed.length - 1]}`;
   const detail = [data.name !== undefined && `name "${user.name ?? ""}" to "${name}"`, data.email !== undefined && `email ${user.email} to ${email}`, "phone" in data && `phone ${user.phone ? `ending ${user.phone.slice(-4)}` : "none"} to ${data.phone ? `ending ${data.phone.slice(-4)}` : "none"}`].filter(Boolean).join("; ");
   await logAudit({ actorId: adminId, action: "user.details", targetType: "User", targetId: userId, detail: `Changed ${detail}` }).catch(() => undefined);

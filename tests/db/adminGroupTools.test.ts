@@ -20,11 +20,11 @@ async function account(label: string, role: "STUDENT" | "ADMIN" = "STUDENT") {
 
 async function group(kind: "FAMILY" | "PARENT", size: number) {
   const admin = await account("admin", "ADMIN");
-  const people = [];
+  const people: Awaited<ReturnType<typeof account>>[] = [];
   for (let i = 0; i < size; i++) people.push(await account(`member${i}`));
   const g = await prisma.familyPlanGroup.create({ data: { payerId: people[0].id, kind } });
   groupIds.push(g.id);
-  const plans = [];
+  const plans: Awaited<ReturnType<typeof prisma.paymentPlan.create>>[] = [];
   for (const p of people) {
     plans.push(
       await prisma.paymentPlan.create({

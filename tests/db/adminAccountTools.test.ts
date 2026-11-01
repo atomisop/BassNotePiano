@@ -34,6 +34,7 @@ describe("the studio's account fixes", () => {
     expect(after.email).toBe(newEmail);
     expect(after.emailVerified).toBeNull();
     expect(after.phone).toBe("+12125557788");
+    expect(after.sessionVersion).toBe(student.sessionVersion + 1);
     expect(await prisma.notification.count({ where: { userId: student.id, type: "ACCOUNT_UPDATE" } })).toBe(1);
     expect(await prisma.auditLog.count({ where: { action: "user.details", targetId: student.id } })).toBe(1);
     expect(await updateAccountDetails(admin.id, student.id, { name: "Kokeb Kebret", email: newEmail, phone: "+12125557788" })).toBeNull();

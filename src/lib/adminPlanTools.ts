@@ -97,6 +97,8 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
   if (!plan || plan.status !== "CANCELED") throw new PaymentPlanError("Only a canceled plan can be restarted.");
   if (plan.installmentsPaid >= plan.termMonths) throw new PaymentPlanError("Every bill of this plan was already paid. Start a new plan with the plan builder instead.");
+  // A group or parent plan's bills belong to its payer and its group rate, which may be gone by now; start a fresh solo plan instead.
+  if (plan.familyGroupId) throw new PaymentPlanError("This plan was part of a group or parent plan. Start a new plan with the plan builder instead.");
   const other = await prisma.paymentPlan.findFirst({ where: { userId: plan.userId, status: "ACTIVE" }, select: { id: true } });
   if (other) throw new PaymentPlanError("This student already has a running plan. Cancel it first.");
   const user = await prisma.user.findUnique({ where: { id: plan.userId }, select: { bannedAt: true } });

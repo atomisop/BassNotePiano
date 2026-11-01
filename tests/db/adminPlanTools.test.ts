@@ -94,4 +94,13 @@ describe("the studio's plan tools", () => {
     await expect(restartPlan(admin.id, second.id)).rejects.toThrow(/already has a running plan/);
     expect(student.id).toBeTruthy();
   });
+
+  it("will not restart a plan that was part of a group or parent plan", async () => {
+    const { admin, student, plan } = await setup({ status: "CANCELED" });
+    const group = await prisma.familyPlanGroup.create({ data: { payerId: student.id } });
+    await prisma.paymentPlan.update({ where: { id: plan.id }, data: { familyGroupId: group.id } });
+    await expect(restartPlan(admin.id, plan.id)).rejects.toThrow(/part of a group/);
+    await prisma.paymentPlan.update({ where: { id: plan.id }, data: { familyGroupId: null } });
+    await prisma.familyPlanGroup.delete({ where: { id: group.id } });
+  });
 });
