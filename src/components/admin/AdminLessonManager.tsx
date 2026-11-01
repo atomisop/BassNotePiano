@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Trash2 } from "@/components/ui/appIcons";
+import { ChevronDown, ChevronUp, Pencil, Trash2 } from "@/components/ui/appIcons";
+import { Dialog } from "@/components/ui/Dialog";
+import { toast } from "@/components/ui/Toaster";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { Collapse } from "@/components/ui/Collapse";
@@ -11,6 +13,8 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FileText } from "@/components/ui/appIcons";
+
+const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -43,6 +47,7 @@ export interface AdminLessonManagerProps {
   onCreateLesson: (input: CreateLessonPayload) => Promise<CourseLesson>;
   onDeleteLesson: (lessonId: string, scaleGroupSlug: string) => Promise<void>;
   onReorder: (scaleGroupSlug: string, orderedLessonIds: string[]) => Promise<void>;
+  onEditLesson: (lessonId: string, scaleGroupSlug: string, title: string, description: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function formatBytes(bytes: number | null): string {
@@ -121,6 +126,7 @@ export function AdminLessonManager({
   onCreateLesson,
   onDeleteLesson,
   onReorder,
+  onEditLesson,
 }: AdminLessonManagerProps) {
   const router = useRouter();
 
@@ -133,6 +139,9 @@ export function AdminLessonManager({
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<CourseLesson | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   function resetForm() {
     setTitle("");
@@ -196,6 +205,23 @@ export function AdminLessonManager({
     } finally {
       setBusy(false);
     }
+  }
+
+  function startEdit(lesson: CourseLesson) {
+    setEditing(lesson);
+    setEditTitle(lesson.title);
+    setEditDescription(lesson.description ?? "");
+  }
+
+  async function handleEdit() {
+    if (!editing) return;
+    setBusy(true);
+    const result = await onEditLesson(editing.id, scaleGroupSlug, editTitle, editDescription).catch(() => ({ ok: false as const, error: "Could not save the lesson. Try again." }));
+    setBusy(false);
+    if (!result.ok) return void toast.warning(result.error);
+    toast.success("Lesson saved");
+    setEditing(null);
+    router.refresh();
   }
 
   async function handleMove(index: number, direction: -1 | 1) {
@@ -339,6 +365,14 @@ export function AdminLessonManager({
                   </button>
                   <button
                     type="button"
+                    onClick={() => startEdit(lesson)}
+                    aria-label={`Rename ${lesson.title}`}
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setDeletingId(lesson.id)}
                     aria-label={`Delete ${lesson.title}`}
                     className={buttonVariants({ variant: "secondary", size: "iconSm" })}
@@ -351,6 +385,29 @@ export function AdminLessonManager({
           ))}
         </div>
       )}
+
+      <Dialog open={editing !== null} onOpenChange={(next) => !busy && !next && setEditing(null)} title="Rename the lesson">
+        <div className="grid gap-4">
+          <p className="text-small text-slate-400">The file, its place in the list and everyone&apos;s progress stay as they are.</p>
+          <label className="grid gap-1.5">
+            <span className="text-small font-medium text-slate-200">Title</span>
+            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} maxLength={120} className={editField} />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-small font-medium text-slate-200">Description (optional)</span>
+            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} maxLength={1000} rows={3} className={`${editField} h-auto resize-none py-2.5`} />
+          </label>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" disabled={busy} onClick={() => setEditing(null)} className={buttonVariants({ variant: "secondary" })}>
+              Cancel
+            </button>
+            <button type="button" disabled={busy || !editTitle.trim()} onClick={() => void handleEdit()} aria-busy={busy} className={buttonVariants({ variant: "primary" })}>
+              {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
+              Save
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

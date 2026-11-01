@@ -18,6 +18,7 @@ import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -25,6 +26,12 @@ export interface CustomerProfileProps {
   changeLog?: React.ReactNode;
   /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
   scheduler?: React.ReactNode;
+  /** Owner tools in the Account card (edit details, reset code, trial), built by the page. */
+  accountTools?: React.ReactNode;
+  /** Owner tool in the Class credits card (when credits expire), built by the page. */
+  creditTools?: React.ReactNode;
+  /** The owner can correct an approved payment's amount or day. */
+  canEditPayments?: boolean;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -144,6 +151,9 @@ export function CustomerProfile({
   profile,
   changeLog,
   scheduler,
+  accountTools,
+  creditTools,
+  canEditPayments = false,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -444,6 +454,7 @@ export function CustomerProfile({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+              {accountTools}
               {pendingAction === "curriculum" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
@@ -606,7 +617,7 @@ export function CustomerProfile({
 
         <div hidden={tab !== "classes"} className="space-y-5">
           {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
+          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
@@ -705,6 +716,7 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
+                  {p.status === "VERIFIED" && canEditPayments && <AdminEditPaymentButton paymentId={p.id} amountCents={p.amountCents} paidAt={p.reviewedAt ?? p.updatedAt} />}
                   {p.status === "VERIFIED" && (
                     <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
                       Receipt

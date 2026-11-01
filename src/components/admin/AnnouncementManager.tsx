@@ -9,8 +9,11 @@ import {
   createAnnouncementAction,
   setAnnouncementActiveAction,
   deleteAnnouncementAction,
+  updateAnnouncementAction,
 } from "@/app/(dashboard)/admin/announcements/actions";
 import { buttonVariants } from "@/components/ui/button";
+
+const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function relativeTime(iso: Date): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -146,6 +149,20 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   // (PaymentQueue, StudentQueue, AdminLessonManager) instead of a native
   // confirm() dialog, which looks out of place next to the custom UI.
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(announcement.title);
+  const [body, setBody] = useState(announcement.body);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setError(null);
+    setBusy(true);
+    const result = await updateAnnouncementAction(announcement.id, title, body).catch(() => ({ ok: false as const, error: "Something went wrong." }));
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    setEditing(false);
+    onChanged();
+  }
 
   async function handleToggleActive() {
     setBusy(true);
@@ -183,7 +200,39 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
         </div>
       </div>
 
-      {deleting ? (
+      {editing ? (
+        <div className="mt-3 grid gap-3">
+          <label className="grid gap-1.5">
+            <span className="text-small font-medium text-slate-200">Title</span>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className={editField} />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-small font-medium text-slate-200">Message</span>
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} rows={4} className={`${editField} h-auto resize-none py-2.5`} />
+          </label>
+          <p className="text-small text-slate-500">The banner and the bell entries change at once. Emails already sent stay as they were.</p>
+          {error && <p className="text-small text-red-400">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                setTitle(announcement.title);
+                setBody(announcement.body);
+                setError(null);
+              }}
+              disabled={busy}
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+            >
+              Cancel
+            </button>
+            <button type="button" onClick={() => void handleSave()} disabled={busy || !title.trim() || !body.trim()} className={buttonVariants({ variant: "primary", size: "sm" })}>
+              {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+              Save
+            </button>
+          </div>
+        </div>
+      ) : deleting ? (
         <div className="mt-3 space-y-2">
           <p className="text-small text-red-400">Delete this announcement? This can&apos;t be undone.</p>
           <div className="flex gap-2">
@@ -216,6 +265,9 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
           >
             {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {announcement.active ? "Deactivate" : "Reactivate"}
+          </button>
+          <button type="button" onClick={() => setEditing(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            Edit
           </button>
           <button
             type="button"
