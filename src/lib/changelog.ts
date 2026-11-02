@@ -14,7 +14,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-11-02",
     title: "Friends to practice with, and one place for help",
     items: [
-      "Open a friend's profile to see their streak, badges and practice this week, and tap Nudge to remind them to practice",
+      "Friends has its own tab in the dock. Tap a friend to see their streak, badges and practice this week, and tap Nudge to remind them to practice",
       "Writing to the studio now lives in your Inbox, under Support, next to your notifications and Mail",
       "Chat between students has been removed",
     ],

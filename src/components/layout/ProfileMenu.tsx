@@ -149,9 +149,16 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
 
           <div className="my-1.5 border-t border-ink/10" />
 
+          {/* A student's dock has Friends. An admin's dock has Admin in its place, so Friends is listed here, first, at every width. */}
+          {appExtras?.isAdmin && (
+            <>
+              <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
+              <div className="my-1.5 border-t border-ink/10 md:hidden" />
+            </>
+          )}
+
           {appExtras && (
             <div className="md:hidden">
-              <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
               <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Inbox" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
               {appExtras.isAdmin && (
                 <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />

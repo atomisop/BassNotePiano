@@ -41,7 +41,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "friends",
     target: "nav-friends",
     title: "Friends",
-    body: "Up in the top bar: add friends by username, see each other's profile and send a nudge to practice.",
+    body: "Add friends by username, tap one to see their practice, and send a nudge to practice together.",
   },
   {
     id: "bell",
