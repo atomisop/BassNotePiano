@@ -219,7 +219,8 @@ export function LessonVideoPlayer({
               >
                 {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
-              <GlassSlider min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={handleVolumeChange} aria-label="Volume" className="w-24" />
+              {/* The slider is hidden on phones: with it the control bar ran 40px past a 375px screen (2026-11-02); the mute button and the phone's own volume keys remain. */}
+              <GlassSlider min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={handleVolumeChange} aria-label="Volume" className="hidden w-24 sm:block" />
             </div>
             <button
               type="button"

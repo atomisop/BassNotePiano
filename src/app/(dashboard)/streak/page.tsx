@@ -111,7 +111,7 @@ export default async function StreakPage() {
               </span>
             </div>
             <div className="mt-4 flex gap-1.5" role="img" aria-label={`${days.length} practiced days in all, ${status.streak} in a row now`}>
-              <div aria-hidden className="grid shrink-0 grid-rows-7 gap-1 pr-1 md:gap-1.5 text-[0.625rem] leading-none text-slate-500">
+              <div aria-hidden className="grid shrink-0 grid-rows-7 gap-1 pr-1 md:gap-1.5 text-caption leading-none text-slate-500">
                 {WEEKDAY_LETTERS.map((l, i) => (
                   <span key={i} className="flex h-[var(--cell)] items-center [--cell:1rem] md:[--cell:1.25rem]">
                     {l}
