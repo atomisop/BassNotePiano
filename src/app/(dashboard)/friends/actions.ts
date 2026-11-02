@@ -10,6 +10,7 @@ import {
   unblockUser,
   SocialError,
 } from "@/lib/social";
+import { sendNudge } from "@/lib/nudge";
 import { RateLimitError } from "@/lib/rateLimit";
 
 async function requireUserId(): Promise<string> {
@@ -39,6 +40,16 @@ export async function respondToFriendRequestAction(requestId: string, accept: bo
     const userId = await requireUserId();
     await respondToFriendRequest(userId, requestId, accept);
     revalidatePath("/friends");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function nudgeFriendAction(friendId: string) {
+  try {
+    const userId = await requireUserId();
+    await sendNudge(userId, friendId);
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };

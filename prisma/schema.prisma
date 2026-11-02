@@ -505,6 +505,7 @@ enum NotificationType {
   BANNER_PHONE // to the student, each time the "add your phone number" banner pops up (kept in the bell even if they close it)
   BANNER_DISCORD // same, for the "connect your Discord" banner
   BANNER_PRACTICE // same, for the "time to practice" banner
+  FRIEND_NUDGE // to a student, when a friend taps "Nudge to practice" on their profile (fixed wording, banner plus bell)
 }
 
 // The in-app inbox is the source of truth, always written regardless of

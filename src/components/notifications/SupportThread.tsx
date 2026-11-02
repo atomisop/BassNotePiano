@@ -1,28 +1,43 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { LifeBuoy } from "@/components/ui/appIcons";
-import { ThreadBackButton } from "@/components/messaging/threadUi";
-import type { SupportChat } from "@/lib/messagesSupport";
 import { ComposerBar } from "@/components/messaging/threadUi";
+import { usePoll } from "@/hooks/usePoll";
+import { announceChange } from "@/lib/liveEvents";
+import type { SupportChat } from "@/lib/messagesSupport";
+import { getSupportChatAction, markSupportChatReadAction, sendSupportChatMessageAction } from "@/app/(dashboard)/support/actions";
 
-/** The person's conversation with the Bass Note Piano team, shown like any other chat in Messages. */
-export function SupportChatWindow({
-  chat,
-  onSend,
-  onMinimize,
-}: {
-  chat: SupportChat;
-  onSend: (body: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-  onMinimize: () => void;
-}) {
+const POLL_MS = 3_000;
+
+/**
+ * The person's conversation with the Bass Note Piano team, inside the bell's Support tab. It is their own Support Chat thread (the one
+ * Atom's handoff uses), so the team answers from Admin > Support Chat. While this tab is on screen it looks again every few seconds and
+ * marks the team's replies read.
+ */
+export function SupportThread({ active }: { active: boolean }) {
+  const [chat, setChat] = useState<SupportChat | null>(null);
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const count = chat.messages.length;
+  const count = chat?.messages.length ?? 0;
+
+  usePoll(
+    async (signal) => {
+      const next = await getSupportChatAction();
+      if (signal.aborted) return;
+      if (document.visibilityState === "visible" && next.unread > 0) {
+        await markSupportChatReadAction();
+        announceChange("messages");
+        next.unread = 0;
+      }
+      setChat(next);
+    },
+    POLL_MS,
+    { enabled: active, resetKey: active ? "support" : null },
+  );
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -34,10 +49,14 @@ export function SupportChatWindow({
     if (!body || sending) return;
     setSending(true);
     setError(null);
-    const result = await onSend(body);
+    const result = await sendSupportChatMessageAction(body);
+    if (result.ok) {
+      setValue("");
+      setChat(await getSupportChatAction());
+    } else {
+      setError(result.error);
+    }
     setSending(false);
-    if (result.ok) setValue("");
-    else setError(result.error);
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -48,29 +67,18 @@ export function SupportChatWindow({
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col">
-      <div className="flex items-center gap-3 neu-groove-b px-4 py-3">
-        <ThreadBackButton onClick={onMinimize} />
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-signal-fg shadow-raised-low">
-          <LifeBuoy className="h-4.5 w-4.5" strokeWidth={1.75} aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-body font-semibold text-slate-50">Support</p>
-          <p className="truncate text-small text-slate-500">Bass Note Piano team</p>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
-        {chat.messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-1 px-6 text-center">
+    <div className="flex h-full min-h-0 min-w-0 flex-col">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-6 py-4">
+        {chat && chat.messages.length === 0 && (
+          <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
             <p className="text-body font-semibold text-slate-200">Ask the studio anything</p>
             <p className="text-small text-slate-500">Questions about classes, payments or your account. The team&apos;s replies show up here.</p>
           </div>
         )}
-        {chat.messages.map((m) => (
+        {chat?.messages.map((m) => (
           <div key={m.id} className={`flex ${m.mine ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-body ${
+              className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-body ${
                 m.mine ? "bg-signal/16 text-slate-50" : "bg-neu-base text-slate-100"
               }`}
             >
@@ -83,8 +91,7 @@ export function SupportChatWindow({
         ))}
         <div ref={endRef} />
       </div>
-
-      {error && <p className="px-4 pb-1 text-small text-red-400">{error}</p>}
+      {error && <p className="px-6 pb-1 text-small text-red-400">{error}</p>}
       <ComposerBar
         formRef={formRef}
         textareaRef={textareaRef}

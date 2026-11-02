@@ -19,6 +19,8 @@ import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { PageBack } from "@/components/ui/BackLink";
+import { NudgeButton } from "@/components/social/NudgeButton";
+import { nudgeSenderLabel } from "@/lib/nudgeRules";
 
 interface PublicProfile {
   id: string;
@@ -252,12 +254,12 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       </span>
                     ) : (
                       <div className="flex shrink-0 gap-2">
-                        <Link
-                          href={`/messages?with=${friend.id}`}
-                          className={buttonVariants({ variant: "secondary", size: "sm" })}
-                        >
-                          Message
-                        </Link>
+                        {friend.username && (
+                          <Link href={`/friends/${friend.username}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                            Profile
+                          </Link>
+                        )}
+                        <NudgeButton friendId={friend.id} friendName={nudgeSenderLabel(friend.name ?? friend.username)} />
                         <button
                           type="button"
                           onClick={() => setBlockingId(friend.id)}
