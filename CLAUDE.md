@@ -319,7 +319,7 @@ notification and show one at a time, **only on Home and at most one per slot in 
 Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
 (`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
 `/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
-Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. **A bill banner** (2026-11-02) comes first: from the day a renewal bill (second payment on) opens, `payments.installmentLeadDays` before it is due, until it is sent, read from `billDue` in `/api/me/status` (`getBillDue` in `meStatus.ts`; a parent sees a child's bill and goes to `/parent`, the child never does); it adds no bell notice, the installments job already sent "Installment due". The owner settings `discord.promptRepeatMinutes`
+Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. The owner settings `discord.promptRepeatMinutes`
 and the practice repeat minutes no longer set the timing (the slots do); `phone.promptSeconds` and the `discord.prompt*` lengths and on/off switches still apply.
 
 ## Staying in sync across the app (added 2026-10-10, `docs/SYNC-AUDIT.md`)
@@ -718,3 +718,7 @@ both ways and links a parent and child directly as ACCEPTED (both told, the chil
 payment in the Money tab (`adminPaymentTools.ts`) corrects its amount or day (`reviewedAt`, noon Eastern) without touching what it paid
 for. Any admin: lessons can be renamed (`updateLessonText`) and announcements edited (`updateAnnouncement`, which also rewrites the bell
 entries still carrying the old words).
+
+## Bill bar and the non-payment lock (added 2026-11-02)
+
+`BillBar` (`components/billing/BillBar.tsx`, under the top bar on every signed-in screen, cannot be closed) shows from the day a renewal bill (second payment on) opens, `payments.installmentLeadDays` before it is due, until it is sent. It reads `billDue` from the live status (`getBillDue` in `meStatus.ts`; a parent sees a child's parent-plan bill and goes to `/parent`, the child never does). Wording is `billBarText` (`billBarRules.ts`, tested): a friendly reminder through the due day, red "we still haven't received your payment" for 2 late days, then "You will lose access in X days". When `payments.lapseAfterDays` pass, `lapsePlanForNonPayment` cancels the plan as before AND `lockForNonPayment` (`paymentLock.ts`) sets `User.paymentLockedAt` on whoever pays the bill (never an admin, never for a first bill that never arrived) and bumps `sessionVersion`. A locked account is refused like a ban (`authorize`, `loginStepOneAction`, `getServerAuthSession`) with `PAYMENT_LOCKED_CODE` (`paymentLockCodes.ts`, browser safe), and every sign-in screen then opens the public `/account-locked` page (contact support opens Atom). Only an admin lifts it ("Lift payment lock" on the student page, audited `user.payment-unlock`); the canceled plan stays canceled.

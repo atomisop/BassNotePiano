@@ -2,6 +2,8 @@
 const LABELS: Record<string, string> = {
   "user.ban": "Banned an account",
   "user.unban": "Lifted a ban",
+  "user.payment-lock": "Locked an account for non-payment",
+  "user.payment-unlock": "Lifted a payment lock",
   "user.role": "Changed a role",
   "access.grant": "Gave complimentary access",
   "access.revoke": "Removed complimentary access",

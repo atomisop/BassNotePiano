@@ -2320,6 +2320,16 @@ html[data-kb-motion="off"] .cmd-window {
 .app-shell-col:has(> .announcement-banner) .app-scroll-under-bar {
   padding-top: 1rem;
 }
+/* The bill bar (BillBar.tsx) sits in the same place, outside the scroll area so it never scrolls away; under the announcement when both show. */
+.app-shell-col > .bill-bar {
+  margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
+}
+.app-shell-col > .announcement-banner ~ .bill-bar {
+  margin-top: 0.75rem;
+}
+.app-shell-col:has(> .bill-bar) .app-scroll-under-bar {
+  padding-top: 1rem;
+}
 
 /* ---------------------------------------------------------------------------
    The card material inside the app: 3D glass. Solid cards on a plain page, with the neumorphic depth the app started with (light from

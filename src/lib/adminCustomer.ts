@@ -65,6 +65,7 @@ export interface CustomerProfile {
     lastActivityAt: Date | null;
     bannedAt: Date | null;
     bannedReason: string | null;
+    paymentLockedAt: Date | null;
   };
   roadmap: ScaleAccessState[];
   payments: UserPaymentRecord[];
@@ -100,6 +101,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       lastActivityDate: true,
       bannedAt: true,
       bannedReason: true,
+      paymentLockedAt: true,
     },
   });
   if (!user) return null;
@@ -141,6 +143,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       lastActivityAt: user.lastActivityDate,
       bannedAt: user.bannedAt,
       bannedReason: user.bannedReason,
+      paymentLockedAt: user.paymentLockedAt,
     },
     roadmap,
     payments,

@@ -6,7 +6,7 @@ import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHisto
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction, getOpenSlotsAction, markAttendanceAction, undoAttendanceAction, setClassInPersonAction } from "../../schedule/actions";
 import { StudentScheduler } from "@/components/admin/StudentScheduler";
-import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
+import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, liftPaymentLockAction, unbanUserAction } from "./actions";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
@@ -157,6 +157,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           onClearPhone={adminClearPhoneAction}
           onBan={banUserAction}
           onUnban={unbanUserAction}
+          onLiftPaymentLock={liftPaymentLockAction}
         />
       </div>
 

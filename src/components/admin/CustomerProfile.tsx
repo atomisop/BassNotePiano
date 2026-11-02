@@ -44,6 +44,8 @@ export interface CustomerProfileProps {
   /** Bans the account for good (it can never sign in). The reason is a private note. */
   onBan: (userId: string, reason: string, notify?: boolean) => Promise<{ ok: true; summary: string } | { ok: false; error: string }>;
   onUnban: (userId: string, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Lets an account locked for non-payment sign in again. */
+  onLiftPaymentLock: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function formatUsd(cents: number) {
@@ -164,6 +166,7 @@ export function CustomerProfile({
   onClearPhone,
   onBan,
   onUnban,
+  onLiftPaymentLock,
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
@@ -198,6 +201,7 @@ export function CustomerProfile({
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
   const [confirmingUnban, setConfirmingUnban] = useState(false);
+  const [confirmingUnlock, setConfirmingUnlock] = useState(false);
   const [confirmingClearPhone, setConfirmingClearPhone] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banSummary, setBanSummary] = useState<string | null>(null);
@@ -281,6 +285,16 @@ export function CustomerProfile({
     router.refresh();
   }
 
+  async function handleLiftLock() {
+    setBusy(true);
+    setError(null);
+    const result = await onLiftPaymentLock(user.id);
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    setConfirmingUnlock(false);
+    router.refresh();
+  }
+
   const banButton = user.bannedAt ? (
     <button
       type="button"
@@ -351,6 +365,28 @@ export function CustomerProfile({
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
+              </div>
+            )}
+            {user.paymentLockedAt && !user.bannedAt && (
+              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
+                <p className="font-semibold">Locked for non-payment on {formatDate(user.paymentLockedAt)}. They cannot sign in.</p>
+                <p className="mt-1">Their plan was canceled when the bill went unpaid. Lift the lock once it is sorted out.</p>
+                {confirmingUnlock ? (
+                  <InlineConfirm
+                    className="mt-3"
+                    question="Lift the payment lock?"
+                    detail="They will be able to sign in again. Their canceled plan stays canceled; they can start a new one."
+                    confirmLabel="Yes, lift the lock"
+                    busyLabel="Lifting…"
+                    busy={busy}
+                    onCancel={() => setConfirmingUnlock(false)}
+                    onConfirm={() => void handleLiftLock()}
+                  />
+                ) : (
+                  <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={`${buttonVariants({ variant: "secondary", size: "sm" })} mt-3`}>
+                    Lift payment lock
+                  </button>
+                )}
               </div>
             )}
             {confirmingUnban && user.bannedAt && (

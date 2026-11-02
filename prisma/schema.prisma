@@ -854,6 +854,9 @@ model User {
   // private note for the owner, never shown to the person. Lifting the ban clears both.
   bannedAt     DateTime?
   bannedReason String?
+  // Set on the day an unpaid renewal bill cancels their plan (payments.lapseAfterDays past due): they are signed out and cannot sign
+  // in again, and see /account-locked instead. Only an admin lifts it ("Lift payment lock" on the student page). See paymentLock.ts.
+  paymentLockedAt DateTime?
 
   // Optional, nothing in the app requires it except the friends/messages
   // system, which prompts for it inline rather than forcing it through the

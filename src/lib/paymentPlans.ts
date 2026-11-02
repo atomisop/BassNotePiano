@@ -1,3 +1,4 @@
+import { lockForNonPayment } from "@/lib/paymentLock";
 import { addBillingCycles } from "@/lib/billingCycle";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
@@ -1025,12 +1026,22 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
     }
   }
 
+  // A renewal bill that never arrived also locks the account of whoever pays it (a parent pays a child's): see paymentLock.ts.
+  let lockedUserId: string | null = null;
+  if (!options.firstBill && plan.installmentsPaid > 0) {
+    const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
+    const payerId = group?.kind === "PARENT" ? group.payerId : plan.userId;
+    if (await lockForNonPayment(payerId, plan.id)) lockedUserId = payerId;
+  }
+
   await createNotification({
     userId: plan.userId,
     type: "PAYMENT_PLAN_CANCELED",
     title: "Your plan was canceled",
     body: options.firstBill
       ? "Your first payment did not arrive in time, so your plan was canceled and your weekly time is open to others again. Start a new plan whenever you are ready."
+      : lockedUserId === plan.userId
+      ? "Your payment did not arrive in time, so your plan was canceled and access to your account is taken away. Contact support to resolve this."
       : "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
     emailCategory: "payments",
   });
@@ -1044,7 +1055,7 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
       ? `${student?.name ?? student?.email ?? "A family"} and the rest of their family never paid the combined first bill, so every member's plan was canceled and the weekly time is free again.`
       : options.firstBill
       ? `${student?.name ?? student?.email ?? "A student"} never paid their first bill, so their plan was canceled and the weekly time is free again.`
-      : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
+      : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled${lockedUserId ? " and the account that pays it is locked until you lift it on the student page" : ""}.`,
     emailCategory: "social",
     cta: { label: "See the plan", path: "/admin/payment-plans?status=CANCELED" },
   });

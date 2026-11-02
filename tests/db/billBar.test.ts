@@ -60,7 +60,7 @@ describe("the bill banner's status", () => {
     expect((await getMeStatus(student.id)).billDue).toBeNull();
     await bill(student.id, p.id);
     const due = (await getMeStatus(student.id)).billDue;
-    expect(due).toEqual({ amountCents: 12999, dueDate: p.nextDueDate.toISOString(), href: "/billing/plans" });
+    expect(due).toMatchObject({ amountCents: 12999, dueDate: p.nextDueDate.toISOString(), href: "/billing/plans" });
   });
 
   it("stops once the payment is sent, and never counts a first payment", async () => {

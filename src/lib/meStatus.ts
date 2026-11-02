@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { getFingerPracticeStatusOnce } from "@/lib/fingerPractice";
 import { getTotalUnreadMessageCount } from "@/lib/messages";
@@ -22,8 +23,8 @@ export interface MeStatus {
   streak: number;
   /** Unread direct, group and support messages: the dock and sidebar badge. One poll serves them all (it used to be two more). */
   unreadMessages: number;
-  /** A plan bill this person pays that is open and not yet sent (their own, or a child's on a parent plan), from the day it opens until it is paid: the bill banner. */
-  billDue: { amountCents: number; dueDate: string; href: string } | null;
+  /** A plan bill this person pays that is open and not yet sent (their own, or a child's on a parent plan), from the day it opens until it is paid: the bill bar. */
+  billDue: { amountCents: number; dueDate: string; href: string; lapseAfterDays: number } | null;
 }
 
 /**
@@ -53,6 +54,7 @@ async function getBillDue(userId: string): Promise<MeStatus["billDue"]> {
     amountCents: bill.amountCents,
     dueDate: bill.paymentPlan.nextDueDate.toISOString(),
     href: bill.paymentPlan.userId === userId ? "/billing/plans" : "/parent",
+    lapseAfterDays: await getNumberSetting("payments.lapseAfterDays"),
   };
 }
 

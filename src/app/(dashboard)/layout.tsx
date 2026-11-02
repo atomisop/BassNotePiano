@@ -27,6 +27,7 @@ import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { TopBanners } from "@/components/ui/TopBanners";
+import { BillBar } from "@/components/billing/BillBar";
 import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
@@ -113,6 +114,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} alertCards={isAdmin ? sidebarCards : []} />
         <AnnouncementBanner announcement={activeAnnouncement} />
+        {/* An open renewal bill, until it is sent: cannot be closed (BillBar.tsx). */}
+        <BillBar />
         {/* How far down the page you are, in place of a scrollbar (see .scroll-progress in globals.css). */}
         <div aria-hidden className="status-bar-fill" />
         <div aria-hidden className="scroll-progress scroll-progress-app" />
