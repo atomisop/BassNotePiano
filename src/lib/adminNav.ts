@@ -28,6 +28,7 @@ export const ADMIN_HUBS: AdminHub[] = [
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Plans" },
       { href: "/admin/pricing", label: "Pricing" },
+      { href: "/admin/money-check", label: "Check" },
     ],
   },
   {

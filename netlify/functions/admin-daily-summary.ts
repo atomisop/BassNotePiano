@@ -92,7 +92,7 @@ export const runAdminDailySummary = () =>
     const weekAgo = new Date(now - 7 * 24 * HOUR_MS);
     const [signups, revenue, taught, noShows, newPlans] = await Promise.all([
       prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.zellePayment.aggregate({ where: { status: "VERIFIED", reviewedAt: { gte: weekAgo } }, _sum: { amountCents: true } }),
+      prisma.zellePayment.aggregate({ where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "VERIFIED", reviewedAt: { gte: weekAgo } }, _sum: { amountCents: true } }),
       prisma.classBooking.count({ where: { status: "COMPLETED", scheduledAt: { gte: weekAgo } } }),
       prisma.classBooking.count({ where: { attendance: "NO_SHOW", scheduledAt: { gte: weekAgo } } }),
       prisma.paymentPlan.count({ where: { createdAt: { gte: weekAgo } } }),

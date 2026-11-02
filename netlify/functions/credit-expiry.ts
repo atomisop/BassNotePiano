@@ -1,5 +1,6 @@
 import { schedule } from "@netlify/functions";
-import { runJob } from "../../src/lib/jobRun";
+import { runJob, purgeOldJobRuns } from "../../src/lib/jobRun";
+import { expireSettledGroupStarts } from "../../src/lib/groupStartCleanup";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
 import { expireTimedDiscounts } from "../../src/lib/referrals";
@@ -63,6 +64,12 @@ export const runCreditExpiry = () =>
 
   const emailLogsPurged = await purgeOldEmailLogs(now);
   console.log(`Email records older than 180 days removed: ${emailLogsPurged}.`);
+
+  const jobRunsPurged = await purgeOldJobRuns(now);
+  console.log(`Job run records older than 30 days removed: ${jobRunsPurged}.`);
+
+  const groupStartsClosed = await expireSettledGroupStarts();
+  console.log(`Settled group first payments closed: ${groupStartsClosed}.`);
 
   const trials = await sendTrialNotices(now);
   console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);

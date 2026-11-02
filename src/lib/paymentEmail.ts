@@ -178,7 +178,7 @@ type OpenPayment = {
 
 /** The one payer of the family this payment belongs to, or null for any other payment. */
 export function familyPayerOf(payment: Pick<OpenPayment, "paymentPlan" | "purpose" | "user">): { name: string | null; payerAliases: { name: string }[] } | null {
-  if (payment.purpose === "FAMILY_PLAN_START") return payment.user;
+  if (payment.purpose === "FAMILY_PLAN_START" || payment.purpose === "FAMILY_PLAN_INSTALLMENT") return payment.user;
   return payment.paymentPlan?.familyGroup?.payer ?? null;
 }
 
@@ -403,7 +403,7 @@ export async function holdUnverifiedPaymentEmail(input: { messageId: string; fro
     const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
     const code = parsed ? referenceInMemo(parsed.memo) : null;
     if (parsed && code) {
-      const open = await prisma.zellePayment.findMany({ where: { status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
+      const open = await prisma.zellePayment.findMany({ where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
       const hits = open.filter((payment) => normalizedCodeOf(payment.id) === code);
       if (hits.length === 1) {
         const hit = hits[0];
@@ -490,7 +490,7 @@ export async function ingestPaymentEmail(
   }
 
   const candidates = (await prisma.zellePayment.findMany({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
   })) as (OpenPayment & { userId: string; createdAt: Date })[];
 
@@ -572,11 +572,11 @@ async function pickByAmountAlone<T extends OpenPayment & { userId: string; creat
  */
 async function warnAboutAmountMismatch(receipt: ReceiptFacts) {
   const sameAmount = await prisma.zellePayment.count({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: receipt.amountCents },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: receipt.amountCents },
   });
   if (sameAmount > 0) return;
   const open = await prisma.zellePayment.findMany({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { gte: new Date(Date.now() - OPEN_PAYMENT_LOOKBACK_MS) } },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { gte: new Date(Date.now() - OPEN_PAYMENT_LOOKBACK_MS) } },
     select: { userId: true, amountCents: true, user: openPaymentSelect.user },
     orderBy: { createdAt: "desc" },
     take: 500,
@@ -655,7 +655,7 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
   if (!full || Date.now() - full.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return false;
   if (memoHasOtherReference(receipt.memo, payment.id)) return false;
   const others = await prisma.zellePayment.findMany({
-    where: { id: { not: payment.id }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: payment.amountCents },
+    where: { id: { not: payment.id }, bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: payment.amountCents },
     select: { userId: true },
   });
   if (others.some((other) => other.userId !== full.userId)) return false;

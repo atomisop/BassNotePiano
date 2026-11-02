@@ -4,7 +4,7 @@ import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, deleteZellePayment, markAllPaymentsChecked, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
+import { approveZellePayment, cancelOpenBill, deleteZellePayment, markAllPaymentsChecked, markPaymentChecked, refundZellePayment, rejectZellePayment, undoRefundZellePayment } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { dismissReceipt, ignoreSenderFromReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
 
@@ -76,6 +76,34 @@ export async function refundPaymentAction(
       return { ok: false, error: err instanceof Error ? err.message : "Could not refund." };
     }
   });
+}
+
+// Owner only: puts a refunded payment back as paid (credits and plan optionally restored).
+export async function undoRefundPaymentAction(paymentId: string, restoreCredits: boolean, reactivatePlan: boolean, notify = true): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can undo a refund." };
+    try {
+      const { warnings } = await undoRefundZellePayment(String(paymentId), { id: admin.id, email: admin.email ?? null }, { restoreCredits: Boolean(restoreCredits), reactivatePlan: Boolean(reactivatePlan) });
+      revalidatePath("/", "layout");
+      return { ok: true, error: null, warning: warnings.length ? warnings.join(" ") : null };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Could not undo the refund." };
+    }
+  });
+}
+
+// Owner only: closes a bill nobody paid, keeping its record as expired.
+export async function cancelBillAction(paymentId: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can cancel a bill." };
+  try {
+    await cancelOpenBill(String(paymentId), { id: admin.id, email: admin.email ?? null });
+    revalidatePath("/", "layout");
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not cancel the bill." };
+  }
 }
 
 /** Attaches a bank or Venmo email that matched nobody to an open payment for the same amount, and approves it. */

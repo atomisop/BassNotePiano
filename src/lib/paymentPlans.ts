@@ -297,6 +297,33 @@ export async function getOrCreateOpenInstallmentPayment(
   zelleHandle: string,
   now: Date = new Date(),
 ): Promise<OpenInstallmentPayment> {
+  const startedAt = Date.now();
+  const result = await getOrCreateMemberInstallmentPayment(planId, zelleHandle, now);
+  // A group's open bills are held inside ONE combined bill (paymentBundles.ts): that is what the payer is shown, pays and gets a
+  // receipt for. A person on a plan of their own, or a group with fewer than two open bills, keeps the ordinary bill.
+  if (!result.payment || result.payment.status !== "AWAITING_TRANSFER") return result;
+  if (result.payment.bundleId) {
+    // Already held in a combined bill (possibly sent or rejected): that is the bill, never the member's own row.
+    const held = await prisma.zellePayment.findUnique({ where: { id: result.payment.bundleId } });
+    if (held && held.status !== "AWAITING_TRANSFER") return { payment: held, wasCreated: false };
+  }
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true, installmentsPaid: true } });
+  if (!plan?.familyGroupId || plan.installmentsPaid === 0) return result;
+  // Every started member's bill that is due is opened first, so the combined bill holds all of them whichever member's page asks first.
+  const siblings = await prisma.paymentPlan.findMany({ where: { familyGroupId: plan.familyGroupId, status: "ACTIVE", installmentsPaid: { gt: 0 }, id: { not: planId } }, select: { id: true } });
+  for (const sibling of siblings) await getOrCreateMemberInstallmentPayment(sibling.id, zelleHandle, now);
+  const { syncGroupBundle } = await import("@/lib/paymentBundles");
+  const { bundleId } = await syncGroupBundle(plan.familyGroupId, zelleHandle);
+  if (!bundleId) return result;
+  const bundle = await prisma.zellePayment.findUniqueOrThrow({ where: { id: bundleId } });
+  return { payment: bundle, wasCreated: bundle.createdAt.getTime() >= startedAt - 1000 };
+}
+
+async function getOrCreateMemberInstallmentPayment(
+  planId: string,
+  zelleHandle: string,
+  now: Date,
+): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
   // A family member's first month is paid inside the family's one combined start payment, never as a bill of its own.
@@ -991,6 +1018,9 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
     select: { id: true },
   });
   if (inReview) return false;
+  // The payer already sent the group's combined bill that holds this plan's bill: it is being reviewed.
+  const bundleInReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, bundle: { status: "PENDING_REVIEW" } }, select: { id: true } });
+  if (bundleInReview) return false;
   // A family that never started (its combined first payment did not arrive) ends together: no member is left half started.
   const failedFamilyStart = Boolean(plan.familyGroupId) && plan.installmentsPaid === 0;
 
