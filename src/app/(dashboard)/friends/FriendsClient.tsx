@@ -237,7 +237,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                         onClick={() => setOpenId(openId === friend.id ? null : friend.id)}
                         aria-expanded={openId === friend.id}
                         aria-label={`${openId === friend.id ? "Hide" : "Show"} ${friend.name ?? friend.username ?? "friend"}'s practice`}
-                        className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
+                        className="tap flex min-w-[9.5rem] flex-1 items-center gap-3 text-left"
                       >
                         <Avatar profile={friend} />
                         <ProfileLine profile={friend} />
@@ -324,12 +324,12 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search @username"
-                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
+                className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
               <button
                 type="submit"
                 disabled={action.pending || query.trim().length < 2}
-                className={buttonVariants({ variant: "primary" })}
+                className={buttonVariants({ variant: "primary", className: "shrink-0 whitespace-nowrap" })}
               >
                 {searching && spin}
                 {searching ? "Searching…" : "Search"}

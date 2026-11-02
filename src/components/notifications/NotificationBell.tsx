@@ -555,7 +555,7 @@ export function NotificationBell() {
                   aria-modal="true"
                   aria-label="Inbox"
                   style={{ willChange: "transform" }}
-                  className="relative flex h-full w-[86%] max-w-md flex-col border-l border-ink/10 bg-surface"
+                  className="relative flex h-full w-[94%] max-w-md flex-col border-l border-ink/10 bg-surface min-[420px]:w-[86%]"
                 >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
@@ -579,7 +579,7 @@ export function NotificationBell() {
                   )}
                 </div>
 
-                <div className="border-b border-ink/10 px-6 py-3">
+                <div className="border-b border-ink/10 px-4 py-3 min-[420px]:px-6">
                   <Tabs<InboxTab>
                     label="Inbox"
                     value={tab}
