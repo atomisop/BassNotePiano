@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { forgetPayerName } from "@/lib/paymentReceipts";
 import { banAccount, describeBan } from "@/lib/accountBan";
+import { liftPaymentLock } from "@/lib/paymentLock";
 
 // Same pattern as every other admin actions.ts, the admin layout's
 // redirect only protects rendering, not these Server Actions, so this
@@ -114,6 +115,14 @@ export async function unbanUserAction(targetUserId: string, notify = true): Prom
     revalidatePath("/", "layout");
     return { ok: true };
   });
+}
+
+/** Lifts a non-payment lock (paymentLock.ts), so the person can sign in again. The plan it canceled stays canceled. */
+export async function liftPaymentLockAction(targetUserId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  await liftPaymentLock({ id: admin.id, email: admin.email ?? null }, targetUserId);
+  revalidatePath(`/admin/users/${targetUserId}`);
+  return { ok: true };
 }
 
 type ToolResult = { ok: true; message: string } | { ok: false; error: string };

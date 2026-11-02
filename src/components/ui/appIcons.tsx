@@ -93,6 +93,7 @@ import { SidebarSimple as PSidebarSimple } from "@phosphor-icons/react/dist/ssr/
 import { SignOut as PSignOut } from "@phosphor-icons/react/dist/ssr/SignOut";
 import { Siren as PSiren } from "@phosphor-icons/react/dist/ssr/Siren";
 import { Smiley as PSmiley } from "@phosphor-icons/react/dist/ssr/Smiley";
+import { SmileyXEyes as PSmileyXEyes } from "@phosphor-icons/react/dist/ssr/SmileyXEyes";
 import { Sparkle as PSparkle } from "@phosphor-icons/react/dist/ssr/Sparkle";
 import { SpeakerHigh as PSpeakerHigh } from "@phosphor-icons/react/dist/ssr/SpeakerHigh";
 import { SpeakerX as PSpeakerX } from "@phosphor-icons/react/dist/ssr/SpeakerX";
@@ -272,6 +273,7 @@ export const Palette = soft(PPalette, "Palette");
 export const ShoppingBag = soft(PShoppingBag, "ShoppingBag");
 export const SignOut = soft(PSignOut, "SignOut");
 export const Smiley = soft(PSmiley, "Smiley");
+export const SmileyXEyes = soft(PSmileyXEyes, "SmileyXEyes");
 export const UserPlus = soft(PUserPlus, "UserPlus");
 export const UploadSimple = soft(PUploadSimple, "UploadSimple");
 export const PushPin = soft(PPushPin, "PushPin");

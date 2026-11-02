@@ -1,3 +1,4 @@
+import { PAYMENT_LOCKED_CODE } from "@/lib/paymentLockCodes";
 import { BANNED_ERROR_CODE } from "@/lib/ban";
 import { cache } from "react";
 import type { NextAuthOptions } from "next-auth";
@@ -227,6 +228,8 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
         // A banned account can never get a session, whichever way it asks for one (password, emailed code, reset, verify).
         if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
+        // An account locked for non-payment cannot get a session either; the sign-in screens open /account-locked.
+        if (user.paymentLockedAt) throw new Error(PAYMENT_LOCKED_CODE);
 
         // A sign-in from a browser or device this account has not used before is emailed to its owner.
         await recordSignInDevice(user, req?.headers?.["user-agent"], placeFromHeaders(req?.headers));
@@ -347,7 +350,7 @@ export const getServerAuthSession = cache(async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true } });
-  // A ban takes effect on the very next request, not only when the old session's token is refreshed.
-  return exists && !exists.bannedAt ? session : null;
+  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true } });
+  // A ban or a non-payment lock takes effect on the very next request, not only when the old session's token is refreshed.
+  return exists && !exists.bannedAt && !exists.paymentLockedAt ? session : null;
 });

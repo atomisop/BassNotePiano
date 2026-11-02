@@ -40,7 +40,7 @@ async function notifyInstallment(
     type,
     title: isOverdue ? "Installment overdue" : "Installment due",
     body: isOverdue
-      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Your classes are on hold and your plan is canceled in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"} unless you pay.`
+      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. If it does not arrive in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"}, your plan is canceled and you lose access to your account.`
       : `${installmentLabel} on your ${planLabel} is ready to pay.`,
     // No emailCategory here on purpose, the email below is a dedicated
     // itemized invoice (sendPaymentPlanInvoiceEmail), not the generic
