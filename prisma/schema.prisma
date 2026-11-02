@@ -56,6 +56,9 @@ enum PaymentPurpose {
   // The one combined first payment of a family plan (every member's first month, paid together by the one payer). Its approval
   // starts every member's plan at once, so a family can never start with only some members. See FamilyPlanGroup.
   FAMILY_PLAN_START
+  // One combined 28-day bill for a group's members (2+ open member bills), paid once by the group's payer. Its approval approves every
+  // member bill it holds (ZellePayment.bundleId) and sends one receipt. See paymentBundles.ts.
+  FAMILY_PLAN_INSTALLMENT
 }
 
 // A student's standing commitment to pay for class credits in periodic
@@ -1548,6 +1551,12 @@ model ZellePayment {
   familyGroupId String?
   familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
 
+  // Set on a member's own 28-day bill while it is held inside a group's combined bill (a FAMILY_PLAN_INSTALLMENT row): the member's
+  // bill still carries their credits and plan progress, but the one payer pays and gets a receipt for the bundle.
+  bundleId String?
+  bundle   ZellePayment?  @relation("PaymentBundle", fields: [bundleId], references: [id], onDelete: SetNull)
+  bundled  ZellePayment[] @relation("PaymentBundle")
+
   // Only set on a CLASS_CREDITS row created through the Schedule screen's
   // guided "buy an extra session" flow (getOrCreatePendingExtraSessionPayment
   // in payments.ts), the exact one-off occurrence the student picked before
@@ -1604,6 +1613,7 @@ model ZellePayment {
 
   @@index([status])
   @@index([familyGroupId])
+  @@index([bundleId])
   @@index([userId])
   @@index([paymentPlanId])
 }

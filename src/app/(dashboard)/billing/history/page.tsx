@@ -39,6 +39,9 @@ function describePayment(payment: {
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum", title: "Full platform unlock" };
   }
+  if (payment.purpose === "FAMILY_PLAN_INSTALLMENT") {
+    return { eyebrow: "Group plan", title: "Combined 28-day bill" };
+  }
   if (payment.purpose === "FAMILY_PLAN_START") {
     return { eyebrow: "Family plan", title: "Combined first payment" };
   }

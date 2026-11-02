@@ -33,7 +33,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
     prisma.user.count(),
     prisma.user.count({ where: { hasCurriculumAccess: true } }),
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.zellePayment.aggregate({ where: { status: "VERIFIED" }, _sum: { amountCents: true } }),
+    prisma.zellePayment.aggregate({ where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "VERIFIED" }, _sum: { amountCents: true } }),
     prisma.zellePayment.aggregate({ where: { status: "PENDING_REVIEW" }, _sum: { amountCents: true } }),
   ]);
 
@@ -82,7 +82,7 @@ export async function getOverviewTrends(months = 6): Promise<OverviewTrends> {
       select: { createdAt: true },
     }),
     prisma.zellePayment.findMany({
-      where: { status: "VERIFIED", updatedAt: { gte: start } },
+      where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "VERIFIED", updatedAt: { gte: start } },
       select: { updatedAt: true, amountCents: true },
     }),
   ]);
@@ -468,7 +468,7 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
   const week = new Date(now.getTime() + 7 * 86_400_000);
   const [plans, refunded] = await Promise.all([
     prisma.paymentPlan.findMany({ where: { status: "ACTIVE", installmentsPaid: { gte: 1 } }, select: { installmentAmountCents: true, nextDueDate: true } }),
-    prisma.zellePayment.aggregate({ where: { status: "REFUNDED" }, _sum: { amountCents: true } }),
+    prisma.zellePayment.aggregate({ where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "REFUNDED" }, _sum: { amountCents: true } }),
   ]);
   const soon = plans.filter((p) => p.nextDueDate >= now && p.nextDueDate <= week);
   return {
@@ -552,7 +552,7 @@ async function readAdminNavBadges(): Promise<Record<string, number>> {
 export async function getRevenueSummary(now: Date = new Date()): Promise<RevenueSummary> {
   const since = new Date(now.getTime() - 220 * 86_400_000);
   const rows = await prisma.zellePayment.findMany({
-    where: { status: "VERIFIED", OR: [{ reviewedAt: { gte: since } }, { reviewedAt: null, updatedAt: { gte: since } }] },
+    where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "VERIFIED", OR: [{ reviewedAt: { gte: since } }, { reviewedAt: null, updatedAt: { gte: since } }] },
     select: { reviewedAt: true, updatedAt: true, amountCents: true },
   });
   return summariseRevenue(rows.map((r) => ({ at: r.reviewedAt ?? r.updatedAt, amountCents: r.amountCents })), now);

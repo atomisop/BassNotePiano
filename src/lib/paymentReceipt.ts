@@ -38,6 +38,7 @@ export async function loadPaymentReceipt(paymentId: string): Promise<LoadedRecei
       paymentPlanId: true,
       user: { select: { id: true, name: true, email: true, bannedAt: true } },
       paymentPlan: { select: { cadence: true, term: true, termMonths: true, status: true, nextDueDate: true, installmentAmountCents: true } },
+      bundled: { select: { amountCents: true, installmentNumber: true, user: { select: { name: true, email: true } } }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!payment || payment.status !== "VERIFIED") return null;
@@ -70,6 +71,7 @@ export async function loadPaymentReceipt(paymentId: string): Promise<LoadedRecei
     nextBill: plan && plan.status === "ACTIVE" ? { dueDate: plan.nextDueDate, amountCents: plan.installmentAmountCents } : null,
     groupSize,
     extraClassAt: payment.extraSessionScheduledAt,
+    bundleLines: payment.bundled.map((m) => ({ name: m.user.name ?? m.user.email, amountCents: m.amountCents, installmentNumber: m.installmentNumber })),
   };
   return { receipt: buildReceipt(facts), userId: payment.user.id, name: facts.accountName, email: payment.user.email, banned: Boolean(payment.user.bannedAt) };
 }
