@@ -8,6 +8,7 @@ import { getBoolSetting } from "../../src/lib/siteSettings";
 import { getFollowUps } from "../../src/lib/adminFollowUps";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
 import { getPaymentDigestFacts } from "../../src/lib/paymentDigest";
+import { REJECTED_EMAIL_MARKER } from "../../src/lib/paymentEmail";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -50,6 +51,21 @@ export const runAdminDailySummary = () =>
     getFollowUps(new Date(now)),
     getPaymentDigestFacts(new Date(now)).catch(() => ({ waitingOverDay: 0, likelyMatches: 0 })),
   ]);
+  // Bank emails whose signature check failed since yesterday's email: one line here instead of an alert each (paymentEmail.ts).
+  const rejectedRows = await prisma.appSetting
+    .findMany({ where: { key: { startsWith: REJECTED_EMAIL_MARKER }, updatedAt: { gte: new Date(now - 24 * HOUR_MS) } }, select: { value: true } })
+    .catch(() => []);
+  const rejected = rejectedRows
+    .map((row) => {
+      try {
+        const v = JSON.parse(row.value) as { from?: string; subject?: string };
+        return v && typeof v === "object" ? `${v.from || "a bank"}: \u201c${v.subject || "no subject"}\u201d` : null;
+      } catch {
+        return null;
+      }
+    })
+    .filter((s): s is string => Boolean(s));
+
   const pipelineQuiet = pipeline.status === "quiet";
 
   const classLine = classesToday.length
@@ -77,6 +93,12 @@ export const runAdminDailySummary = () =>
       : null,
     pipelineQuiet
       ? { text: "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script", url: getAppUrl("/admin/payments") }
+      : null,
+    rejected.length
+      ? {
+          text: `${rejected.length} forwarded bank ${rejected.length === 1 ? "email was" : "emails were"} ignored because the signature check failed (${rejected.slice(0, 3).join("; ")}${rejected.length > 3 ? `; and ${rejected.length - 3} more` : ""}). If one was a real payment, approve it by hand.`,
+          url: getAppUrl("/admin/payments"),
+        }
       : null,
     // People to reach out to (overdue bills, students who stopped practicing, trials ending, credits about to lapse).
     ...followUps.map((f) => ({

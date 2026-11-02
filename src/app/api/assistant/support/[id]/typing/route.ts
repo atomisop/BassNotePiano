@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportError } from "@/lib/reportError";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { setSupportTyping } from "@/lib/support";
 
@@ -15,7 +16,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
     await setSupportTyping(params.id, "VISITOR", body?.typing !== false);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("POST /api/assistant/support/[id]/typing failed:", err);
+    reportError(err, "POST /api/assistant/support/[id]/typing failed");
     return NextResponse.json({ ok: false });
   }
 }

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { latestActivity } from "@/lib/lastActivity";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
@@ -267,6 +268,7 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
       classCredits: true,
       currentStreak: true,
       lastActivityDate: true,
+      knownDevices: { select: { lastSeenAt: true }, orderBy: { lastSeenAt: "desc" }, take: 1 },
       progress: true,
     },
     take: 200,
@@ -304,7 +306,7 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
     nextApproval: computeNextApproval(scales, nowMs, unlockIntervalDays),
     classCredits: user.classCredits,
     currentStreak: user.currentStreak,
-    lastActivityAt: user.lastActivityDate ? user.lastActivityDate.getTime() : null,
+    lastActivityAt: latestActivity(user.knownDevices[0]?.lastSeenAt, user.lastActivityDate)?.getTime() ?? null,
     scalesCompleted: user.progress.filter((p) => p.status === "COMPLETED").length,
     scales,
     };

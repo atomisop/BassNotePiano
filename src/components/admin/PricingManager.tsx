@@ -129,7 +129,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
                 className={`${inputClass} w-28`}
               />
               {f.unit === "%" && <span className="text-slate-400">%</span>}
-              {parsed.values[f.key] !== initial[f.key] && <span className="text-small text-signal">Changed</span>}
+              {parsed.values[f.key] !== initial[f.key] && <span className="text-small text-signal-fg">Changed</span>}
             </div>
             <p className="mt-1 text-small text-slate-500">{f.help}</p>
           </div>
@@ -216,7 +216,7 @@ function PlanLine({ plan, percent }: { plan: { monthlyCents: number; listCents: 
       {after !== plan.monthlyCents && (
         <>
           {" "}
-          → <span className="font-semibold text-signal">{usd(after)}</span>
+          → <span className="font-semibold text-signal-fg">{usd(after)}</span>
         </>
       )}
     </span>

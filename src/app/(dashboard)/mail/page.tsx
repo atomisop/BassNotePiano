@@ -1,4 +1,6 @@
 import { PageBack } from "@/components/ui/BackLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Mail } from "@/components/ui/appIcons";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -36,9 +38,13 @@ export default async function MailPage() {
         </div>
 
         {mail.length === 0 ? (
-          <Card>
-            <p className="text-small text-slate-400">No mail yet.</p>
-          </Card>
+          <EmptyState
+            icon={<Mail />}
+            title="No mail yet"
+            description="Messages from the studio, such as a class reminder or a note from your teacher, land here."
+            actionLabel="Go home"
+            actionHref="/dashboard"
+          />
         ) : (
           <div className="space-y-3">
             {mail.map((m) => (

@@ -288,7 +288,7 @@ function NotificationGroup({
               : "border-transparent bg-neu-base shadow-raised-low"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal-fg">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -571,7 +571,7 @@ export function NotificationBell() {
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal-fg transition hover:opacity-70"
                     >
                       <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
@@ -615,7 +615,7 @@ export function NotificationBell() {
                         <Link
                           href="/account?tab=notifications"
                           onClick={() => setOpen(false)}
-                          className="text-small text-signal transition hover:opacity-70"
+                          className="text-small text-signal-fg transition hover:opacity-70"
                         >
                           Notification settings
                         </Link>

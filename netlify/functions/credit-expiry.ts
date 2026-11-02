@@ -1,4 +1,5 @@
 import { schedule } from "@netlify/functions";
+import { prisma } from "../../src/lib/prisma";
 import { runJob, purgeOldJobRuns } from "../../src/lib/jobRun";
 import { expireSettledGroupStarts } from "../../src/lib/groupStartCleanup";
 import { createNotification } from "../../src/lib/notifications";
@@ -67,6 +68,10 @@ export const runCreditExpiry = () =>
 
   const jobRunsPurged = await purgeOldJobRuns(now);
   console.log(`Job run records older than 30 days removed: ${jobRunsPurged}.`);
+
+  // Sign-in and verification codes are single use and expire within minutes; the rows were kept for ever (175 of 189 stale, 2026-11-02).
+  const codesPurged = await prisma.verificationCode.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 7 * 86_400_000) } } });
+  console.log(`Expired verification codes removed: ${codesPurged.count}.`);
 
   const groupStartsClosed = await expireSettledGroupStarts();
   console.log(`Settled group first payments closed: ${groupStartsClosed}.`);

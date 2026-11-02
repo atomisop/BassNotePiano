@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportError } from "@/lib/reportError";
 import { clientAddress } from "@/lib/assistantInput";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ suggestions });
   } catch (err) {
-    console.error("POST /api/assistant/suggestions failed (non-blocking):", err);
+    reportError(err, "POST /api/assistant/suggestions failed");
     return NextResponse.json({ suggestions: [] });
   }
 }

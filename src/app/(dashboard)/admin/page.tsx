@@ -154,7 +154,7 @@ export default async function AdminOverviewPage() {
           <section aria-label="Money" className="min-w-0">
             <div className="flex items-baseline justify-between gap-3 px-1">
               <h2 className="text-title font-semibold text-slate-50">Money</h2>
-              <Link href="/admin/payments" className="text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
+              <Link href="/admin/payments" className="tap inline-flex items-center text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
                 Payments
               </Link>
             </div>
