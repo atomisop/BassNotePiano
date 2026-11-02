@@ -124,3 +124,11 @@ export const findStoppedJobsOnce = cache(() => findStoppedJobs());
 export async function findStoppedJobs(now = new Date()): Promise<string[]> {
   return (await getJobStatuses(now)).filter((s) => isStopped(s.state)).map((s) => s.name);
 }
+
+/** Run records older than this are removed by the daily job: the Discord check alone writes one a minute. */
+export const JOB_RUN_KEEP_DAYS = 30;
+
+export async function purgeOldJobRuns(now: Date = new Date()): Promise<number> {
+  const { count } = await prisma.jobRun.deleteMany({ where: { ranAt: { lt: new Date(now.getTime() - JOB_RUN_KEEP_DAYS * 86_400_000) } } });
+  return count;
+}

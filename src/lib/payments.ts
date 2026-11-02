@@ -1098,6 +1098,16 @@ export async function refundZellePayment(
       }
     }
   }
+  // Refunding a bill without ending the plan leaves the plan counting that bill as paid, with the next bill date as it was. That is
+  // right for a duplicate payment but wrong for a month that did not happen, so say so instead of leaving it to be noticed later.
+  if (!opts.cancelPlan && payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId }, select: { status: true, installmentsPaid: true, nextDueDate: true } });
+    if (plan && plan.status === "ACTIVE" && plan.installmentsPaid >= (payment.installmentNumber ?? 1)) {
+      warnings.push(
+        `The plan still counts ${plan.installmentsPaid} bill${plan.installmentsPaid === 1 ? "" : "s"} as paid and the next bill stays on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}. If this refund undoes a month, adjust the plan.`,
+      );
+    }
+  }
   if (opts.cancelPlan && payment.paymentPlanId) {
     const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
     await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
