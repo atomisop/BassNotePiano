@@ -12,7 +12,7 @@ const groupIds: string[] = [];
 const jobNames: string[] = [];
 
 async function family(paid: number[]) {
-  const people = [];
+  const people: Awaited<ReturnType<typeof prisma.user.create>>[] = [];
   for (let i = 0; i < paid.length; i++) {
     const email = `${tag}-m${emails.length}@example.test`;
     emails.push(email);
