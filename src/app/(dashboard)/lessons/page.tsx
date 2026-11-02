@@ -17,7 +17,6 @@ import {
   FAMILY_CREDITS_PER_STUDENT,
 } from "@/lib/classSchedule";
 import { getActivePaymentPlan, getFifthClassOffer } from "@/lib/paymentPlans";
-import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "./ScheduleClient";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
@@ -53,14 +52,13 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getBoolSetting("cancel.studentCanReschedule"),
   ]);
 
-  const [credits, occurrences, bookings, supportContactId, weeklyLimited, pricing] = await Promise.all([
+  const [credits, occurrences, bookings, weeklyLimited, pricing] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
     getEffectiveClassCredits(session.user.id),
     getUpcomingOccurrences(session.user.id),
     getUserClassBookings(session.user.id),
-    getSupportContactId(),
     hasLivePaymentPlan(session.user.id),
     getPricingConfig(),
   ]);
@@ -154,7 +152,6 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
       initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
       weekly={
         <ScheduleClient
-          supportContactId={supportContactId}
           cancellationCutoffHours={cancelCutoffHours}
           canCancel={canCancel}
           canReschedule={canReschedule}

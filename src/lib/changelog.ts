@@ -10,6 +10,16 @@ export interface ChangelogEntry {
 // with a new version number is what makes it appear again for everyone.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.0",
+    date: "2026-11-02",
+    title: "Friends to practice with, and one place for help",
+    items: [
+      "Friends has its own tab in the dock. Tap a friend to see their streak, badges and practice this week, and tap Nudge to remind them to practice",
+      "Writing to the studio now lives in your Inbox, under Support, next to your notifications and Mail",
+      "Chat between students has been removed",
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2026-10-06",
     title: "The biggest update yet",

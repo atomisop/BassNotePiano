@@ -15,6 +15,7 @@ import {
 import { Dialog } from "@/components/ui/Dialog";
 import { Kbd } from "@/components/ui/Kbd";
 import { markKeyboardAction } from "@/lib/keyboardMotion";
+import { OPEN_SUPPORT, announce } from "@/lib/topBarEvents";
 import {
   ACTION_SHORTCUTS,
   CHORD_WINDOW_MS,
@@ -167,9 +168,8 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             Book a class
             {hint("/lessons")}
           </CommandItem>
-          <CommandItem value="messages chat" onSelect={() => go("/messages")}>
-            Messages
-            {hint("/messages")}
+          <CommandItem value="support help message contact" onSelect={() => { announce(OPEN_SUPPORT); setOpen(false); }}>
+            Message support
           </CommandItem>
           <CommandItem value="friends classmates" onSelect={() => go("/friends")}>
             Friends

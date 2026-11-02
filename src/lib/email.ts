@@ -738,7 +738,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
     "Live one-on-one classes with your teacher on Discord",
     "A virtual piano, guitar and bass that play every scale for you",
     "Ten minutes of daily finger exercises, with streak badges to earn",
-    "Friends, messages, and Atom, our assistant, for quick questions",
+    "Friends to practice with, a chat with the studio, and Atom, our assistant, for quick questions",
   ];
   const steps = [
     { label: "Finish your profile", detail: "Add a photo and a username so friends can find you.", url: getAppUrl("/profile") },

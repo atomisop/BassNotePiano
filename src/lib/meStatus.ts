@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { getFingerPracticeStatusOnce } from "@/lib/fingerPractice";
-import { getTotalUnreadMessageCount } from "@/lib/messages";
-import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getSupportUnreadCount } from "@/lib/messagesSupport";
 
 /**
@@ -21,8 +19,10 @@ export interface MeStatus {
   practicedToday: boolean;
   /** Days in a row of the 10 minute practice (ending today, or yesterday while today is not done yet): the streak icon in the top bar. */
   streak: number;
-  /** Unread direct, group and support messages: the dock and sidebar badge. One poll serves them all (it used to be two more). */
+  /** The team's replies in the person's Support thread they have not opened yet: part of the bell's count. */
   unreadMessages: number;
+  /** The newest unread nudge from a friend in the last 6 hours (shown once as a banner), or null. */
+  pendingNudge: { id: string; title: string } | null;
   /** A plan bill this person pays that is open and not yet sent (their own, or a child's on a parent plan), from the day it opens until it is paid: the bill bar. */
   billDue: { amountCents: number; dueDate: string; href: string; lapseAfterDays: number } | null;
 }
@@ -59,14 +59,17 @@ async function getBillDue(userId: string): Promise<MeStatus["billDue"]> {
 }
 
 export async function getMeStatus(userId: string): Promise<MeStatus> {
-  const [user, held, practice, direct, group, support, billDue] = await Promise.all([
+  const [user, held, practice, support, billDue, nudge] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { classCredits: true, discordId: true } }),
     prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
     getFingerPracticeStatusOnce(userId),
-    getTotalUnreadMessageCount(userId),
-    getTotalUnreadGroupMessageCount(userId),
     getSupportUnreadCount(userId),
     getBillDue(userId),
+    prisma.notification.findFirst({
+      where: { userId, type: "FRIEND_NUDGE", readAt: null, createdAt: { gt: new Date(Date.now() - 6 * 60 * 60 * 1000) } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true },
+    }),
   ]);
   const heldUnits = held._sum.creditsSpent ?? 0;
   const freeUnits = Math.max(0, (user?.classCredits ?? 0) - heldUnits);
@@ -76,7 +79,8 @@ export async function getMeStatus(userId: string): Promise<MeStatus> {
     discordConnected: Boolean(user?.discordId),
     practicedToday: practice.completedToday,
     streak: practice.streak,
-    unreadMessages: direct + group + support,
+    unreadMessages: support,
     billDue,
+    pendingNudge: nudge,
   };
 }

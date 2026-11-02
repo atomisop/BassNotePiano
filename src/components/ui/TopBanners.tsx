@@ -11,6 +11,9 @@ const SLOT_KEY = (which: string) => `bnp-banner-slot-${which}`;
 
 type Which = "phone" | "discord" | "practice";
 
+// The last friend nudge already shown as a banner on this device, so one nudge pops up once.
+const NUDGE_SEEN_KEY = "bnp-nudge-seen";
+
 export interface TopBannersProps {
   /** Ask for a phone number. Null when nobody should be asked. */
   phone: { seconds: number; verifying: boolean } | null;
@@ -116,6 +119,21 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
     setActive(null);
   }
 
+  // A friend's nudge is the one banner not held to the four daily slots: a person asked for it just now, and the server already limits
+  // them to two a day per friend. It shows once, on any screen except Practice (where they already are), and stays in the bell.
+  const [nudge, setNudge] = useState<{ id: string; title: string } | null>(null);
+  const nudgeId = status?.pendingNudge?.id ?? null;
+  const nudgeTitle = status?.pendingNudge?.title ?? null;
+  useEffect(() => {
+    if (!nudgeId || !nudgeTitle || pathname === "/practice" || document.visibilityState !== "visible") return;
+    if (read(NUDGE_SEEN_KEY) === nudgeId) return;
+    write(NUDGE_SEEN_KEY, nudgeId);
+    setNudge({ id: nudgeId, title: nudgeTitle });
+  }, [nudgeId, nudgeTitle, pathname]);
+
+  if (nudge) {
+    return <IosBanner key={`nudge-${nudge.id}`} title={nudge.title} body="Tap to start your 10 minutes." href="/practice" seconds={8} onClose={() => setNudge(null)} />;
+  }
   if (active === "phone" && phone) {
     return (
       <IosBanner
