@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CreditCard } from "@/components/ui/appIcons";
 import Link from "next/link";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
@@ -87,9 +89,14 @@ export default async function BillingHistoryPage() {
       </div>
 
       {payments.length === 0 ? (
-        <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">
-          No payments yet.
-        </div>
+        <EmptyState
+          className="mt-6"
+          icon={<CreditCard />}
+          title="No payments yet"
+          description="Every payment you make for a plan or an extra class is listed here with its receipt."
+          actionLabel="See the plans"
+          actionHref="/billing/plans"
+        />
       ) : (
         <div className="mt-6 space-y-3">
           {payments.map((payment) => {

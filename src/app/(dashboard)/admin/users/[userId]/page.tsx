@@ -78,7 +78,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
     { label: "Next class", value: nextBooking ? when(nextBooking.scheduledAt) : "None booked" },
     { label: "Discord", value: discord?.discordId ? (discord.discordUsername ?? "Linked") : "Not linked", warn: !discord?.discordId },
     { label: "Streak", value: `${profile.user.currentStreak} days` },
-    { label: "Last active", value: profile.user.lastActivityAt ? when(profile.user.lastActivityAt) : "Never" },
+    { label: "Last active", value: profile.user.lastActivityAt ? when(profile.user.lastActivityAt) : "Not seen yet" },
   ];
 
   return (

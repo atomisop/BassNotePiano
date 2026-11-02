@@ -1,6 +1,7 @@
 "use client";
 
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
+import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
@@ -173,8 +174,10 @@ export function ClassRegistrationForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            spellCheck={false}
             className={fieldClass()}
           />
+          <EmailTypoHint value={email} onFix={setEmail} />
         </div>
       </div>
 
