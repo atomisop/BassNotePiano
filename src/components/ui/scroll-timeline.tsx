@@ -40,9 +40,7 @@ export function ScrollTimeline({
     ScrollTrigger.enable();
 
     const mm = gsap.matchMedia();
-    // Only from md up: on a phone the pinned sideways scroll was three screens of near-empty black with a "Keep scrolling" hint
-    // (2026-11-02 audit); HowItWorks shows the steps as a plain list there and hides this section.
-    mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px)", () => {
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
       const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
       const stemsTop = gsap.utils.toArray<HTMLElement>("[data-stem]", track);
       const dots = gsap.utils.toArray<HTMLElement>("[data-dot]", track);
