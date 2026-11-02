@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 
 function Word({ word, progress, range }: { word: string; progress: MotionValue<number>; range: [number, number] }) {
-  const opacity = useTransform(progress, range, [0.55, 1]);
+  const opacity = useTransform(progress, range, [0.75, 1]);
   return (
     <motion.span style={{ opacity }} className="inline-block motion-reduce:!opacity-100">
       {word}

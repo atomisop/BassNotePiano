@@ -9,7 +9,6 @@ import { OfflineNotice } from "@/components/ui/OfflineNotice";
 import { ServiceWorkerSetup } from "@/components/pwa/ServiceWorkerSetup";
 import { LaunchSplash } from "@/components/pwa/LaunchSplash";
 import { NavigationOverlay } from "@/components/layout/NavigationOverlay";
-import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { NavTracker } from "@/components/layout/NavTracker";
 import { KeyboardAvoider } from "@/components/layout/KeyboardAvoider";
@@ -45,12 +44,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <OfflineNotice />
           <ServiceWorkerSetup />
           <LaunchSplash />
-          {/* Same reasoning as Toaster: mounted here (not in a single route)
-              so it appears on every page, marketing, auth, and the
-              authenticated app, using whatever theme is active on each. */}
-          <CookieConsentBanner />
           {/* Atom, the assistant widget, same "every page, one mount point"
-              reasoning as Toaster/CookieConsentBanner above, except on the
+              reasoning as Toaster above, except on the
               auth screens (see AtomUnlessAuth). */}
           <AtomUnlessAuth />
           <NavigationOverlay />

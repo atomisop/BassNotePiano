@@ -72,7 +72,7 @@ function fieldClass() {
   // as "non-text, always"). -500 (6.5:1) is the same token SiteFooter's
   // real body text already uses after the accessibility pass found the
   // same mistake there.
-  return "w-full glass-surface-subtle border-(--field-edge) px-3 py-2.5 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-slate-50/60";
+  return "w-full glass-surface-subtle border-(--field-edge) px-3 py-2.5 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-slate-50/60";
 }
 
 export function ClassRegistrationForm() {

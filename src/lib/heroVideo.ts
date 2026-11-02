@@ -1,4 +1,4 @@
-// Whether to play the homepage background video. It is a 17MB file, so people on a slow
+// Whether to play the homepage background video. It is a 17 MB file on a computer (1.6 to 2.3 MB on a phone or tablet), so people on a slow
 // connection, with data saver on, or who ask for less motion get it paused on its first frame instead.
 // Pure, so it is tested.
 

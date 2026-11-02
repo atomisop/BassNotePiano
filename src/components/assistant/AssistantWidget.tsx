@@ -11,7 +11,7 @@ import { ArrowRight, Sparkles } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
-import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
+import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent, type AtomAnchor } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
 import { Hint } from "@/components/ui/Hint";
@@ -19,7 +19,7 @@ import { ThumbsDown, ThumbsUp, X } from "@/components/ui/appIcons";
 
 /**
  * Atom, the "ask me anything" assistant, floating on every page (mounted
- * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
+ * once in providers.tsx, same pattern as Toaster).
  *
  * The launcher (and the open panel's header icon, and every per-message
  * accent) run `AiBorder`/`GenerateAIButton` from `components/ui/button-33.tsx`,
@@ -46,15 +46,6 @@ import { ThumbsDown, ThumbsUp, X } from "@/components/ui/appIcons";
  * `lib/overlayNav.ts` for why this doesn't just trust the z-index. Both
  * overlays broadcast `FULLSCREEN_NAV_EVENT` while open; this widget listens
  * and hides itself (`navOverlayOpen` below) for as long as one is up.
- *
- * COOKIE BANNER COLLISION, the same problem running the other way: the
- * open chat panel is itself a `fixed`, body-portaled element claiming the
- * same corner of the screen CookieConsentBanner does (`z-[70]`), which had
- * no idea this panel existed and rendered on top of it, confirmed live
- * (a first visitor opening Atom before deciding on cookies got the banner
- * sitting over the bottom of the open panel). Fixed from this side too,
- * broadcasting `ATOM_PANEL_OPEN_EVENT` whenever `open` changes so the
- * banner can step aside while this is up, same `lib/overlayNav.ts`.
  *
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
@@ -382,14 +373,6 @@ export function AssistantWidget() {
     window.addEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
     return () => window.removeEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
   }, []);
-
-  // Tells CookieConsentBanner (a separate fixed, body-portaled element
-  // claiming the same corner of the screen) to hold itself back while this
-  // panel is open, see overlayNav.ts.
-  useEffect(() => {
-    setAtomPanelOpen(open);
-    return () => setAtomPanelOpen(false);
-  }, [open]);
 
   // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
   // the floating launcher while it is mounted, and opens

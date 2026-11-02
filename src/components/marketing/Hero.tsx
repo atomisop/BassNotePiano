@@ -9,11 +9,16 @@ import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
 // The original 4K file, served from R2 (the same object storage the app uses for lesson files and avatars, see lib/storage.ts).
-// A smaller re-encode served from the site (2026-10-31) looked visibly softer, so the owner chose the original back (2026-11-01).
-// It is HEVC (10-bit), which Firefox and many Windows and Android browsers cannot play, so those fall back to the 1080p H.264 copy.
-// The still poster stays, so the first frame shows at once while the video loads.
-const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/1788454184967-hero-piano.mp4";
-const HERO_VIDEO_FALLBACK = "/marketing/hero-piano-1080.mp4";
+// A smaller re-encode served from the site (2026-10-31) looked visibly softer on a computer screen, so the owner chose the
+// original back for computers (2026-11-01). It is 17 MB and HEVC (10-bit): Firefox and many Windows and Android browsers cannot
+// play it and fall back to the 1080p H.264 copy (2.3 MB). Phones and tablets never get the 4K file (2026-11-02): on a screen
+// under 1024px wide the extra pixels are invisible and the download was costing a visitor on mobile data 17 MB before the page
+// had said a word, so a phone gets the 720p copy (1.6 MB) and a tablet the 1080p one. The browser picks the first source whose
+// media query and codec it accepts, once, when the video element is created. The still poster stays, so the first frame shows
+// at once while the video loads.
+const HERO_VIDEO_4K = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/1788454184967-hero-piano.mp4";
+const HERO_VIDEO_1080 = "/marketing/hero-piano-1080.mp4";
+const HERO_VIDEO_720 = "/marketing/hero-piano-720.mp4";
 const HERO_POSTER = "/marketing/hero-piano-poster.webp";
 
 /**
@@ -88,8 +93,9 @@ export function Hero() {
           poster={HERO_POSTER}
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         >
-          <source src={HERO_VIDEO_URL} type='video/mp4; codecs="hvc1.2.4.L150.B0"' />
-          <source src={HERO_VIDEO_FALLBACK} type="video/mp4" />
+          <source media="(min-width: 1024px)" src={HERO_VIDEO_4K} type='video/mp4; codecs="hvc1.2.4.L150.B0"' />
+          <source media="(min-width: 640px)" src={HERO_VIDEO_1080} type="video/mp4" />
+          <source src={HERO_VIDEO_720} type="video/mp4" />
         </video>
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
