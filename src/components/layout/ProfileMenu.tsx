@@ -152,7 +152,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           {appExtras && (
             <div className="md:hidden">
               <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
-              <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Notifications and mail" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
+              <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Inbox" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
               {appExtras.isAdmin && (
                 <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
               )}

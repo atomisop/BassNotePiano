@@ -34,8 +34,8 @@ export default async function FriendProfilePage({ params }: { params: Promise<{ 
       </div>
       {friend.practicedToday && <p className="mt-4 text-small text-slate-400">Finished today&apos;s 10 minutes of practice.</p>}
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="glass-surface p-5">
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="glass-surface p-5 sm:col-span-2">
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{friend.streak > 0 ? `${friend.streak} day streak` : "Streak"}</p>
           <StreakDots currentStreak={friend.streak} />
         </div>
