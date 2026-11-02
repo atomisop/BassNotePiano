@@ -2865,8 +2865,8 @@ input[type="month"]::-webkit-date-and-time-value {
   text-align: left;
   min-height: 1.5em;
 }
-/* Only on touch screens: a computer already draws mm/dd/yyyy in an empty box. */
-@media (hover: none) {
+/* Only on iPhone and iPad (the touch-callout test matches iOS only): Android and computers already draw mm/dd/yyyy in an empty box. */
+@supports (-webkit-touch-callout: none) {
 input[type="date"][value=""]::before,
 input[type="date"]:not([value])::before {
   content: "Choose a date";
