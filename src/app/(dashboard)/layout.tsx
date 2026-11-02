@@ -7,9 +7,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getTotalUnreadMessageCount } from "@/lib/messages";
-import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
-import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { NavPendingGate } from "@/components/layout/NavPendingGate";
@@ -41,10 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
   // Everything the shell needs is asked for at once, not one after another (it ran on every page).
-  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
-    getTotalUnreadMessageCount(session.user.id),
-    getTotalUnreadGroupMessageCount(session.user.id),
-    getSupportUnreadCount(session.user.id),
+  const [user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true, notifyEmailReminders: true } }),
     getActiveAnnouncementForUser(session.user.id),
     phoneVerifyMode(),
@@ -54,7 +48,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getPricingConfig(),
     getDiscountPercent(session.user.id),
   ]);
-  const unreadMessageCount = directUnreadCount + groupUnreadCount + supportUnreadCount;
 
   // Text confirmation is off by default. When the owner switches it on, an account made while it was on has to
   // finish confirming its number; older accounts are never blocked, they get a short popup (below) instead.
@@ -135,9 +128,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </Suspense>
       <DeckStack />
       <div className="lg:hidden">
-        <AppDock unreadMessageCount={unreadMessageCount} ownerAdmin={isOwner} />
+        <AppDock isAdmin={isAdmin} />
       </div>
-      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
+      <AppSidebar cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

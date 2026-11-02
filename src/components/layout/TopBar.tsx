@@ -120,11 +120,13 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5">
         <div className="hidden md:contents">
-        {/* Friends only where nothing else offers it: tablets (the dock has no Friends). From lg the sidebar has it; on phones the profile menu does.
-            No live classes button: Lessons is already in the dock and the sidebar. */}
-        <span className="contents lg:hidden">
-          <FriendsTopLink />
-        </span>
+        {/* Friends is in a student's dock. An admin's dock has Admin in its place, so Friends stays here for them on tablets (from lg the
+            sidebar has it; on phones the profile menu does). No live classes button: Lessons is already in the dock and the sidebar. */}
+        {isAdmin && (
+          <span className="contents lg:hidden">
+            <FriendsTopLink />
+          </span>
+        )}
         {/* From lg the sidebar lists the admin sections, so the shortcut is only for tablets. */}
         {isAdmin && (
           <span className="contents lg:hidden">

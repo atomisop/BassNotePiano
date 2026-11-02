@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -26,7 +25,7 @@ const DOCK_ICONS: Record<string, DockIcon> = {
   home: { paths: COOLICONS.home.paths, fill: [0] },
   roadmap: { paths: COOLICONS.roadmap.paths },
   lessons: { paths: COOLICONS.lessons.paths },
-  messages: { paths: COOLICONS.messages.paths, fill: [0] },
+  friends: { paths: COOLICONS.friends.paths },
   admin: { paths: [`M20 10.165${SHIELD_CHECK.slice(SHIELD_SPLIT + "m11-.835".length)}`, SHIELD_CHECK.slice(0, SHIELD_SPLIT)], fill: [0], cut: [1] },
   settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
 };
@@ -56,9 +55,8 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
-  unreadMessageCount: number;
-  /** The owner's own dock (2026-10-30, by their request): Admin takes Messages' place. Messages is still in the sidebar and menu. */
-  ownerAdmin?: boolean;
+  /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
+  isAdmin?: boolean;
 }
 
 // "About" and "Sign out" live inside Settings now, not as dock icons,
@@ -84,10 +82,10 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
+  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
-const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
+const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -127,8 +125,8 @@ const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { h
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAdmin = false }: AppDockProps) {
-  const items = ownerAdmin ? OWNER_NAV_ITEMS : NAV_ITEMS;
+export function AppDock({ isAdmin = false }: AppDockProps) {
+  const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -139,10 +137,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
   }, [router, items]);
-  // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
-  // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
-  const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
-
   // Like Instagram's bar: scrolling down shrinks the pill in both directions; scrolling up or reaching the top brings it back. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -205,14 +199,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
           const active =
             at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
           const current = pathname === item.href;
-          const badge = item.href === "/messages" ? unreadMessageCount : 0;
           const icon = DOCK_ICONS[item.icon];
           return (
             <Link
               key={item.href}
               href={item.href}
-              data-prerender={item.href === "/messages" ? undefined : ""}
-              aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
+              data-prerender=""
+              aria-label={item.label}
               aria-current={current ? "page" : undefined}
               // The current tab again means "take me to the top" (it would only reload the same page).
               onClick={
@@ -243,8 +236,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
                 className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
               >
                 <DockGlyphIcon icon={icon} active={active} />
-                {/* Instagram's unread mark: a small red dot at the icon's lower right. */}
-                {Boolean(badge) && <span className="ig-dock-dot pointer-events-none absolute -bottom-[3px] -right-[3px] h-[7px] w-[7px] rounded-full" />}
               </motion.span>
 
             </Link>
