@@ -100,6 +100,8 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
 
   // The phone's own launch screen when the installed app opens: the logo on black, so there is no blank black screen before the page loads.
+  // iOS reads the launch images only for a page that says it is a web app in its own words; Next emits just the newer name, so add Apple's.
+  other: { "apple-mobile-web-app-capable": "yes" },
   appleWebApp: {
     capable: true,
     title: SITE_NAME,
