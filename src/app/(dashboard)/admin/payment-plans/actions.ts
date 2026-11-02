@@ -10,7 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
-import { restartPlan, setPlanLength, setPlanPrice, waiveNextBill } from "@/lib/adminPlanTools";
+import { restartPlan, setPlanLength, setPlanPrice, setPlanProgress, waiveNextBill } from "@/lib/adminPlanTools";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { adminLinkParent, adminUnlinkParent, changeGroupPayer, getGroupView, listLinksFor, separateFromGroup, type AdminLinkRow, type GroupView } from "@/lib/adminGroupTools";
 import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
@@ -112,6 +112,22 @@ export async function changeBillDateAction(planId: string, day: string, notify =
     }
     revalidatePath("/", "layout");
     return { ok: true, error: null };
+  });
+}
+
+/** Owner only: sets how many bills are paid and the next bill date, with none of the usual limits (see setPlanProgress). */
+export async function setPlanProgressAction(planId: string, billsPaid: number, nextBillDay: string, notify = true): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a plan's progress." };
+    try {
+      const { warnings } = await setPlanProgress(admin.id, String(planId), { billsPaid: Number(billsPaid), nextBillDay: String(nextBillDay) });
+      revalidatePath("/", "layout");
+      return { ok: true, error: null, warning: warnings.join(" ") };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
   });
 }
 

@@ -9,7 +9,7 @@ import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel"
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import Link from "next/link";
-import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, ignoreSenderAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
+import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, ignoreSenderAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction, undoRefundPaymentAction, cancelBillAction } from "./actions";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
@@ -93,6 +93,8 @@ export default async function AdminPaymentsPage(
           onCheck={checkPaymentAction}
           onDelete={isOwner ? deletePaymentAction : undefined}
           onRefund={isOwner ? refundPaymentAction : undefined}
+          onUndoRefund={isOwner ? undoRefundPaymentAction : undefined}
+          onCancelBill={isOwner ? cancelBillAction : undefined}
           emptyMessage={
             activeFilter === "PENDING_REVIEW" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} payments.`
           }

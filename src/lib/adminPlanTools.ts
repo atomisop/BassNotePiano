@@ -126,3 +126,41 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   await noticePlanUpdated({ userId: plan.userId, title: "Your plan is back on", body: `The studio restarted your ${describePaymentPlan(plan.cadence, plan.term)} plan. Your next payment is due ${day(nextDue)}.` });
   return { keptTime, nextDue };
 }
+
+/**
+ * Owner: sets how many bills are paid and the next bill date on a plan, with none of the usual limits (any date, a past one too; a
+ * finished plan can be reopened). For putting a plan back to what is true after something else changed it. Credits and booked classes
+ * are NOT changed (use Credits and Plan builder for those); unpaid bills are closed so the next one is made fresh for the new date.
+ */
+export async function setPlanProgress(adminId: string, planId: string, input: { billsPaid: number; nextBillDay: string }): Promise<{ warnings: string[] }> {
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new PaymentPlanError("That plan was not found.");
+  if (plan.status !== "ACTIVE" && plan.status !== "COMPLETED") throw new PaymentPlanError("Only a running or finished plan can be changed here. Restart a canceled plan first.");
+  const billsPaid = Math.floor(Number(input.billsPaid));
+  if (!Number.isFinite(billsPaid) || billsPaid < 0 || billsPaid > plan.termMonths) throw new PaymentPlanError(`Bills paid must be from 0 to ${plan.termMonths}.`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.nextBillDay)) throw new PaymentPlanError("Pick the next bill date.");
+  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, status: "PENDING_REVIEW" }, select: { id: true } });
+  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it on Billing > Payments first.");
+
+  const currentKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(plan.nextDueDate);
+  const shift = Math.round((Date.parse(`${input.nextBillDay}T12:00:00Z`) - Date.parse(`${currentKey}T12:00:00Z`)) / 86_400_000);
+  const nextDueDate = new Date(plan.nextDueDate.getTime() + shift * 86_400_000);
+  const status = billsPaid >= plan.termMonths ? "COMPLETED" : "ACTIVE";
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentPlan.update({ where: { id: planId }, data: { installmentsPaid: billsPaid, nextDueDate, status } });
+    await tx.zellePayment.updateMany({ where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+  });
+  await logAudit({
+    actorId: adminId,
+    action: "plan.progress",
+    targetType: "PaymentPlan",
+    targetId: planId,
+    detail: `Bills paid ${plan.installmentsPaid} to ${billsPaid} of ${plan.termMonths}; next bill ${day(plan.nextDueDate)} to ${day(nextDueDate)}`,
+  }).catch(() => undefined);
+  await noticePlanUpdated({
+    userId: plan.userId,
+    title: "Your plan was updated",
+    body: `Your plan now shows ${billsPaid} of ${plan.termMonths} bills paid. Your next payment is due ${day(nextDueDate)}.`,
+  }).catch((err) => console.error("Plan progress notice failed (non-blocking):", err));
+  return { warnings: ["Credits and booked classes were not changed. Adjust them under Credits if they should change too."] };
+}

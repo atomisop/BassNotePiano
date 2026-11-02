@@ -29,6 +29,10 @@ export interface PaymentQueueProps {
   onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
+  /** Owner only: put a refunded payment back as paid. */
+  onUndoRefund?: (paymentId: string, restoreCredits: boolean, reactivatePlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
+  /** Owner only: close a bill nobody paid, keeping the record as expired. */
+  onCancelBill?: (paymentId: string) => Promise<{ ok: boolean; error: string | null }>;
   emptyMessage?: string;
 }
 
@@ -128,6 +132,8 @@ export function PaymentQueue({
   onCheck,
   onDelete,
   onRefund,
+  onUndoRefund,
+  onCancelBill,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
@@ -159,6 +165,10 @@ export function PaymentQueue({
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [undoingId, setUndoingId] = useState<string | null>(null);
+  const [undoCredits, setUndoCredits] = useState(true);
+  const [undoPlan, setUndoPlan] = useState(true);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [refundNote, setRefundNote] = useState("");
   const [refundCredits, setRefundCredits] = useState(true);
   const [refundPlan, setRefundPlan] = useState(true);
@@ -208,6 +218,34 @@ export function PaymentQueue({
       else toast.success("Payment refunded", { description: whoAndHow(id) });
     } catch (err) {
       toast.error("Couldn't refund that payment", { description: failureText(err) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleUndoRefund(id: string) {
+    if (!onUndoRefund) return;
+    setBusyId(id);
+    try {
+      const result = await onUndoRefund(id, undoCredits, undoPlan, notify);
+      if (!result.ok) return void toast.warning(result.error ?? "Could not undo the refund.");
+      toast.success("Refund undone, the payment counts as paid again", result.warning ? { description: result.warning, duration: null } : undefined);
+      setUndoingId(null);
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleCancelBill(id: string) {
+    if (!onCancelBill) return;
+    setBusyId(id);
+    try {
+      const result = await onCancelBill(id);
+      if (!result.ok) return void toast.warning(result.error ?? "Could not cancel the bill.");
+      toast.success("Bill canceled");
+      setCancelingId(null);
+      router.refresh();
     } finally {
       setBusyId(null);
     }
@@ -524,6 +562,50 @@ export function PaymentQueue({
                 >
                   Refund
                 </button>
+              )}
+            </div>
+          )}
+
+          {onUndoRefund && payment.status === "REFUNDED" && (
+            <div className="mt-4 border-t border-slate-50/10 pt-3">
+              {undoingId === payment.id ? (
+                <div className="space-y-3">
+                  <p className="text-small text-slate-300">Count {formatUsd(payment.amountCents)} as paid again. Choose what else to put back.</p>
+                  <label className="flex items-center gap-2 text-small text-slate-200">
+                    <input type="checkbox" checked={undoCredits} onChange={(e) => setUndoCredits(e.target.checked)} className="h-4 w-4 accent-signal" />
+                    Give back the credits the refund took
+                  </label>
+                  <label className="flex items-center gap-2 text-small text-slate-200">
+                    <input type="checkbox" checked={undoPlan} onChange={(e) => setUndoPlan(e.target.checked)} className="h-4 w-4 accent-signal" />
+                    Run the plan again if the refund ended it (canceled classes are not brought back)
+                  </label>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setUndoingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep refunded</button>
+                    <button type="button" onClick={() => handleUndoRefund(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+                      {busyId === payment.id ? "Undoing…" : "Undo refund"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setUndoingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Undo refund</button>
+              )}
+            </div>
+          )}
+
+          {onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED") && (
+            <div className="mt-4 border-t border-slate-50/10 pt-3">
+              {cancelingId === payment.id ? (
+                <div className="space-y-2">
+                  <p className="text-small text-slate-400">Close this unpaid bill? The record stays as expired. The plan is not changed.</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setCancelingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep</button>
+                    <button type="button" onClick={() => handleCancelBill(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+                      {busyId === payment.id ? "Closing…" : "Cancel bill"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setCancelingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel bill</button>
               )}
             </div>
           )}

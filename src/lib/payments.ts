@@ -1164,6 +1164,70 @@ export async function refundZellePayment(
   return { warnings };
 }
 
+
+/**
+ * Reverses a refund (owner): the payment counts as paid again. The credits it took back are returned and the plan it ended is running
+ * again only when asked; classes that were canceled with it are not brought back (book them again or use Plan builder).
+ */
+export async function undoRefundZellePayment(
+  paymentId: string,
+  admin: { id: string; email: string | null },
+  opts: { restoreCredits: boolean; reactivatePlan: boolean },
+): Promise<{ warnings: string[] }> {
+  const warnings: string[] = [];
+  const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId }, include: { user: { select: { email: true } } } });
+  if (payment.status !== "REFUNDED") throw new Error("Only a refunded payment can be undone.");
+  const flipped = await prisma.zellePayment.updateMany({ where: { id: paymentId, status: "REFUNDED" }, data: { status: "VERIFIED", refundedAt: null, refundNote: null } });
+  if (flipped.count === 0) throw new Error("Only a refunded payment can be undone.");
+
+  if (payment.purpose === "FAMILY_PLAN_INSTALLMENT") {
+    const members = await prisma.zellePayment.findMany({ where: { bundleId: payment.id, status: "REFUNDED" }, select: { id: true } });
+    for (const m of members) warnings.push(...(await undoRefundZellePayment(m.id, admin, opts)).warnings);
+  } else {
+    if (opts.restoreCredits && payment.lessonQuantity && payment.lessonQuantity > 0) {
+      await adjustUserCredits(admin.id, payment.userId, payment.lessonQuantity, "Refund undone");
+    }
+    const planIds: string[] = [];
+    if (payment.paymentPlanId) planIds.push(payment.paymentPlanId);
+    if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
+      const group = await prisma.paymentPlan.findMany({ where: { familyGroupId: payment.familyGroupId }, select: { id: true, userId: true, creditsPerInstallment: true } });
+      planIds.push(...group.map((g) => g.id));
+      if (opts.restoreCredits) for (const g of group) if (g.creditsPerInstallment > 0) await adjustUserCredits(admin.id, g.userId, g.creditsPerInstallment, "Refund undone");
+    }
+    if (opts.reactivatePlan) {
+      for (const planId of planIds) {
+        const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, cancellationNote: true } });
+        if (plan?.status === "CANCELED" && plan.cancellationNote?.startsWith("Refund:")) {
+          await prisma.paymentPlan.update({ where: { id: planId }, data: { status: "ACTIVE", canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
+          warnings.push("A plan ended by the refund is running again. Classes canceled with it were not brought back.");
+        }
+      }
+    }
+  }
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "payment.refund-undone",
+    targetType: "ZellePayment",
+    targetId: paymentId,
+    detail: `${formatUsdCents(payment.amountCents)} from ${payment.user.email}${opts.restoreCredits ? ", credits returned" : ""}${opts.reactivatePlan ? ", plan restored" : ""}`,
+  });
+  return { warnings };
+}
+
+/** Closes a bill nobody paid (or one that was rejected) without deleting its record: it shows as expired. A group's combined bill closes with every bill it holds. */
+export async function cancelOpenBill(paymentId: string, admin: { id: string; email: string | null }): Promise<void> {
+  const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId }, include: { user: { select: { email: true } } } });
+  if (payment.status !== "AWAITING_TRANSFER" && payment.status !== "REJECTED") throw new Error("Only an unpaid or rejected bill can be canceled. Use Reject for one waiting for review.");
+  await prisma.$transaction(async (tx) => {
+    await tx.zellePayment.updateMany({ where: { id: paymentId, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } }, data: { status: "EXPIRED" } });
+    if (payment.purpose === "FAMILY_PLAN_INSTALLMENT") {
+      await tx.zellePayment.updateMany({ where: { bundleId: paymentId, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } }, data: { status: "EXPIRED" } });
+    }
+  });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "payment.cancel-bill", targetType: "ZellePayment", targetId: paymentId, detail: `${formatUsdCents(payment.amountCents)} bill for ${payment.user.email} was ${payment.status}` });
+}
+
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */
 export async function rejectZellePayment(paymentId: string, reviewerId: string, reason: string) {
   const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
