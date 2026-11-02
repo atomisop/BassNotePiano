@@ -9,7 +9,10 @@ import { bannerSlotId } from "@/lib/bannerSlots";
 // The slot (2am, 8am, 2pm, 8pm, the viewer's own clock) each banner last popped up in: a banner shows at most once per slot, four times a day.
 const SLOT_KEY = (which: string) => `bnp-banner-slot-${which}`;
 
-type Which = "phone" | "discord" | "practice";
+/** How long the bill banner stays up before tucking itself away (the owner's other banners have their own setting). */
+const BILL_SECONDS = 12;
+
+type Which = "bill" | "phone" | "discord" | "practice";
 
 export interface TopBannersProps {
   /** Ask for a phone number. Null when nobody should be asked. */
@@ -49,11 +52,27 @@ function write(key: string, value: string) {
   }
 }
 
+/** "$129.99 is due Thursday, Nov 6." or, once the day has passed, how many days overdue. */
+function billBody(bill: { amountCents: number; dueDate: string }, now: Date): { title: string; body: string } {
+  const amount = `$${(bill.amountCents / 100).toFixed(2)}`;
+  const due = new Date(bill.dueDate);
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const daysLeft = Math.round((startOf(due) - startOf(now)) / 86_400_000);
+  if (daysLeft < 0) {
+    const late = -daysLeft;
+    return { title: "Your bill is overdue", body: `${amount} was due ${late} day${late === 1 ? "" : "s"} ago and your classes are on hold. Tap to pay.` };
+  }
+  const when = daysLeft === 0 ? "today" : daysLeft === 1 ? "tomorrow" : due.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  return { title: "Your next bill is ready", body: `${amount} is due ${when}. Tap to pay.` };
+}
+
 /**
  * The banners at the top of the app, one at a time and only while the tab is visible. Each one pops up at most once per slot, four slots
  * a day six hours apart from 8am (8am, 2pm, 8pm, 2am, the viewer's clock), for as long as the live status (MeStatusProvider) says it still
  * applies, so connecting Discord or finishing practice stops them at once, on every screen. Each time one pops up the reminder is also
- * kept in the notifications, so closing the banner never loses it. Order when several are due: phone, Discord, practice.
+ * kept in the notifications, so closing the banner never loses it. Order when several are due: bill, phone, Discord, practice. The bill
+ * banner shows from the day a renewal bill opens (payments.installmentLeadDays before it is due) until it is sent; its reminder is
+ * already in the notifications ("Installment due", from the payment-plan-installments job), so it records nothing more there.
  */
 export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   const status = useMeStatus();
@@ -69,6 +88,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
     write(SLOT_KEY("any"), slot);
     activeRef.current = which;
     setActive(which);
+    if (which === "bill") return;
     // Keep the reminder in the notifications whether or not they close the banner. Best effort: a failure changes nothing on screen.
     void fetch("/api/me/banner-notice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: which, slot }) }).catch(() => undefined);
   }
@@ -81,6 +101,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
       // At most one pop-up per time slot in all, not one of each kind.
       if (read(SLOT_KEY("any")) === slot) return;
       const due = (which: Which) => read(SLOT_KEY(which)) !== slot;
+      if (s?.billDue && !alreadyShown("bill", path) && due("bill")) return show("bill");
       if (p && !alreadyShown("phone", path) && due("phone")) return show("phone");
       if (d && s && !s.discordConnected && !alreadyShown("discord", path) && due("discord")) return show("discord");
       if (r && s && !s.practicedToday && !alreadyShown("practice", path) && due("practice")) show("practice");
@@ -97,7 +118,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   // The status can change while a banner is up (they connected Discord in another tab): take the banner down.
   useEffect(() => {
     if (!status) return;
-    if ((active === "discord" && status.discordConnected) || (active === "practice" && status.practicedToday)) {
+    if ((active === "bill" && !status.billDue) || (active === "discord" && status.discordConnected) || (active === "practice" && status.practicedToday)) {
       activeRef.current = null;
       setActive(null);
     }
@@ -116,6 +137,10 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
     setActive(null);
   }
 
+  if (active === "bill" && status?.billDue) {
+    const text = billBody(status.billDue, new Date());
+    return <IosBanner key="bill" title={text.title} body={text.body} href={status.billDue.href} seconds={BILL_SECONDS} onClose={closed} />;
+  }
   if (active === "phone" && phone) {
     return (
       <IosBanner

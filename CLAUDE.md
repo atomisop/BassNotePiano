@@ -319,7 +319,7 @@ notification and show one at a time, **only on Home and at most one per slot in 
 Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
 (`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
 `/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
-Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. The owner settings `discord.promptRepeatMinutes`
+Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. **A bill banner** (2026-11-02) comes first: from the day a renewal bill (second payment on) opens, `payments.installmentLeadDays` before it is due, until it is sent, read from `billDue` in `/api/me/status` (`getBillDue` in `meStatus.ts`; a parent sees a child's bill and goes to `/parent`, the child never does); it adds no bell notice, the installments job already sent "Installment due". The owner settings `discord.promptRepeatMinutes`
 and the practice repeat minutes no longer set the timing (the slots do); `phone.promptSeconds` and the `discord.prompt*` lengths and on/off switches still apply.
 
 ## Staying in sync across the app (added 2026-10-10, `docs/SYNC-AUDIT.md`)

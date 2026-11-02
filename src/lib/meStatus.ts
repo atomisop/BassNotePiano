@@ -22,16 +22,49 @@ export interface MeStatus {
   streak: number;
   /** Unread direct, group and support messages: the dock and sidebar badge. One poll serves them all (it used to be two more). */
   unreadMessages: number;
+  /** A plan bill this person pays that is open and not yet sent (their own, or a child's on a parent plan), from the day it opens until it is paid: the bill banner. */
+  billDue: { amountCents: number; dueDate: string; href: string } | null;
+}
+
+/**
+ * The oldest renewal bill (second payment on) this person still has to send. A child on a parent plan never sees their bill (the parent
+ * pays it); the parent sees it and is sent to /parent. A first payment is left out: it is part of starting a plan, not a renewal.
+ */
+async function getBillDue(userId: string): Promise<MeStatus["billDue"]> {
+  const bill = await prisma.zellePayment.findFirst({
+    where: {
+      status: "AWAITING_TRANSFER",
+      purpose: "PAYMENT_PLAN_INSTALLMENT",
+      installmentNumber: { gte: 2 },
+      paymentPlan: {
+        status: "ACTIVE",
+        OR: [
+          { userId, familyGroupId: null },
+          { userId, familyGroup: { kind: "FAMILY" } },
+          { familyGroup: { kind: "PARENT", payerId: userId } },
+        ],
+      },
+    },
+    orderBy: { createdAt: "asc" },
+    select: { amountCents: true, paymentPlan: { select: { userId: true, nextDueDate: true } } },
+  });
+  if (!bill?.paymentPlan) return null;
+  return {
+    amountCents: bill.amountCents,
+    dueDate: bill.paymentPlan.nextDueDate.toISOString(),
+    href: bill.paymentPlan.userId === userId ? "/billing/plans" : "/parent",
+  };
 }
 
 export async function getMeStatus(userId: string): Promise<MeStatus> {
-  const [user, held, practice, direct, group, support] = await Promise.all([
+  const [user, held, practice, direct, group, support, billDue] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { classCredits: true, discordId: true } }),
     prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
     getFingerPracticeStatusOnce(userId),
     getTotalUnreadMessageCount(userId),
     getTotalUnreadGroupMessageCount(userId),
     getSupportUnreadCount(userId),
+    getBillDue(userId),
   ]);
   const heldUnits = held._sum.creditsSpent ?? 0;
   const freeUnits = Math.max(0, (user?.classCredits ?? 0) - heldUnits);
@@ -42,5 +75,6 @@ export async function getMeStatus(userId: string): Promise<MeStatus> {
     practicedToday: practice.completedToday,
     streak: practice.streak,
     unreadMessages: direct + group + support,
+    billDue,
   };
 }
