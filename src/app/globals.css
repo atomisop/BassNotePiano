@@ -2836,3 +2836,48 @@ html[data-splash] .bnp-splash {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Date and time boxes on phones (2026-11-02, owner: the "Class already taught on" and "Billing cycle starts on" boxes in the plan builder were
+   invisible on an iPhone). An empty native date input on iOS draws nothing at all: no placeholder, no height, and a fill the same colour as
+   the sheet it sits in. Give every one a hairline edge, a real height, left-aligned text and a hint while it is empty, and let the picker
+   follow the theme. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  display: block;
+  min-height: 44px;
+  text-align: left;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  color-scheme: dark;
+}
+[data-mode="light"] input[type="date"],
+[data-mode="light"] input[type="time"],
+[data-mode="light"] input[type="datetime-local"],
+[data-mode="light"] input[type="month"] {
+  border-color: rgb(0 0 0 / 0.14);
+  color-scheme: light;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="month"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+/* Only on touch screens: a computer already draws mm/dd/yyyy in an empty box. */
+@media (hover: none) {
+input[type="date"][value=""]::before,
+input[type="date"]:not([value])::before {
+  content: "Choose a date";
+  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
+}
+input[type="time"][value=""]::before {
+  content: "Choose a time";
+  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
+}
+}
+input[type="date"]:disabled,
+input[type="time"]:disabled {
+  opacity: 0.5;
+}
