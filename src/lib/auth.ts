@@ -12,7 +12,8 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
 import { consumeSecondStep } from "@/lib/adminTwoStep";
-import { placeFromHeaders, recordSignInDevice } from "@/lib/deviceAlerts";
+import { placeFromHeaders, recordSignInDevice, isDeviceSignedOut } from "@/lib/deviceAlerts";
+import { headers } from "next/headers";
 import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 type Entitlements = {
@@ -358,5 +359,8 @@ export const getServerAuthSession = cache(async () => {
 
   const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true } });
   // A ban or a non-payment lock takes effect on the very next request, not only when the old session's token is refreshed.
-  return exists && !exists.bannedAt && !exists.paymentLockedAt ? session : null;
+  if (!exists || exists.bannedAt || exists.paymentLockedAt) return null;
+  // One device signed out from the list: only a browser matching it is refused, every other session carries on.
+  const ua = (await headers()).get("user-agent");
+  return (await isDeviceSignedOut(session.user.id, ua)) ? null : session;
 });

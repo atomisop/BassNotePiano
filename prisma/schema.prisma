@@ -1154,6 +1154,8 @@ model KnownDevice {
   city        String?
   region      String?
   country     String?
+  // Set when the person signs this one device out from the list; cleared by the next sign-in on it. Other sessions are untouched.
+  signedOutAt DateTime?
 
   @@unique([userId, deviceHash])
 }
