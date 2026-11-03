@@ -63,11 +63,11 @@ const FEATURED_INDEX = Math.max(0, TERM_OPTIONS.findIndex((o) => o.value === FEA
 type Audience = "solo" | "family";
 
 /** The retired yearly length has no card of its own; it borrows the six month look. */
-function tierLook(term: PaymentPlanTerm) {
+export function tierLook(term: PaymentPlanTerm) {
   return TIER_LOOK[term === "MONTHLY" || term === "TERM_3" ? term : "TERM_6"];
 }
 
-function tierVars(look: Look): CSSProperties {
+export function tierVars(look: Look): CSSProperties {
   return { "--tier-tint": look.tint, "--tier-accent": look.accent, "--tier-glow": look.glow } as CSSProperties;
 }
 
