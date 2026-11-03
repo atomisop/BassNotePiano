@@ -2899,7 +2899,7 @@ input[type="time"]:disabled {
 @property --tier-wash { syntax: "<number>"; inherits: true; initial-value: 0; }
 
 .tier-scope {
-  transition: --tier-tint 1100ms ease, --tier-accent 1100ms ease, --tier-glow 1100ms ease, --tier-wash 1100ms ease;
+  transition: --tier-tint 600ms ease, --tier-accent 600ms ease, --tier-glow 600ms ease, --tier-wash 600ms ease;
 }
 .tier-card {
   background-image:
@@ -2925,6 +2925,7 @@ input[type="time"]:disabled {
   inset: 0;
   z-index: 0;
   opacity: var(--tier-wash);
+  will-change: opacity;
   background:
     radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.2), rgb(255 122 48 / 0.07) 40%, transparent 68%);
 }

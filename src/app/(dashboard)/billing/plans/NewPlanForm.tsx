@@ -1,7 +1,7 @@
 "use client";
 
 import { SwitchLook } from "@/components/ui/switch";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
@@ -97,6 +97,9 @@ export function NewPlanForm({
 }) {
   const cadence = OFFERED_PLAN_CADENCE;
   const [audience, setAudience] = useState<Audience>(parent?.only || parent?.startOn ? "FAMILY" : initialAudience);
+  // The switch itself updates at once; the heavy re-render of cards, totals and the people list follows without blocking the next tap.
+  const [tabAudience, setTabAudience] = useState<Audience>(audience);
+  const [, startAudienceTransition] = useTransition();
   const [parentMode, setParentMode] = useState(Boolean(parent?.only || parent?.startOn));
   // The parent learns too unless they take themselves out (or already have a plan of their own).
   const [includeSelf, setIncludeSelf] = useState(Boolean(parent?.canIncludeSelf));
@@ -296,10 +299,13 @@ export function NewPlanForm({
           { id: "SOLO", label: "Just me" },
           { id: "FAMILY", label: "Me and others" },
         ]}
-        value={audience}
+        value={tabAudience}
         onChange={(next) => {
-          setAudience(next);
-          setError(null);
+          setTabAudience(next);
+          startAudienceTransition(() => {
+            setAudience(next);
+            setError(null);
+          });
         }}
       />
       </div>

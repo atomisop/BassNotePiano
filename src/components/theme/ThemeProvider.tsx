@@ -49,7 +49,14 @@ function applyToDocument(theme: ThemeId) {
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
   el.style.colorScheme = themeMode(theme);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeGroundColor(theme));
+  // iOS ignores a changed `content` on an existing tag after the first switch and keeps painting the old colour in the status bar strip, so the tag is replaced with a fresh one.
+  const color = themeGroundColor(theme);
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+  const meta = document.createElement("meta");
+  meta.name = "theme-color";
+  meta.content = color;
+  document.head.appendChild(meta);
+  el.style.backgroundColor = color;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

@@ -235,6 +235,16 @@ export async function signOutOtherDevicesAction() {
   return { ok: true as const };
 }
 
+/** Signs out one device from the list (never this one: that is the normal sign out). Its session stops working on its next request. */
+export async function signOutDeviceAction(deviceId: string) {
+  const { id } = await requireSession();
+  const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
+  if (deviceId === mine) return { ok: false as const, error: "Use Sign out to leave this device." };
+  const res = await prisma.knownDevice.updateMany({ where: { id: deviceId, userId: id }, data: { signedOutAt: new Date() } });
+  if (res.count === 0) return { ok: false as const, error: "That device is no longer in the list." };
+  return { ok: true as const };
+}
+
 export interface SignedInDevice {
   id: string;
   label: string;
@@ -250,7 +260,7 @@ export interface SignedInDevice {
 export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
   const { id } = await requireSession();
   const [rows, mine] = await Promise.all([
-    prisma.knownDevice.findMany({ where: { userId: id }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
+    prisma.knownDevice.findMany({ where: { userId: id, signedOutAt: null }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
     currentDeviceId(id, (await headers()).get("user-agent")),
   ]);
   const now = Date.now();
