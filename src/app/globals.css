@@ -1950,6 +1950,11 @@ input[type="radio"],
   html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] {
     height: min(560px, calc(var(--vv-height, 100svh) - 1.5rem)) !important;
   }
+  /* On a phone Atom is a bottom sheet: it sits right on the keyboard and fills what is left above it. */
+  @media (max-width: 767px) {
+    html[data-keyboard="open"] .kb-atom { bottom: var(--kb-height, 0px) !important; }
+    html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] { height: calc(var(--vv-height, 100svh) - 0.5rem) !important; }
+  }
   html[data-keyboard="open"] .kb-hide {
     display: none !important;
   }
