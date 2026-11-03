@@ -2916,7 +2916,7 @@ input[type="time"]:disabled {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 56px -8px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 110px -34px color-mix(in srgb, var(--tier-glow) 40%, transparent);
   }
 }
-.tier-price { color: var(--tier-accent); }
+.tier-price { color: #ffffff; }
 :root:not([data-theme="ink"]) .tier-price { color: #0b0b0b; }
 /* The warm wash behind the page while a group plan is on: strongest at the bottom edge of the screen, fading up. */
 .tier-wash {
