@@ -26,6 +26,8 @@ export default async function ScalePage(props: { params: Promise<{ scaleSlug: st
   if (!access) notFound();
 
   if (!access.canAccess) {
+    // No plan at all: the only useful place is the plans page, so go straight there.
+    if ((access.lockedBecause ?? "no-plan") === "no-plan") redirect("/billing/plans");
     // Say why it is locked and what to do, instead of bouncing the student somewhere without a word.
     const next = await getNextApproval(session.user.id);
     const previousSlug = next.state === "NEEDS_CHECKLIST" ? next.previousSlug : null;

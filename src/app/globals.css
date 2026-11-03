@@ -2891,3 +2891,50 @@ input[type="date"]:disabled,
 input[type="time"]:disabled {
   opacity: 0.5;
 }
+
+/* Pricing cards: the colours are registered so a change (Just me to Group) glides instead of jumping. */
+@property --tier-tint { syntax: "<color>"; inherits: true; initial-value: rgb(80 110 190); }
+@property --tier-accent { syntax: "<color>"; inherits: true; initial-value: rgb(160 190 255); }
+@property --tier-glow { syntax: "<color>"; inherits: true; initial-value: rgb(150 110 255); }
+@property --tier-wash { syntax: "<number>"; inherits: true; initial-value: 0; }
+
+.tier-scope {
+  transition: --tier-tint 1100ms ease, --tier-accent 1100ms ease, --tier-glow 1100ms ease, --tier-wash 1100ms ease;
+}
+.tier-card {
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--tier-tint) 38%, transparent), color-mix(in srgb, var(--tier-tint) 6%, transparent) 62%, transparent);
+}
+.tier-accent { color: var(--tier-accent); }
+.tier-accent-bg { background-color: var(--tier-accent); }
+.tier-glow {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 55%, transparent), 0 0 56px -6px color-mix(in srgb, var(--tier-glow) 50%, transparent), 0 0 120px -30px color-mix(in srgb, var(--tier-glow) 45%, transparent);
+}
+/* The warm wash behind the page while a group plan is on: strongest at the bottom edge of the screen, fading up. */
+.tier-wash {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: var(--tier-wash);
+  background:
+    radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.42), rgb(255 122 48 / 0.16) 45%, transparent 75%);
+}
+@keyframes tier-star-rise {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  15% { opacity: 0.95; }
+  100% { transform: translateY(-190px) scale(1); opacity: 0; }
+}
+.tier-star {
+  position: absolute;
+  bottom: 12%;
+  background: var(--tier-accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 4px var(--tier-glow));
+  animation: tier-star-rise var(--star-d, 4s) ease-out var(--star-delay, 0s) infinite;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tier-star { display: none; }
+  .tier-scope { transition-duration: 1ms; }
+}

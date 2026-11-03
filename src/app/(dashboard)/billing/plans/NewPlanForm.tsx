@@ -18,6 +18,7 @@ import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
+import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
@@ -26,11 +27,6 @@ function usd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
-  { value: "MONTHLY", label: "1 Month" },
-  { value: "TERM_3", label: "3 Months" },
-  { value: "TERM_6", label: "6 Months" },
-];
 
 const field =
   "h-11 min-w-0 flex-1 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -309,35 +305,16 @@ export function NewPlanForm({
       </div>
       )}
 
+      {/* The same plan cards as the pricing page: picking one is how the length is chosen. */}
+      <PaymentPlanTierGrid
+        pricing={pricing}
+        personalDiscountPercent={personalDiscountPercent}
+        select={{ term, onSelect: setTerm, audience: audience === "FAMILY" ? "family" : "solo" }}
+      />
+
       {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
       <div className="space-y-6">
-      <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {TERM_OPTIONS.map((option) => {
-            const active = term === option.value;
-            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals });
-            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }).perPaymentCents) * 100);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setTerm(option.value)}
-                aria-pressed={active}
-                className={`tap rounded-control bg-neu-base px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                }`}
-              >
-                <span className={`block text-small font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</span>
-                <span className="mt-0.5 block text-body font-semibold tabular-nums text-slate-50">{usd(t.perPaymentCents)}</span>
-                <span className="block text-small text-slate-500">{off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {isFamily && (
         <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
           {parent && !parent.only && (
