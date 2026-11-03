@@ -3,6 +3,7 @@ import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
 import { ScrollAssist } from "@/components/layout/ScrollAssist";
 import { DeckStack } from "@/components/layout/DeckStack";
 import { AutoRefresh } from "@/components/layout/AutoRefresh";
+import { PreloadPages } from "@/components/layout/PreloadPages";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -123,6 +124,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
       <SwipeBack />
       <AutoRefresh />
+      <PreloadPages isAdmin={isAdmin} />
       <Suspense fallback={null}>
         <ScrollAssist />
       </Suspense>

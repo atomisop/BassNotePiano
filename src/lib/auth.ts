@@ -357,10 +357,13 @@ export const getServerAuthSession = cache(async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true } });
-  // A ban or a non-payment lock takes effect on the very next request, not only when the old session's token is refreshed.
-  if (!exists || exists.bannedAt || exists.paymentLockedAt) return null;
-  // One device signed out from the list: only a browser matching it is refused, every other session carries on.
+  // Asked together, not one after the other: this runs on every page.
   const ua = (await headers()).get("user-agent");
-  return (await isDeviceSignedOut(session.user.id, ua)) ? null : session;
+  const [exists, deviceOut] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true } }),
+    isDeviceSignedOut(session.user.id, ua),
+  ]);
+  // A ban or a non-payment lock takes effect on the very next request, not only when the old session's token is refreshed.
+  // One device signed out from the list: only a browser matching it is refused, every other session carries on.
+  return exists && !exists.bannedAt && !exists.paymentLockedAt && !deviceOut ? session : null;
 });
