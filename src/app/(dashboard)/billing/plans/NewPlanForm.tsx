@@ -18,10 +18,16 @@ import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
-import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
+import { tierLook, tierVars } from "@/components/marketing/PaymentPlanTierGrid";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+
+const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
+  { value: "MONTHLY", label: "1 Month" },
+  { value: "TERM_3", label: "3 Months" },
+  { value: "TERM_6", label: "6 Months" },
+];
 
 function usd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -311,12 +317,45 @@ export function NewPlanForm({
       </div>
       )}
 
-      {/* The same plan cards as the pricing page: picking one is how the length is chosen. */}
-      <PaymentPlanTierGrid
-        pricing={pricing}
-        personalDiscountPercent={personalDiscountPercent}
-        select={{ term, onSelect: setTerm, audience: audience === "FAMILY" ? "family" : "solo" }}
-      />
+      {/* The plan length: three plain cards with just the price, in the plan colours (they fade to the group colours with the switch). */}
+      <div aria-hidden className="tier-wash" style={{ opacity: audience === "FAMILY" ? 1 : 0 }} />
+      <div>
+        <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {TERM_OPTIONS.map((option) => {
+            const active = term === option.value;
+            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals });
+            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }).perPaymentCents) * 100);
+            const look = tierLook(option.value);
+            const who = audience === "FAMILY" ? look.family : look.solo;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTerm(option.value)}
+                aria-pressed={active}
+                style={tierVars(who)}
+                className={`tap relative isolate overflow-hidden rounded-control border border-ink/10 bg-neu-base px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  active ? "ring-2 ring-[var(--tier-accent)]" : "opacity-90 hover:opacity-100"
+                }`}
+              >
+                {(["solo", "family"] as const).map((k) => (
+                  <span
+                    key={k}
+                    aria-hidden
+                    style={tierVars(look[k])}
+                    className={`tier-layer tier-card pointer-events-none absolute inset-0 -z-10 ${(k === "family") === (audience === "FAMILY") ? "opacity-100" : "opacity-0"}`}
+                  />
+                ))}
+                <span className="tier-accent block text-caption font-bold uppercase tracking-wide">{look.tag}</span>
+                <span className="mt-0.5 block text-small font-semibold text-slate-100">{option.label}</span>
+                <span className="tier-price mt-0.5 block text-body font-semibold tabular-nums">{usd(t.perPaymentCents)}</span>
+                <span className="block text-small text-slate-400">{off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
