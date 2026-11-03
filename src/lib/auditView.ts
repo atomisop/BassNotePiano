@@ -1,6 +1,7 @@
 /** Plain words for the audit log's short action codes (anything not listed shows as its code). */
 const LABELS: Record<string, string> = {
   "user.ban": "Banned an account",
+  "account.email-change": "Changed their sign-in email",
   "user.unban": "Lifted a ban",
   "user.payment-lock": "Locked an account for non-payment",
   "user.payment-unlock": "Lifted a payment lock",

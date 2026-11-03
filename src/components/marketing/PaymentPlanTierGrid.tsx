@@ -42,12 +42,12 @@ const TIER_LOOK: Record<"MONTHLY" | "TERM_3" | "TERM_6", { tag: string; solo: Lo
   TERM_3: {
     tag: "Best value",
     solo: { tint: "rgb(140 140 40)", accent: "rgb(225 232 120)", glow: "rgb(200 210 80)" },
-    family: { tint: "rgb(235 120 55)", accent: "rgb(255 185 130)", glow: "rgb(255 140 70)" },
+    family: { tint: "rgb(225 170 40)", accent: "rgb(255 224 120)", glow: "rgb(255 205 70)" },
   },
   TERM_6: {
     tag: "Most popular",
     solo: { tint: "rgb(120 80 210)", accent: "rgb(200 175 255)", glow: "rgb(170 130 255)" },
-    family: { tint: "rgb(232 96 40)", accent: "rgb(255 170 110)", glow: "rgb(255 120 50)" },
+    family: { tint: "rgb(226 78 42)", accent: "rgb(255 150 105)", glow: "rgb(255 105 55)" },
   },
 };
 type Look = { tint: string; accent: string; glow: string };
@@ -199,7 +199,7 @@ export function PaymentPlanTierGrid({
               <p className="font-serif text-body text-slate-50">{option.label}</p>
               <span
                 className={`rounded-full px-3 py-1 text-small font-bold ${
-                  isMonthly ? "bg-white text-black" : "tier-accent-bg text-black"
+                  isMonthly ? "tier-starter" : "tier-accent-bg text-black"
                 }`}
               >
                 {tierLook(option.value).tag}
@@ -221,7 +221,7 @@ export function PaymentPlanTierGrid({
                 )}
               </p>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} tier-accent`}>
+                <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} tier-price`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
                 <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>
@@ -241,7 +241,7 @@ export function PaymentPlanTierGrid({
     
             {(() => {
               const cta = `tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
-                isMonthly ? "bg-white text-black hover:bg-white/90" : "tier-accent-bg text-black hover:brightness-110"
+                isMonthly ? "tier-starter hover:opacity-90" : "tier-accent-bg text-black hover:brightness-110"
               } active:scale-[0.99]`;
               if (switchTo) {
                 const current = option.value === switchTo.currentTerm;
