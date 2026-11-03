@@ -2946,3 +2946,7 @@ input[type="time"]:disabled {
   .tier-star { display: none; }
   .tier-scope { transition-duration: 1ms; }
 }
+
+/* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
+.tier-starter { background-color: #ffffff; color: #000000; }
+:root:not([data-theme="ink"]) .tier-starter { background-color: #0b0b0b; color: #ffffff; }

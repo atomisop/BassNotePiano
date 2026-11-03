@@ -199,7 +199,7 @@ export function PaymentPlanTierGrid({
               <p className="font-serif text-body text-slate-50">{option.label}</p>
               <span
                 className={`rounded-full px-3 py-1 text-small font-bold ${
-                  isMonthly ? "bg-white text-black" : "tier-accent-bg text-black"
+                  isMonthly ? "tier-starter" : "tier-accent-bg text-black"
                 }`}
               >
                 {tierLook(option.value).tag}
@@ -241,7 +241,7 @@ export function PaymentPlanTierGrid({
     
             {(() => {
               const cta = `tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
-                isMonthly ? "bg-white text-black hover:bg-white/90" : "tier-accent-bg text-black hover:brightness-110"
+                isMonthly ? "tier-starter hover:opacity-90" : "tier-accent-bg text-black hover:brightness-110"
               } active:scale-[0.99]`;
               if (switchTo) {
                 const current = option.value === switchTo.currentTerm;
