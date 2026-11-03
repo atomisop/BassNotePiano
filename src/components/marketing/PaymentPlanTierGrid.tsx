@@ -180,10 +180,19 @@ export function PaymentPlanTierGrid({
       node: (
           <div
             style={tierVars(look(option.value))}
-            className={`tier-scope tier-card relative flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} ${
-              featured ? "tier-glow" : "transition hover:shadow-raised-high"
+            className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} ${
+              featured ? "" : "transition hover:shadow-raised-high"
             }`}
           >
+            {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
+            {(["solo", "family"] as const).map((who) => (
+              <div
+                key={who}
+                aria-hidden
+                style={tierVars(tierLook(option.value)[who])}
+                className={`tier-layer tier-card pointer-events-none absolute inset-0 -z-10 rounded-2xl ${featured ? "tier-glow" : ""} ${(who === "family") === isFamily ? "opacity-100" : "opacity-0"}`}
+              />
+            ))}
             {featured && (
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
                 {STARS.map((star, i) => (
@@ -277,9 +286,9 @@ export function PaymentPlanTierGrid({
   }
 
   return (
-    <div className={`tier-scope ${narrow ? "@container" : ""}`} style={{ "--tier-wash": isFamily ? 1 : 0 } as CSSProperties}>
+    <div className={narrow ? "@container" : undefined}>
       {/* The warm wash a group plan puts behind the page: it fills in from the bottom of the screen. */}
-      <div aria-hidden className="tier-wash" />
+      <div aria-hidden className="tier-wash" style={{ opacity: isFamily ? 1 : 0 }} />
       <div className={`mx-auto mb-8 flex flex-col items-center gap-3 ${switchTo || select ? "hidden" : ""}`}>
         <Segmented
           label="Who is learning"

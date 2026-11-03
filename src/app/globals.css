@@ -2893,20 +2893,15 @@ input[type="time"]:disabled {
 }
 
 /* Pricing cards: the colours are registered so a change (Just me to Group) glides instead of jumping. */
-@property --tier-tint { syntax: "<color>"; inherits: true; initial-value: rgb(80 110 190); }
-@property --tier-accent { syntax: "<color>"; inherits: true; initial-value: rgb(160 190 255); }
-@property --tier-glow { syntax: "<color>"; inherits: true; initial-value: rgb(150 110 255); }
-@property --tier-wash { syntax: "<number>"; inherits: true; initial-value: 0; }
-
-.tier-scope {
-  transition: --tier-tint 600ms ease, --tier-accent 600ms ease, --tier-glow 600ms ease, --tier-wash 600ms ease;
-}
+/* Colours that change with the Just me / Group flip: plain transitions on ordinary properties (no registered custom properties,
+   so nothing below a card is restyled on every frame), and the gradient and glow are two stacked layers that cross-fade. */
+.tier-layer { transition: opacity 600ms ease; will-change: opacity; }
 .tier-card {
   background-image:
     linear-gradient(180deg, color-mix(in srgb, var(--tier-tint) 38%, transparent), color-mix(in srgb, var(--tier-tint) 6%, transparent) 62%, transparent);
 }
-.tier-accent { color: var(--tier-accent); }
-.tier-accent-bg { background-color: var(--tier-accent); }
+.tier-accent { color: var(--tier-accent); transition: color 600ms ease; }
+.tier-accent-bg { background-color: var(--tier-accent); transition: background-color 600ms ease, filter 150ms ease; }
 .tier-glow {
   /* Small enough to fade out inside the carousel's side padding on a phone, so nothing is cut off. */
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 26px -4px color-mix(in srgb, var(--tier-glow) 45%, transparent);
@@ -2924,7 +2919,7 @@ input[type="time"]:disabled {
   position: fixed;
   inset: 0;
   z-index: 0;
-  opacity: var(--tier-wash);
+  transition: opacity 600ms ease;
   will-change: opacity;
   background:
     radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.2), rgb(255 122 48 / 0.07) 40%, transparent 68%);
@@ -2939,13 +2934,14 @@ input[type="time"]:disabled {
   bottom: 12%;
   background: var(--tier-accent);
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-  filter: drop-shadow(0 0 4px var(--tier-glow));
+  will-change: transform, opacity;
+  transition: background-color 600ms ease;
   animation: tier-star-rise var(--star-d, 4s) ease-out var(--star-delay, 0s) infinite;
   opacity: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .tier-star { display: none; }
-  .tier-scope { transition-duration: 1ms; }
+  .tier-layer, .tier-accent-bg, .tier-wash { transition-duration: 1ms; }
 }
 
 /* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
