@@ -22,6 +22,7 @@ import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
 import { SectionCard } from "./SectionCard";
+import { EmailChange } from "./EmailChange";
 import { PasswordSection, DangerZoneSection, TutorialsSection, NotificationSettingsSection } from "./AccountSections";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -418,10 +419,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 
       <AccountGroup id="contact" title="Contact">
         <SectionCard title="Email address">
-          <div className="flex flex-wrap items-center">
-            <span className="text-small text-slate-100">{account.email}</span>
-            <Badge ok={account.emailVerified}>{account.emailVerified ? "Verified" : "Not verified"}</Badge>
-          </div>
+          <EmailChange currentEmail={account.email} verified={account.emailVerified} renderBadge={(ok) => <Badge ok={ok}>{ok ? "Verified" : "Not verified"}</Badge>} />
         </SectionCard>
         <PhoneCard state={account.phone} />
       </AccountGroup>

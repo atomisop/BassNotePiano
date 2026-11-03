@@ -294,6 +294,12 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      if (trigger === "update") {
+        // An email change keeps the session; this device picks the new address up here.
+        const current = await prisma.user.findUnique({ where: { id: token.sub }, select: { email: true } });
+        if (current) token.email = current.email;
+      }
+
       token.role = entitlements.role;
       token.hasCurriculumAccess = entitlements.hasCurriculumAccess;
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;

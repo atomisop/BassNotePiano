@@ -379,6 +379,7 @@ enum VerificationPurpose {
   CHANGE_AVATAR // confirm a profile photo change
   PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
   SWITCH_TO_FAMILY // confirm turning a paid plan into a family plan (the old plan is cancelled when the family's first payment is approved)
+  CHANGE_EMAIL // confirm a new sign-in email: the code is sent to the NEW address, so only someone who can read it can claim it
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 

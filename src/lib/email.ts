@@ -292,6 +292,11 @@ function codeBlockHtml(code: string): string {
 }
 
 const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: string; intro: string }> = {
+  CHANGE_EMAIL: {
+    subject: "Confirm your new email",
+    heading: "Confirm your new email",
+    intro: "Enter this code to make this the email you sign in to Bass Note Piano with.",
+  },
   EMAIL_VERIFY: {
     subject: "Verify your email",
     heading: "Confirm your email",

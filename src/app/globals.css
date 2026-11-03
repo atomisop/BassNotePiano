@@ -2908,8 +2908,16 @@ input[type="time"]:disabled {
 .tier-accent { color: var(--tier-accent); }
 .tier-accent-bg { background-color: var(--tier-accent); }
 .tier-glow {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 55%, transparent), 0 0 56px -6px color-mix(in srgb, var(--tier-glow) 50%, transparent), 0 0 120px -30px color-mix(in srgb, var(--tier-glow) 45%, transparent);
+  /* Small enough to fade out inside the carousel's side padding on a phone, so nothing is cut off. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 26px -4px color-mix(in srgb, var(--tier-glow) 45%, transparent);
 }
+@media (min-width: 1024px) {
+  .tier-glow {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 56px -8px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 110px -34px color-mix(in srgb, var(--tier-glow) 40%, transparent);
+  }
+}
+.tier-price { color: var(--tier-accent); }
+:root:not([data-theme="ink"]) .tier-price { color: #0b0b0b; }
 /* The warm wash behind the page while a group plan is on: strongest at the bottom edge of the screen, fading up. */
 .tier-wash {
   pointer-events: none;
@@ -2918,7 +2926,7 @@ input[type="time"]:disabled {
   z-index: 0;
   opacity: var(--tier-wash);
   background:
-    radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.42), rgb(255 122 48 / 0.16) 45%, transparent 75%);
+    radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.2), rgb(255 122 48 / 0.07) 40%, transparent 68%);
 }
 @keyframes tier-star-rise {
   0% { transform: translateY(0) scale(0.5); opacity: 0; }
