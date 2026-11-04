@@ -2343,6 +2343,7 @@ html[data-kb-motion="off"] .cmd-window {
 /* On phones the page's own heading moves into the top card (BarTitle.tsx); what it copied is hidden here. */
 @media (max-width: 767.98px) {
   html[data-bar-title] [data-deck-header] h1,
+  html[data-bar-title] h1[data-page-title],
   html[data-bar-title] [data-deck-header] .tracking-caps:has(+ h1),
   html[data-bar-title] [data-deck-header]:not(:has(> :not(h1):not(.tracking-caps))) {
     display: none !important;

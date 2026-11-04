@@ -87,7 +87,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div>
         <PageBack href="/admin/users" />
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
       </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-neu-base p-3 shadow-raised-low sm:grid-cols-4 lg:grid-cols-7">

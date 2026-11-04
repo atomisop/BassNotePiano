@@ -32,7 +32,7 @@ export function BarTitle() {
         setTitle("");
         return;
       }
-      const text = main.querySelector<HTMLElement>("[data-deck-header] h1")?.textContent?.trim() ?? "";
+      const text = main.querySelector<HTMLElement>("[data-deck-header] h1, h1[data-page-title]")?.textContent?.trim() ?? "";
       // Only a flag on <html>, never an edit inside the page: the page's own markup is React's, and changing it before it has hydrated breaks it.
       if (text) root.setAttribute("data-bar-title", "");
       else root.removeAttribute("data-bar-title");
