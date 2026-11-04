@@ -264,7 +264,9 @@ export function ClassBookingClient({
     setCancelingId(booking.id);
     let result: Awaited<ReturnType<typeof cancelClassBookingAction>>;
     try {
-      result = await cancelClassBookingAction(booking.id);
+      const hold = await toast.held("Canceling your class", () => cancelClassBookingAction(booking.id), { mail: true });
+      if (hold.undone) return;
+      result = hold.value;
       announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);

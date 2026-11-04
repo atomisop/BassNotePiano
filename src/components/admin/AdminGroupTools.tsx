@@ -27,8 +27,11 @@ function useRun() {
   const [busy, setBusy] = useState<string | null>(null);
   async function run(key: string, work: () => Promise<Result>, after?: () => void | Promise<void>) {
     setBusy(key);
-    const result = await work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    const label = { split: "Moving them onto their own plan", payer: "Changing who pays", link: "Linking the parent" }[key] ?? "Unlinking the parent";
+    const hold = await toast.held(label, () => work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true });
     setBusy(null);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return void toast.warning(result.error);
     toast.success(result.message);
     await after?.();

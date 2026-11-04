@@ -199,7 +199,11 @@ export function AdminLessonManager({
   async function handleDelete(lessonId: string) {
     setBusy(true);
     try {
-      await onDeleteLesson(lessonId, scaleGroupSlug);
+      const hold = await toast.held("Deleting the lesson", () => onDeleteLesson(lessonId, scaleGroupSlug));
+      if (hold.undone) {
+        setDeletingId(null);
+        return;
+      }
       setDeletingId(null);
       router.refresh();
     } finally {

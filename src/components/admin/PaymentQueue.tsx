@@ -187,7 +187,8 @@ export function PaymentQueue({
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
-      await onApprove(id, notify);
+      const h = await toast.held("Approving payment", () => onApprove(id, notify), { mail: notify });
+      if (h.undone) return;
       toast.success("Payment approved", { description: whoAndHow(id) });
       router.refresh();
       setApprovingId(null);
@@ -203,7 +204,9 @@ export function PaymentQueue({
     setBusyId(id);
     setRefundError(null);
     try {
-      const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify);
+      const h = await toast.held("Refunding payment", () => onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify), { mail: notify });
+      if (h.undone) return;
+      const result = h.value;
       if (!result.ok) {
         setRefundError(result.error);
         toast.error("Couldn't refund that payment", { description: result.error ?? undefined });
@@ -227,7 +230,9 @@ export function PaymentQueue({
     if (!onUndoRefund) return;
     setBusyId(id);
     try {
-      const result = await onUndoRefund(id, undoCredits, undoPlan, notify);
+      const h = await toast.held("Undoing the refund", () => onUndoRefund(id, undoCredits, undoPlan, notify), { mail: notify });
+      if (h.undone) return;
+      const result = h.value;
       if (!result.ok) return void toast.warning(result.error ?? "Could not undo the refund.");
       toast.success("Refund undone, the payment counts as paid again", result.warning ? { description: result.warning, duration: null } : undefined);
       setUndoingId(null);
@@ -241,7 +246,9 @@ export function PaymentQueue({
     if (!onCancelBill) return;
     setBusyId(id);
     try {
-      const result = await onCancelBill(id);
+      const h = await toast.held("Canceling the bill", () => onCancelBill(id));
+      if (h.undone) return;
+      const result = h.value;
       if (!result.ok) return void toast.warning(result.error ?? "Could not cancel the bill.");
       toast.success("Bill canceled");
       setCancelingId(null);
@@ -255,7 +262,8 @@ export function PaymentQueue({
     if (!onDelete) return;
     setBusyId(id);
     try {
-      await onDelete(id);
+      const h = await toast.held("Deleting payment record", () => onDelete(id));
+      if (h.undone) return;
       toast.success("Payment record deleted", { description: whoAndHow(id) });
       router.refresh();
       setDeletingId(null);
@@ -270,7 +278,8 @@ export function PaymentQueue({
     if (!reason.trim()) return;
     setBusyId(id);
     try {
-      await onReject(id, reason.trim(), notify);
+      const h = await toast.held("Rejecting payment", () => onReject(id, reason.trim(), notify), { mail: notify });
+      if (h.undone) return;
       toast.success("Payment rejected", { description: whoAndHow(id) });
       router.refresh();
       setRejectingId(null);

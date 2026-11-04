@@ -15,6 +15,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreditCard } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { toast } from "@/components/ui/Toaster";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
@@ -85,7 +86,9 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
     setBusyId(id);
     setRecordError(null);
     try {
-      const result = await onRecordPayment(id, notify);
+      const h = await toast.held("Recording the payment", () => onRecordPayment(id, notify), { mail: notify });
+      if (h.undone) return;
+      const result = h.value;
       if (!result.ok) {
         setRecordError(result.error);
         return;
@@ -101,7 +104,9 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
     if (!onResendBill) return;
     setBusyId(id);
     try {
-      const result = await onResendBill(id);
+      const h = await toast.held("Resending the bill", () => onResendBill(id), { mail: true });
+      if (h.undone) return;
+      const result = h.value;
       setBillNote({ id, text: result.message, ok: result.ok });
     } finally {
       setBusyId(null);
@@ -112,7 +117,8 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
     if (!note.trim()) return;
     setBusyId(id);
     try {
-      await onCancel(id, note.trim(), notify);
+      const h = await toast.held("Canceling the plan", () => onCancel(id, note.trim(), notify), { mail: notify });
+      if (h.undone) return;
       router.refresh();
       setCancelingId(null);
       setNote("");

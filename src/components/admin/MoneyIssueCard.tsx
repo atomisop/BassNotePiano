@@ -15,8 +15,10 @@ export function MoneyIssueCard({ issue, onFix }: { issue: MoneyIssue; onFix: (ke
 
   async function apply(fix: MoneyFixId) {
     setBusy(true);
-    const result = await onFix(issue.key, fix).catch(() => ({ ok: false, message: "Something went wrong. Try again." }));
+    const hold = await toast.held("Applying the fix", () => onFix(issue.key, fix).catch(() => ({ ok: false, message: "Something went wrong. Try again." })));
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return void toast.warning(result.message);
     toast.success(result.message);
     setConfirming(null);

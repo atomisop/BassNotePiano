@@ -12,6 +12,7 @@ import {
   type MessageRecipient,
 } from "@/app/(dashboard)/admin/messages/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 interface SentRow {
   id: string;
@@ -88,14 +89,21 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
     setError(null);
     setNotice(null);
     setSubmitting(true);
-    const result = await sendMessageAction(
-      recipients.map((r) => r.id),
-      title,
-      body,
-      sendEmail,
-      supportCta,
+    const hold = await toast.held(
+      "Sending the message",
+      () =>
+        sendMessageAction(
+          recipients.map((r) => r.id),
+          title,
+          body,
+          sendEmail,
+          supportCta,
+        ),
+      { mail: sendEmail },
     );
     setSubmitting(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       setError(result.error);
       return;

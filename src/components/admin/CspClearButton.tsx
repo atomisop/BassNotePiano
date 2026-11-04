@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 /** Clears the report list, after asking. */
 export function CspClearButton({ onClear }: { onClear: () => Promise<{ ok: boolean; error?: string }> }) {
@@ -13,9 +14,11 @@ export function CspClearButton({ onClear }: { onClear: () => Promise<{ ok: boole
 
   async function go() {
     setBusy(true);
-    const res = await onClear().catch(() => ({ ok: false, error: "That did not go through." }));
+    const hold = await toast.held("Clearing the reports", () => onClear().catch(() => ({ ok: false, error: "That did not go through." })));
     setBusy(false);
     setAsking(false);
+    if (hold.undone) return;
+    const res = hold.value;
     if (!res.ok) return setError(res.error ?? "That did not go through.");
     router.refresh();
   }
