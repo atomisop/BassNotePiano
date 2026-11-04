@@ -49,13 +49,17 @@ function applyToDocument(theme: ThemeId) {
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
   el.style.colorScheme = themeMode(theme);
-  // iOS ignores a changed `content` on an existing tag after the first switch and keeps painting the old colour in the status bar strip, so the tag is replaced with a fresh one.
+  // The tag belongs to React (Next renders it from `viewport` and swaps it on every navigation), so it is only ever updated in place:
+  // removing or replacing it made React fail with "removeChild of null" on the next page change and left the old screen stuck.
   const color = themeGroundColor(theme);
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
-  const meta = document.createElement("meta");
-  meta.name = "theme-color";
-  meta.content = color;
-  document.head.appendChild(meta);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", color);
+  else {
+    const added = document.createElement("meta");
+    added.name = "theme-color";
+    added.content = color;
+    document.head.appendChild(added);
+  }
   el.style.backgroundColor = color;
 }
 
