@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { respondFamilyInviteAction } from "@/app/(dashboard)/billing/plans/actions";
+import { toast } from "@/components/ui/Toaster";
 
 type Invite = { id: string; payerName: string };
 
@@ -16,8 +17,9 @@ export function FamilyInvitesPanel({ invites }: { invites: Invite[] }) {
   if (invites.length === 0) return null;
 
   async function answer(id: string, accept: boolean) {
-    setBusy(`${id}:${accept}`);
     setError(null);
+    if (!accept && !(await toast.hold("Declining the invite"))) return;
+    setBusy(`${id}:${accept}`);
     const result = await respondFamilyInviteAction(id, accept).catch(() => ({ ok: false, error: "Something went wrong. Please try again." }));
     if (!result.ok) setError(result.error);
     setBusy(null);

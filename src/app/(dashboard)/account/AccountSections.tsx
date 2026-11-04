@@ -18,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Laptop, Smartphone, Tablet } from "@/components/ui/appIcons";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { SectionCard } from "./SectionCard";
+import { toast } from "@/components/ui/Toaster";
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
 
@@ -381,6 +382,9 @@ function CalendarFeedCard() {
   }
 
   async function reset() {
+    setConfirmReset(false);
+    // The old link stops working for good, so this waits for Undo.
+    if (!(await toast.hold("Making a new calendar link"))) return;
     setBusy(true);
     try {
       const r = await fetch("/api/me/calendar", { method: "POST" });

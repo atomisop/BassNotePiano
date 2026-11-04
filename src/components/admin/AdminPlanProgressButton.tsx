@@ -23,8 +23,10 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
 
   async function save() {
     setBusy(true);
-    const result = await setPlanProgressAction(planId, paid, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", warning: null as string | null }));
+    const hold = await toast.held("Setting the plan progress", () => setPlanProgressAction(planId, paid, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", warning: null as string | null })), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return void toast.warning(result.error ?? "Could not save.");
     toast.success(`Plan set to ${paid} of ${termMonths} bills paid`, result.warning ? { description: result.warning } : undefined);
     setOpen(false);

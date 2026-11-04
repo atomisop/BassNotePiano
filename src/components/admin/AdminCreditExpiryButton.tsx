@@ -35,8 +35,10 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
 
   async function save(grant: LiveCreditGrant, date: string | null) {
     setBusy(grant.id);
-    const result = await setCreditExpiryAction(userId, grant.id, date, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    const hold = await toast.held("Changing the credit expiry", () => setCreditExpiryAction(userId, grant.id, date, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: notify });
     setBusy(null);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return void toast.warning(result.error);
     toast.success(result.message);
     router.refresh();

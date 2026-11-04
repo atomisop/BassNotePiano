@@ -140,8 +140,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   async function doCancel() {
     if (!canceling) return;
     setBusy(true);
-    const result = await onCancel(canceling.id, reason.trim() || undefined, notify);
+    const hold = await toast.held("Canceling the class", () => onCancel(canceling.id, reason.trim() || undefined, notify), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return setError(result.error);
     toast.success("Class canceled and refunded.");
     setCanceling(null);

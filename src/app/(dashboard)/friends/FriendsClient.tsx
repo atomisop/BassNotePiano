@@ -22,6 +22,7 @@ import { PageBack } from "@/components/ui/BackLink";
 import { NudgeButton } from "@/components/social/NudgeButton";
 import { nudgeSenderLabel } from "@/lib/nudgeRules";
 import { FriendDetail } from "./FriendDetail";
+import { toast } from "@/components/ui/Toaster";
 
 interface PublicProfile {
   id: string;
@@ -137,6 +138,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
   }
 
   async function handleRespond(requestId: string, accept: boolean) {
+    if (!accept && !(await toast.hold("Declining the request"))) return;
     hide(`req:${requestId}`);
     const done = await action.run(async () => {
       try {

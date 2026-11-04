@@ -29,9 +29,15 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
   const first = props.name.split(" ")[0] || "the student";
   const trialEnd = props.trialEndsAt ? new Date(props.trialEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" }) : null;
 
-  async function run(work: () => Promise<{ ok: true; message: string } | { ok: false; error: string }>) {
+  async function run(work: () => Promise<{ ok: true; message: string } | { ok: false; error: string }>, hold?: string) {
     setBusy(true);
-    const result = await work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    // Anything that sends an email or cannot be flipped back is held first, so Undo can still stop it.
+    const held = await (hold ? toast.held(hold, () => work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true }) : undefined);
+    if (held?.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = held ? held.value : await work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setBusy(false);
     if (!result.ok) return void toast.warning(result.error);
     toast.success(result.message);
@@ -102,7 +108,7 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
           <p className="text-small text-slate-300">
             Emails {first} a code at {props.email}, the same one Forgot password sends. They type it on the sign-in screen to choose a new password. Their current password keeps working until they do.
           </p>
-          {actions("Send the code", () => void run(() => sendPasswordResetAction(props.userId)))}
+          {actions("Send the code", () => void run(() => sendPasswordResetAction(props.userId), "Sending the reset code"))}
         </div>
       </Dialog>
 

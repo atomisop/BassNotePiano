@@ -46,8 +46,10 @@ export function PausePlanCard({
   async function confirm() {
     setBusy(true);
     setError(null);
-    const result = await onPause(weeks);
+    const hold = await toast.held("Pausing your plan", () => onPause(weeks), { mail: true });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       const message = result.error ?? "Something went wrong. Try again.";
       setError(message);

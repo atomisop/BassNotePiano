@@ -19,6 +19,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
+import { toast } from "@/components/ui/Toaster";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -213,7 +214,7 @@ export function CustomerProfile({
   // right below it.
   const [pendingAction, setPendingAction] = useState<"role" | "curriculum" | "history" | null>(null);
 
-  async function withBusy(fn: () => Promise<void>) {
+  async function withBusy(fn: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
     try {
@@ -249,7 +250,12 @@ export function CustomerProfile({
     setBusy(true);
     setError(null);
     setCreditSuccess(null);
-    const result = await onAdjustCredits(user.id, amount, creditReason.trim(), notify);
+    const h = await toast.held("Adjusting credits", () => onAdjustCredits(user.id, amount, creditReason.trim(), notify), { mail: notify });
+    if (h.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = h.value;
     if (!result.ok) {
       setError(result.error);
       setBusy(false);
@@ -266,7 +272,12 @@ export function CustomerProfile({
   async function handleBan() {
     setBusy(true);
     setError(null);
-    const result = await onBan(user.id, banReason, notify);
+    const h = await toast.held("Banning this account", () => onBan(user.id, banReason, notify), { mail: notify });
+    if (h.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = h.value;
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingBan(false);
@@ -288,7 +299,12 @@ export function CustomerProfile({
   async function handleLiftLock() {
     setBusy(true);
     setError(null);
-    const result = await onLiftPaymentLock(user.id);
+    const h = await toast.held("Lifting the payment lock", () => onLiftPaymentLock(user.id));
+    if (h.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = h.value;
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingUnlock(false);
@@ -460,7 +476,7 @@ export function CustomerProfile({
                     busyLabel="Clearing…"
                     busy={busy}
                     onCancel={() => setConfirmingClearPhone(false)}
-                    onConfirm={() => void withBusy(() => onClearPhone(user.id, notify)).then(() => setConfirmingClearPhone(false))}
+                    onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
                   />
                 )}
                 <p className="mt-1 text-small text-slate-500">
@@ -528,7 +544,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify))}
+                    onClick={() => withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -555,7 +571,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
+                    onClick={() => withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -591,7 +607,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => onForceSignOut(user.id)).then(() => setConfirmingSignOut(false))}
+                    onClick={() => withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Confirm

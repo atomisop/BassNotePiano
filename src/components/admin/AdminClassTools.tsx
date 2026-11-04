@@ -26,7 +26,12 @@ export function AdminCancelAllButton({ userId, firstName, upcoming }: { userId: 
 
   async function save() {
     setBusy(true);
-    const result = await cancelUpcomingClassesAction(userId, reason, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    const h = await toast.held("Canceling classes", () => cancelUpcomingClassesAction(userId, reason, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: notify });
+    if (h.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = h.value;
     setBusy(false);
     if (!result.ok) return void toast.warning(result.error);
     toast.success(`${result.count} ${result.count === 1 ? "class" : "classes"} canceled`);
@@ -90,7 +95,12 @@ export function AdminCloseDay() {
 
   async function save() {
     setBusy(true);
-    const result = await closeStudioDayAction(date, reason, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    const h = await toast.held("Closing the day", () => closeStudioDayAction(date, reason, notify).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: notify });
+    if (h.undone) {
+      setBusy(false);
+      return;
+    }
+    const result = h.value;
     setBusy(false);
     if (!result.ok) return void toast.warning(result.error);
     toast.success(`${result.label} is closed${result.canceled ? `, ${result.canceled} ${result.canceled === 1 ? "class" : "classes"} canceled` : ""}`);

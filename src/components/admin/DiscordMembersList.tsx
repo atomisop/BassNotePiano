@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
+import { toast } from "@/components/ui/Toaster";
 
 export interface DiscordMemberRow {
   id: string;
@@ -51,7 +52,9 @@ export function DiscordMembersList({
     setBusy(id);
     setNotice(null);
     try {
-      const res = await onDisconnect(id, tellStudent);
+      const hold = await toast.held("Disconnecting their Discord", () => onDisconnect(id, tellStudent), { mail: tellStudent });
+      if (hold.undone) return;
+      const res = hold.value;
       setNotice({ ok: res.ok, text: res.message });
       router.refresh();
     } catch {
@@ -66,7 +69,9 @@ export function DiscordMembersList({
     setNotifying(id);
     setNotice(null);
     try {
-      const res = await onNotify(id);
+      const hold = await toast.held("Sending the Discord message", () => onNotify(id), { mail: true });
+      if (hold.undone) return;
+      const res = hold.value;
       setNotice({ ok: res.ok, text: res.message });
     } catch {
       setNotice({ ok: false, text: "That didn't go through. Please try again." });

@@ -12,6 +12,7 @@ import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
+import { toast } from "@/components/ui/Toaster";
 
 export interface UserListRow {
   id: string;
@@ -69,7 +70,8 @@ export function UserList({
     setBusyId(userId);
     setError(null);
     try {
-      await onApproveNext(userId, false, notify);
+      const hold = await toast.held("Releasing the next scale", () => onApproveNext(userId, false, notify), { mail: notify });
+      if (hold.undone) return;
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

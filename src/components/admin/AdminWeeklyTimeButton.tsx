@@ -46,8 +46,10 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
     const chosen = choices.find((c) => `${c.scheduleId}:${c.chunkIndex}` === pick);
     if (!chosen) return;
     setBusy(true);
-    const result = await moveWeeklyTimeAction(planId, chosen.scheduleId, chosen.chunkIndex, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", label: undefined }));
+    const hold = await toast.held("Moving the weekly time", () => moveWeeklyTimeAction(planId, chosen.scheduleId, chosen.chunkIndex, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", label: undefined })), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       toast.warning(result.error ?? "Could not move the weekly time.");
       return;

@@ -2,6 +2,7 @@
 
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
+import { toast } from "@/components/ui/Toaster";
 import { useRouter } from "next/navigation";
 import type { AdminAnnouncementRow } from "@/lib/announcements";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -40,8 +41,10 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
   async function publish() {
     setError(null);
     setSubmitting(true);
-    const result = await createAnnouncementAction(title, body, sendEmail);
+    const hold = await toast.held("Publishing to everyone", () => createAnnouncementAction(title, body, sendEmail), { mail: true });
     setSubmitting(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       setError(result.error);
       return;
@@ -149,6 +152,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   // (PaymentQueue, StudentQueue, AdminLessonManager) instead of a native
   // confirm() dialog, which looks out of place next to the custom UI.
   const [deleting, setDeleting] = useState(false);
+  const [gone, setGone] = useState(false);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(announcement.title);
   const [body, setBody] = useState(announcement.body);
@@ -171,13 +175,21 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
     onChanged();
   }
 
-  async function handleDelete() {
-    setBusy(true);
-    await deleteAnnouncementAction(announcement.id);
-    setBusy(false);
+  function handleDelete() {
     setDeleting(false);
-    onChanged();
+    setGone(true);
+    // The real delete waits 5 seconds so Undo can still cancel it.
+    toast.deferred(
+      "Announcement deleted",
+      async () => {
+        await deleteAnnouncementAction(announcement.id);
+        onChanged();
+      },
+      () => setGone(false),
+    );
   }
+
+  if (gone) return null;
 
   return (
     <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">

@@ -18,6 +18,7 @@ import { errorNeedsTeam } from "@/lib/bookingRules";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { toast } from "@/components/ui/Toaster";
 
 interface UpcomingBooking {
   id: string;
@@ -85,7 +86,12 @@ export function ScheduleClient({
   async function handleSkip(bookingId: string) {
     setSkippingId(bookingId);
     setSkipError(null);
-    const result = await cancelClassBookingAction(bookingId);
+    const hold = await toast.held("Skipping this class", () => cancelClassBookingAction(bookingId), { mail: true });
+    if (hold.undone) {
+      setSkippingId(null);
+      return;
+    }
+    const result = hold.value;
     announceChange("booking");
     setSkippingId(null);
     if (!result.ok) {
