@@ -9,6 +9,7 @@ import { LESSON_VARIANTS, SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleWorkspace } from "./components/ScaleWorkspace";
 import { FingerPracticeGate } from "./components/FingerPracticeGate";
+import { ReplaceOnMount } from "./components/ReplaceOnMount";
 import { LockedScale } from "./components/LockedScale";
 import { describeLockedScale } from "@/lib/lockedScale";
 import { getNextApproval } from "@/lib/scaleApproval";
@@ -26,8 +27,8 @@ export default async function ScalePage(props: { params: Promise<{ scaleSlug: st
   if (!access) notFound();
 
   if (!access.canAccess) {
-    // No plan at all: the only useful place is the plans page, so go straight there.
-    if ((access.lockedBecause ?? "no-plan") === "no-plan") redirect("/billing/plans");
+    // No plan at all: the only useful place is the plans page, so go straight there (the card below shows for an instant, and is the fallback).
+    const noPlan = (access.lockedBecause ?? "no-plan") === "no-plan";
     // Say why it is locked and what to do, instead of bouncing the student somewhere without a word.
     const next = await getNextApproval(session.user.id);
     const previousSlug = next.state === "NEEDS_CHECKLIST" ? next.previousSlug : null;
@@ -38,7 +39,12 @@ export default async function ScalePage(props: { params: Promise<{ scaleSlug: st
       slug: params.scaleSlug,
       previousTitle: previous ? `${previous.code}: ${previous.title}` : null,
     });
-    return <LockedScale scaleLabel={`${access.scaleGroup.code}: ${access.scaleGroup.title}`} scaleSlug={params.scaleSlug} message={message} />;
+    return (
+      <>
+        {noPlan && <ReplaceOnMount href="/billing/plans" />}
+        <LockedScale scaleLabel={`${access.scaleGroup.code}: ${access.scaleGroup.title}`} scaleSlug={params.scaleSlug} message={message} />
+      </>
+    );
   }
 
   // Lessons open only after today's 10 minutes of finger exercises. Admins are exempt.

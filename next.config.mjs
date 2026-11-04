@@ -28,6 +28,12 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/schedule", destination: "/lessons", permanent: false },
+      // Student chat is gone; an old link lands on Home. Done here, not with redirect() in the page, which streams after the loading screen.
+      { source: "/messages", destination: "/dashboard", permanent: false },
+      // The breadcrumb links every path segment, and these folders have no page of their own.
+      { source: "/billing", destination: "/billing/plans", permanent: false },
+      { source: "/billing/receipt", destination: "/billing/history", permanent: false },
+      { source: "/scales", destination: "/roadmap", permanent: false },
       { source: "/billing/credits", destination: "/lessons?tab=extra", permanent: false },
       { source: "/billing/curriculum", destination: "/billing/plans", permanent: false },
       { source: "/billing/curriculum/family", destination: "/billing/plans", permanent: false },
