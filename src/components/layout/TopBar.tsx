@@ -76,10 +76,11 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header data-topbar="" className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
-      {/* No bar at all: the logo and each button float on their own over the page, which scrolls under them (kept below the notch and
-          Dynamic Island on phones). Every button carries its own surface, so it stays readable over whatever passes underneath. */}
-      <div data-glass="" className="pointer-events-auto relative flex min-h-12 w-full flex-wrap items-center justify-between gap-x-2 rounded-[24px] border border-slate-50/10 bg-neu-base/90 px-1.5 shadow-raised-mid backdrop-blur-md md:h-12 md:border-0 md:bg-transparent md:shadow-none md:backdrop-blur-none md:flex-nowrap md:rounded-full min-[360px]:gap-x-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
+    <header data-topbar="" className="pad-safe-x pointer-events-auto fixed inset-x-0 top-0 z-[45] bg-neu-base/95 px-2 pt-[max(0.375rem,env(safe-area-inset-top))] backdrop-blur-md md:pointer-events-none md:bg-transparent md:px-3 md:backdrop-blur-none">
+      {/* Phones: the top is one flat, edge to edge strip in the page's own colour (no island, border or shadow), so the logo, buttons and
+          page title read as part of the page and the whole strip moves together when you pull to refresh. From md up there is no bar at
+          all: the logo and each button float on their own over the page, which scrolls under them. */}
+      <div data-glass="" className="pointer-events-auto relative flex min-h-12 w-full flex-wrap items-center justify-between gap-x-2 px-1.5 md:h-12 md:flex-nowrap md:rounded-full min-[360px]:gap-x-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
