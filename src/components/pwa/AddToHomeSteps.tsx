@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Download, EllipsisVertical, Share, SquarePlus, Smartphone } from "@/components/ui/appIcons";
 import { HOME_SCREEN_STEPS, detectPlatform, type HomeScreenPlatform } from "@/lib/addToHome";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 const ICONS = { share: Share, plus: SquarePlus, menu: EllipsisVertical, open: Smartphone } as const;
 
@@ -66,9 +66,9 @@ export function AddToHomeSteps({ onInstalled }: { onInstalled?: () => void }) {
       </div>
 
       {platform === "android" && canInstall && (
-        <Button type="button" onClick={install} variant="primary" size="sm" className="mt-4 text-black">
+        <button type="button" onClick={install} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 text-black" })}>
           <Download className="mr-2 h-4 w-4" aria-hidden /> Install now
-        </Button>
+        </button>
       )}
 
       <ol className="mt-4 space-y-3">

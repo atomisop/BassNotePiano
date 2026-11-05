@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ChevronRight } from "@/components/ui/appIcons";
 import { AdminListSearch } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -100,13 +100,13 @@ export function UserList({
             : []),
         ]}
         extra={
-          <Button
+          <button
             type="button"
-            variant="secondary" size="sm"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
             onClick={() => void navigator.clipboard?.writeText(pickedList.map((id) => rows.find((r) => r.id === id)?.email).filter(Boolean).join(", "))}
           >
             Copy emails
-          </Button>
+          </button>
         }
       />
 
@@ -140,15 +140,15 @@ export function UserList({
                 {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />}
               </Link>
               {row.readyScale && (
-                <Button
+                <button
                   type="button"
                   disabled={busyId === row.id}
                   onClick={() => void approve(row.id)}
-                  variant="primary" size="sm" className="shrink-0"
+                  className={buttonVariants({ variant: "primary", size: "sm", className: "shrink-0" })}
                 >
                   {busyId === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busyId === row.id ? "Releasing…" : `Approve ${row.readyScale}`}
-                </Button>
+                </button>
               )}
             </li>
           )}

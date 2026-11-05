@@ -3,7 +3,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { DiscordIcon } from "@/components/ui/icons";
 import { unlinkDiscordAction } from "@/app/(dashboard)/lessons/discordActions";
 import type { DiscordLinkState } from "@/lib/discordLinkState";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { DiscordConnectLink, DiscordLink } from "@/components/ui/DiscordLink";
 
 const MESSAGES: Record<string, { text: string; good: boolean }> = {
@@ -42,9 +42,9 @@ export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; fla
         <div className="flex flex-wrap items-center gap-2">
           {link.connected ? (
             <form action={unlinkDiscordAction}>
-              <Button type="submit" variant="secondary" size="sm">
+              <button type="submit" className={buttonVariants({ variant: "secondary", size: "sm" })}>
                 Disconnect
-              </Button>
+              </button>
             </form>
           ) : (
             <DiscordConnectLink className={buttonVariants({ variant: "primary", size: "sm" })}>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, Trash2 } from "@/components/ui/appIcons";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction } from "@/app/(dashboard)/admin/schedule/actions";
@@ -114,12 +114,12 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
             ) : (
               <>
                 <div className="flex gap-2" role="group" aria-label="What to keep">
-                  <Button type="button" aria-pressed={whole} onClick={() => setWhole(true)} variant="secondary" size="sm" className={whole ? "shadow-pressed-low! text-signal-fg!" : ""}>
+                  <button type="button" aria-pressed={whole} onClick={() => setWhole(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: whole ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                     Whole day
-                  </Button>
-                  <Button type="button" aria-pressed={!whole} onClick={() => setWhole(false)} variant="secondary" size="sm" className={!whole ? "shadow-pressed-low! text-signal-fg!" : ""}>
+                  </button>
+                  <button type="button" aria-pressed={!whole} onClick={() => setWhole(false)} className={buttonVariants({ variant: "secondary", size: "sm", className: !whole ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                     Some hours
-                  </Button>
+                  </button>
                 </div>
                 {!whole && (
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -168,10 +168,10 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
           <input value={note} onChange={(e) => setNote(e.target.value)} className={`${field} mt-1.5`} maxLength={200} />
         </label>
 
-        <Button type="submit" disabled={busy} aria-busy={busy} variant="primary" className="w-full sm:w-auto">
+        <button type="submit" disabled={busy} aria-busy={busy} className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}>
           {busy ? <MorphingSquare size={14} className="mr-2 shrink-0" /> : <CalendarCheck aria-hidden className="mr-2 h-4 w-4" />}
           Reserve
-        </Button>
+        </button>
       </form>
 
       <section className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
@@ -201,16 +201,16 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                   </p>
                   {r.note && <p className="mt-0.5 text-small text-slate-500">{r.note}</p>}
                 </div>
-                <Button
+                <button
                   type="button"
                   onClick={() => void release(r.groupId)}
                   disabled={releasing === r.groupId}
                   aria-label={sure === r.groupId ? "Tap again to release" : `Release ${r.dayLabel}`}
-                  variant="secondary" size="sm" className="shrink-0"
+                  className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                 >
                   {releasing === r.groupId ? <MorphingSquare size={12} className="mr-1.5" /> : <Trash2 aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
                   {sure === r.groupId ? "Sure?" : "Release"}
-                </Button>
+                </button>
               </li>
             ))}
           </ul>

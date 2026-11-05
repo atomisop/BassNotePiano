@@ -11,7 +11,7 @@ import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CheckCheck } from "@/components/ui/appIcons";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { toast } from "@/components/ui/Toaster";
 
@@ -175,15 +175,15 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 >
                   Cancel
                 </button>
-                <Button
+                <button
                   type="button"
                   onClick={() => handleApprove(reg.id)}
                   disabled={busyId === reg.id}
-                  variant="primary" className="flex-1"
+                  className={buttonVariants({ variant: "primary", className: "flex-1" })}
                 >
                   {busyId === reg.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === reg.id ? "Approving…" : "Confirm approve"}
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
@@ -196,14 +196,14 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
               >
                 Reject
               </button>
-              <Button
+              <button
                 type="button"
                 onClick={() => setApprovingId(reg.id)}
                 disabled={busyId === reg.id}
-                variant="primary" className="flex-1"
+                className={buttonVariants({ variant: "primary", className: "flex-1" })}
               >
                 Approve
-              </Button>
+              </button>
             </div>
           )}
         </div>

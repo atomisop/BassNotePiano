@@ -13,7 +13,7 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
@@ -80,14 +80,14 @@ function NotesSection({ studentId }: { studentId: string }) {
     <SectionCard
       title="Notes"
       action={
-        <Button
+        <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          variant="secondary" size="sm"
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
           {open ? "Close notes" : "Notes"}
-        </Button>
+        </button>
       }
     >
       {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500">Permanent notes on this student. Mark any as hidden from them.</p>}
@@ -312,26 +312,26 @@ export function CustomerProfile({
   }
 
   const banButton = user.bannedAt ? (
-    <Button
+    <button
       type="button"
       disabled={busy}
       onClick={() => setConfirmingUnban((o) => !o)}
       aria-expanded={confirmingUnban}
-      variant="secondary" size="sm"
+      className={buttonVariants({ variant: "secondary", size: "sm" })}
     >
       Lift ban
-    </Button>
+    </button>
   ) : user.role === "ADMIN" ? null : (
-    <Button
+    <button
       type="button"
       disabled={busy}
       onClick={() => setConfirmingBan((o) => !o)}
       aria-expanded={confirmingBan}
-      variant="danger" size="sm"
+      className={buttonVariants({ variant: "danger", size: "sm" })}
     >
       <Hammer className="h-4 w-4" aria-hidden />
       Ban
-    </Button>
+    </button>
   );
 
 
@@ -344,7 +344,7 @@ export function CustomerProfile({
       {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
         <QuickMessageButton userId={user.id} name={user.name ?? user.email} />
-        <Button
+        <button
           type="button"
           onClick={() => {
             chooseTab("classes");
@@ -354,19 +354,19 @@ export function CustomerProfile({
               input?.focus({ preventScroll: true });
             }, 60);
           }}
-          variant="secondary" size="sm"
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
           <Coins aria-hidden className="h-4 w-4" />
           Add credits
-        </Button>
-        <Button type="button" onClick={() => chooseTab("scheduler")} variant="secondary" size="sm">
+        </button>
+        <button type="button" onClick={() => chooseTab("scheduler")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           <CalendarPlus aria-hidden className="h-4 w-4" />
           Book a class
-        </Button>
-        <Button type="button" onClick={() => chooseTab("money")} variant="ghost" size="sm">
+        </button>
+        <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
           Payments
-        </Button>
+        </button>
         <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="ml-auto" />
       </div>
 
@@ -436,13 +436,13 @@ export function CustomerProfile({
                   placeholder="Why, so you remember"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} variant="secondary" size="sm">
+                  <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Not yet
-                  </Button>
-                  <Button type="button" onClick={handleBan} disabled={busy} variant="danger" size="sm">
+                  </button>
+                  <button type="button" onClick={handleBan} disabled={busy} className={buttonVariants({ variant: "danger", size: "sm" })}>
                     {busy ? <MorphingSquare size={12} className="shrink-0" /> : <Hammer className="h-4 w-4" aria-hidden />}
                     {busy ? "Banning…" : "Yes, ban this account"}
-                  </Button>
+                  </button>
                 </div>
               </div>
             )}
@@ -512,28 +512,28 @@ export function CustomerProfile({
                   {user.hasCurriculumAccess
                     ? "Remove complimentary access?"
                     : "Give complimentary curriculum access?"}
-                  <Button
+                  <button
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
-                  </Button>
-                  <Button type="button" onClick={() => setPendingAction(null)} variant="secondary" size="sm">
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
-                  </Button>
+                  </button>
                 </span>
               ) : (
-                <Button
+                <button
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("curriculum")}
-                  variant="secondary" size="sm"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
-                </Button>
+                </button>
               )}
 
               {pendingAction === "role" ? (
@@ -541,80 +541,80 @@ export function CustomerProfile({
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account? They are signed out right away."
                     : "Make this account an admin? They will be able to manage payments, users and credits."}
-                  <Button
+                  <button
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
-                  </Button>
-                  <Button type="button" onClick={() => setPendingAction(null)} variant="secondary" size="sm">
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
-                  </Button>
+                  </button>
                 </span>
               ) : (
-                <Button
+                <button
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("role")}
-                  variant="secondary" size="sm"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
-                </Button>
+                </button>
               )}
 
               {pendingAction === "history" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Permanently delete this account&apos;s stored Atom history?
-                  <Button
+                  <button
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Deleting…" : "Confirm"}
-                  </Button>
-                  <Button type="button" onClick={() => setPendingAction(null)} variant="secondary" size="sm">
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
-                  </Button>
+                  </button>
                 </span>
               ) : (
-                <Button
+                <button
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("history")}
-                  variant="secondary" size="sm"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   Clear Atom history
-                </Button>
+                </button>
               )}
 
               {!confirmingSignOut ? (
-                <Button
+                <button
                   type="button"
                   disabled={busy}
                   onClick={() => setConfirmingSignOut(true)}
-                  variant="secondary" size="sm"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   Sign out everywhere
-                </Button>
+                </button>
               ) : (
                 <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Sign out every device this account is logged into?
-                  <Button
+                  <button
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Confirm
-                  </Button>
-                  <Button type="button" onClick={() => setConfirmingSignOut(false)} variant="secondary" size="sm">
+                  </button>
+                  <button type="button" onClick={() => setConfirmingSignOut(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
-                  </Button>
+                  </button>
                 </span>
               )}
             </div>
@@ -701,13 +701,13 @@ export function CustomerProfile({
                 />
               </div>
               {!creditConfirming && (
-                <Button
+                <button
                   type="submit"
                   disabled={busy}
-                  variant="primary" size="sm" className="shrink-0"
+                  className={buttonVariants({ variant: "primary", size: "sm", className: "shrink-0" })}
                 >
                   Review
-                </Button>
+                </button>
               )}
             </form>
             {creditConfirming && (
@@ -717,18 +717,18 @@ export function CustomerProfile({
                   {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
                 </span>
                 ? Reason: &ldquo;{creditReason}&rdquo;
-                <Button
+                <button
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  variant="secondary" size="sm"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
-                </Button>
-                <Button type="button" onClick={() => setCreditConfirming(false)} variant="secondary" size="sm">
+                </button>
+                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   Edit
-                </Button>
+                </button>
               </div>
             )}
             {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
@@ -789,7 +789,7 @@ export function CustomerProfile({
               {profile.payerAliases.map((alias) => (
                 <div key={alias.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
                   <span className="min-w-0 truncate text-slate-100">{alias.name}</span>
-                  <Button
+                  <button
                     type="button"
                     disabled={busy}
                     onClick={async () => {
@@ -801,10 +801,10 @@ export function CustomerProfile({
                         setBusy(false);
                       }
                     }}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Forget
-                  </Button>
+                  </button>
                 </div>
               ))}
             </div>

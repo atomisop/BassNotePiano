@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { PasswordInput } from "@/components/ui/password-input";
 import { chunkCode, CHUNKED_CODE_LENGTH } from "@/lib/codeChunks";
@@ -72,9 +72,9 @@ export function EmailChange({ currentEmail, verified, renderBadge }: { currentEm
       <div>
         {current}
         <div className="mt-3">
-        <Button type="button" onClick={() => { setOpen(true); setDone(null); }} variant="secondary" size="sm">
+        <button type="button" onClick={() => { setOpen(true); setDone(null); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           Edit email
-        </Button>
+        </button>
         {done && <p className="mt-2 text-small text-slate-50">Email changed to {done}. Use it the next time you sign in.</p>}
         </div>
       </div>
@@ -125,13 +125,13 @@ export function EmailChange({ currentEmail, verified, renderBadge }: { currentEm
       )}
       {error && <p role="alert" className="text-small text-red-400">{error}</p>}
       <div className="flex gap-2">
-        <Button type="button" onClick={close} disabled={busy} variant="secondary" size="sm">
+        <button type="button" onClick={close} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           Cancel
-        </Button>
-        <Button type="submit" disabled={busy || (awaitingCode && code.length !== 6)} variant="primary" size="sm">
+        </button>
+        <button type="submit" disabled={busy || (awaitingCode && code.length !== 6)} className={buttonVariants({ variant: "primary", size: "sm" })}>
           {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {awaitingCode ? "Confirm new email" : "Send code"}
-        </Button>
+        </button>
       </div>
     </form>
     </div>

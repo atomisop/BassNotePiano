@@ -4,7 +4,7 @@ import { useWebOtp } from "@/lib/useWebOtp";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
@@ -99,9 +99,9 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           <Button type="button" onClick={sendCode} loading={busy} className="cta-sheen w-full">
             {busy ? "Sending…" : "Text me a code"}
           </Button>
-          <Button type="button" onClick={() => { setError(null); setStep("number"); }} variant="secondary" size="sm" className="w-full">
+          <button type="button" onClick={() => { setError(null); setStep("number"); }} className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}>
             Use a different number
-          </Button>
+          </button>
         </div>
       )}
 
@@ -135,17 +135,17 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
               {busy ? "Verifying…" : "Verify"}
             </Button>
           </form>
-          <Button
+          <button
             type="button"
             onClick={async () => {
               if (cooldown.secondsLeft > 0) return;
               await sendCode();
             }}
             disabled={cooldown.secondsLeft > 0 || busy}
-            variant="secondary" size="sm" className="mt-4 w-full"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4 w-full" })}
           >
             {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a text? Send it again"}
-          </Button>
+          </button>
           <button type="button" onClick={() => { setError(null); setInput(""); setStep("number"); }} className="tap mt-2 w-full text-center text-small text-slate-500 transition hover:text-slate-300">
             Wrong number? Use a different one
           </button>

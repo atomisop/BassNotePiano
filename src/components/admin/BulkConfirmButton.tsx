@@ -4,7 +4,7 @@ import { useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
 /** A button for a change that touches many rows at once: the first press asks, the second does it. */
@@ -49,13 +49,13 @@ export function BulkConfirmButton({
       <div className="rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
         <p className="text-small text-slate-300">{question}</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setAsking(false)} disabled={busy} variant="secondary" size="sm">
+          <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Not yet
-          </Button>
-          <Button type="button" onClick={run} disabled={busy} variant="primary" size="sm" className="text-black">
+          </button>
+          <button type="button" onClick={run} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
             {busy && <MorphingSquare size={12} />}
             {busy ? "Working…" : confirmLabel}
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -63,9 +63,9 @@ export function BulkConfirmButton({
 
   return (
     <div>
-      <Button type="button" onClick={() => { setResult(null); setAsking(true); }} variant="secondary" size="sm">
+      <button type="button" onClick={() => { setResult(null); setAsking(true); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>
         {label}
-      </Button>
+      </button>
       {result && (
         <p role="status" className={`mt-2 text-small ${result.ok ? "text-slate-200" : "text-red-400"}`}>
           {result.text}

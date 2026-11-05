@@ -15,7 +15,7 @@ import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CheckCheck } from "@/components/ui/appIcons";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
@@ -401,7 +401,7 @@ export function PaymentQueue({
                 {payment.checkedAt ? "Auto-approved, checked" : "Auto-approved, check the transfer arrived"}
               </p>
               {!payment.checkedAt && onCheck && (
-                <Button
+                <button
                   type="button"
                   disabled={busyId === payment.id}
                   onClick={async () => {
@@ -413,11 +413,11 @@ export function PaymentQueue({
                       setBusyId(null);
                     }
                   }}
-                  variant="secondary" size="sm" className="shrink-0"
+                  className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                 >
                   {busyId === payment.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   Mark checked
-                </Button>
+                </button>
               )}
             </div>
           )}
@@ -477,15 +477,15 @@ export function PaymentQueue({
                 >
                   Cancel
                 </button>
-                <Button
+                <button
                   type="button"
                   onClick={() => handleApprove(payment.id)}
                   disabled={busyId === payment.id}
-                  variant="primary" className="flex-1"
+                  className={buttonVariants({ variant: "primary", className: "flex-1" })}
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Approving…" : "Confirm approve"}
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
@@ -498,14 +498,14 @@ export function PaymentQueue({
               >
                 Reject
               </button>
-              <Button
+              <button
                 type="button"
                 onClick={() => setApprovingId(payment.id)}
                 disabled={busyId === payment.id}
-                variant="primary" className="flex-1"
+                className={buttonVariants({ variant: "primary", className: "flex-1" })}
               >
                 Approve
-              </Button>
+              </button>
             </div>
           )}
 
@@ -590,13 +590,13 @@ export function PaymentQueue({
                   </label>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setUndoingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep refunded</button>
-                    <Button type="button" onClick={() => handleUndoRefund(payment.id)} disabled={busyId === payment.id} variant="primary" className="flex-1">
+                    <button type="button" onClick={() => handleUndoRefund(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
                       {busyId === payment.id ? "Undoing…" : "Undo refund"}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : (
-                <Button type="button" onClick={() => setUndoingId(payment.id)} variant="secondary" size="sm">Undo refund</Button>
+                <button type="button" onClick={() => setUndoingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Undo refund</button>
               )}
             </div>
           )}
@@ -608,13 +608,13 @@ export function PaymentQueue({
                   <p className="text-small text-slate-400">Close this unpaid bill? The record stays as expired. The plan is not changed.</p>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setCancelingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep</button>
-                    <Button type="button" onClick={() => handleCancelBill(payment.id)} disabled={busyId === payment.id} variant="primary" className="flex-1">
+                    <button type="button" onClick={() => handleCancelBill(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
                       {busyId === payment.id ? "Closing…" : "Cancel bill"}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : (
-                <Button type="button" onClick={() => setCancelingId(payment.id)} variant="secondary" size="sm">Cancel bill</Button>
+                <button type="button" onClick={() => setCancelingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel bill</button>
               )}
             </div>
           )}
@@ -646,14 +646,14 @@ export function PaymentQueue({
                 </div>
               </div>
             ) : (
-              <Button
+              <button
                 type="button"
                 onClick={() => setDeletingId(payment.id)}
                 disabled={busyId === payment.id}
-                variant="secondary" size="sm" className="mt-3"
+                className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
               >
                 Delete
-              </Button>
+              </button>
             ))}
         </motion.div>
         );

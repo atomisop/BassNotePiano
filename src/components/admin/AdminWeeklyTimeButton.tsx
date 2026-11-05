@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { moveWeeklyTimeAction, weeklyTimeChoicesAction } from "@/app/(dashboard)/admin/payment-plans/actions";
@@ -63,10 +63,10 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
 
   return (
     <>
-      <Button type="button" onClick={() => void show()} aria-haspopup="dialog" variant="secondary" size="sm" className={compact ? "h-8 px-2.5" : ""}>
+      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
         <Clock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Weekly time
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Move the weekly time">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="grid gap-4">
@@ -103,13 +103,13 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
             </label>
           )}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" disabled={busy} onClick={() => setOpen(false)} variant="secondary">
+            <button type="button" disabled={busy} onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
               Cancel
-            </Button>
-            <Button type="button" disabled={busy || !pick} onClick={() => void save()} aria-busy={busy} variant="primary">
+            </button>
+            <button type="button" disabled={busy || !pick} onClick={() => void save()} aria-busy={busy} className={buttonVariants({ variant: "primary" })}>
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               Move every class
-            </Button>
+            </button>
           </div>
         </div>
       </Dialog>

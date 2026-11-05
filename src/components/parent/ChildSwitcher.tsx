@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Search } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * "Select child": the picker from the reference's Select Student popover. A button showing who you are looking at opens a list
@@ -48,16 +48,16 @@ export function ChildSwitcher({ currentId, kids }: { currentId: string; kids: { 
         title="Select child"
         description="You can switch to another child here."
         footer={
-          <Button
+          <button
             type="button"
             onClick={() => {
               setOpen(false);
               if (picked !== currentId) router.push(`/parent/${picked}`);
             }}
-            variant="primary" className="w-full"
+            className={buttonVariants({ variant: "primary", className: "w-full" })}
           >
             Select
-          </Button>
+          </button>
         }
       >
         <label className="flex items-center gap-2 rounded-full bg-neu-base px-3.5 py-2 shadow-pressed-low">

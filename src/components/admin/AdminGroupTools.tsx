@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Users } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import {
@@ -73,10 +73,10 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
 
   return (
     <>
-      <Button type="button" onClick={show} aria-haspopup="dialog" variant="secondary" size="sm" className="h-8 px-2.5">
+      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
         <Users aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Group
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title={view?.kind === "PARENT" ? "Parent plan" : "Group plan"}>
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         {!view ? (
@@ -113,28 +113,28 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
                 </p>
                 {confirmSplit ? (
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" disabled={busy !== null} onClick={() => setConfirmSplit(false)} variant="secondary" size="sm">
+                    <button type="button" disabled={busy !== null} onClick={() => setConfirmSplit(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                       Keep them on it
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
                       disabled={busy !== null}
                       onClick={() => void run("split", () => separateFromGroupAction(planId, notify), () => setOpen(false))}
-                      variant="primary" size="sm"
+                      className={buttonVariants({ variant: "primary", size: "sm" })}
                     >
                       {busy === "split" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       Yes, own plan
-                    </Button>
+                    </button>
                   </div>
                 ) : (
-                  <Button
+                  <button
                     type="button"
                     disabled={busy !== null || (isPayer && view.kind === "FAMILY" && running.length > 1)}
                     onClick={() => setConfirmSplit(true)}
-                    variant="secondary" size="sm" className="justify-self-start"
+                    className={buttonVariants({ variant: "secondary", size: "sm", className: "justify-self-start" })}
                   >
                     Move to their own plan
-                  </Button>
+                  </button>
                 )}
               </div>
             )}
@@ -155,15 +155,15 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
                       </option>
                     ))}
                   </select>
-                  <Button
+                  <button
                     type="button"
                     disabled={busy !== null || !payer}
                     onClick={() => void run("payer", () => changeGroupPayerAction(groupId, payer, notify), load)}
-                    variant="primary" size="sm"
+                    className={buttonVariants({ variant: "primary", size: "sm" })}
                   >
                     {busy === "payer" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                     Make payer
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -200,10 +200,10 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <Button type="button" onClick={show} aria-haspopup="dialog" variant="secondary" size="sm" className="h-8 px-2.5">
+      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
         <UserPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Parent links
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Parent links">
         <NotifyToggle on={notify} onChange={setNotify} label="Notify both people" className="mb-3" />
         <div className="grid gap-5">
@@ -225,18 +225,18 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
                   </span>
                   {removing === l.linkId ? (
                     <span className="flex gap-2">
-                      <Button type="button" disabled={busy !== null} onClick={() => setRemoving(null)} variant="secondary" size="sm">
+                      <button type="button" disabled={busy !== null} onClick={() => setRemoving(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                         Keep
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
                         disabled={busy !== null}
                         onClick={() => void run(l.linkId, () => unlinkParentAction(userId, l.linkId, notify), load)}
-                        variant="danger" size="sm"
+                        className={buttonVariants({ variant: "danger", size: "sm" })}
                       >
                         {busy === l.linkId && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                         End link
-                      </Button>
+                      </button>
                     </span>
                   ) : (
                     <button type="button" onClick={() => setRemoving(l.linkId)} className="tap inline-flex items-center text-small font-medium text-slate-300 hover:text-slate-100">
@@ -252,16 +252,16 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
             <p className="text-small font-medium text-slate-200">Link another account</p>
             <div className="flex gap-2" role="radiogroup" aria-label="This account is the">
               {(["parent", "child"] as const).map((r) => (
-                <Button
+                <button
                   key={r}
                   type="button"
                   role="radio"
                   aria-checked={role === r}
                   onClick={() => setRole(r)}
-                  variant={role === r ? "primary" : "secondary"} size="sm"
+                  className={buttonVariants({ variant: role === r ? "primary" : "secondary", size: "sm" })}
                 >
                   This account is the {r}
-                </Button>
+                </button>
               ))}
             </div>
             <label className="grid gap-1.5">
@@ -272,7 +272,7 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
               <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 accent-signal" />
               Both people asked for this. The parent will see the child&apos;s progress, practice and classes, and can change their class times.
             </label>
-            <Button
+            <button
               type="button"
               disabled={busy !== null || !agreed || !email.trim()}
               onClick={() => void run("link", () => linkParentAction(userId, email, role, notify), async () => {
@@ -280,11 +280,11 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
                 setAgreed(false);
                 await load();
               })}
-              variant="primary" size="sm" className="justify-self-start"
+              className={buttonVariants({ variant: "primary", size: "sm", className: "justify-self-start" })}
             >
               {busy === "link" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
               Link them
-            </Button>
+            </button>
           </div>
         </div>
       </Dialog>

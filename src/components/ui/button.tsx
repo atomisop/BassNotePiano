@@ -4,8 +4,6 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 import { MorphingSquare } from "@/components/ui/morphing-square"
-import { Button as GlisseButton } from "glisse"
-import "glisse/styles.css"
 
 /**
  * The one button for the whole app. Buttons live on the front plane of the
@@ -73,66 +71,26 @@ export interface ButtonProps
   loading?: boolean
 }
 
-/**
- * Every ordinary button is a Glisse (Apple Liquid Glass) button: the main action (default, primary, paper) is `filled`, danger is
- * `filled` and red, every quiet one is clear `glass` (destructive is red). Two kinds keep the old drawing because Glisse cannot do
- * them: `asChild` (the button IS a link or other element) and the `link` variant (inline text). Icon sizes pass their content as
- * Glisse's `icon`, which makes the round icon-only button (give it an aria-label).
- */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
-    if (variant === "link") {
-      return (
-        <button
-          className={cn(buttonVariants({ variant, size, className }))}
-          ref={ref}
-          disabled={disabled || loading}
-          aria-busy={loading || undefined}
-          {...props}
-        >
-          {loading ? (
-            <>
-              <MorphingSquare size={14} className="shrink-0" />
-              {children}
-            </>
-          ) : (
-            children
-          )}
-        </button>
-      )
-    }
-    if (asChild) {
-      // The button IS a link or other element (a Next Link): it gets Glisse's glass drawing through its own classes.
-      const solid = variant == null || variant === "default" || variant === "primary" || variant === "paper" || variant === "danger"
-      return (
-        <Slot
-          className={cn("lg-button lg-glass", size === "icon" || size === "iconSm" ? "!w-10 !px-0" : "", className)}
-          ref={ref}
-          data-variant={solid ? "filled" : "glass"}
-          data-destructive={variant === "danger" || variant === "destructive" ? "" : undefined}
-          aria-disabled={disabled || undefined}
-          {...props}
-        >
-          {children}
-        </Slot>
-      )
-    }
-    const filled = variant == null || variant === "default" || variant === "primary" || variant === "paper" || variant === "danger"
-    const iconOnly = size === "icon" || size === "iconSm"
+    const Comp = asChild ? Slot : "button"
     return (
-      <GlisseButton
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        variant={filled ? "filled" : "glass"}
-        destructive={variant === "danger" || variant === "destructive" || undefined}
-        icon={loading ? <MorphingSquare size={14} className="shrink-0" /> : iconOnly ? children : undefined}
-        tint={filled && variant !== "danger" ? "rgb(var(--signal))" : undefined}
-        className={cn(filled && variant !== "danger" && "!text-[rgb(var(--signal-ink))]", className)}
-        disabled={disabled || loading}
+        disabled={asChild ? disabled : disabled || loading}
         aria-busy={loading || undefined}
         {...props}
       >
-        {iconOnly ? undefined : children}
-      </GlisseButton>
+        {!asChild && loading ? (
+          <>
+            <MorphingSquare size={14} className="shrink-0" />
+            {children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   },
 )

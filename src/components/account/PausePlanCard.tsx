@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
 import { PAUSE_COOLDOWN_DAYS, PAUSE_MAX_WEEKS } from "@/lib/planPause";
@@ -85,7 +85,7 @@ export function PausePlanCard({
               ))}
             </select>
           </div>
-          <Button type="button" onClick={() => setConfirming(true)} variant="secondary" size="sm">Pause my plan</Button>
+          <button type="button" onClick={() => setConfirming(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Pause my plan</button>
         </div>
       ) : (
         <div className="mt-3 rounded-xl bg-neu-base p-4 shadow-raised-low">
@@ -93,10 +93,10 @@ export function PausePlanCard({
             Pause for {weeks} week{weeks === 1 ? "" : "s"}, starting now? Classes in that time are canceled and come back on their own afterwards.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" disabled={busy} onClick={confirm} variant="primary" size="sm" className="text-black">
+            <button type="button" disabled={busy} onClick={confirm} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
               {busy ? "Pausing..." : "Yes, pause"}
-            </Button>
-            <Button type="button" disabled={busy} onClick={() => setConfirming(false)} variant="secondary" size="sm">Not now</Button>
+            </button>
+            <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not now</button>
           </div>
         </div>
       )}

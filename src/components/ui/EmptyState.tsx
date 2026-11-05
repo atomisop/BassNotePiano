@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * #4, Empty state.
@@ -52,13 +52,13 @@ export function EmptyState({
         </Link>
       )}
       {actionLabel && !actionHref && onAction && (
-        <Button
+        <button
           type="button"
           onClick={onAction}
-           className="mt-6"
+          className={cn(buttonVariants(), "mt-6")}
         >
           {actionLabel}
-        </Button>
+        </button>
       )}
     </div>
   );

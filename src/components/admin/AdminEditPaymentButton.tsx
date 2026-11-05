@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { editPaymentAction } from "@/app/(dashboard)/admin/users/[userId]/actions";
@@ -59,13 +59,13 @@ export function AdminEditPaymentButton({ paymentId, amountCents, paidAt }: { pay
             <input type="date" value={day} max={ymd(new Date())} onChange={(e) => setDay(e.target.value)} className={field} />
           </label>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" disabled={busy} onClick={() => setOpen(false)} variant="secondary">
+            <button type="button" disabled={busy} onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
               Cancel
-            </Button>
-            <Button type="button" disabled={busy || !day} onClick={() => void save()} aria-busy={busy} variant="primary">
+            </button>
+            <button type="button" disabled={busy || !day} onClick={() => void save()} aria-busy={busy} className={buttonVariants({ variant: "primary" })}>
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               Save
-            </Button>
+            </button>
           </div>
         </div>
       </Dialog>

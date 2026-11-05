@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, MoveRight, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import type { ChildClass } from "@/lib/parentChildren";
@@ -65,10 +65,10 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
         <p className="text-small text-slate-400">
           Credits <span className="tabular-nums text-slate-50">{creditsLabel}</span>
         </p>
-        <Button type="button" onClick={() => void openPicker("book")} variant="primary" size="sm">
+        <button type="button" onClick={() => void openPicker("book")} className={buttonVariants({ variant: "primary", size: "sm" })}>
           <CalendarPlus aria-hidden className="mr-1.5 h-4 w-4" />
           Book a class
-        </Button>
+        </button>
       </div>
 
       {upcoming.length === 0 ? (
@@ -82,14 +82,14 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
                 {c.label && <p className="mt-0.5 truncate text-small text-slate-500">{c.label}</p>}
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button type="button" onClick={() => void openPicker(c.id)} aria-label={`Move the ${formatDateTime(c.scheduledAt)} class`} variant="secondary" size="sm">
+                <button type="button" onClick={() => void openPicker(c.id)} aria-label={`Move the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   <MoveRight aria-hidden className="mr-1.5 h-3.5 w-3.5" />
                   Move
-                </Button>
-                <Button type="button" onClick={() => void cancel(c.id)} disabled={busy === c.id} aria-label={sure === c.id ? "Tap again to cancel this class" : `Cancel the ${formatDateTime(c.scheduledAt)} class`} variant="secondary" size="sm">
+                </button>
+                <button type="button" onClick={() => void cancel(c.id)} disabled={busy === c.id} aria-label={sure === c.id ? "Tap again to cancel this class" : `Cancel the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   {busy === c.id ? <MorphingSquare size={12} className="mr-1.5" /> : <X aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
                   {sure === c.id ? "Sure?" : "Cancel"}
-                </Button>
+                </button>
               </div>
             </li>
           ))}

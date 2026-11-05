@@ -10,7 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
 import { GuardedButton } from "@/components/ui/GuardedButton";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -261,14 +261,14 @@ export function OnboardingWizard() {
 
       <div className="mt-6 flex items-center gap-2">
         {step > 0 && (
-          <Button
+          <button
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            variant="secondary"
+            className={buttonVariants({ variant: "secondary" })}
           >
             Back
-          </Button>
+          </button>
         )}
         <GuardedButton
           reason={submitting || checkingUsername ? null : step === 0 && !canAdvance ? "Username needs 3 or more characters" : step === 1 && !canAdvance ? "Pick your instrument" : null}
@@ -281,14 +281,14 @@ export function OnboardingWizard() {
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </GuardedButton>
         {optional && (
-          <Button
+          <button
             type="button"
             onClick={handleSkip}
             disabled={submitting}
-            variant="secondary"
+            className={buttonVariants({ variant: "secondary" })}
           >
             Skip
-          </Button>
+          </button>
         )}
       </div>
     </motion.div>

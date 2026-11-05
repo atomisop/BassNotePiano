@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
@@ -134,33 +134,33 @@ export function DiscordMembersList({
                   </span>
                   {asking === row.id ? (
                     <span className="flex shrink-0 flex-wrap items-center gap-2">
-                      <Button type="button" onClick={() => setAsking(null)} disabled={busy === row.id} variant="secondary" size="sm">
+                      <button type="button" onClick={() => setAsking(null)} disabled={busy === row.id} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                         Not yet
-                      </Button>
-                      <Button type="button" onClick={() => disconnect(row.id)} disabled={busy === row.id} variant="danger" size="sm">
+                      </button>
+                      <button type="button" onClick={() => disconnect(row.id)} disabled={busy === row.id} className={buttonVariants({ variant: "danger", size: "sm" })}>
                         {busy === row.id && <MorphingSquare size={12} />}
                         {busy === row.id ? "Working…" : "Yes, disconnect"}
-                      </Button>
+                      </button>
                     </span>
                   ) : (
-                    <Button type="button" onClick={() => setAsking(row.id)} variant="secondary" size="sm" className="shrink-0">
+                    <button type="button" onClick={() => setAsking(row.id)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
                       Disconnect
-                    </Button>
+                    </button>
                   )}
                 </>
               ) : (
                 <>
                   <span className="shrink-0 text-small text-slate-500">Not connected</span>
                   {!row.banned && (
-                    <Button
+                    <button
                       type="button"
                       onClick={() => notify(row.id)}
                       disabled={notifying === row.id}
-                      variant="secondary" size="sm" className="shrink-0"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                     >
                       {notifying === row.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {notifying === row.id ? "Sending…" : "Notify"}
-                    </Button>
+                    </button>
                   )}
                 </>
               )}
