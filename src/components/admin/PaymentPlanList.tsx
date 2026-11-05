@@ -132,7 +132,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   }
 
   return (
-    <div className="space-y-3">
+    <div data-stagger="" className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
       <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I cancel or record a payment" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}

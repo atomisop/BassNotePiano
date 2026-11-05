@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
 import { Ban, ChevronDown } from "@/components/ui/appIcons";
@@ -230,8 +230,8 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
               </div>
             ) : (
               <div className="space-y-2">
-                {friends.map((friend) => (
-                  <div key={friend.id} className="rounded-lg bg-neu-base shadow-raised-low">
+                {friends.map((friend, i) => (
+                  <div key={friend.id} style={{ "--i": i } as CSSProperties} className="stagger-item rounded-lg bg-neu-base shadow-raised-low">
                     <div className="flex flex-wrap items-center justify-between gap-3 p-2.5">
                       {/* The name opens that friend's practice, badges and streak right here: one place for looking and nudging. */}
                       <button
@@ -366,8 +366,8 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
           {receivedRequests.length > 0 && (
             <SectionCard id="requests" title="Friend requests">
               <div className="space-y-2">
-                {receivedRequests.map((req) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                {receivedRequests.map((req, i) => (
+                  <div key={req.id} style={{ "--i": i } as CSSProperties} className="stagger-item flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={req.sender} />
                       <ProfileLine profile={req.sender} />

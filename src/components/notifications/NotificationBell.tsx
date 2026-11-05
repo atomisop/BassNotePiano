@@ -3,7 +3,7 @@
 import { OPEN_NOTIFICATIONS, OPEN_SUPPORT, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
 import { notificationTarget } from "@/lib/notificationTargets";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { SupportThread } from "@/components/notifications/SupportThread";
@@ -324,8 +324,10 @@ function NotificationGroup({
             className="overflow-hidden"
           >
             <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
-              {items.map((n) => (
-                <NotificationEntry key={n.id} notification={n} onClick={onItemClick} />
+              {items.map((n, i) => (
+                <div key={n.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
+                  <NotificationEntry notification={n} onClick={onItemClick} />
+                </div>
               ))}
             </div>
           </motion.div>

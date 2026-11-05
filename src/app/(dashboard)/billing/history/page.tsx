@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreditCard } from "@/components/ui/appIcons";
@@ -99,10 +100,10 @@ export default async function BillingHistoryPage() {
         />
       ) : (
         <div className="mt-6 space-y-3">
-          {payments.map((payment) => {
+          {payments.map((payment, i) => {
             const { eyebrow, title } = describePayment(payment);
             return (
-            <div key={payment.id} className="glass-surface p-5">
+            <div key={payment.id} style={{ "--i": i } as CSSProperties} className="stagger-item glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
