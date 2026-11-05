@@ -1,0 +1,33 @@
+// Local-only test student for the UI revamp's screenshots (docs/revamp). Refuses to run against anything but a local database.
+// Sign in at http://localhost:<port>/login with these values; the emailed code is printed in the dev server log.
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const url = process.env.DATABASE_URL || "";
+if (!/@(127\.0\.0\.1|localhost)[:/]/.test(url)) {
+  console.error("Refusing: DATABASE_URL is not a local database.");
+  process.exit(1);
+}
+export const TEST_EMAIL = "revamp-student@bnp.test";
+export const TEST_PASSWORD = "Revamp-test-7!";
+
+const prisma = new PrismaClient();
+const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
+const user = await prisma.user.upsert({
+  where: { email: TEST_EMAIL },
+  update: { passwordHash, bannedAt: null },
+  create: {
+    email: TEST_EMAIL,
+    emailVerified: new Date(),
+    name: "Revamp Student",
+    username: "revamp-student",
+    passwordHash,
+    onboardedAt: new Date(),
+    onboardingTourSeenAt: new Date(),
+    hasCurriculumAccess: true,
+    classCredits: 8,
+    lastSeenPatchNotesAt: new Date(),
+  },
+});
+console.log("ready:", user.email);
+await prisma.$disconnect();

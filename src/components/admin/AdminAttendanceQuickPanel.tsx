@@ -197,7 +197,7 @@ export function AdminAttendanceQuickPanel() {
         aria-label="Class bookings and attendance"
         title="Class bookings and attendance"
         aria-expanded={open}
-        className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+        className={`tap press relative flex h-9 w-9 items-center justify-center rounded-full bg-neu-base ${
           open
             ? "text-signal-fg shadow-pressed-low"
             : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"

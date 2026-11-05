@@ -6,7 +6,7 @@ One row per screen, in the order the loop runs them. 71 rows. Status: Todo, Doin
 
 | # | Screen | Route | Status | Before shot | After shot | Notes |
 |---|---|---|---|---|---|---|
-| 1 | Top bar (phone strip + desktop) | `TopBar.tsx` | Todo | | | |
+| 1 | Top bar (phone strip + desktop) | `TopBar.tsx` | Done (dark; light theme not shot) | shots/top-bar-before-* | shots/top-bar-after-* | controls/top-bar.md |
 | 2 | Profile menu | `ProfileMenu.tsx` | Todo | | | |
 | 3 | Dock | `AppDock.tsx` | Todo | | | |
 | 4 | Sidebar + spotlight | `AppSidebar.tsx` | Todo | | | |

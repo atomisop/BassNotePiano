@@ -508,7 +508,7 @@ export function NotificationBell() {
         aria-label={badgeCount > 0 ? `Notifications, mail and support, ${badgeCount} unread` : "Notifications, mail and support"}
         aria-expanded={open}
         data-tour="notification-bell"
-        className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+        className={`tap press relative flex h-9 w-9 items-center justify-center rounded-full bg-neu-base ${
           open
             ? "text-signal-fg shadow-pressed-low"
             : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
