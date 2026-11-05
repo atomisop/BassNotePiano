@@ -601,10 +601,6 @@ student's figures in four column groups (account, learning, classes and money, h
 Insights: fixed checks over the studio's own numbers (`buildInsights` in `adminInsightsRules.ts`, pure and tested), each a finding with its numbers and one thing to
 try; nothing is sent to Gemini or anywhere else, and a check needs `MIN_SAMPLE` (3) people before it speaks. Add a new check there with a test.
 
-## Admin navigation pattern (added 2026-11-05, `docs/ADMIN-PATTERN.md`)
-
-Two levels at most: six sections, each showing its everyday pages as tabs and the rest under a **More** tab (`more: true` in `adminNav.ts`, `splitHubPages`). A person's page is one scroll of six collapsible sections with a sticky index (no tabs hiding content), a single top row (Message, Add credits, Book a class, one Notify switch) and one **Plan** menu (`ActionMenu`) whose rare owner tools sit under "Advanced". Cmd-K does jobs for a person (`?do=` links, `commandRecents.ts`), the Overview opens with **Needs you** (`needsYou.ts`), and a tap on an Accounts row opens a side summary on computers (`PersonPeekPanel`). A job appears once per screen; never add a third row of tabs.
-
 ## Admin Overview (reworked 2026-10-30)
 
 `/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
