@@ -28,7 +28,7 @@ const TRACK_OFF = "bg-slate-50/12 ring-slate-50/20"
 const TRACK_ON = "bg-signal ring-signal"
 // Transform only: the knob is always 20px, shown at 45% (the dot) when off, so the flip is one smooth scale and slide.
 const KNOB =
-  "pointer-events-none block h-5 w-5 rounded-full motion-safe:transition-[transform,background-color] motion-safe:duration-300 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
+  "pointer-events-none block h-5 w-5 rounded-full knob-stretch"
 const KNOB_OFF = "translate-x-0 scale-[0.45] bg-signal"
 const KNOB_ON = "translate-x-5 scale-100 bg-white shadow-[0_1px_3px_rgb(0_0_0/0.35)]"
 

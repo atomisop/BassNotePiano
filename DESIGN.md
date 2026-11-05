@@ -15,8 +15,9 @@ Colour:   ground #121212, cards one solid step lighter, an 11-step neutral ramp 
           States: success (emerald), warning (amber-300), danger (red). Light theme mirrors all of it.
 Shape:    soft. 8 small controls and chips · 12 buttons' boxes, fields and rows · 16 cards · 24 sheets.
           Buttons and filter chips are full pills. No other radius.
-Depth:    flat. Cards are a solid fill with no border or shadow. Only things that float over the page
-          (menus, dialogs, sheets, the dock and the top bar) get the one floating shadow.
+Depth:    cards are a solid fill with no border or shadow. Buttons are raised (the `liquid` fill with a soft shadow, decided
+          2026-11-05 in the revamp): they lift on hover, and press IN and dip to 0.97 while held. Things that float over the
+          page (menus, dialogs, sheets, the dock and the top bar) get the one floating shadow.
 ```
 
 ## Type
@@ -65,3 +66,7 @@ Marketing pages may use larger display sizes for their hero only.
 ## Motion
 
 150 to 200 ms for hover and press, 240 ms for things entering, the iOS curve (`ease-ios`). Reduced motion gets none.
+Revamp tokens (globals.css): `--ease-move` ease-in-out for things already on screen, `--dur-menu` 180 ms (exit 80%), `--stagger` 30 ms,
+`--press-scale` 0.97, `--pop-scale` 0.95, `--knob-stretch` 1.12. No bounce on everyday UI; springs only for the dock and drag release.
+Shared pieces: `pop` (popovers, menus, tooltips), `stagger-item` / `StaggerList`, `knob-stretch` (Switch), `IconSwap`, `SuccessPulse`,
+`MaskReveal`, `SharedLayout` (layoutId), `useRubberBand`, `useArc`. Screens reuse these; they are not rebuilt by hand.

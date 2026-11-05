@@ -29,9 +29,17 @@ export const collapseVariants: Variants = {
   closed: { height: 0, opacity: 0, transition: { height: SPRING.smooth, opacity: FADE } },
 };
 
-/** A floating menu that grows out of its trigger. */
+/** Revamp tokens, the TS side of the CSS ones in globals.css. */
+export const POP_SCALE = 0.95;
+export const MENU_MS = 180;
+export const STAGGER_S = 0.03;
+export const PRESS_SCALE = 0.97;
+/** Ease-in-out for things already on screen that move (rule 9). */
+export const EASE_MOVE = [0.65, 0, 0.35, 1] as const;
+
+/** A floating menu that grows out of its trigger. Set `style={{ transformOrigin }}` at the trigger (rule 11). */
 export const popoverVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.96, y: -6 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: SPRING.snappy },
-  exit: { opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.14, ease: EASE_IOS } },
+  hidden: { opacity: 0, scale: POP_SCALE },
+  visible: { opacity: 1, scale: 1, transition: { duration: MENU_MS / 1000, ease: EASE_IOS } },
+  exit: { opacity: 0, scale: POP_SCALE, transition: { duration: (MENU_MS * 0.8) / 1000, ease: EASE_IOS } },
 };
