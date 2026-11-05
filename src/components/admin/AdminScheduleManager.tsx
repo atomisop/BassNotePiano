@@ -4,7 +4,7 @@ import { classesInWindow } from "@/lib/classScheduleLabels";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CalendarPlus } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
@@ -143,14 +143,14 @@ function ScheduleForm({
             Cancel
           </button>
         )}
-        <button
+        <Button
           type="submit"
           disabled={submitting}
-          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
+          variant="primary" size="sm" className="flex flex-1"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -255,16 +255,16 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => {
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        variant="secondary" size="sm"
                       >
                         Edit
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={() => (row.active && row.upcomingBookings > 0 ? setConfirmOffId(row.id) : handleToggleActive(row))}
@@ -285,15 +285,15 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           bookings only. What should happen to the booked classes?
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => handleToggleActive(row, true)} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                          <Button type="button" onClick={() => handleToggleActive(row, true)} variant="outline" size="sm">
                             Cancel them and tell the students
-                          </button>
-                          <button type="button" onClick={() => handleToggleActive(row, false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                          </Button>
+                          <Button type="button" onClick={() => handleToggleActive(row, false)} variant="secondary" size="sm">
                             Keep them, turn off new bookings
-                          </button>
-                          <button type="button" onClick={() => setConfirmOffId(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                          </Button>
+                          <Button type="button" onClick={() => setConfirmOffId(null)} variant="ghost" size="sm">
                             Back
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}

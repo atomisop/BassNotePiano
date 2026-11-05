@@ -14,7 +14,7 @@ import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";
 import { AddToHomeSteps, isStandalone } from "@/components/pwa/AddToHomeSteps";
 import { updatePasswordAction, requestPasswordChangeCodeAction, signOutOtherDevicesAction, signOutDeviceAction, listSignedInDevicesAction, type SignedInDevice, updateNotificationPreferencesAction, requestAccountDeletionCodeAction, confirmAccountDeletionAction, type NotificationPreferencesInput } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { Laptop, Smartphone, Tablet } from "@/components/ui/appIcons";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { SectionCard } from "./SectionCard";
@@ -164,14 +164,14 @@ export function PasswordSection() {
               Cancel
             </button>
           )}
-          <button
+          <Button
             type="submit"
             disabled={submitting || (awaitingCode && code.length !== 6)}
-            className={buttonVariants({ variant: "primary", className: "flex w-full" })}
+            variant="primary" className="flex w-full"
           >
             {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {submitting ? (awaitingCode ? "Saving…" : "Sending code…") : awaitingCode ? "Confirm change" : "Send verification code"}
-          </button>
+          </Button>
         </form>
       </SectionCard>
 
@@ -218,7 +218,7 @@ function ReferralCard() {
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
       <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
+        <Button type="button" onClick={copy} variant="primary" size="sm" className="text-black">{copied ? "Copied" : "Copy link"}</Button>
         <span className="text-small text-slate-400">
           {data.joined === 0 ? "No one has joined yet." : `${data.joined} joined, ${data.rewarded} earned the discount.`}
         </span>
@@ -344,8 +344,8 @@ function PushCard() {
       {state === "on" && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-small text-slate-300">On for this device.</span>
-          <button type="button" disabled={busy} onClick={sendTest} className={buttonVariants({ variant: "secondary", size: "sm" })}>Send a test</button>
-          <button type="button" disabled={busy} onClick={turnOff} className={buttonVariants({ variant: "secondary", size: "sm" })}>Turn off</button>
+          <Button type="button" disabled={busy} onClick={sendTest} variant="secondary" size="sm">Send a test</Button>
+          <Button type="button" disabled={busy} onClick={turnOff} variant="secondary" size="sm">Turn off</Button>
         </div>
       )}
       {message && <p className="mt-2 text-small text-slate-300" role="status">{message}</p>}
@@ -405,7 +405,7 @@ function CalendarFeedCard() {
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2">
             <a href={links.webcal} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Subscribe on this device</a>
-            <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
+            <Button type="button" onClick={copy} variant="secondary" size="sm">{copied ? "Copied" : "Copy link"}</Button>
           </div>
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
           <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
@@ -415,8 +415,8 @@ function CalendarFeedCard() {
             <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
               <p className="text-small text-slate-200">The old link stops working. Calendars that use it will need the new one.</p>
               <div className="mt-3 flex gap-2">
-                <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
-                <button type="button" disabled={busy} onClick={() => setConfirmReset(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep it</button>
+                <Button type="button" disabled={busy} onClick={reset} variant="primary" size="sm" className="text-black">{busy ? "Working…" : "Make a new link"}</Button>
+                <Button type="button" disabled={busy} onClick={() => setConfirmReset(false)} variant="secondary" size="sm">Keep it</Button>
               </div>
             </div>
           )}
@@ -498,10 +498,10 @@ function SignedInDevicesCard() {
                     {d.active ? "Active now" : "Not active"}
                   </span>
                   {!d.isThisDevice && (
-                    <button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    <Button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} variant="secondary" size="sm">
                       {busyId === d.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       Sign out
-                    </button>
+                    </Button>
                   )}
                 </div>
               </li>
@@ -511,10 +511,10 @@ function SignedInDevicesCard() {
       )}
       {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       {devices && devices.some((d) => !d.isThisDevice) && (
-        <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", className: "mt-4" })}>
+        <Button type="button" onClick={signOutAll} disabled={busyId !== null} variant="secondary" className="mt-4">
           {busyId === "all" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           Sign out of all other devices
-        </button>
+        </Button>
       )}
     </SectionCard>
   );
@@ -590,13 +590,13 @@ export function DangerZoneSection() {
         </p>
 
         {stage === "idle" && (
-          <button
+          <Button
             type="button"
             onClick={() => setStage("password")}
-            className={buttonVariants({ variant: "danger", className: "mt-4" })}
+            variant="danger" className="mt-4"
           >
             Delete my account
-          </button>
+          </Button>
         )}
 
         {stage === "password" && (
@@ -694,13 +694,13 @@ export function TutorialsSection() {
   return (
     <>
       <SectionCard advanced title="Tutorials">
-        <button
+        <Button
           type="button"
           onClick={() => router.push("/dashboard?tour=1")}
-          className={buttonVariants({ variant: "primary", className: "mt-4" })}
+          variant="primary" className="mt-4"
         >
           Replay app tour
-        </button>
+        </Button>
       </SectionCard>
       <SectionCard advanced title="Add to your Home Screen">
         <p className="text-small text-slate-400">

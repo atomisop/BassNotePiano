@@ -7,7 +7,7 @@ import type { ZellePaymentStatus } from "@prisma/client";
 import { ZellePaymentModal } from "@/components/progression/ZellePaymentModal";
 import type { ZelleReferenceSubmission } from "@/lib/payments";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { precheckReceiptAction } from "@/app/(dashboard)/billing/receipt-actions";
 
@@ -80,13 +80,13 @@ export function ZelleUnlockGate({
         </div>
       )}
 
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={buttonVariants({ variant: "primary", className: "w-full" })}
+        variant="primary" className="w-full"
       >
         {status === "REJECTED" ? "Resubmit payment" : "Pay"}
-      </button>
+      </Button>
 
       <ZellePaymentModal
         isOpen={isOpen}

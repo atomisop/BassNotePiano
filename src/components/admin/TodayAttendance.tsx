@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
@@ -66,29 +66,29 @@ export function TodayAttendance({
     return (
       <div className="flex items-center gap-2">
         <StatusDot tone={mark === "PRESENT" ? "success" : "danger"}>{mark === "PRESENT" ? "Present" : "No-show"}</StatusDot>
-        <button type="button" onClick={() => void undo()} disabled={busy !== null} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        <Button type="button" onClick={() => void undo()} disabled={busy !== null} variant="ghost" size="sm">
           {busy === "undo" && <MorphingSquare size={12} className="mr-1 shrink-0" />}
           Undo
-        </button>
+        </Button>
       </div>
     );
   }
   if (!started) return <span className="text-small text-slate-500">Not started</span>;
   return (
     <div className="flex items-center gap-2" role="group" aria-label={`Attendance for ${name}`}>
-      <button type="button" onClick={() => void set("PRESENT")} disabled={busy !== null} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <Button type="button" onClick={() => void set("PRESENT")} disabled={busy !== null} variant="secondary" size="sm">
         {busy === "PRESENT" && <MorphingSquare size={12} className="mr-1 shrink-0" />}
         Present
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={() => void set("NO_SHOW")}
         disabled={busy !== null}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-red-300 hover:text-red-200")}
+        variant="ghost" size="sm" className="text-red-300 hover:text-red-200"
       >
         {busy === "NO_SHOW" && <MorphingSquare size={12} className="mr-1 shrink-0" />}
         No-show
-      </button>
+      </Button>
     </div>
   );
 }

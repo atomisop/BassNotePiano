@@ -8,7 +8,7 @@ import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { submitClassRegistrationAction } from "./actions";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
   { value: "PIANO_KEYBOARD", label: "Piano / Keyboard" },
@@ -256,14 +256,14 @@ export function ClassRegistrationForm() {
 
       {error && <p className="text-small text-red-400">{error}</p>}
 
-      <button
+      <Button
         type="submit"
         disabled={submitting}
-        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
+        variant="primary" className="flex w-full"
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {submitting ? "Submitting…" : "Request to register"}
-      </button>
+      </Button>
 
       {/* No account is created by this form (see ClassRegistration's own
           schema comment), so there's no consent checkbox to gate submission

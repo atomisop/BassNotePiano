@@ -29,7 +29,7 @@ import {
 } from "./actions";
 import { NewPlanForm, type StartPlanInput, type StartPlanResult } from "./NewPlanForm";
 import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } from "../../parent/actions";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 function formatUsd(cents: number) {
@@ -150,9 +150,9 @@ function SwitchToFamilyPanel({
     return (
       <div className="mt-6 rounded-xl bg-neu-base p-4 shadow-raised-low">
         <p className="text-small font-semibold text-slate-50">Joining others? Switch to a group plan</p>
-        <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+        <Button type="button" onClick={() => setOpen(true)} variant="secondary" size="sm" className="mt-3">
           Add group members
-        </button>
+        </Button>
       </div>
     );
   }
@@ -176,9 +176,9 @@ function SwitchToFamilyPanel({
             />
           ))}
           {emails.length + 1 < MAX_FAMILY_MEMBERS && (
-            <button type="button" onClick={() => setEmails((prev) => [...prev, ""])} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Button type="button" onClick={() => setEmails((prev) => [...prev, ""])} variant="secondary" size="sm">
               Add another person
-            </button>
+            </Button>
           )}
           <div className="rounded-control bg-neu-base p-3 text-small text-slate-300 shadow-pressed-low">
             <div className="flex justify-between"><span>Each person, every 28 days</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
@@ -197,9 +197,9 @@ function SwitchToFamilyPanel({
             </ul>
           )}
           {toInvite.length > 0 && (
-            <button type="button" onClick={() => void invites.send(toInvite)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Button type="button" onClick={() => void invites.send(toInvite)} variant="secondary" size="sm">
               {toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
-            </button>
+            </Button>
           )}
           {invites.error && <p className="text-small text-red-400">{invites.error}</p>}
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" aria-label="Your password" className={field} />
@@ -212,7 +212,7 @@ function SwitchToFamilyPanel({
             >
               {busy ? "Sending…" : "Email me a code"}
             </GuardedButton>
-            <button type="button" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
+            <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="sm">Cancel</Button>
           </div>
         </>
       ) : (
@@ -221,10 +221,10 @@ function SwitchToFamilyPanel({
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={CHUNKED_CODE_LENGTH} value={chunkCode(code)} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123 456" aria-label="Code" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
-            <button type="button" disabled={busy || code.length < 6} onClick={confirm} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <Button type="button" disabled={busy || code.length < 6} onClick={confirm} variant="primary" size="sm">
               {busy ? "Setting up…" : "Confirm switch"}
-            </button>
-            <button type="button" onClick={() => { setStep("people"); setCode(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Back</button>
+            </Button>
+            <Button type="button" onClick={() => { setStep("people"); setCode(""); }} variant="secondary" size="sm">Back</Button>
           </div>
         </>
       )}

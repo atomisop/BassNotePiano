@@ -21,7 +21,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { Ticket } from "@/components/ui/appIcons";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { NETWORK_ERROR, type OccurrenceRow, type BookingRow, type BookingMode, type TabId, formatOccurrenceDay, creditsLabel, weekStartMs, formatOccurrenceTime, groupOccurrencesByWeek, groupByMonth, BookingCard, MonthGroup, AttendeeEmailRow } from "./BookingParts";
 
@@ -563,9 +563,9 @@ export function ClassBookingClient({
                   Moving {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
                   {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only, your weekly time stays)</span>}
                 </p>
-                <button type="button" onClick={() => setReschedulingBooking(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                <Button type="button" onClick={() => setReschedulingBooking(null)} variant="secondary" size="sm" className="shrink-0">
                   Never mind
-                </button>
+                </Button>
               </div>
             )}
 
@@ -629,9 +629,9 @@ export function ClassBookingClient({
                   paymentId={extraPayment.id}
                   onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
                 />
-                <button type="button" onClick={() => setExtraPayment(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+                <Button type="button" onClick={() => setExtraPayment(null)} variant="secondary" size="sm" className="mt-3">
                   Back to times
-                </button>
+                </Button>
               </div>
             )}
 
@@ -653,22 +653,22 @@ export function ClassBookingClient({
                   ))}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" onClick={() => setFamilyEmails((prev) => [...prev, ""])} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  <Button type="button" onClick={() => setFamilyEmails((prev) => [...prev, ""])} variant="secondary" size="sm">
                     + Add another student
-                  </button>
+                  </Button>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setFamilyRowKey(null)} disabled={familySubmitting} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    <Button type="button" onClick={() => setFamilyRowKey(null)} disabled={familySubmitting} variant="secondary" size="sm">
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={handleBookFamily}
                       disabled={!familyAllVerified || familySubmitting}
-                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
+                      variant="primary" size="sm" className="flex shrink-0"
                     >
                       {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -827,23 +827,23 @@ export function ClassBookingClient({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  <Button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} variant="secondary" size="sm">
                     Clear
-                  </button>
+                  </Button>
                   {missingCredits > 0 ? (
                     <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}>
                       Get more credits
                     </Link>
                   ) : (
-                    <button
+                    <Button
                       type="button"
                       onClick={handleBookSelected}
                       disabled={bundleSubmitting}
-                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
+                      variant="primary" size="sm" className="flex shrink-0"
                     >
                       {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

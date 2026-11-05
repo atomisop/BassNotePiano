@@ -11,7 +11,7 @@ import {
   sendMessageAction,
   type MessageRecipient,
 } from "@/app/(dashboard)/admin/messages/actions";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
 interface SentRow {
@@ -132,14 +132,14 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
               {recipients.map((r) => (
                 <span key={r.id} className="inline-flex items-center gap-1.5 rounded-full bg-neu-base py-1 pl-3 pr-1 text-small text-slate-100 shadow-pressed-low">
                   {r.name ?? r.email}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setRecipients((current) => current.filter((c) => c.id !== r.id))}
                     aria-label={`Remove ${r.name ?? r.email}`}
-                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                    variant="secondary" size="iconSm"
                   >
                     <X className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>
@@ -166,24 +166,24 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                 ) : (
                   <>
                     {visibleResults.length > 1 && (
-                      <button
+                      <Button
                         type="button"
                         onClick={() => addRecipients(visibleResults)}
-                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        variant="secondary" size="sm"
                       >
                         Add all {visibleResults.length}
-                      </button>
+                      </Button>
                     )}
                     {visibleResults.map((r) => (
-                      <button
+                      <Button
                         key={r.id}
                         type="button"
                         onClick={() => addRecipients([r])}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full flex-col text-left" })}
+                        variant="secondary" size="sm" className="w-full flex-col text-left"
                       >
                         <span className="truncate text-small font-medium text-slate-100">{r.name ?? r.email}</span>
                         {r.name && <span className="truncate text-small text-slate-500">{r.email}</span>}
-                      </button>
+                      </Button>
                     ))}
                   </>
                 )}
@@ -223,15 +223,15 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
         {error && <p className="mt-3 text-small text-red-400">{error}</p>}
         {notice && <p className="mt-3 text-small text-slate-300">{notice}</p>}
 
-        <button
+        <Button
           type="button"
           onClick={() => void send()}
           disabled={submitting || recipients.length === 0 || !title.trim() || !body.trim()}
-          className={buttonVariants({ variant: "primary", className: "mt-4" })}
+          variant="primary" className="mt-4"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Sending…" : recipients.length > 1 ? `Send to ${recipients.length} people` : "Send message"}
-        </button>
+        </Button>
       </div>
 
       <div className="glass-surface p-6">

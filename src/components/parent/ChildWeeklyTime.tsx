@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Check } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { childWeeklyChoicesAction, parentEndChildPlanAction, parentMoveWeeklyTimeAction, type WeeklyChoice } from "@/app/(dashboard)/parent/actions";
 
@@ -46,10 +46,10 @@ export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; 
 
   return (
     <>
-      <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <Button type="button" onClick={() => void openBox()} aria-haspopup="dialog" variant="secondary" size="sm">
         <CalendarClock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         {hasTime ? "Change weekly time" : "Set weekly time"}
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={(next) => !moving && setOpen(next)} title={hasTime ? "Move the weekly time to" : "Pick their weekly time"}>
         {loading ? (
           <div className="flex justify-center py-6">
@@ -73,10 +73,10 @@ export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; 
                 );
               })}
             </ul>
-            <button type="button" disabled={!picked || moving} onClick={() => void move()} aria-busy={moving} className={buttonVariants({ variant: "primary", className: "mt-4 w-full" })}>
+            <Button type="button" disabled={!picked || moving} onClick={() => void move()} aria-busy={moving} variant="primary" className="mt-4 w-full">
               {moving && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               {hasTime ? "Move all their classes" : "Book all their classes"}
-            </button>
+            </Button>
           </>
         )}
       </Dialog>
@@ -102,9 +102,9 @@ export function EndChildPlanButton({ childId }: { childId: string }) {
     router.refresh();
   }
   return (
-    <button type="button" onClick={() => void end()} disabled={busy} aria-label={sure ? "Tap again to end this plan" : "End this plan"} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+    <Button type="button" onClick={() => void end()} disabled={busy} aria-label={sure ? "Tap again to end this plan" : "End this plan"} variant="secondary" size="sm">
       {busy && <MorphingSquare size={12} className="mr-1.5" />}
       {sure ? "Sure? End the plan" : "End this plan"}
-    </button>
+    </Button>
   );
 }

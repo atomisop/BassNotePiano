@@ -3,6 +3,7 @@
 import { THEMES, type ThemeChoice } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
 import { LiquidThemeToggle } from "./LiquidThemeToggle";
+import { LiquidGlassControl } from "./LiquidGlassControl";
 import { Check } from "@/components/ui/appIcons";
 
 function CheckIcon() {
@@ -52,6 +53,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
     return (
       <div className="flex flex-wrap items-center gap-4">
         <LiquidThemeToggle />
+        <div className="w-full max-w-sm"><LiquidGlassControl /></div>
         <button
           type="button"
           onClick={() => setTheme("system")}

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -234,14 +234,14 @@ function ResetPasswordForm() {
         </Button>
       </motion.form>
 
-      <button
+      <Button
         type="button"
         onClick={handleResend}
         disabled={cooldown.secondsLeft > 0}
-        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2 w-full sm:mt-4" })}
+        variant="secondary" size="sm" className="mt-2 w-full sm:mt-4"
       >
         {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
-      </button>
+      </Button>
       {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
         <p className="mt-3 text-center text-small text-slate-500">
           Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.

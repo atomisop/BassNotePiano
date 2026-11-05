@@ -13,7 +13,7 @@ import { paymentReferenceCode } from "@/lib/paymentReference";
 import { normalizePhone, PHONE_HELP } from "@/lib/phone";
 import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { toast } from "@/components/ui/Toaster";
 import { Check, X } from "@/components/ui/appIcons";
@@ -337,15 +337,15 @@ export function ZellePaymentModal({
                     {scaleTitle}
                   </h2>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={handleClose}
                   disabled={submitting}
                   aria-label="Close"
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  variant="secondary" size="sm"
                 >
                   <X size={18} />
-                </button>
+                </Button>
               </div>
 
               <AnimatePresence mode="wait">
@@ -419,15 +419,15 @@ export function ZellePaymentModal({
                         </div>
                       )}
                       {phoneError && <p role="alert" className="text-small text-red-400">{phoneError}</p>}
-                      <button
+                      <Button
                         type="button"
                         onClick={handlePhoneContinue}
                         disabled={phoneSaving || !phoneOk}
-                        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
+                        variant="primary" className="flex w-full"
                       >
                         {phoneSaving && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                         {phoneSaving ? "Saving…" : "Continue to payment"}
-                      </button>
+                      </Button>
                     </div>
                   </motion.div>
                 )}
@@ -468,13 +468,13 @@ export function ZellePaymentModal({
                         <p className="text-small uppercase tracking-wide text-slate-500">{method === "VENMO" ? "Venmo" : "Zelle handle"}</p>
                         <p className="truncate font-mono text-small text-slate-100">{method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle}</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={handleCopyHandle}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
+                        variant="secondary" size="sm" className="shrink-0 text-slate-50"
                       >
                         {copied ? "Copied" : "Copy"}
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
@@ -482,13 +482,13 @@ export function ZellePaymentModal({
                         <p className="text-small uppercase tracking-wide text-slate-500">Exact amount</p>
                         <p className="truncate font-mono text-small text-slate-100">{formatUsd(amountCents)}</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
+                        variant="secondary" size="sm" className="shrink-0 text-slate-50"
                       >
                         {copiedWhat === "amount" ? "Copied" : "Copy"}
-                      </button>
+                      </Button>
                     </div>
 
                     {reference && method === "ZELLE" && (
@@ -497,13 +497,13 @@ export function ZellePaymentModal({
                           <p className="text-small uppercase tracking-wide text-slate-500">Put this in the message</p>
                           <p className="truncate font-mono text-small text-slate-100">{reference}</p>
                         </div>
-                        <button
+                        <Button
                           type="button"
                           onClick={() => handleCopy("code", reference)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
+                          variant="secondary" size="sm" className="shrink-0 text-slate-50"
                         >
                           {copiedWhat === "code" ? "Copied" : "Copy"}
-                        </button>
+                        </Button>
                       </div>
                     )}
 
@@ -528,13 +528,13 @@ export function ZellePaymentModal({
                       Waiting for your payment
                     </div>
                     {waitedLong && (
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setStep("confirming")}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3 w-full" })}
+                        variant="secondary" size="sm" className="mt-3 w-full"
                       >
                         Paid and not unlocked? Tell us
-                      </button>
+                      </Button>
                     )}
                   </motion.div>
                 )}
@@ -588,15 +588,15 @@ export function ZellePaymentModal({
                         >
                           Back
                         </button>
-                        <button
+                        <Button
                           type="button"
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
+                          variant="primary" size="sm" className="flex flex-1"
                         >
                           {submitting && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {submitting ? "Submitting…" : "Submit for review"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </motion.div>

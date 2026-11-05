@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import type { AdminPaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -211,30 +211,30 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                     >
                       Back
                     </button>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleRecord(plan.id)}
                       disabled={busyId === plan.id}
-                      className={buttonVariants({ variant: "primary", className: "flex-1" })}
+                      variant="primary" className="flex-1"
                     >
                       {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Recording…" : "Confirm"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-small text-slate-300">No payment on record for this plan.</p>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setRecordError(null);
                       setRecordingId(plan.id);
                     }}
-                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
+                    variant="secondary" size="sm" className="shrink-0"
                   >
                     Record payment
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -279,25 +279,25 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 {/* Compact actions at the end of the plan, not full-width bars: Resend is the everyday one, Cancel stays quiet. */}
                 {onResendBill && (
                   <>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleResend(plan.id)}
                       disabled={busyId === plan.id}
-                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                      variant="secondary" size="sm"
                     >
                       {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}
-                    </button>
+                    </Button>
                     {billNote?.id === plan.id && <p className={`basis-full text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
                   </>
                 )}
-                <button
+                <Button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                  variant="ghost" size="sm" className="text-red-300 hover:text-red-200"
                 >
                   Cancel plan
-                </button>
+                </Button>
               </div>
             ))}
         </div>

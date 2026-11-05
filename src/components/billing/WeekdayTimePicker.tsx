@@ -5,7 +5,7 @@ import { Bell, Lock } from "@/components/ui/appIcons";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { DAY_NAMES, DAY_ORDER, DAY_SHORT, formatTimeLabel } from "@/lib/weeklyTimeLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const chip = "tap rounded-control bg-neu-base text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -183,16 +183,16 @@ export function WeekdayTimePicker({
  */
 function WaitButton({ waiting, busy, onPress, compact = false }: { waiting: boolean; busy: boolean; onPress: () => void; compact?: boolean }) {
   return (
-    <button
+    <Button
       type="button"
       aria-busy={busy}
       onClick={() => {
         if (!busy) onPress();
       }}
-      className={buttonVariants({ variant: "secondary", size: "sm", className: cn(compact ? "shrink-0" : "mt-3", busy && "cursor-progress") })}
+      variant="secondary" size="sm" className={cn(compact ? "shrink-0" : "mt-3", busy && "cursor-progress")}
     >
       {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
       {waiting ? (busy ? "Stopping…" : "Stop waiting") : busy ? "Adding you…" : "Tell me when it opens"}
-    </button>
+    </Button>
   );
 }

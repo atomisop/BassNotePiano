@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Wrench, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { toast } from "@/components/ui/Toaster";
@@ -141,10 +141,10 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      <Button type="button" onClick={() => void openBox()} aria-haspopup="dialog" variant="secondary" size="sm" className="h-8 px-2.5">
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan builder
-      </button>
+      </Button>
       <Dialog
         open={open}
         onOpenChange={(next) => !busy && setOpen(next)}

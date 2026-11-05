@@ -1,9 +1,12 @@
 "use client";
 
+import * as React from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
+import { TabBar } from "glisse";
+import "glisse/styles.css";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -86,6 +89,33 @@ const NAV_ITEMS = [
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
 const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
+
+/**
+ * How Glisse's TabBar draws each tab that has an `href`: a Next link that also carries the tour's hook, the "pending" light-up and
+ * the rule that tapping the current tab means "take me to the top" (it would only reload the same page).
+ */
+const DockLink = React.forwardRef<HTMLAnchorElement, React.ComponentProps<typeof Link>>(function DockLink({ href, onClick, ...rest }, ref) {
+  const pathname = usePathname();
+  const to = typeof href === "string" ? href : "";
+  const tour = [...NAV_ITEMS, ...ADMIN_NAV_ITEMS].find((i) => i.href === to);
+  return (
+    <Link
+      ref={ref}
+      href={href}
+      data-prerender=""
+      data-tour={tour && "dataTour" in tour ? tour.dataTour : undefined}
+      aria-current={pathname === to ? "page" : undefined}
+      onClick={(e) => {
+        onClick?.(e);
+        if (pathname === to) {
+          e.preventDefault();
+          window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
+        }
+      }}
+      {...rest}
+    />
+  );
+});
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -175,6 +205,11 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   }, [pathname]);
 
 
+  // The tab that lights up: the page being opened, else the page shown. A scale's page belongs to Roadmap, an admin page to Admin.
+  const at = pendingHref ?? pathname;
+  const tabValue =
+    items.find((i) => at === i.href || (i.href === "/roadmap" && at.startsWith("/scales/")) || (i.href === "/admin" && at.startsWith("/admin/")))?.href ?? null;
+
   return (
     <div
       role="navigation"
@@ -191,56 +226,24 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
           transformOrigin: "50% 100%",
           transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
-        className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
+        className="glass-dock pointer-events-auto relative flex w-full max-w-[26rem] justify-center"
       >
-        {items.map((item) => {
-          const at = pendingHref ?? pathname;
-          // A scale's page belongs to the Roadmap tab.
-          const active =
-            at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
-          const current = pathname === item.href;
-          const icon = DOCK_ICONS[item.icon];
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              data-prerender=""
-              aria-label={item.label}
-              aria-current={current ? "page" : undefined}
-              // The current tab again means "take me to the top" (it would only reload the same page).
-              onClick={
-                current
-                  ? (e) => {
-                      e.preventDefault();
-                      window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
-                    }
-                  : () => {
-                      setPendingHref(item.href);
-                      window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
-                    }
-              }
-              data-tour={"dataTour" in item ? item.dataTour : undefined}
-              className="tap relative flex h-full items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {active && (
-                <motion.span
-                  layoutId="dock-active-pill"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="ig-dock-active pointer-events-none absolute -inset-x-[4.5px] inset-y-0 rounded-full"
-                />
-              )}
-              <motion.span
-                // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
-                whileTap={{ scale: 0.82 }}
-                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
-              >
-                <DockGlyphIcon icon={icon} active={active} />
-              </motion.span>
-
-            </Link>
-          );
-        })}
+        <TabBar
+          link={DockLink}
+          aria-label="Primary"
+          value={tabValue}
+          onValueChange={(href) => {
+            if (href === pathname) return;
+            setPendingHref(href);
+            window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: href }));
+          }}
+          items={items.map((item) => ({
+            value: item.href,
+            label: item.label,
+            href: item.href,
+            icon: <DockGlyphIcon icon={DOCK_ICONS[item.icon]} active={tabValue === item.href} />,
+          }))}
+        />
       </div>
     </div>
   );

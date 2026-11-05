@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
 import { FADE, SPRING } from "@/lib/motionTokens";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const backdropVariants = {
@@ -84,13 +84,13 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
               >
                 Full update history
               </Link>
-              <button
+              <Button
                 type="button"
                 onClick={handleClose}
-                className={buttonVariants({ variant: "primary", size: "sm", className: "shrink-0" })}
+                variant="primary" size="sm" className="shrink-0"
               >
                 Got it
-              </button>
+              </Button>
             </div>
           </motion.div>
         </motion.div>

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Wrench } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { setPlanProgressAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 
@@ -35,10 +35,10 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
 
   return (
     <>
-      <button type="button" onClick={() => { setPaid(billsPaid); setDay(currentDay); setOpen(true); }} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
+      <Button type="button" onClick={() => { setPaid(billsPaid); setDay(currentDay); setOpen(true); }} aria-haspopup="dialog" variant="secondary" size="sm" className={compact ? "h-8 px-2.5" : ""}>
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan progress
-      </button>
+      </Button>
       <Dialog
         open={open}
         onOpenChange={(next) => !busy && setOpen(next)}

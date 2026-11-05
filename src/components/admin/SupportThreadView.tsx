@@ -19,7 +19,7 @@ import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCommands";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { toast } from "@/components/ui/Toaster";
@@ -215,25 +215,25 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {open ? (
-              <button
+              <Button
                 type="button"
                 onClick={handleResolve}
                 disabled={resolving}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                variant="secondary" size="sm"
               >
                 {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {resolving ? "Resolving…" : "Mark resolved"}
-              </button>
+              </Button>
             ) : (
               <StatusDot tone="success">Resolved</StatusDot>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
+              variant="outline" size="sm"
             >
               Delete
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -358,14 +358,14 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
               className="min-w-0 flex-1 rounded-xl px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
             />
           )}
-          <button
+          <Button
             type="submit"
             disabled={sending || !reply.trim()}
-            className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
+            variant="primary" size="sm" className="flex shrink-0"
           >
             {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {sending ? "Sending…" : slashQuery !== null || reply.startsWith("/") ? "Transfer" : isEmail ? "Send email" : "Send"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

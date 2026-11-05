@@ -13,7 +13,7 @@ import {
   type PricingConfig,
 } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import type { DiscountCandidate, PricingFormValues } from "@/app/(dashboard)/admin/pricing/actions";
 import { toast } from "@/components/ui/Toaster";
 
@@ -191,17 +191,17 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
               Save {changed.length} change{changed.length === 1 ? "" : "s"}? New plans and plan changes use these prices straight away, the pricing page and Atom show them, and nobody already on a plan is affected.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
-              <button type="button" onClick={() => void save()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+              <Button type="button" onClick={() => setAsking(false)} disabled={busy} variant="secondary" size="sm">Not yet</Button>
+              <Button type="button" onClick={() => void save()} disabled={busy} variant="primary" size="sm" className="text-black">
                 {busy && <MorphingSquare size={12} />}
                 {busy ? "Saving…" : "Yes, save"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+          <Button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} variant="primary" size="sm" className="text-black">
             Save prices
-          </button>
+          </Button>
         )}
       </div>
     </Card>
@@ -262,18 +262,18 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
           <input id={`dp-${row.userId}`} type="number" inputMode="numeric" min={1} max={MAX_PERSONAL_DISCOUNT_PERCENT} value={value} onChange={(e) => setValue(e.target.value)} className={`${inputClass} w-20`} />
           <span className="text-slate-400">% off</span>
           {dirty && (
-            <button type="button" disabled={busy} onClick={() => void run(() => onSet(row.userId, percent, row.note ?? ""))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            <Button type="button" disabled={busy} onClick={() => void run(() => onSet(row.userId, percent, row.note ?? ""))} variant="primary" size="sm" className="text-black">
               {busy && <MorphingSquare size={12} />}
               Save {percent}%
-            </button>
+            </Button>
           )}
           {removing ? (
             <>
-              <button type="button" onClick={() => setRemoving(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep</button>
-              <button type="button" onClick={() => void run(() => onClear(row.userId))} disabled={busy} className={buttonVariants({ variant: "danger", size: "sm" })}>Yes, remove</button>
+              <Button type="button" onClick={() => setRemoving(false)} disabled={busy} variant="secondary" size="sm">Keep</Button>
+              <Button type="button" onClick={() => void run(() => onClear(row.userId))} disabled={busy} variant="danger" size="sm">Yes, remove</Button>
             </>
           ) : (
-            <button type="button" onClick={() => setRemoving(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Remove</button>
+            <Button type="button" onClick={() => setRemoving(true)} disabled={busy} variant="secondary" size="sm">Remove</Button>
           )}
         </div>
       </div>
@@ -376,19 +376,19 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                   Give {picked.name ?? picked.email} {p}% off? Their running plan (and an unpaid bill) changes now, every bill after it too, and they are told. Bills already paid never change.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
-                  <button type="button" onClick={() => void add()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                  <Button type="button" onClick={() => setAsking(false)} disabled={busy} variant="secondary" size="sm">Not yet</Button>
+                  <Button type="button" onClick={() => void add()} disabled={busy} variant="primary" size="sm" className="text-black">
                     {busy && <MorphingSquare size={12} />}
                     {busy ? "Saving…" : "Yes, give it"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={!valid} onClick={() => setAsking(true)} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                <Button type="button" disabled={!valid} onClick={() => setAsking(true)} variant="primary" size="sm" className="text-black">
                   {picked.discountPercent > 0 ? "Change discount" : "Give discount"}
-                </button>
-                <button type="button" onClick={() => { setPicked(null); setQuery(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
+                </Button>
+                <Button type="button" onClick={() => { setPicked(null); setQuery(""); }} variant="secondary" size="sm">Cancel</Button>
               </div>
             )}
           </div>

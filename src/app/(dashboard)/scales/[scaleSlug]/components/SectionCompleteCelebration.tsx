@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { SPRING } from "@/lib/motionTokens";
@@ -50,21 +50,21 @@ export function SectionCompleteCelebration({
       <h3 className="relative text-title font-semibold text-slate-50">Lesson complete</h3>
       <p className="relative mx-auto mt-1 max-w-xs text-small text-slate-400">Saved to your progress.</p>
       <div className="relative mt-6 flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={onCourseDetails}
-          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
+          variant="secondary" className="flex-1"
         >
           Review this lesson
-        </button>
+        </Button>
         {hasNextSection && (
-          <button
+          <Button
             type="button"
             onClick={onNextSection}
-            className={cn(buttonVariants(), "flex-1")}
+             className="flex-1"
           >
             Next lesson
-          </button>
+          </Button>
         )}
       </div>
     </motion.div>

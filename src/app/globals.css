@@ -2999,3 +2999,99 @@ input[type="time"]:disabled {
 /* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
 .tier-starter { background-color: #ffffff; color: #000000; }
 :root:not([data-theme="ink"]) .tier-starter { background-color: #0b0b0b; color: #ffffff; }
+
+/* glisse (the glass buttons and dock) follows the app's own light/dark mode (`data-mode` on <html>), not its own `data-theme`. */
+html[data-mode="dark"] {
+  --lg-foreground: rgb(255 255 255);
+  --lg-muted: rgb(235 235 245 / 0.6);
+  --lg-glass: rgb(40 40 40 / 0.62);
+  --lg-glass-active: rgb(70 70 70 / 0.62);
+  --lg-edge: rgb(255 255 255 / 0.08);
+  --lg-drop: transparent;
+  --lg-selection: rgb(255 255 255 / 0.145);
+  --lg-lens: rgb(255 255 255 / 0.055);
+  --lg-lens-drop: transparent;
+  --lg-segment-track: transparent;
+  --lg-segment-thumb: rgb(235 235 245 / 0.3);
+  --lg-segment-label: rgb(255 255 255);
+  --lg-segment-lens: transparent;
+  --lg-surface: rgb(28 28 31 / 0.86);
+  --lg-surface-edge: rgb(255 255 255 / 0.13);
+  --lg-shadow: rgb(0 0 0 / 0.38);
+  --lg-highlight: rgb(235 235 245 / 0.13);
+  --lg-separator: rgb(235 235 245 / 0.16);
+  --lg-destructive: #ff4245;
+  --lg-track: rgb(235 235 245 / 0.3);
+  --lg-rail: rgb(255 255 255 / 0.1);
+  --lg-ring: rgb(255 255 255 / 0.5);
+  --lg-lens-shine: 1;
+  --lg-rim-shine: 0.13;
+}
+html[data-mode="light"] {
+  --lg-foreground: rgb(0 0 0 / 0.88);
+  --lg-muted: rgb(60 60 67 / 0.6);
+  --lg-glass: rgb(255 255 255 / 0.6);
+  --lg-glass-active: rgb(236 236 240 / 0.85);
+  --lg-edge: rgb(0 0 0 / 0.08);
+  --lg-drop: rgb(0 0 0 / 0.06);
+  --lg-selection: rgb(0 0 0 / 0.1);
+  --lg-lens: rgb(0 0 0 / 0.03);
+  --lg-lens-drop: rgb(0 0 0 / 0.11);
+  --lg-segment-track: rgb(118 118 128 / 0.12);
+  --lg-segment-thumb: rgb(255 255 255);
+  --lg-segment-label: rgb(0 0 0);
+  --lg-segment-lens: rgb(0 0 0 / 0.03);
+  --lg-surface: rgb(250 250 252 / 0.86);
+  --lg-surface-edge: rgb(0 0 0 / 0.08);
+  --lg-shadow: rgb(25 25 35 / 0.12);
+  --lg-highlight: rgb(60 60 67 / 0.09);
+  --lg-separator: rgb(60 60 67 / 0.15);
+  --lg-destructive: #ff383c;
+  --lg-track: rgb(59 59 66 / 0.3);
+  --lg-rail: rgb(0 0 0 / 0.1);
+  --lg-ring: rgb(0 0 0 / 0.4);
+  --lg-lens-shine: -1.5;
+  --lg-rim-shine: 0.3;
+}
+
+/* The dock: glisse's own tab bar, icons only, on close-to-clear glass that bends the light behind it (glisse's own refraction is left to
+   draw the glass; nothing grey is painted over it). The current tab is a white lens. */
+.glass-dock .lg-tab-bar[data-icons] {
+  --lg-tab-width: min(72px, calc((100vw - 60px) / 5));
+  --lg-tab-height: 52px;
+  --lg-glass: rgb(255 255 255 / 0.04);
+  --lg-tab-selected: #fff;
+  --lg-selection: rgb(255 255 255 / 0.26);
+  --lg-lens: rgb(255 255 255 / 0.14);
+  --lg-blur: 1.5px;
+}
+.glass-dock .lg-tab-label { display: none; }
+.glass-dock .lg-tab-bar { box-shadow: 0 10px 30px rgb(0 0 0 / 0.25); }
+html[data-mode="light"] .glass-dock .lg-tab-bar[data-icons] {
+  --lg-glass: rgb(255 255 255 / 0.1);
+  --lg-tab-selected: #1a1a1a;
+  --lg-selection: rgb(255 255 255 / 0.85);
+  --lg-lens: rgb(255 255 255 / 0.5);
+}
+/* Every other clickable button (chips, rows, tabs, menu items) is drawn as glisse glass too: the same material as `.lg-glass`. Solid
+   fills (the orange main action, red, white) keep their own colour, and switches and glisse's own parts are left alone. */
+button:where(:not(.lg-button, .lg-tab, [role="switch"], [role="slider"], [data-no-glass], [class*="bg-signal"], [class*="bg-red-"], [class*="bg-white"], [class*="bg-amber"], [class*="bg-primary"], [class*="bg-transparent"])) {
+  background-color: var(--lg-glass);
+  -webkit-backdrop-filter: blur(var(--lg-blur, 6px)) var(--lg-filter, saturate(1.5));
+  backdrop-filter: blur(var(--lg-blur, 6px)) var(--lg-filter, saturate(1.5));
+  box-shadow: inset 0 0 0 0.5px var(--lg-edge), 0 1px 3px var(--lg-drop);
+}
+@media (hover: hover) and (pointer: fine) {
+  button:where(:not(.lg-button, .lg-tab, [role="switch"], [role="slider"], [data-no-glass], [class*="bg-signal"], [class*="bg-red-"], [class*="bg-white"], [class*="bg-amber"], [class*="bg-primary"], [class*="bg-transparent"])):hover {
+    background-color: var(--lg-glass-active);
+  }
+}
+
+/* Solid orange / red / white buttons that are not glisse's own: same glass edge (bright rim, soft light, depth), colour kept. */
+:is(button, a)[class*="bg-signal"]:not(.lg-button),
+:is(button, a)[class*="bg-red-"]:not(.lg-button),
+:is(button, a)[class*="bg-white"]:not(.lg-button) {
+  -webkit-backdrop-filter: blur(6px) saturate(1.5);
+  backdrop-filter: blur(6px) saturate(1.5);
+  box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.38), inset 0 1.5px 1px rgb(255 255 255 / 0.5), inset 0 -6px 10px rgb(0 0 0 / 0.1), 0 4px 14px rgb(0 0 0 / 0.22);
+}

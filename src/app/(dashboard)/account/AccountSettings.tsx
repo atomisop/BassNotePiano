@@ -16,7 +16,7 @@ import { SettingsLayout } from "@/components/layout/PageLayouts";
 import { startNavigation } from "@/lib/navigationState";
 import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { unlinkDiscordAction } from "../lessons/discordActions";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
@@ -353,7 +353,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
           {username ? "Reconnect" : "Connect Discord"}
         </DiscordConnectLink>
         {username && (
-          <button
+          <Button
             type="button"
             disabled={busy}
             onClick={async () => {
@@ -364,10 +364,10 @@ function DiscordAccountCard({ username }: { username: string | null }) {
               router.refresh();
               announceChange("status");
             }}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            variant="secondary" size="sm"
           >
             Disconnect
-          </button>
+          </Button>
         )}
       </div>
     </SectionCard>

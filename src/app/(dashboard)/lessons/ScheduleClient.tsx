@@ -15,7 +15,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
@@ -218,16 +218,16 @@ export function ScheduleClient({
                           </Link>
                         )}
                         {canCancel && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => {
                               setSkipError(null);
                               setConfirmSkipId(booking.id);
                             }}
-                            className={buttonVariants({ variant: "secondary", size: "sm" })}
+                            variant="secondary" size="sm"
                           >
                             Skip this class
-                          </button>
+                          </Button>
                         )}
                       </>
                     )}
@@ -238,23 +238,23 @@ export function ScheduleClient({
                       <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
                         <p className="text-small text-slate-300">Skip this class? It stays on your account.</p>
                         <div className="mt-2 flex gap-2">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => setConfirmSkipId(null)}
                             disabled={busy}
-                            className={buttonVariants({ variant: "secondary", size: "sm" })}
+                            variant="secondary" size="sm"
                           >
                             Keep it
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             onClick={() => handleSkip(booking.id)}
                             disabled={busy}
-                            className={buttonVariants({ variant: "danger", size: "sm" })}
+                            variant="danger" size="sm"
                           >
                             {busy && <MorphingSquare size={12} />}
                             {busy ? "Skipping…" : "Skip this class"}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )
@@ -292,13 +292,13 @@ export function ScheduleClient({
           <div className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
             <div className="flex items-center justify-between gap-3">
               <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
-              <button
+              <Button
                 type="button"
                 onClick={() => setChangingTime(false)}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                variant="secondary" size="sm"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
             {changeError && <p className="mt-2 text-small text-red-400">{changeError}</p>}
             {loadingSlots ? (
@@ -314,13 +314,13 @@ export function ScheduleClient({
             )}
           </div>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={openChangeTime}
-            className={buttonVariants({ variant: "secondary", className: "mt-4 w-full text-left" })}
+            variant="secondary" className="mt-4 w-full text-left"
           >
             Change weekly time
-          </button>
+          </Button>
         )}
       </div>
 

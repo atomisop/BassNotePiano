@@ -6,7 +6,7 @@ import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { BookingCalendar } from "./BookingCalendar";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -120,15 +120,15 @@ export function WeeklyTimePicker({
             Move your weekly class to every <span className="font-semibold text-slate-50">{DAY_LABELS[selected.dayOfWeek]}</span>,{" "}
             <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)}</span>?
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => onConfirm(selected)}
             disabled={busy}
-            className={buttonVariants({ variant: "primary", className: "mt-2.5" })}
+            variant="primary" className="mt-2.5"
           >
             {busy && <MorphingSquare size={13} className="shrink-0" />}
             {busy ? "Moving…" : "Confirm new time"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

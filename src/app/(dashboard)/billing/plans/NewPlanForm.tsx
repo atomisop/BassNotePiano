@@ -19,7 +19,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
 import { tierLook, tierVars } from "@/components/marketing/PaymentPlanTierGrid";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
 
@@ -456,21 +456,21 @@ export function NewPlanForm({
               </li>
             ))}
           </ul>
-          <button
+          <Button
             type="button"
             disabled={!people.canAdd}
             onClick={() => {
               setMemberRows((prev) => [...prev, ""]);
               setFocusRow(memberRows.length);
             }}
-            className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
+            variant="secondary" size="sm" className="mt-3"
           >
             {isParent ? "Add another child" : "Add another person"}
-          </button>
+          </Button>
           {toInvite.length > 0 && (
-            <button type="button" onClick={() => void invites.send(toInvite)} className={buttonVariants({ variant: "secondary", size: "sm", className: "ml-2 mt-3" })}>
+            <Button type="button" onClick={() => void invites.send(toInvite)} variant="secondary" size="sm" className="ml-2 mt-3">
               {isParent ? (toInvite.length === 1 ? "Send request" : `Send ${toInvite.length} requests`) : toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
-            </button>
+            </Button>
           )}
           {invites.error && (
             <p role="alert" className="mt-2 text-small text-red-400">
@@ -548,7 +548,7 @@ export function NewPlanForm({
         }}
         title="Review and start"
         footer={
-          <button
+          <Button
             type="button"
             aria-disabled={busy || !acknowledged || hint !== null}
             onClick={() => {
@@ -556,11 +556,11 @@ export function NewPlanForm({
               if (!acknowledged) return void toast.warning("Tick the box to agree");
               void start();
             }}
-            className={buttonVariants({ variant: "primary", className: cn("w-full sm:w-auto", (busy || !acknowledged) && "opacity-45 saturate-50", !acknowledged && "cursor-not-allowed") })}
+            variant="primary" className={cn("w-full sm:w-auto", (busy || !acknowledged) && "opacity-45 saturate-50", !acknowledged && "cursor-not-allowed")}
           >
             {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {busy ? "Starting…" : isParent ? "Start plan" : isFamily ? "Start group plan" : "Start plan"}
-          </button>
+          </Button>
         }
       >
         <dl className="space-y-2 text-small">

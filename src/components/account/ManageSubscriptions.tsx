@@ -8,7 +8,7 @@ import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from
 import { calculatePaymentPlanRate, discountedPlanPriceCents, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { usePricing } from "@/components/billing/PricingContext";
 import { toast } from "@/components/ui/Toaster";
 import { Dialog } from "@/components/ui/Dialog";
@@ -257,9 +257,9 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
             )}
 
             {canSwitch && (
-              <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "primary", className: "mt-5 w-full sm:w-auto" })}>
+              <Button type="button" onClick={() => setView("switch")} variant="primary" className="mt-5 w-full sm:w-auto">
                 Switch plan
-              </button>
+              </Button>
             )}
           </div>
 
@@ -304,21 +304,21 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         title={switchPreview ? `Switch to ${switchPreview.label}?` : "Switch plan"}
         footer={
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
               disabled={!switchPreview || switchPreview.blocked || pendingTerm !== null}
               onClick={async () => {
                 if (!confirmTerm) return;
                 await handleChangeTerm(confirmTerm);
               }}
-              className={buttonVariants({ variant: "primary" })}
+              variant="primary"
             >
               {pendingTerm !== null && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               {pendingTerm !== null ? "Switching…" : "Yes, switch"}
-            </button>
-            <button type="button" disabled={pendingTerm !== null} onClick={() => setConfirmTerm(null)} className={buttonVariants({ variant: "secondary" })}>
+            </Button>
+            <Button type="button" disabled={pendingTerm !== null} onClick={() => setConfirmTerm(null)} variant="secondary">
               Not now
-            </button>
+            </Button>
           </div>
         }
       >
@@ -354,31 +354,31 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
             </p>
           )}
           {cancelStage === "idle" && (
-            <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Button type="button" onClick={startCancelFlow} variant="secondary" size="sm">
               Cancel subscription
-            </button>
+            </Button>
           )}
 
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
               <p className="text-small text-slate-100">Before you cancel, want to switch to 3 Months instead?</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => handleChangeTerm("TERM_3")}
                   disabled={pendingTerm !== null}
-                  className={buttonVariants({ variant: "primary" })}
+                  variant="primary"
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   Switch to 3 Months
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setCancelStage("reason")}
-                  className={buttonVariants({ variant: "secondary" })}
+                  variant="secondary"
                 >
                   No, cancel anyway
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -416,23 +416,23 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
               )}
               {cancelError && <p className="mt-2 text-small text-red-400">{cancelError}</p>}
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={handleConfirmCancel}
                   disabled={!reason || cancelStage === "canceling"}
-                  className={buttonVariants({ variant: "danger" })}
+                  variant="danger"
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={resetCancelFlow}
                   disabled={cancelStage === "canceling"}
-                  className={buttonVariants({ variant: "secondary" })}
+                  variant="secondary"
                 >
                   Never mind
-                </button>
+                </Button>
               </div>
             </div>
           )}

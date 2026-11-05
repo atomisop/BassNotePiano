@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
 
 /**
@@ -136,28 +136,28 @@ export function BookingCalendar({
         <p className="text-body text-slate-100 font-semibold">{monthLabel}</p>
         <div className="flex items-center gap-1">
           {selectedDateKey && (
-            <button type="button" onClick={() => onSelectDate(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mr-1" })}>
+            <Button type="button" onClick={() => onSelectDate(null)} variant="secondary" size="sm" className="mr-1">
               Show all
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={() => shiftMonth(-1)}
             disabled={atMinMonth}
             aria-label="Previous month"
-            className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+            variant="secondary" size="iconSm"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => shiftMonth(1)}
             disabled={atMaxMonth}
             aria-label="Next month"
-            className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+            variant="secondary" size="iconSm"
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 

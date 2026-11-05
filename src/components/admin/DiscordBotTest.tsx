@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { SetupCheck } from "@/lib/discordApi";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 
 /** Owner-only: runs the bot through every step and shows which one fails. */
@@ -37,7 +37,7 @@ export function DiscordBotTest({
           <DiscordConnectLink className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Connect my Discord
           </DiscordConnectLink>
-          <button
+          <Button
             type="button"
             onClick={async () => {
               setMaking(true);
@@ -48,15 +48,15 @@ export function DiscordBotTest({
               }
             }}
             disabled={making}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            variant="secondary" size="sm"
           >
             {making && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {making ? "Creating…" : "Make a test call I can see"}
-          </button>
-          <button type="button" onClick={run} disabled={running} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          </Button>
+          <Button type="button" onClick={run} disabled={running} variant="secondary" size="sm">
             {running && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {running ? "Testing…" : "Test the bot"}
-          </button>
+          </Button>
         </div>
       </div>
       {visible && (

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Coins } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
@@ -245,13 +245,13 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
                 {mode === "revoke" && selected.classCredits > 0 && !confirming && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setAmount(String(storedToCredits(selected.classCredits)))}
-                    className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-1.5" })}
+                    variant="secondary" size="sm" className="mt-1.5"
                   >
                     Revoke all {formatCredits(storedToCredits(selected.classCredits))}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div>
@@ -292,24 +292,24 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                     >
                       Edit
                     </button>
-                    <button
+                    <Button
                       type="button"
                       onClick={handleConfirm}
                       disabled={submitting}
-                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
+                      variant="primary" size="sm" className="flex flex-1"
                     >
                       {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {submitting ? "Applying…" : "Confirm"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <button
+                <Button
                   type="submit"
-                  className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}
+                  variant="primary" className="w-full sm:w-auto"
                 >
                   {mode === "grant" ? "Review grant" : "Review revoke"}
-                </button>
+                </Button>
               )}
             </form>
 
