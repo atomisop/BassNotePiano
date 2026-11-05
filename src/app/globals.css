@@ -1424,7 +1424,7 @@
     transition: padding-left 240ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-sidebar .sb-item {
-    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 280ms var(--ease-spring);
+    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale var(--dur-base) var(--ease-ios);
   }
   html[data-sidebar-anim] .app-sidebar .sb-label {
     transition: opacity 160ms var(--ease-ios) 80ms, max-width 240ms var(--ease-ios), visibility 0s;
@@ -1528,12 +1528,11 @@
 }
 @utility press-soft {
   transition-property: scale, box-shadow, background-color, color, opacity, border-color;
-  transition-duration: 420ms;
-  transition-timing-function: var(--ease-spring);
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-ios);
   &:active:not(:disabled) {
-    scale: 0.985;
+    scale: var(--press-scale);
     transition-duration: 90ms;
-    transition-timing-function: var(--ease-ios);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1555,10 +1554,10 @@
    class always wins. Full-screen scrims (inset-0) are left alone. */
 @layer base {
   [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]) {
-    transition: scale 420ms var(--ease-spring);
+    transition: scale var(--dur-fast) var(--ease-ios);
   }
   [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]):active {
-    scale: 0.96;
+    scale: var(--press-scale);
     transition-duration: 90ms;
     transition-timing-function: var(--ease-ios);
   }
@@ -3036,8 +3035,24 @@ html[data-kb-motion="off"] .stagger-item { animation: none !important; }
   transition-timing-function: var(--ease-ios);
   &[data-state="unchecked"] { transform-origin: left center; }
   &[data-state="checked"] { transform-origin: right center; }
-  :where([role="switch"]:active:not(:disabled)) > & { transform: scaleX(var(--knob-stretch)); transition-duration: 90ms; }
+  :where([role="switch"]:active:not(:disabled)) & { transform: scaleX(var(--knob-stretch)); transition-duration: 90ms; }
 }
 @media (prefers-reduced-motion: reduce) {
   .knob-stretch { transform: none !important; }
 }
+
+/* Staggered rows without touching each row: put data-stagger on the list's container (a ul, or a div whose children are the rows). Rows
+   beyond the 8th share the last delay. Plays when a row first mounts only, so a refresh that keeps the rows does not replay it. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-stagger] > * {
+    animation: stagger-in var(--dur-base) var(--ease-ios) both;
+  }
+  [data-stagger] > :nth-child(2) { animation-delay: calc(1 * var(--stagger)); }
+  [data-stagger] > :nth-child(3) { animation-delay: calc(2 * var(--stagger)); }
+  [data-stagger] > :nth-child(4) { animation-delay: calc(3 * var(--stagger)); }
+  [data-stagger] > :nth-child(5) { animation-delay: calc(4 * var(--stagger)); }
+  [data-stagger] > :nth-child(6) { animation-delay: calc(5 * var(--stagger)); }
+  [data-stagger] > :nth-child(7) { animation-delay: calc(6 * var(--stagger)); }
+  [data-stagger] > :nth-child(n+8) { animation-delay: calc(7 * var(--stagger)); }
+}
+html[data-kb-motion="off"] [data-stagger] > * { animation: none !important; }

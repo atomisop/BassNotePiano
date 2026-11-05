@@ -59,7 +59,7 @@ Switch.displayName = SwitchPrimitives.Root.displayName
 function SwitchLook({ on, className }: { on: boolean; className?: string }) {
   return (
     <span aria-hidden className={cn(TRACK, on ? TRACK_ON : TRACK_OFF, className)}>
-      <span className={cn(KNOB, on ? KNOB_ON : KNOB_OFF)} />
+      <span data-state={on ? "checked" : "unchecked"} className={cn(KNOB, on ? KNOB_ON : KNOB_OFF)} />
     </span>
   )
 }

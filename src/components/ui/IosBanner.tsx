@@ -119,7 +119,7 @@ export function IosBanner({
         style={{
           transform: shown ? `translateY(${drag}px)` : "translateY(-140%)",
           opacity: shown ? 1 : 0,
-          transition: startY.current !== null ? "none" : "transform 460ms cubic-bezier(0.22, 1.25, 0.36, 1), opacity 200ms ease",
+          transition: startY.current !== null ? "none" : "transform 460ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease",
         }}
       >
         <Tap href={href} onClick={() => close("tapped")}>
