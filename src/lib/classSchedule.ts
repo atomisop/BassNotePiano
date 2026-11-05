@@ -1,4 +1,5 @@
 import { noticeBookingConfirmed } from "@/lib/studentNotices";
+import { planHoldsOccurrence } from "@/lib/planHold";
 import { findOwnerReservation, OWNER_RESERVED_MESSAGE, reservationCovers, reservationIsFor } from "@/lib/ownerReservations";
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
@@ -353,14 +354,14 @@ async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: str
     ? []
     : await tx.paymentPlan.findMany({
         where: { userId: { not: studentId }, reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
-        select: { reservedScheduleId: true, reservedChunkIndex: true },
+        select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
       });
   if (plans.length > 0) {
     const schedules = await tx.classSchedule.findMany({ where: { id: { in: plans.map((p) => p.reservedScheduleId as string) }, dayOfWeek: occurrenceDate.getUTCDay() } });
     for (const plan of plans) {
       const schedule = schedules.find((s) => s.id === plan.reservedScheduleId);
       const chunk = schedule ? chunksForSchedule(schedule).find((c) => c.chunkIndex === plan.reservedChunkIndex) : undefined;
-      if (schedule && chunk && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
+      if (schedule && chunk && planHoldsOccurrence(plan.reservedBookings, occurrenceDate) && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
         throw new PlanHoldError();
       }
     }
@@ -433,16 +434,20 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
   // bookClass and Reschedule refuse it, so students never see it as open. The admin sees it apart, with the holder's name.
   const holdingPlans = await prisma.paymentPlan.findMany({
     where: { reservedScheduleId: { not: null }, reservedChunkIndex: { not: null }, ...(viewerId ? { userId: { not: viewerId } } : {}), OR: livePaymentPlanConditions() },
-    select: { reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } } },
+    select: { reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } }, reservedBookings: { select: { occurrenceDate: true, status: true } } },
   });
-  const heldBy = new Map(holdingPlans.map((p) => [`${p.reservedScheduleId}:${p.reservedChunkIndex}`, p.user.name ?? p.user.email]));
+  // Same rule as the booking check (planHoldsOccurrence): no hold before the plan's first class or on a skipped or canceled week.
+  const holderOf = (scheduleId: string, chunkIndex: number, occurrenceDate: Date) => {
+    const plan = holdingPlans.find((p) => p.reservedScheduleId === scheduleId && p.reservedChunkIndex === chunkIndex && planHoldsOccurrence(p.reservedBookings, occurrenceDate));
+    return plan ? (plan.user.name ?? plan.user.email) : undefined;
+  };
   const viewer = viewerId && ownerReservations.length > 0 ? await prisma.user.findUnique({ where: { id: viewerId }, select: { email: true, emailVerified: true } }) : null;
 
   return candidates
     .map((c): ClassOccurrence => {
       const covering = ownerReservations.filter((r) => reservationCovers(r, c.schedule.id, c.occurrenceDate, c.chunk.chunkIndex));
       const blocking = covering.filter((r) => !reservationIsFor(r.email, viewer));
-      const holder = heldBy.get(`${c.schedule.id}:${c.chunk.chunkIndex}`);
+      const holder = holderOf(c.schedule.id, c.chunk.chunkIndex, c.occurrenceDate);
       return {
         scheduleId: c.schedule.id,
         label: c.schedule.label,
@@ -1104,10 +1109,11 @@ export async function bookFamilyClass(
         // reservation on the same chunk, regardless of who's in the family
         // group, since the reservation's own auto-booking is always a solo
         // row for exactly one student.
-        const reservedByPlan = await tx.paymentPlan.findFirst({
+        const reservedPlans = await tx.paymentPlan.findMany({
           where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, OR: livePaymentPlanConditions() },
-          select: { id: true },
+          select: { id: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
         });
+        const reservedByPlan = reservedPlans.some((p) => planHoldsOccurrence(p.reservedBookings, occurrenceDate));
         if (reservedByPlan) {
           throw new PlanHoldError();
         }
