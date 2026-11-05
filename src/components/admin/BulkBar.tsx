@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
 export interface BulkAction {
@@ -67,25 +67,25 @@ export function BulkBar({
         {asking ? (
           <>
             <span className="text-small text-slate-300">{asking.question}</span>
-            <button type="button" onClick={() => setAsking(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Button type="button" onClick={() => setAsking(null)} variant="secondary" size="sm">
               Not yet
-            </button>
-            <button type="button" onClick={() => void go(asking)} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            </Button>
+            <Button type="button" onClick={() => void go(asking)} variant="primary" size="sm" className="text-black">
               {asking.confirmLabel ?? "Yes"}
-            </button>
+            </Button>
           </>
         ) : (
           <>
             {actions.map((a) => (
-              <button
+              <Button
                 key={a.label}
                 type="button"
                 disabled={busy || ids.length === 0}
                 onClick={() => (a.question ? setAsking(a) : void go(a))}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                variant="secondary" size="sm"
               >
                 {a.label}
-              </button>
+              </Button>
             ))}
             {extra}
             <button type="button" disabled={busy} onClick={onClear} className="tap ml-auto text-small text-slate-400 hover:text-slate-200">

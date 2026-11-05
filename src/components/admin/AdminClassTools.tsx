@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCog, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { formatEtShort } from "@/lib/classScheduleLabels";
@@ -41,10 +41,10 @@ export function AdminCancelAllButton({ userId, firstName, upcoming }: { userId: 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      <Button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" variant="secondary" size="sm" className="h-8 px-2.5">
         <X aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Cancel all upcoming
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title={`Cancel ${firstName}'s upcoming classes`}>
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="grid gap-4">
@@ -57,13 +57,13 @@ export function AdminCancelAllButton({ userId, firstName, upcoming }: { userId: 
             <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="Canceled by the studio" className={field} />
           </label>
           <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" disabled={busy} onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
+            <Button type="button" disabled={busy} onClick={() => setOpen(false)} variant="secondary">
               Keep them
-            </button>
-            <button type="button" disabled={busy} onClick={() => void save()} aria-busy={busy} className={buttonVariants({ variant: "danger" })}>
+            </Button>
+            <Button type="button" disabled={busy} onClick={() => void save()} aria-busy={busy} variant="danger">
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               Cancel {upcoming} {upcoming === 1 ? "class" : "classes"}
-            </button>
+            </Button>
           </div>
         </div>
       </Dialog>
@@ -110,7 +110,7 @@ export function AdminCloseDay() {
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => {
           setDate("");
@@ -119,11 +119,11 @@ export function AdminCloseDay() {
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm" })}
+        variant="secondary" size="sm"
       >
         <CalendarCog aria-hidden className="h-4 w-4" />
         Close a day
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Close the studio for a day">
         <NotifyToggle on={notify} onChange={setNotify} label="Notify the students" className="mb-3" />
         <div className="grid gap-4">
@@ -163,13 +163,13 @@ export function AdminCloseDay() {
             </div>
           )}
           <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" disabled={busy} onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
+            <Button type="button" disabled={busy} onClick={() => setOpen(false)} variant="secondary">
               Cancel
-            </button>
-            <button type="button" disabled={busy || !preview} onClick={() => void save()} aria-busy={busy} className={buttonVariants({ variant: "danger" })}>
+            </Button>
+            <Button type="button" disabled={busy || !preview} onClick={() => void save()} aria-busy={busy} variant="danger">
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               {preview ? `Close ${preview.label}` : "Close the day"}
-            </button>
+            </Button>
           </div>
         </div>
       </Dialog>

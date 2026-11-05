@@ -4,7 +4,7 @@ import { Celebrate } from "@/components/ui/Celebrate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Pause, Play, Plus } from "@/components/ui/appIcons";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Tabs } from "@/components/ui/Tabs";
 import { useMetronome, METRONOME_MAX_BPM, METRONOME_MIN_BPM } from "@/components/scales/useMetronome";
@@ -342,10 +342,10 @@ export function PracticeClient({
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-2 sm:flex">
-          <button type="button" onClick={toggle} className={buttonVariants({ size: "lg", className: "min-h-12 w-full sm:w-auto sm:px-8" })}>
+          <Button type="button" onClick={toggle} size="lg" className="min-h-12 w-full sm:w-auto sm:px-8">
             {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
-          </button>
+          </Button>
           {status.completedToday && (
             <a href={nextHref ?? "/dashboard"} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
               {nextHref ? "Continue to your lesson" : "Go to scales"}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { RotateCcw, Settings } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { restartPlanAction, setPlanLengthAction, setPlanPriceAction, waiveNextBillAction } from "@/app/(dashboard)/admin/payment-plans/actions";
@@ -54,7 +54,7 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => {
           setTerm(props.term);
@@ -64,11 +64,11 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm", className: props.compact ? "h-8 px-2.5" : "" })}
+        variant="secondary" size="sm" className={props.compact ? "h-8 px-2.5" : ""}
       >
         <Settings aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan settings
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Plan settings">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="grid gap-5">
@@ -77,32 +77,32 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
             <p className="text-small text-slate-400">{props.installmentsPaid} {props.installmentsPaid === 1 ? "bill" : "bills"} paid so far. A length has to be longer than that.</p>
             <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Plan length">
               {TERMS.map((t) => (
-                <button
+                <Button
                   key={t.term}
                   type="button"
                   role="radio"
                   aria-checked={term === t.term}
                   disabled={t.bills <= props.installmentsPaid && t.term !== props.term}
                   onClick={() => setTerm(t.term)}
-                  className={buttonVariants({ variant: term === t.term ? "primary" : "secondary", size: "sm" })}
+                  variant={term === t.term ? "primary" : "secondary"} size="sm"
                 >
                   {t.label}
-                </button>
+                </Button>
               ))}
             </div>
             <label className="flex items-center gap-2 text-small text-slate-300">
               <input type="checkbox" checked={newPrice} onChange={(e) => setNewPrice(e.target.checked)} className="h-4 w-4 accent-signal" />
               Use that length&apos;s own price (otherwise each bill stays {usd(props.priceCents)})
             </label>
-            <button
+            <Button
               type="button"
               disabled={!!busy || term === props.term}
               onClick={() => void run("length", () => setPlanLengthAction(props.planId, term, newPrice, notify))}
-              className={buttonVariants({ variant: "secondary", size: "sm", className: "justify-self-start" })}
+              variant="secondary" size="sm" className="justify-self-start"
             >
               {busy === "length" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               Save length
-            </button>
+            </Button>
           </section>
 
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
@@ -116,15 +116,15 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
                   <span className="sr-only">Price in dollars</span>
                   <input inputMode="decimal" value={dollars} onChange={(e) => setDollars(e.target.value.replace(/[^\d.]/g, ""))} className={field} />
                 </label>
-                <button
+                <Button
                   type="button"
                   disabled={!!busy || !price || price === props.priceCents}
                   onClick={() => void run("price", () => setPlanPriceAction(props.planId, price / 100, notify))}
-                  className={buttonVariants({ variant: "secondary", size: "sm", className: "justify-self-start" })}
+                  variant="secondary" size="sm" className="justify-self-start"
                 >
                   {busy === "price" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {price && price !== props.priceCents ? `Set to ${usd(price)}` : "Save price"}
-                </button>
+                </Button>
               </>
             )}
           </section>
@@ -132,15 +132,15 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
             <h3 className="text-body font-semibold text-slate-50">Next 28 days free</h3>
             <p className="text-small text-slate-400">Counts as a paid bill: their classes and credits for the cycle are added and the next bill moves 28 days out. Recorded as a $0 payment.</p>
-            <button
+            <Button
               type="button"
               disabled={!!busy || props.installmentsPaid < 1}
               onClick={() => (sureWaive ? void run("waive", () => waiveNextBillAction(props.planId, notify)) : setSureWaive(true))}
-              className={buttonVariants({ variant: sureWaive ? "primary" : "secondary", size: "sm", className: "justify-self-start" })}
+              variant={sureWaive ? "primary" : "secondary"} size="sm" className="justify-self-start"
             >
               {busy === "waive" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {sureWaive ? `Yes, waive ${usd(props.priceCents)}` : "Give 28 days free"}
-            </button>
+            </Button>
           </section>
         </div>
       </Dialog>
@@ -154,14 +154,14 @@ export function AdminRestartPlanButton({ planId, label, compact = false }: { pla
   const [notify] = useNotifyStudent("student-changes");
   const { busy, run } = useRun(() => setSure(false));
   return (
-    <button
+    <Button
       type="button"
       disabled={!!busy}
       onClick={() => (sure ? void run("restart", () => restartPlanAction(planId, notify)) : setSure(true))}
-      className={buttonVariants({ variant: sure ? "primary" : "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}
+      variant={sure ? "primary" : "secondary"} size="sm" className={compact ? "h-8 px-2.5" : ""}
     >
       {busy ? <MorphingSquare size={12} className="mr-1.5 shrink-0" /> : <RotateCcw aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
       {sure ? `Restart the ${label} plan?` : "Restart canceled plan"}
-    </button>
+    </Button>
   );
 }

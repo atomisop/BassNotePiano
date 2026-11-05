@@ -4,7 +4,7 @@ import { ChevronLeft } from "@/components/ui/appIcons";
 import { useMemo, useState } from "react";
 import { Switch as UiSwitch } from "@/components/ui/switch";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/StatusDot";
 
 type SaveResult = { ok: true; value: SettingValue } | { ok: false; error: string };
@@ -77,26 +77,26 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
           <input type="text" value={draft} maxLength={def.maxLength} onChange={(e) => setDraft(e.target.value)} aria-label={def.label} className={`${inputClass} w-full sm:w-72`} />
         )}
         {dirty && (
-          <button
+          <Button
             type="button"
             disabled={busy}
             onClick={() => run(onSave(def.key, def.type === "number" ? Number(draft) : draft))}
-            className={buttonVariants({ variant: "primary", size: "sm" })}
+            variant="primary" size="sm"
           >
             Save
-          </button>
+          </Button>
         )}
         {saved && <span className="text-small text-signal-fg">Saved</span>}
         {changed && !dirty && (
-          <button
+          <Button
             type="button"
             disabled={busy}
             onClick={() => run(onReset(def.key))}
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
+            variant="ghost" size="sm"
             title={`Back to ${String(def.default)}`}
           >
             Reset
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -7,7 +7,7 @@ import { ArrowRight, Check, Link2Off, Send, X } from "@/components/ui/appIcons";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
 import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { checkFamilyMemberAction } from "@/app/(dashboard)/billing/plans/actions";
@@ -111,16 +111,16 @@ export function ParentLinksPanel() {
         </div>
         <div className="mt-2 flex gap-2">
           <input type="email" inputMode="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their account email" aria-label="Child's account email" className={field} />
-          <button
+          <Button
             type="button"
             disabled={check !== "ready" || busy === "send"}
             onClick={() => void send()}
             aria-label="Send request"
-            className={buttonVariants({ variant: "primary", size: "sm", className: "h-11 shrink-0 px-4" })}
+            variant="primary" size="sm" className="h-11 shrink-0 px-4"
           >
             {busy === "send" ? <MorphingSquare size={14} /> : <Send aria-hidden className="h-4 w-4" />}
             <span className="ml-2 hidden sm:inline">Send request</span>
-          </button>
+          </Button>
         </div>
         <AccountCheckLine state={check} email={email.trim()} />
       </div>
@@ -150,15 +150,15 @@ export function ParentLinksPanel() {
                         <span className="block truncate text-small font-medium text-slate-300">{c.name}</span>
                         <span className="block truncate text-small text-slate-500">Waiting for them to accept · {c.email}</span>
                       </span>
-                      <button type="button" disabled={busy === `cancel:${c.childId}`} onClick={() => void run(`cancel:${c.childId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      <Button type="button" disabled={busy === `cancel:${c.childId}`} onClick={() => void run(`cancel:${c.childId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} variant="secondary" size="sm">
                         Withdraw
-                      </button>
+                      </Button>
                     </div>
                   )}
                   {c.status === "ACCEPTED" && (
-                    <button type="button" aria-label={`End the link with ${c.name}`} title="End the link" disabled={busy === `end:${c.childId}`} onClick={() => void run(`end:${c.childId}`, () => endParentLinkAction(c.childId), "Link ended")} className={buttonVariants({ variant: "ghost", size: "sm", className: "h-9 w-9 shrink-0 px-0" })}>
+                    <Button type="button" aria-label={`End the link with ${c.name}`} title="End the link" disabled={busy === `end:${c.childId}`} onClick={() => void run(`end:${c.childId}`, () => endParentLinkAction(c.childId), "Link ended")} variant="ghost" size="sm" className="h-9 w-9 shrink-0 px-0">
                       <Link2Off aria-hidden className="h-4 w-4" />
-                    </button>
+                    </Button>
                   )}
                 </li>
               ))}
@@ -173,13 +173,13 @@ export function ParentLinksPanel() {
                   <li key={r.linkId} className="flex items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-3">
                     <p className="min-w-0 truncate text-small text-slate-100">{r.parentName}</p>
                     <div className="flex shrink-0 gap-2">
-                      <button type="button" aria-label={`Accept ${r.parentName}`} disabled={busy === `yes:${r.linkId}`} onClick={() => void run(`yes:${r.linkId}`, () => respondToParentLinkAction(r.linkId, true), "Linked")} className={buttonVariants({ variant: "primary", size: "sm" })}>
+                      <Button type="button" aria-label={`Accept ${r.parentName}`} disabled={busy === `yes:${r.linkId}`} onClick={() => void run(`yes:${r.linkId}`, () => respondToParentLinkAction(r.linkId, true), "Linked")} variant="primary" size="sm">
                         <Check aria-hidden className="mr-1.5 h-4 w-4" />
                         Accept
-                      </button>
-                      <button type="button" aria-label={`Decline ${r.parentName}`} disabled={busy === `no:${r.linkId}`} onClick={() => void run(`no:${r.linkId}`, () => respondToParentLinkAction(r.linkId, false), "Declined")} className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 w-8 px-0" })}>
+                      </Button>
+                      <Button type="button" aria-label={`Decline ${r.parentName}`} disabled={busy === `no:${r.linkId}`} onClick={() => void run(`no:${r.linkId}`, () => respondToParentLinkAction(r.linkId, false), "Declined")} variant="secondary" size="sm" className="h-8 w-8 px-0">
                         <X aria-hidden className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </li>
                 ))}
@@ -194,9 +194,9 @@ export function ParentLinksPanel() {
                 {state.parents.map((p) => (
                   <li key={p.parentId} className="flex items-center justify-between gap-3 py-2.5">
                     <p className="min-w-0 truncate text-small text-slate-100">{p.name}</p>
-                    <button type="button" disabled={busy === `end:${p.parentId}`} onClick={() => void run(`end:${p.parentId}`, () => endParentLinkAction(p.parentId), "Link ended")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    <Button type="button" disabled={busy === `end:${p.parentId}`} onClick={() => void run(`end:${p.parentId}`, () => endParentLinkAction(p.parentId), "Link ended")} variant="secondary" size="sm">
                       End link
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

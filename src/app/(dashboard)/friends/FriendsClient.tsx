@@ -16,7 +16,7 @@ import {
 } from "./actions";
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { PageBack } from "@/components/ui/BackLink";
 import { NudgeButton } from "@/components/social/NudgeButton";
@@ -328,14 +328,14 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                 placeholder="Search @username"
                 className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
-              <button
+              <Button
                 type="submit"
                 disabled={action.pending || query.trim().length < 2}
-                className={buttonVariants({ variant: "primary", className: "shrink-0 whitespace-nowrap" })}
+                variant="primary" className="shrink-0 whitespace-nowrap"
               >
                 {searching && spin}
                 {searching ? "Searching…" : "Search"}
-              </button>
+              </Button>
             </form>
 
             {(requestError ?? action.error) && <p className="mt-2 text-small text-red-400">{requestError ?? action.error}</p>}
@@ -348,15 +348,15 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       <Avatar profile={profile} />
                       <ProfileLine profile={profile} />
                     </div>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleAddFriend(profile)}
                       disabled={sentTo.has(profile.id) || action.pending}
-                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
+                      variant="secondary" size="sm" className="shrink-0"
                     >
                       {action.isPending(`add:${profile.id}`) && spin}
                       {sentTo.has(profile.id) ? "Sent" : "Add friend"}
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -373,15 +373,15 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       <ProfileLine profile={req.sender} />
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => handleRespond(req.id, true)}
                         disabled={action.pending}
-                        className={buttonVariants({ variant: "primary", size: "sm", className: busy })}
+                        variant="primary" size="sm" className={busy}
                       >
                         {action.isPending(`accept:${req.id}`) && spin}
                         Accept
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={() => handleRespond(req.id, false)}

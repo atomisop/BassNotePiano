@@ -4,7 +4,7 @@ import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle"
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Mail } from "@/components/ui/appIcons";
@@ -126,27 +126,27 @@ export function UnmatchedEmailList({
                     </span>
                     {isConfirming ? (
                       <span className="flex gap-2">
-                        <button
+                        <Button
                           type="button"
                           disabled={busy === row.id}
                           onClick={() => run(row.id, () => onMatch(row.id, c.id, notify), { title: "Email attached, payment approved", description: who })}
-                          className={buttonVariants({ variant: "primary", size: "sm" })}
+                          variant="primary" size="sm"
                         >
                           {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {busy === row.id ? "Approving…" : "Confirm: approve"}
-                        </button>
-                        <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                        </Button>
+                        <Button type="button" onClick={() => setConfirming(null)} variant="secondary" size="sm">
                           Cancel
-                        </button>
+                        </Button>
                       </span>
                     ) : (
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setConfirming({ receiptId: row.id, paymentId: c.id })}
-                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        variant="secondary" size="sm"
                       >
                         Attach and approve
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -164,54 +164,54 @@ export function UnmatchedEmailList({
             {confirming?.receiptId === row.id && confirming.paymentId === "dismiss" ? (
               <>
                 <span className="text-small text-slate-400">It will stop being counted. This does not touch any payment.</span>
-                <button
+                <Button
                   type="button"
                   disabled={busy === row.id}
                   onClick={() => run(row.id, () => onDismiss(row.id), { title: "Email dismissed" })}
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  variant="outline" size="sm"
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busy === row.id ? "Dismissing…" : "Dismiss it"}
-                </button>
-                <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                </Button>
+                <Button type="button" onClick={() => setConfirming(null)} variant="secondary" size="sm">
                   Cancel
-                </button>
+                </Button>
               </>
             ) : confirming?.receiptId === row.id && confirming.paymentId === "ignore" && onIgnoreSender ? (
               <>
                 <span className="text-small text-slate-400">
                   Every email from &ldquo;{row.senderName}&rdquo; is skipped from now on, and the ones waiting here are dismissed. No payment is touched. Undo it in Settings &gt; Payments.
                 </span>
-                <button
+                <Button
                   type="button"
                   disabled={busy === row.id}
                   onClick={() => run(row.id, () => onIgnoreSender(row.id), { title: "Sender ignored from now on", description: row.senderName })}
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  variant="outline" size="sm"
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busy === row.id ? "Saving…" : "Yes, always ignore"}
-                </button>
-                <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                </Button>
+                <Button type="button" onClick={() => setConfirming(null)} variant="secondary" size="sm">
                   Cancel
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={() => setConfirming({ receiptId: row.id, paymentId: "dismiss" })}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  variant="secondary" size="sm"
                 >
                   Not a studio payment
-                </button>
+                </Button>
                 {onIgnoreSender && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setConfirming({ receiptId: row.id, paymentId: "ignore" })}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    variant="secondary" size="sm"
                   >
                     Always ignore this sender
-                  </button>
+                  </Button>
                 )}
               </>
             )}

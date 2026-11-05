@@ -8,7 +8,7 @@ import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SPRING } from "@/lib/motionTokens";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { ChevronLeft, X } from "@/components/ui/appIcons";
 
@@ -264,24 +264,24 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         </button>
                       )}
                       {isLastQuestion ? (
-                        <button
+                        <Button
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
+                          variant="primary" size="sm" className="flex flex-1"
                         >
                           {step === "submitting" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
-                        </button>
+                        </Button>
                       ) : (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => setCurrentIndex((i) => i + 1)}
                           disabled={!hasSelected}
-                          className={buttonVariants({ variant: "primary", className: "flex-1" })}
+                          variant="primary" className="flex-1"
                         >
                           Next
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </motion.div>
@@ -331,13 +331,13 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                     </div>
                     <div className="mt-6 flex gap-2">
                       {!result.passed && (
-                        <button
+                        <Button
                           type="button"
                           onClick={handleRetake}
-                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex-1" })}
+                          variant="primary" size="sm" className="flex-1"
                         >
                           Retake quiz
-                        </button>
+                        </Button>
                       )}
                       <button
                         type="button"

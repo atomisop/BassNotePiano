@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { respondFamilyInviteAction } from "@/app/(dashboard)/billing/plans/actions";
 import { toast } from "@/components/ui/Toaster";
 
@@ -39,14 +39,14 @@ export function FamilyInvitesPanel({ invites }: { invites: Invite[] }) {
             .
           </p>
           <div className="mt-3 flex gap-2">
-            <button type="button" aria-busy={busy === `${invite.id}:true`} onClick={() => void answer(invite.id, true)} disabled={busy !== null} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <Button type="button" aria-busy={busy === `${invite.id}:true`} onClick={() => void answer(invite.id, true)} disabled={busy !== null} variant="primary" size="sm">
               {busy === `${invite.id}:true` && <MorphingSquare size={14} className="mr-2" />}
               Accept
-            </button>
-            <button type="button" aria-busy={busy === `${invite.id}:false`} onClick={() => void answer(invite.id, false)} disabled={busy !== null} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            </Button>
+            <Button type="button" aria-busy={busy === `${invite.id}:false`} onClick={() => void answer(invite.id, false)} disabled={busy !== null} variant="secondary" size="sm">
               {busy === `${invite.id}:false` && <MorphingSquare size={14} className="mr-2" />}
               Decline
-            </button>
+            </Button>
           </div>
         </div>
       ))}

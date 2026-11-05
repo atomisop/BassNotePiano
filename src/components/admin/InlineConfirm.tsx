@@ -1,6 +1,6 @@
 "use client";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 /**
@@ -33,13 +33,13 @@ export function InlineConfirm({
       <p className={`text-small font-semibold ${danger ? "text-red-300" : "text-slate-100"}`}>{question}</p>
       {detail && <p className="mt-1 text-small text-slate-300">{detail}</p>}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onCancel} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+        <Button type="button" onClick={onCancel} disabled={busy} variant="secondary" size="sm">
           Not yet
-        </button>
-        <button type="button" onClick={onConfirm} disabled={busy} className={buttonVariants({ variant: danger ? "danger" : "primary", size: "sm", className: danger ? undefined : "text-black" })}>
+        </Button>
+        <Button type="button" onClick={onConfirm} disabled={busy} variant={danger ? "danger" : "primary"} size="sm" className={danger ? undefined : "text-black"}>
           {busy && <MorphingSquare size={12} className="shrink-0" />}
           {busy ? busyLabel : confirmLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );

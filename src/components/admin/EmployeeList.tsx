@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EmployeeRow } from "@/lib/admin";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { toast } from "@/components/ui/Toaster";
 
@@ -96,13 +96,13 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                 </div>
               ) : (
                 <div className="mt-4 flex justify-end">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setConfirmingId(employee.id)}
-                    className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                    variant="ghost" size="sm" className="text-red-300 hover:text-red-200"
                   >
                     Revoke admin
-                  </button>
+                  </Button>
                 </div>
               ))}
           </div>

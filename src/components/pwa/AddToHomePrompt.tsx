@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "@/components/ui/appIcons";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { detectPlatform, shouldPromptAddToHome } from "@/lib/addToHome";
@@ -127,9 +127,9 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
                 <button type="button" onClick={later} className="tap text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">
                   Maybe later
                 </button>
-                <button type="button" onClick={done} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                <Button type="button" onClick={done} variant="primary" size="sm" className="text-black">
                   I added it
-                </button>
+                </Button>
               </div>
               <p className="mt-3 text-small text-slate-500">You can find these steps again any time in Settings, under Tutorials.</p>
             </motion.div>

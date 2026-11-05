@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { twoStepBeginAction, twoStepConfirmAction, twoStepDisableAction, twoStepRegenerateAction } from "./actions";
 
 /**
@@ -44,9 +44,9 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
                 <li key={c}>{c}</li>
               ))}
             </ul>
-            <button type="button" onClick={() => setCodes(null)} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <Button type="button" onClick={() => setCodes(null)} variant="primary" size="sm">
               I saved them
-            </button>
+            </Button>
           </>
         ) : enabled ? (
           <>
@@ -55,12 +55,12 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
             </p>
             {mode === "idle" && (
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setMode("regenerate")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                <Button type="button" onClick={() => setMode("regenerate")} variant="secondary" size="sm">
                   New backup codes
-                </button>
-                <button type="button" onClick={() => setMode("disable")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                </Button>
+                <Button type="button" onClick={() => setMode("disable")} variant="secondary" size="sm">
                   Turn off
-                </button>
+                </Button>
               </div>
             )}
             {mode !== "idle" && (
@@ -70,7 +70,7 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
                 )}
                 <Input inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code from your app" value={code} onChange={(e) => setCode(e.target.value)} className={field} />
                 <div className="mt-2 flex gap-2">
-                  <button
+                  <Button
                     type="button"
                     disabled={busy || !code.trim()}
                     onClick={() =>
@@ -88,13 +88,13 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
                             setCode("");
                           })
                     }
-                    className={buttonVariants({ variant: "primary", size: "sm" })}
+                    variant="primary" size="sm"
                   >
                     {mode === "disable" ? "Turn off two-step" : "Make new codes"}
-                  </button>
-                  <button type="button" onClick={() => { setMode("idle"); setError(null); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  </Button>
+                  <Button type="button" onClick={() => { setMode("idle"); setError(null); }} variant="secondary" size="sm">
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -109,7 +109,7 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
             <p>2. Type the 6-digit code the app shows, to prove it works.</p>
             <Input inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} className={field} />
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={busy || !code.trim()}
                 onClick={() =>
@@ -121,27 +121,27 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
                     setCode("");
                   })
                 }
-                className={buttonVariants({ variant: "primary", size: "sm" })}
+                variant="primary" size="sm"
               >
                 Turn on
-              </button>
-              <button type="button" onClick={() => { setSetup(null); setCode(""); setError(null); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              </Button>
+              <Button type="button" onClick={() => { setSetup(null); setCode(""); setError(null); }} variant="secondary" size="sm">
                 Cancel
-              </button>
+              </Button>
             </div>
           </>
         ) : (
           <>
             <p>Off. Turn it on to also ask for an authenticator code when you sign in. Students are never asked.</p>
             <p className="text-slate-500">Before you rely on it, keep the backup codes it gives you. Without your phone and without those codes you cannot sign in.</p>
-            <button
+            <Button
               type="button"
               disabled={busy}
               onClick={() => run(() => twoStepBeginAction(), (r) => setSetup(r as unknown as { secret: string; uri: string }))}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
+              variant="secondary" size="sm"
             >
               Set up
-            </button>
+            </Button>
           </>
         )}
         {error && <p role="alert" className="text-red-400">{error}</p>}

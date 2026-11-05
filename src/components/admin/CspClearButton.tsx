@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
 /** Clears the report list, after asking. */
@@ -26,12 +26,12 @@ export function CspClearButton({ onClear }: { onClear: () => Promise<{ ok: boole
   return asking ? (
     <span className="inline-flex flex-wrap items-center gap-2 text-small text-slate-300">
       Clear every report and start counting again?
-      <button type="button" disabled={busy} onClick={() => setAsking(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
-      <button type="button" disabled={busy} onClick={() => void go()} className={buttonVariants({ variant: "danger", size: "sm" })}>Yes, clear</button>
+      <Button type="button" disabled={busy} onClick={() => setAsking(false)} variant="secondary" size="sm">Not yet</Button>
+      <Button type="button" disabled={busy} onClick={() => void go()} variant="danger" size="sm">Yes, clear</Button>
     </span>
   ) : (
     <span>
-      <button type="button" onClick={() => setAsking(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Clear reports</button>
+      <Button type="button" onClick={() => setAsking(true)} variant="secondary" size="sm">Clear reports</Button>
       {error && <span role="alert" className="ml-2 text-small text-red-400">{error}</span>}
     </span>
   );

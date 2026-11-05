@@ -10,7 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { ChevronDown } from "@/components/ui/appIcons";
 
@@ -247,14 +247,14 @@ export function BookingCard({
             </button>
           )}
           {cancelEligible && !confirmingCancel && (
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingCancel(true)}
               disabled={canceling}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
+              variant="secondary" size="sm"
             >
               {b.reserved ? "Skip" : "Cancel"}
-            </button>
+            </Button>
           )}
           {hoursUntil > 0 && (
             <a
@@ -274,23 +274,23 @@ export function BookingCard({
             {b.reserved ? "Skip this class? It stays on your account." : "Cancel this class? No credits are used."} The teacher is told right away.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingCancel(false)}
               disabled={canceling}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
+              variant="secondary" size="sm"
             >
               Keep it
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => onCancel(b)}
               disabled={canceling}
-              className={buttonVariants({ variant: "danger", size: "sm" })}
+              variant="danger" size="sm"
             >
               {canceling && <MorphingSquare size={12} />}
               {canceling ? "Canceling…" : b.reserved ? "Yes, skip it" : "Yes, cancel it"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -328,17 +328,17 @@ export function MonthGroup({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="glass-surface overflow-hidden">
-      <button
+      <Button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full justify-between" })}
+        variant="secondary" size="sm" className="w-full justify-between"
       >
         <span className="text-small font-medium text-slate-200">{group.label}</span>
         <span className="flex items-center gap-2 text-small text-slate-500">
           {group.bookings.length} booking{group.bookings.length === 1 ? "" : "s"}
           <ChevronIcon open={open} />
         </span>
-      </button>
+      </Button>
       <Collapse open={open}>
         <div className="space-y-2 border-t border-ink/10 p-3">
           {group.bookings.map((b) => (
@@ -401,14 +401,14 @@ export function AttendeeEmailRow({
         ) : null}
       </span>
       {removable && (
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           aria-label="Remove this student"
-          className={buttonVariants({ variant: "secondary", size: "sm", className: "flex shrink-0" })}
+          variant="secondary" size="sm" className="flex shrink-0"
         >
           <XIcon size={12} />
-        </button>
+        </Button>
       )}
     </div>
   );

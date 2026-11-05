@@ -12,7 +12,7 @@ import {
   deleteAnnouncementAction,
   updateAnnouncementAction,
 } from "@/app/(dashboard)/admin/announcements/actions";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -120,27 +120,27 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
             >
               Cancel
             </button>
-            <button
+            <Button
               type="button"
               onClick={() => void publish()}
               disabled={submitting}
-              className={buttonVariants({ variant: "primary", className: "flex-1" })}
+              variant="primary" className="flex-1"
             >
               {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {submitting ? "Sending…" : `Confirm: email ${totalUsers}`}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={handlePublishClick}
           disabled={submitting || !title.trim() || !body.trim()}
-          className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 flex" })}
+          variant="primary" size="sm" className="mt-4 flex"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Publishing…" : "Publish to everyone"}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -225,7 +225,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
           <p className="text-small text-slate-500">The banner and the bell entries change at once. Emails already sent stay as they were.</p>
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setEditing(false);
@@ -234,14 +234,14 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
                 setError(null);
               }}
               disabled={busy}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
+              variant="secondary" size="sm"
             >
               Cancel
-            </button>
-            <button type="button" onClick={() => void handleSave()} disabled={busy || !title.trim() || !body.trim()} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            </Button>
+            <Button type="button" onClick={() => void handleSave()} disabled={busy || !title.trim() || !body.trim()} variant="primary" size="sm">
               {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
               Save
-            </button>
+            </Button>
           </div>
         </div>
       ) : deleting ? (
@@ -269,26 +269,26 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
         </div>
       ) : (
         <div className="mt-3 flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={handleToggleActive}
             disabled={busy}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            variant="secondary" size="sm"
           >
             {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {announcement.active ? "Deactivate" : "Reactivate"}
-          </button>
-          <button type="button" onClick={() => setEditing(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          </Button>
+          <Button type="button" onClick={() => setEditing(true)} disabled={busy} variant="secondary" size="sm">
             Edit
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => setDeleting(true)}
             disabled={busy}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            variant="secondary" size="sm"
           >
             Delete
-          </button>
+          </Button>
         </div>
       )}
     </div>

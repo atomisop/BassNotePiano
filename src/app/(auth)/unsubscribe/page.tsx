@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { maskEmail, recipientTag, RECIPIENT_HINT_PARAM, RECIPIENT_PARAM } from "@/lib/recipientTag";
 import { isEmailCategory, UNSUBSCRIBE_CATEGORY_LABEL, UNSUBSCRIBE_CATEGORY_NOTE, verifyUnsubscribeToken } from "@/lib/unsubscribe";
@@ -67,9 +67,9 @@ export default async function UnsubscribePage(props: { searchParams: Promise<{ u
         <input type="hidden" name="c" value={c} />
         <input type="hidden" name="t" value={t} />
         <input type="hidden" name="from" value="page" />
-        <button type="submit" className={buttonVariants({ variant: "primary", size: "sm" })}>
+        <Button type="submit" variant="primary" size="sm">
           Unsubscribe
-        </button>
+        </Button>
         <Link href="/" className={buttonVariants({ variant: "secondary", size: "sm" })}>
           Keep them
         </Link>

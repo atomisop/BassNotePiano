@@ -5,13 +5,13 @@ import { useTransition } from "react";
 import { markAllMailReadAction } from "./actions";
 import { announceChange } from "@/lib/liveEvents";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export function MarkAllReadButton() {
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
-    <button
+    <Button
       type="button"
       disabled={pending}
       onClick={() =>
@@ -21,10 +21,10 @@ export function MarkAllReadButton() {
           router.refresh();
         })
       }
-      className={buttonVariants({ variant: "secondary" })}
+      variant="secondary"
     >
       {pending && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
       Mark all read
-    </button>
+    </Button>
   );
 }

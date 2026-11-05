@@ -6,7 +6,7 @@ import { EyeOff, Eye, Pencil, Trash2 } from "@/components/ui/appIcons";
 import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { toast } from "@/components/ui/Toaster";
 
@@ -99,27 +99,27 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
           </label>
           <div className="flex gap-1.5">
             {editingId && (
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setEditingId(null);
                   setDraft("");
                   setHidden(false);
                 }}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                variant="secondary" size="sm"
               >
                 Cancel
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={save}
               disabled={busy || !draft.trim()}
-              className={buttonVariants({ variant: "primary", size: "sm" })}
+              variant="primary" size="sm"
             >
               {busy && <MorphingSquare size={11} />}
               {editingId ? "Save changes" : "Save note"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

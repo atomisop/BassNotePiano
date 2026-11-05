@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Hourglass, KeyRound, Pencil } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { sendPasswordResetAction, setTrialAction, updateAccountDetailsAction } from "@/app/(dashboard)/admin/users/[userId]/actions";
@@ -48,19 +48,19 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
   const close = (next: boolean) => !busy && !next && setOpen(null);
   const actions = (label: string, onClick: () => void, disabled = false, danger = false) => (
     <div className="flex flex-wrap justify-end gap-2">
-      <button type="button" disabled={busy} onClick={() => setOpen(null)} className={buttonVariants({ variant: "secondary" })}>
+      <Button type="button" disabled={busy} onClick={() => setOpen(null)} variant="secondary">
         Cancel
-      </button>
-      <button type="button" disabled={busy || disabled} onClick={onClick} aria-busy={busy} className={buttonVariants({ variant: danger ? "danger" : "primary" })}>
+      </Button>
+      <Button type="button" disabled={busy || disabled} onClick={onClick} aria-busy={busy} variant={danger ? "danger" : "primary"}>
         {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {label}
-      </button>
+      </Button>
     </div>
   );
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => {
           setName(props.name);
@@ -69,19 +69,19 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
           setOpen("details");
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm" })}
+        variant="secondary" size="sm"
       >
         <Pencil aria-hidden className="h-4 w-4" />
         Edit details
-      </button>
-      <button type="button" onClick={() => setOpen("reset")} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      </Button>
+      <Button type="button" onClick={() => setOpen("reset")} aria-haspopup="dialog" variant="secondary" size="sm">
         <KeyRound aria-hidden className="h-4 w-4" />
         Send reset code
-      </button>
-      <button type="button" onClick={() => setOpen("trial")} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      </Button>
+      <Button type="button" onClick={() => setOpen("trial")} aria-haspopup="dialog" variant="secondary" size="sm">
         <Hourglass aria-hidden className="h-4 w-4" />
         {trialEnd ? `Trial until ${trialEnd}` : "Free trial"}
-      </button>
+      </Button>
 
       <Dialog open={open === "details"} onOpenChange={close} title="Edit account details">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
@@ -120,16 +120,16 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
           </p>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Trial length">
             {TRIAL_CHOICES.map((d) => (
-              <button
+              <Button
                 key={d}
                 type="button"
                 role="radio"
                 aria-checked={days === d}
                 onClick={() => setDays(d)}
-                className={buttonVariants({ variant: days === d ? "primary" : "secondary", size: "sm" })}
+                variant={days === d ? "primary" : "secondary"} size="sm"
               >
                 {d} days
-              </button>
+              </Button>
             ))}
           </div>
           {actions(`Run it for ${days} days`, () => void run(() => setTrialAction(props.userId, days, notify)))}

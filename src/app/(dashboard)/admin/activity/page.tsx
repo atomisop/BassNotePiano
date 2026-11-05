@@ -3,7 +3,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
 import { AUDIT_KIND_LABEL, AUDIT_PAGE_SIZE, auditKind, auditLabel } from "@/lib/auditView";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 
 export const metadata = { title: "Admin: Activity" };
 
@@ -86,7 +86,7 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
-          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Search</button>
+          <Button type="submit" variant="primary" size="sm" className="text-black">Search</Button>
           {(q || kind || userId || days !== "30") && (
             <Link href="/admin/activity" className={buttonVariants({ variant: "secondary", size: "sm" })}>Clear filters</Link>
           )}

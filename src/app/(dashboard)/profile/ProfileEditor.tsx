@@ -13,7 +13,7 @@ import {
   updateUsernameAction,
   requestAvatarUploadUrlAction,
 } from "../account/actions";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 
 interface MusicProfile {
@@ -273,15 +273,15 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
       {error && <p className="mt-3 text-small text-red-400">{error}</p>}
       {success && <p className="mt-3 text-small text-slate-50">Music profile updated.</p>}
 
-      <button
+      <Button
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 flex" })}
+        variant="primary" size="sm" className="mt-4 flex"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Saving…" : "Save"}
-      </button>
+      </Button>
     </SectionCard>
   );
 }
@@ -352,15 +352,15 @@ function AvatarSection({
           )}
         </div>
         <div>
-          <button
+          <Button
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className={buttonVariants({ variant: "secondary", size: "sm", className: "cta-sheen" })}
+            variant="secondary" size="sm" className="cta-sheen"
           >
             {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}
-          </button>
+          </Button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </div>
       </div>
@@ -404,14 +404,14 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           disabled={submitting}
           className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
         />
-        <button
+        <Button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className={buttonVariants({ variant: "primary", size: "sm", className: "flex" })}
+          variant="primary" size="sm" className="flex"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </form>
 
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
@@ -454,14 +454,14 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
             className="w-full bg-transparent px-2 py-2 text-body text-slate-100 outline-none"
           />
         </div>
-        <button
+        <Button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className={buttonVariants({ variant: "primary", size: "sm", className: "flex" })}
+          variant="primary" size="sm" className="flex"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </form>
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
       {success && <p className="mt-2 text-small text-slate-50">Username updated.</p>}
