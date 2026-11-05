@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage } from "@/lib/adminNav";
+import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage, splitHubPages } from "@/lib/adminNav";
 
 describe("admin menu", () => {
   it("has six choices", () => {
@@ -49,5 +49,19 @@ describe("hubWaiting", () => {
     expect(hubWaiting(billing, { "/admin/payments": 3, "/admin/payment-plans": 2, "/admin/support": 9 })).toBe(5);
     expect(hubWaiting(billing, {})).toBe(0);
     expect(hubWaiting(billing, { "/admin/payments": -4 })).toBe(0);
+  });
+});
+
+describe("splitHubPages", () => {
+  it("keeps every page reachable: tabs plus More are the whole hub, and no section shows more than three tabs", () => {
+    for (const hub of ADMIN_HUBS) {
+      const { tabs, more } = splitHubPages(hub);
+      expect([...tabs, ...more].map((p) => p.href).sort()).toEqual(hub.pages.map((p) => p.href).sort());
+      expect(tabs.length).toBeLessThanOrEqual(3);
+      expect(tabs.length).toBeGreaterThan(0);
+    }
+  });
+  it("still locates a page that sits under More", () => {
+    expect(locateAdminPage("/admin/pricing")?.hub.id).toBe("billing");
   });
 });
