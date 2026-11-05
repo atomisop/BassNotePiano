@@ -29,5 +29,11 @@ const user = await prisma.user.upsert({
     lastSeenPatchNotesAt: new Date(),
   },
 });
-console.log("ready:", user.email);
+const ADMIN_EMAIL = "revamp-admin@bnp.test";
+await prisma.user.upsert({
+  where: { email: ADMIN_EMAIL },
+  update: { passwordHash, role: "ADMIN", bannedAt: null },
+  create: { email: ADMIN_EMAIL, emailVerified: new Date(), name: "Revamp Admin", username: "revamp-admin", passwordHash, role: "ADMIN", onboardedAt: new Date(), onboardingTourSeenAt: new Date(), hasCurriculumAccess: true, lastSeenPatchNotesAt: new Date() },
+});
+console.log("ready:", user.email, ADMIN_EMAIL);
 await prisma.$disconnect();
