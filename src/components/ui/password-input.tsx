@@ -4,6 +4,7 @@ import * as React from "react";
 import { Input, type InputProps } from "@/components/ui/input";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
+import { IconSwap } from "@/components/ui/IconSwap";
 
 /**
  * A password field a visitor can actually check before submitting.
@@ -32,7 +33,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           aria-label={visible ? "Hide password" : "Show password"}
           className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-500 transition hover:text-slate-300"
         >
-          {visible ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+          <IconSwap state={visible}>{visible ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}</IconSwap>
         </button>
       </div>
     );

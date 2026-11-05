@@ -6,6 +6,7 @@ import { Kbd } from "@/components/ui/Kbd";
 import { OPEN_COMMAND_EVENT } from "@/lib/shortcuts";
 import { themeMode } from "@/lib/themes";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { IconSwap } from "@/components/ui/IconSwap";
 
 /** Computers (lg and up): search (opens the command menu, which grows out of this button) and the light/dark switch, in the top bar. */
 export function TopBarTools() {
@@ -33,7 +34,7 @@ export function TopBarTools() {
         title={dark ? "Light theme" : "Dark theme"}
         className="tap press flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low"
       >
-        {mounted && (dark ? <Sun className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden /> : <Moon className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />)}
+        {mounted && <IconSwap state={dark}>{dark ? <Sun className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden /> : <Moon className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />}</IconSwap>}
       </button>
     </div>
   );

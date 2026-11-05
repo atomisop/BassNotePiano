@@ -9,6 +9,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { toast } from "@/components/ui/Toaster";
+import { IconSwap } from "@/components/ui/IconSwap";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -154,7 +155,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                     title={n.hiddenFromStudent ? "Show to student" : "Hide from student"}
                     className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
                   >
-                    {n.hiddenFromStudent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    <IconSwap state={n.hiddenFromStudent}>{n.hiddenFromStudent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</IconSwap>
                   </button>
                   <button
                     type="button"
