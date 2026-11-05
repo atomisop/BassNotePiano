@@ -7,12 +7,13 @@ import type { LeaderboardRow } from "@/lib/leaderboard";
 export function LeaderboardRows({ rows, viewerId, compact = false }: { rows: LeaderboardRow[]; viewerId: string; compact?: boolean }) {
   return (
     <ol className="grid gap-1.5">
-      {rows.map((r) => {
+      {rows.map((r, i) => {
         const me = r.userId === viewerId;
         return (
           <li
             key={r.userId}
-            className={cn("flex items-center gap-3 rounded-xl px-2.5 py-2", me ? "bg-signal/12" : "bg-neu-base shadow-pressed-low")}
+            style={{ "--i": i } as import("react").CSSProperties}
+            className={cn("stagger-item flex items-center gap-3 rounded-xl px-2.5 py-2", me ? "bg-signal/12" : "bg-neu-base shadow-pressed-low")}
           >
             <span
               className={cn(

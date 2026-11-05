@@ -55,7 +55,7 @@ export function SidebarToggle() {
       aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       aria-pressed={collapsed}
       title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (B)`}
-      className="sidebar-toggle press hidden h-8 w-8 items-center justify-center rounded-control text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
+      className="sidebar-toggle tap press hidden h-9 w-9 items-center justify-center rounded-full bg-neu-base text-slate-400 shadow-raised-low hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
     >
       <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
     </button>

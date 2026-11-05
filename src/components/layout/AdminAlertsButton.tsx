@@ -42,7 +42,7 @@ export function AdminAlertsButton({ cards }: { cards: SidebarCard[] }) {
         aria-expanded={open}
         aria-label={attention > 0 ? `Alerts, ${attention} need you` : "Alerts"}
         title="Alerts"
-        className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+        className={`tap press relative flex h-9 w-9 items-center justify-center rounded-full bg-neu-base ${
           open ? "text-signal-fg shadow-pressed-low" : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >

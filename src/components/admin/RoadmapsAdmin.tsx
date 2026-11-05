@@ -9,6 +9,7 @@ import { ROADMAP_ARTWORKS, ROADMAP_INSTRUMENTS, ROADMAP_LEVELS } from "@/lib/roa
 import { RoadmapArtwork } from "@/components/home/RoadmapArtwork";
 import { addScaleAction, createRoadmapAction, moveRoadmapAction, moveScaleAction, updateRoadmapAction } from "@/app/(dashboard)/admin/roadmaps/actions";
 import { cn } from "@/lib/utils";
+import { IconSwap } from "@/components/ui/IconSwap";
 
 const field =
   "h-11 w-full min-w-0 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -110,7 +111,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
             )
           }
         >
-          {r.visible ? <EyeOff aria-hidden className="h-4 w-4" /> : <Eye aria-hidden className="h-4 w-4" />}
+          <IconSwap state={r.visible}>{r.visible ? <EyeOff aria-hidden className="h-4 w-4" /> : <Eye aria-hidden className="h-4 w-4" />}</IconSwap>
           {r.visible ? "Hide from students" : "Show to students"}
         </Button>
         <Button variant="secondary" size="sm" onClick={() => setEditing((v) => !v)}>

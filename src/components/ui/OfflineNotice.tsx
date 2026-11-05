@@ -61,7 +61,7 @@ export function OfflineNotice() {
             key={offline ? "offline" : "online"}
             role={offline ? "alert" : "status"}
             {...motionProps}
-            transition={{ type: "spring", bounce: 0.2, duration: 0.35 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.35 }}
             className={
               offline
                 ? "pointer-events-auto flex items-center gap-2.5 rounded-full bg-red-600 py-2.5 pr-5 pl-4 text-small font-semibold text-white shadow-lg"

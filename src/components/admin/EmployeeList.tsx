@@ -44,10 +44,10 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
   return (
     <div className="space-y-3">
       {error && <p className="text-small text-red-400">{error}</p>}
-      {employees.map((employee) => {
+      {employees.map((employee, i) => {
         const canRevoke = viewerCanRevoke && !employee.isOwner && employee.id !== currentUserId;
         return (
-          <div key={employee.id} className="glass-surface p-5">
+          <div key={employee.id} style={{ "--i": i } as import("react").CSSProperties} className="stagger-item glass-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="truncate text-title font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
