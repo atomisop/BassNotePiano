@@ -34,10 +34,20 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
 
   async function run(kind: "date" | "indefinite" | "resume") {
     setBusy(kind);
-    const result = await (kind === "resume" ? resumePlanAdminAction(planId, notify) : pausePlanAdminAction(planId, kind === "date" ? { kind: "until", date } : { kind: "indefinite" }, notify)).catch(() => ({
-      ok: false,
-      error: "Something went wrong. Try again.",
-    }));
+    const hold = await toast.held(
+      kind === "resume" ? "Resuming the plan" : "Pausing the plan",
+      () =>
+        (kind === "resume" ? resumePlanAdminAction(planId, notify) : pausePlanAdminAction(planId, kind === "date" ? { kind: "until", date } : { kind: "indefinite" }, notify)).catch(() => ({
+          ok: false,
+          error: "Something went wrong. Try again.",
+        })),
+      { mail: notify },
+    );
+    if (hold.undone) {
+      setBusy(null);
+      return;
+    }
+    const result = hold.value;
     setBusy(null);
     if (!result.ok) {
       toast.warning(result.error ?? "Could not do that.");

@@ -22,6 +22,7 @@ import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCom
 import { buttonVariants } from "@/components/ui/button";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { toast } from "@/components/ui/Toaster";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -139,7 +140,13 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
     setSending(true);
     setError(null);
     setNotice(null);
-    const result = await sendSupportReplyAction(thread.id, reply.trim());
+    // A live chat reply goes at once; a reply on an email thread is emailed, so it waits 10 seconds for Undo.
+    const hold = isEmail ? await toast.held("Sending the reply", () => sendSupportReplyAction(thread.id, reply.trim()), { mail: true }) : null;
+    if (hold?.undone) {
+      setSending(false);
+      return;
+    }
+    const result = hold ? hold.value : await sendSupportReplyAction(thread.id, reply.trim());
     if (!result.ok) {
       setError(result.error);
     } else {
@@ -163,7 +170,12 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
   async function handleDelete() {
     if (deleting) return;
     setDeleting(true);
-    await deleteSupportThreadAction(thread.id);
+    // The thread stays until the 5 seconds pass, so Undo can cancel; the page waits here meanwhile.
+    const hold = await toast.held("Deleting this conversation", () => deleteSupportThreadAction(thread.id));
+    if (hold.undone) {
+      setDeleting(false);
+      return;
+    }
     router.replace(backHref);
   }
 

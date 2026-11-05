@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import type { LessonMediaType } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { createPresignedLessonUpload } from "@/lib/storage";
-import { createLesson, deleteLesson, reorderLessons, type CreateLessonInput } from "@/lib/courseContent";
+import { createLesson, deleteLesson, reorderLessons, updateLessonText, LessonEditError, type CreateLessonInput } from "@/lib/courseContent";
+import { logAudit } from "@/lib/audit";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -61,4 +62,17 @@ export async function reorderLessonsAction(scaleGroupSlug: string, orderedLesson
   await reorderLessons(scaleGroupSlug, orderedLessonIds);
   revalidatePath("/admin/lessons");
   revalidatePath(`/scales/${scaleGroupSlug}`);
+}
+
+export async function updateLessonTextAction(lessonId: string, scaleGroupSlug: string, title: string, description: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  try {
+    const lesson = await updateLessonText(lessonId, title, description);
+    await logAudit({ actorId: admin.id, action: "lesson.edit", targetType: "Lesson", targetId: lessonId, detail: `Lesson renamed to "${lesson.title}"` }).catch(() => undefined);
+  } catch (err) {
+    return { ok: false, error: err instanceof LessonEditError ? err.message : "Could not save the lesson. Try again." };
+  }
+  revalidatePath("/admin/lessons");
+  revalidatePath(`/scales/${scaleGroupSlug}`);
+  return { ok: true };
 }

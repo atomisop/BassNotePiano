@@ -1,4 +1,5 @@
 import { getBoolSetting } from "@/lib/siteSettings";
+import { reportError } from "@/lib/reportError";
 import { clientAddress } from "@/lib/assistantInput";
 import { NextResponse } from "next/server";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, escalationId });
   } catch (err) {
-    console.error("POST /api/assistant/escalate failed:", err);
+    reportError(err, "POST /api/assistant/escalate failed");
     return NextResponse.json(
       { error: "Something went wrong sending this to our team. Please try again, or message the studio directly." },
       { status: 500 },

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { reportError } from "@/lib/reportError";
 import { nextEmailStatus, statusFromResendEvent, verifyResendSignature } from "@/lib/emailLogRules";
+import { notifyAdmins } from "@/lib/adminNotifications";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   if (!status || !resendId) return NextResponse.json({ ok: true });
 
   try {
-    const log = await prisma.emailLog.findUnique({ where: { resendId }, select: { id: true, status: true, deliveredAt: true, openedAt: true, bouncedAt: true } });
+    const log = await prisma.emailLog.findUnique({ where: { resendId }, select: { id: true, status: true, deliveredAt: true, openedAt: true, bouncedAt: true, userId: true, to: true, subject: true } });
     if (!log) return NextResponse.json({ ok: true });
     const at = typeof event.created_at === "string" && !Number.isNaN(Date.parse(event.created_at)) ? new Date(event.created_at) : new Date();
     await prisma.emailLog.update({
@@ -47,6 +48,16 @@ export async function POST(req: Request) {
         ...((status === "BOUNCED" || status === "COMPLAINED") && !log.bouncedAt ? { bouncedAt: at } : {}),
       },
     });
+    // A bounce to a student is almost always a mistyped address (a live one was "gnail.com", 2026-11-02): tell the studio once per
+    // email, with where to fix it, instead of letting every later email to that address silently bounce too.
+    if (status === "BOUNCED" && !log.bouncedAt && log.userId) {
+      await notifyAdmins("EMAIL_BOUNCED", {
+        type: "ADMIN_ALERT",
+        title: "An email to a student bounced",
+        body: `The email \u201c${log.subject}\u201d to ${log.to} could not be delivered. The address may be mistyped: check it on their account and ask them for the right one.`,
+        cta: { label: "Open account", path: `/admin/users/${log.userId}` },
+      });
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     reportError(err, "resend webhook");

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { sendFollowUpReminderAction } from "@/app/(dashboard)/admin/followup-actions";
+import { toast } from "@/components/ui/Toaster";
 
 /** "Remind": the first tap asks, the second sends the fixed reminder for this reason to this person. */
 export function RemindButton({ kind, userId, name }: { kind: string; userId: string; name: string }) {
@@ -13,7 +14,12 @@ export function RemindButton({ kind, userId, name }: { kind: string; userId: str
     setState("sending");
     setError(null);
     try {
-      const res = await sendFollowUpReminderAction(kind, userId);
+      const hold = await toast.held(`Reminding ${name}`, () => sendFollowUpReminderAction(kind, userId), { mail: true });
+      if (hold.undone) {
+        setState("idle");
+        return;
+      }
+      const res = hold.value;
       if (res.ok) setState("sent");
       else {
         setError(res.error);

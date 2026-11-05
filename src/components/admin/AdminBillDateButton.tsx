@@ -26,8 +26,10 @@ export function AdminBillDateButton({ planId, currentDay, compact = false }: { p
 
   async function save() {
     setBusy(true);
-    const result = await changeBillDateAction(planId, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
+    const hold = await toast.held("Moving the next bill", () => changeBillDateAction(planId, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again." })), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       toast.warning(result.error ?? "Could not change the date.");
       return;

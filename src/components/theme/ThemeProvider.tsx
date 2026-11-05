@@ -49,7 +49,18 @@ function applyToDocument(theme: ThemeId) {
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
   el.style.colorScheme = themeMode(theme);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeGroundColor(theme));
+  // The tag belongs to React (Next renders it from `viewport` and swaps it on every navigation), so it is only ever updated in place:
+  // removing or replacing it made React fail with "removeChild of null" on the next page change and left the old screen stuck.
+  const color = themeGroundColor(theme);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", color);
+  else {
+    const added = document.createElement("meta");
+    added.name = "theme-color";
+    added.content = color;
+    document.head.appendChild(added);
+  }
+  el.style.backgroundColor = color;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

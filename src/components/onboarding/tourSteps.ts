@@ -41,19 +41,13 @@ export const TOUR_STEPS: TourStep[] = [
     id: "friends",
     target: "nav-friends",
     title: "Friends",
-    body: "Up in the top bar: add friends by username and keep an eye on each other's progress.",
-  },
-  {
-    id: "messages",
-    target: "nav-messages",
-    title: "Messages",
-    body: "Message friends directly, or reach us here any time you need help.",
+    body: "Add friends by username, tap one to see their practice, and send a nudge to practice together.",
   },
   {
     id: "bell",
     target: "notification-bell",
     title: "Notifications",
-    body: "Payments, replies, and announcements all land here. Nothing important gets missed.",
+    body: "Payments, announcements and your chat with the studio all land here. Open the Support tab any time you need help.",
   },
   {
     id: "profile",

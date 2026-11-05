@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, CalendarPlus, X } from "@/components/ui/appIcons";
+import { ArrowRightLeft, X } from "@/components/ui/appIcons";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
-import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 export interface SchedulerSlot {
   scheduleId: string;
@@ -21,8 +21,6 @@ export interface SchedulerSlot {
   label: string | null;
   scheduledAt: string;
   creditCost: number;
-  /** Another student's weekly plan keeps this time (free this week, but moving here needs a yes). */
-  heldBy?: string;
 }
 
 export interface SchedulerBooking {
@@ -35,17 +33,15 @@ export interface SchedulerBooking {
   inPerson: boolean;
 }
 
-type Result = { ok: true } | { ok: false; error: string; planHold?: boolean };
+type Result = { ok: true } | { ok: false; error: string };
 
 export interface StudentSchedulerProps {
   studentId: string;
   studentName: string;
   bookings: SchedulerBooking[];
-  /** The plan's own controls (pause, move the weekly time), drawn by the page. */
-  planControls?: React.ReactNode;
-  loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; held?: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
-  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify?: boolean, overridePlanHold?: boolean) => Promise<Result>;
-  onMoveToTime: (bookingId: string, date: string, time: string, notify?: boolean, overridePlanHold?: boolean) => Promise<Result>;
+  loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
+  onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify?: boolean) => Promise<Result>;
+  onMoveToTime: (bookingId: string, date: string, time: string, notify?: boolean) => Promise<Result>;
   onCancel: (bookingId: string, reason?: string, notify?: boolean) => Promise<Result>;
   onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number, notify?: boolean) => Promise<Result>;
   onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW", notify?: boolean) => Promise<void>;
@@ -61,11 +57,11 @@ const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-f
  * booked on the wrong day is moved to the right one and marked there, with no refund and re-charge. Undo a mark first to move a marked class.
  */
 export function StudentScheduler(props: StudentSchedulerProps) {
-  const { studentId, studentName, bookings, planControls, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
+  const { studentId, studentName, bookings, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
   // One "Notify student" switch for everything on this card (reschedule, cancel, book, attendance); off by default.
   const [notify, setNotify] = useNotifyStudent("student-changes");
-  const [times, setTimes] = useState<{ open: SchedulerSlot[]; held?: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
+  const [times, setTimes] = useState<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
   const [slotsBusy, setSlotsBusy] = useState(false);
   const [moving, setMoving] = useState<SchedulerBooking | null>(null);
   const [picked, setPicked] = useState<SchedulerSlot | null>(null);
@@ -74,15 +70,12 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const [bookDay, setBookDay] = useState<string | null>(null);
   // A typed time is not one of the weekly times, so moving there creates a new one-off time: ask first.
   const [confirmNew, setConfirmNew] = useState(false);
-  // The time chosen is kept by another student's weekly plan: ask once, then move over it. Holds the holder's name (or a generic line for a typed time).
-  const [planHold, setPlanHold] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canceling, setCanceling] = useState<SchedulerBooking | null>(null);
   const [reason, setReason] = useState("");
   const [booking, setBooking] = useState<SchedulerSlot | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
-
   const now = Date.now();
   const time = (b: SchedulerBooking) => new Date(b.scheduledAt).getTime();
   const active = bookings.filter((b) => b.status === "SCHEDULED");
@@ -101,6 +94,18 @@ export function StudentScheduler(props: StudentSchedulerProps) {
       setSlotsBusy(false);
     }
   }
+  // The one "Book a class" button lives in the profile's top row and asks this card to open its box.
+  const ensureSlotsRef = useRef(ensureSlots);
+  ensureSlotsRef.current = ensureSlots;
+  useEffect(() => {
+    const open = () => {
+      setError(null);
+      setBookOpen(true);
+      void ensureSlotsRef.current();
+    };
+    window.addEventListener("bnp-open-book-class", open);
+    return () => window.removeEventListener("bnp-open-book-class", open);
+  }, []);
 
   function openMove(b: SchedulerBooking) {
     setError(null);
@@ -115,43 +120,28 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setDay(null);
     setOwnTime("");
     setConfirmNew(false);
-    setPlanHold(null);
     setError(null);
   }
 
   const useOwn = Boolean(day && ownTime && !picked);
 
-  async function doMove(overridePlanHold = false) {
+  async function doMove() {
     if (!moving || (!useOwn && !picked)) return;
     if (useOwn && !confirmNew) {
       setConfirmNew(true);
       return;
     }
-    if (!useOwn && picked?.heldBy && !overridePlanHold) {
-      setPlanHold(picked.heldBy);
-      return;
-    }
     setBusy(true);
     setError(null);
-    const result = useOwn
-      ? await onMoveToTime(moving.id, day!, ownTime, notify, overridePlanHold)
-      : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex, notify, overridePlanHold);
+    const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime, notify) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex, notify);
     setBusy(false);
-    if (!result.ok) {
-      // A typed time that lands on a plan's weekly time is only found out by the server: ask the same question, then try again.
-      if (result.planHold && !overridePlanHold) {
-        setPlanHold("another student");
-        return;
-      }
-      return setError(result.error);
-    }
+    if (!result.ok) return setError(result.error);
     toast.success("Class rescheduled.");
     setMoving(null);
     setPicked(null);
     setDay(null);
     setOwnTime("");
     setConfirmNew(false);
-    setPlanHold(null);
     setTimes(null);
     router.refresh();
   }
@@ -159,8 +149,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   async function doCancel() {
     if (!canceling) return;
     setBusy(true);
-    const result = await onCancel(canceling.id, reason.trim() || undefined, notify);
+    const hold = await toast.held("Canceling the class", () => onCancel(canceling.id, reason.trim() || undefined, notify), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return setError(result.error);
     toast.success("Class canceled and refunded.");
     setCanceling(null);
@@ -224,25 +216,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   );
 
   const slotsReady = times?.open ?? [];
-  const heldReady = times?.held ?? [];
   const bookedReady = (times?.booked ?? []).filter((b) => b.id !== moving?.id);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {planControls}
-          {planControls && <Hint label="About plan controls">Pause the plan, move the standing weekly time and every upcoming class on it together, or (owner) move the next bill to another day.</Hint>}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${studentName.split(" ")[0]}`} />
-          <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
-            <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
-            Book a class
-          </Button>
-        </div>
-      </div>
-
       {needs.length > 0 && (
         <section>
           <h2 className="mb-1.5 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-amber-300">
@@ -281,21 +258,12 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         description={moving ? `Now: ${formatEtShort(moving.scheduledAt)}` : undefined}
         footer={
           <div className="flex flex-wrap justify-end gap-2">
-            {planHold ? (
-              <>
-                <Button type="button" variant="secondary" disabled={busy} onClick={() => setPlanHold(null)}>
-                  Back
-                </Button>
-                <Button type="button" disabled={busy} loading={busy} onClick={() => void doMove(true)}>
-                  Yes, move it here
-                </Button>
-              </>
-            ) : confirmNew ? (
+            {confirmNew ? (
               <>
                 <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmNew(false)}>
                   Back
                 </Button>
-                <Button type="button" disabled={busy} loading={busy} onClick={() => void doMove()}>
+                <Button type="button" disabled={busy} loading={busy} onClick={doMove}>
                   Yes, create it and reschedule
                 </Button>
               </>
@@ -304,7 +272,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
                 <Button type="button" variant="secondary" disabled={busy} onClick={closeMove}>
                   Never mind
                 </Button>
-                <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={() => void doMove()}>
+                <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={doMove}>
                   {useOwn ? `Reschedule to ${day} at ${ownTime}` : picked ? `Reschedule to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
                 </Button>
               </>
@@ -312,14 +280,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           </div>
         }
       >
-        {planHold ? (
-          <div className="rounded-xl border border-amber-300/40 bg-neu-base shadow-pressed-low p-4">
-            <p className="text-body font-semibold text-slate-50">This time belongs to a weekly plan</p>
-            <p className="mt-1 text-small text-slate-300">
-              {planHold === "another student" ? "Another student's" : `${planHold}'s`} plan keeps this weekly time, though nobody has a class in it this week. Move {studentName}&apos;s class here anyway? Their plan keeps the time for its other weeks.
-            </p>
-          </div>
-        ) : confirmNew ? (
+        {confirmNew ? (
           <div className="rounded-xl border border-slate-50/35 bg-neu-base shadow-pressed-low p-4">
             <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
             <p className="mt-1 text-small text-slate-300">
@@ -329,7 +290,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         ) : times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay allowPast held={heldReady} day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
+          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay allowPast day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>
