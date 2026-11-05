@@ -54,7 +54,7 @@ export function HomeRows({ title, aside, children, className }: { title: string;
         <h2 className="text-title font-semibold text-slate-50">{title}</h2>
         {aside && <span className="text-small text-slate-400">{aside}</span>}
       </div>
-      <ul className="mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">{children}</ul>
+      <ul data-stagger="" className="mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">{children}</ul>
     </section>
   );
 }

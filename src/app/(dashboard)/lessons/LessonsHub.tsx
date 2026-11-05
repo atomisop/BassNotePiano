@@ -34,8 +34,8 @@ export function LessonsHub({
         />
       </div>
       {/* Both stay mounted so a half-picked day or typed email survives a tab switch. */}
-      <div hidden={tab !== "weekly"}>{weekly}</div>
-      <div hidden={tab !== "extra"}>{extras}</div>
+      <div hidden={tab !== "weekly"} className="tab-in">{weekly}</div>
+      <div hidden={tab !== "extra"} className="tab-in">{extras}</div>
     </div>
   );
 }

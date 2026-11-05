@@ -17,7 +17,7 @@ export function StreakBadge() {
     <Link
       href="/streak"
       aria-label={label}
-      className="inline-flex h-[30px] items-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-semibold text-slate-100 shadow-raised-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+      className="tap press inline-flex h-9 items-center gap-1.5 rounded-full bg-neu-base px-3 text-small font-semibold text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
     >
       <Flame
         aria-hidden

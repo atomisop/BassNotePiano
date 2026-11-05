@@ -17,14 +17,14 @@ export function CreditsBadge() {
   const { credits, heldCredits } = status;
   const label = `${formatCredits(credits)} credit${credits === 1 ? "" : "s"}`;
   return (
-    <Link href="/lessons" aria-label={`${label} available. Open lessons.`} className="tap inline-flex items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal">
+    <Link href="/lessons" aria-label={`${label} available. Open lessons.`} className="tap press inline-flex items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal">
       <UsageBadge
         icon={<Coins className="h-4 w-4 text-signal-fg" aria-hidden />}
         planName="Credits"
         usage={credits}
         limit={0}
         display={<span className="tabular-nums">{formatCredits(credits)}</span>}
-        className="gap-1.5 bg-neu-base px-2.5 py-1 text-small font-semibold text-slate-100 shadow-raised-low"
+        className="h-9 gap-1.5 bg-neu-base px-3 py-0 text-small font-semibold text-slate-100 shadow-raised-low"
         tooltipContent={
           <p>
             {label} available.

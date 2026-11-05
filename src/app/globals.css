@@ -1061,6 +1061,14 @@
     --dur-fast: 140ms;
     --dur-base: 240ms;
     --dur-slow: 320ms;
+    /* Revamp motion tokens (docs/revamp/AUDIT.md). Exits are 80% of the matching enter (rule 15). */
+    --ease-move: cubic-bezier(0.65, 0, 0.35, 1); /* ease-in-out for things already on screen that move (rule 9) */
+    --dur-menu: 180ms; /* menus and popovers, inside the 150-250 band (rule 2) */
+    --dur-menu-exit: 144ms;
+    --stagger: 30ms; /* one list row step (rule 3), cap 8 rows */
+    --press-scale: 0.97; /* rule 4 */
+    --pop-scale: 0.95; /* rule 10 */
+    --knob-stretch: 1.12; /* rule 5 */
   }
 
   /* Neumorphic base + the two shadow colors, per mode. Dark is near-black
@@ -1416,7 +1424,7 @@
     transition: padding-left 240ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-sidebar .sb-item {
-    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 280ms var(--ease-spring);
+    transition: padding 240ms var(--ease-ios), gap 240ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale var(--dur-base) var(--ease-ios);
   }
   html[data-sidebar-anim] .app-sidebar .sb-label {
     transition: opacity 160ms var(--ease-ios) 80ms, max-width 240ms var(--ease-ios), visibility 0s;
@@ -1511,27 +1519,20 @@
 }
 @utility press {
   transition-property: scale, filter, box-shadow, background-color, color, opacity, border-color;
-  transition-duration: 480ms;
-  transition-timing-function: var(--ease-spring);
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      scale: 1.025;
-    }
-  }
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-ios);
   &:active:not(:disabled) {
-    scale: 0.94;
+    scale: var(--press-scale);
     transition-duration: 90ms;
-    transition-timing-function: var(--ease-ios);
   }
 }
 @utility press-soft {
   transition-property: scale, box-shadow, background-color, color, opacity, border-color;
-  transition-duration: 420ms;
-  transition-timing-function: var(--ease-spring);
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-ios);
   &:active:not(:disabled) {
-    scale: 0.985;
+    scale: var(--press-scale);
     transition-duration: 90ms;
-    transition-timing-function: var(--ease-ios);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1553,10 +1554,10 @@
    class always wins. Full-screen scrims (inset-0) are left alone. */
 @layer base {
   [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]) {
-    transition: scale 420ms var(--ease-spring);
+    transition: scale var(--dur-fast) var(--ease-ios);
   }
   [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]):active {
-    scale: 0.96;
+    scale: var(--press-scale);
     transition-duration: 90ms;
     transition-timing-function: var(--ease-ios);
   }
@@ -2999,3 +3000,87 @@ input[type="time"]:disabled {
 /* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
 .tier-starter { background-color: #ffffff; color: #000000; }
 :root:not([data-theme="ink"]) .tier-starter { background-color: #0b0b0b; color: #ffffff; }
+
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Revamp shared motion pieces (docs/revamp). Transform and opacity only; reduced motion gets none.
+   --------------------------------------------------------------------------------------------------------------- */
+
+/* Popovers, menus, tooltips: start at 0.95, grow from the trigger (Radix sets --radix-*-transform-origin), leave 20% faster (rules 2, 10, 11, 12, 15). */
+@keyframes pop-in { from { opacity: 0; transform: scale(var(--pop-scale)); } to { opacity: 1; transform: scale(1); } }
+@keyframes pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(var(--pop-scale)); } }
+@utility pop {
+  transform-origin: var(--radix-popper-transform-origin, var(--radix-tooltip-content-transform-origin, var(--radix-dropdown-menu-content-transform-origin, var(--radix-popover-content-transform-origin, center))));
+  @media (prefers-reduced-motion: no-preference) {
+    &[data-state="open"], &[data-state="delayed-open"], &[data-state="instant-open"] { animation: pop-in var(--dur-menu) var(--ease-ios) both; }
+    &[data-state="closed"] { animation: pop-out var(--dur-menu-exit) var(--ease-ios) both; }
+  }
+}
+html[data-kb-motion="off"] .pop { animation: none !important; }
+
+/* Staggered list rows: set style="--i: n" on each child (StaggerList does it), capped at 8 steps (rule 3). */
+@keyframes stagger-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@utility stagger-item {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: stagger-in var(--dur-base) var(--ease-ios) both;
+    animation-delay: calc(min(var(--i, 0), 8) * var(--stagger));
+  }
+}
+html[data-kb-motion="off"] .stagger-item { animation: none !important; }
+
+/* Switch knob stretches 12% along its travel while held, anchored at the side it is leaving (rule 5). */
+@utility knob-stretch {
+  transition-property: transform, translate, scale, background-color;
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-ios);
+  &[data-state="unchecked"] { transform-origin: left center; }
+  &[data-state="checked"] { transform-origin: right center; }
+  :where([role="switch"]:active:not(:disabled)) & { transform: scaleX(var(--knob-stretch)); transition-duration: 90ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .knob-stretch { transform: none !important; }
+}
+
+/* Staggered rows without touching each row: put data-stagger on the list's container (a ul, or a div whose children are the rows). Rows
+   beyond the 8th share the last delay. Plays when a row first mounts only, so a refresh that keeps the rows does not replay it. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-stagger] > * {
+    animation: stagger-in var(--dur-base) var(--ease-ios) both;
+  }
+  [data-stagger] > :nth-child(2) { animation-delay: calc(1 * var(--stagger)); }
+  [data-stagger] > :nth-child(3) { animation-delay: calc(2 * var(--stagger)); }
+  [data-stagger] > :nth-child(4) { animation-delay: calc(3 * var(--stagger)); }
+  [data-stagger] > :nth-child(5) { animation-delay: calc(4 * var(--stagger)); }
+  [data-stagger] > :nth-child(6) { animation-delay: calc(5 * var(--stagger)); }
+  [data-stagger] > :nth-child(7) { animation-delay: calc(6 * var(--stagger)); }
+  [data-stagger] > :nth-child(n+8) { animation-delay: calc(7 * var(--stagger)); }
+}
+html[data-kb-motion="off"] [data-stagger] > * { animation: none !important; }
+
+/* A menu that stays mounted while closed (ActionMenu): grows from its corner at 0.95, leaves 20% faster, and is out of the tab order and the pointer path once gone
+   (visibility flips after the exit). Rules 2, 10, 11, 12, 15. */
+.menu-panel {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(var(--pop-scale));
+  transition: opacity var(--dur-menu-exit) var(--ease-ios), transform var(--dur-menu-exit) var(--ease-ios), visibility 0s linear var(--dur-menu-exit);
+}
+.menu-panel[data-open] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity var(--dur-menu) var(--ease-ios), transform var(--dur-menu) var(--ease-ios), visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel, .menu-panel[data-open] { transition: none; transform: none; }
+}
+html[data-kb-motion="off"] .menu-panel { transition: none; }
+
+/* Content that swaps in when a tab is chosen: a fade and a 6px rise on ease-ios (rules 1, 16). A conditionally rendered panel plays it on mount;
+   a panel toggled with `hidden` plays it again each time it becomes visible. The leaving panel goes at once, so the two never fight for space. */
+@media (prefers-reduced-motion: no-preference) {
+  .tab-in { animation: stagger-in var(--dur-base) var(--ease-ios) both; }
+}
+html[data-kb-motion="off"] .tab-in { animation: none !important; }

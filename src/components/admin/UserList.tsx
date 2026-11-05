@@ -116,7 +116,7 @@ export function UserList({
       {rows.length === 0 ? (
         <EmptyState icon={<Search />} title="No one found" description="Try another name or email, or another tab." />
       ) : (
-        <ul className="glass-surface divide-y divide-slate-50/10 px-4">
+        <ul data-stagger="" className="glass-surface divide-y divide-slate-50/10 px-4">
           <ViewMore items={rows} initial={15} step={20}>
           {(row) => (
             <li key={row.id} className="flex items-center gap-2">

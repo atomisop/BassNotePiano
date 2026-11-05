@@ -112,7 +112,7 @@ export function SupportThreadList({ initialThreads, source, filter, currentAdmin
       {threads.length === 0 ? (
         <EmptyState icon={<LifeBuoy />} title={emptyMessage.replace(/\.$/, "")} description="New chats and emails from students land here." />
       ) : (
-        <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
+        <div data-stagger="" className="glass-surface divide-y divide-ink/10 overflow-hidden">
           <ViewMore items={threads} initial={12} step={20}>
           {(thread) => (
             <ThreadRow key={thread.id} thread={thread} href={hrefFor(thread)} currentAdminId={currentAdminId} />

@@ -91,7 +91,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`tap relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] transition ${
+        className={`tap press relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] ${
           open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         } ${triggerClassName ?? ""}`}
       >

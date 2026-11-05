@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { PageBack } from "@/components/ui/BackLink";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Mail } from "@/components/ui/appIcons";
@@ -47,8 +48,8 @@ export default async function MailPage() {
           />
         ) : (
           <div className="space-y-3">
-            {mail.map((m) => (
-              <Link key={m.id} href={`/mail/${m.id}`} className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {mail.map((m, i) => (
+              <Link key={m.id} href={`/mail/${m.id}`} style={{ "--i": i } as CSSProperties} className="stagger-item block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Card interactive className="flex items-start gap-3">
                   <span
                     className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${m.readAt ? "bg-transparent" : "bg-signal"}`}
