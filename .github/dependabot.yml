@@ -2,31 +2,26 @@
 # It never merges anything itself: CI runs on each PR and a person decides.
 #
 # Why "groups": without them Dependabot opens one pull request per package, and every pull request triggers
-# a Netlify deploy preview (which costs deploy credits). Grouping all the small updates into one weekly pull
-# request keeps the noise and the cost down. Big version jumps (major updates) still come on their own, so
-# they get a proper look.
+# a Netlify deploy preview (which costs deploy credits). Grouping all the small updates into one monthly pull
+# request keeps the noise and the cost down. Major updates are grouped in too (2026-11-05, to keep the open PR count low), so look at the one PR carefully before merging.
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 1
     groups:
       npm-minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 2
+      interval: "monthly"
+    open-pull-requests-limit: 1
     groups:
       actions-minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
+        patterns:
+          - "*"
