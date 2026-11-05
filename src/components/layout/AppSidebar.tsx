@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, type AppIcon } from "@/components/ui/appIcons";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, Settings, Globe, ArrowUpRight, type AppIcon } from "@/components/ui/appIcons";
 import GenerateAIButton from "@/components/ui/button-33";
-import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
 import { Kbd } from "@/components/ui/Kbd";
@@ -33,7 +32,6 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: "Community",
     items: [
       { href: "/friends", label: "Friends", icon: Users },
-      { href: "/messages", label: "Messages", icon: MessageSquare, dataTour: "nav-messages" },
       { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     ],
   },
@@ -52,9 +50,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
  * AppDock; this takes its place on wide screens so nothing floats over the
  * content and every destination has a label. Sits under the fixed TopBar.
  */
-export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminBadges = {} }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean; adminBadges?: AdminNavBadges }) {
+export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: SidebarCard[]; isAdmin: boolean; adminBadges?: AdminNavBadges }) {
   const pathname = usePathname();
-  const unread = useUnreadMessages(initial);
   const [mounted, setMounted] = useState(false);
   // The admin's six sections sit under Website as one more group, so the admin pages need no second menu of their own on a computer.
   const adminHub = pathname.startsWith("/admin") ? locateAdminPage(pathname)?.hub.id ?? "overview" : null;
@@ -134,7 +131,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminB
               const active = item.isActive
                 ? item.isActive(pathname)
                 : pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.match?.some((m) => pathname.startsWith(m)) ?? false);
-              const badge = item.href === "/messages" ? unread : item.count ?? 0;
+              const badge = item.count ?? 0;
               const Icon = item.icon;
               return (
                 <li key={item.href}>
@@ -156,7 +153,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminB
                     href={item.href}
                     prefetch
                     data-tour={item.dataTour}
-                    data-prerender={item.href === "/messages" ? undefined : ""}
+                    data-prerender=""
                     title={item.label}
                     aria-current={active ? "page" : undefined}
                     className={`sb-item group/sb press-soft relative flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${

@@ -3,6 +3,8 @@
 // counts the same way. Names in one place so the sender and the listener can never drift apart.
 
 export const OPEN_NOTIFICATIONS = "bnp:open-notifications";
+/** Opens the bell on its Support tab (the student's conversation with the team). */
+export const OPEN_SUPPORT = "bnp:open-support";
 export const OPEN_STUDENT_NOTES = "bnp:open-student-notes";
 export const OPEN_ATTENDANCE = "bnp:open-attendance";
 export const UNREAD_COUNT = "bnp:unread-count";

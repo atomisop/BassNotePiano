@@ -64,7 +64,12 @@ export function UnmatchedEmailList({
     setError(null);
     let result: Result;
     try {
-      result = await action();
+      const hold = await toast.held(done.title, action, { mail: true });
+      if (hold.undone) {
+        setBusy(null);
+        return;
+      }
+      result = hold.value;
     } catch {
       result = { ok: false, error: "It did not go through. Try again." };
     }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, CalendarPlus, X } from "@/components/ui/appIcons";
+import { ArrowRightLeft, X } from "@/components/ui/appIcons";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
-import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { useNotifyStudent } from "@/components/admin/NotifyToggle";
 
 export interface SchedulerSlot {
   scheduleId: string;
@@ -61,7 +61,7 @@ const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-f
  * booked on the wrong day is moved to the right one and marked there, with no refund and re-charge. Undo a mark first to move a marked class.
  */
 export function StudentScheduler(props: StudentSchedulerProps) {
-  const { studentId, studentName, bookings, planControls, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
+  const { studentId, studentName, bookings, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
   // One "Notify student" switch for everything on this card (reschedule, cancel, book, attendance); off by default.
   const [notify, setNotify] = useNotifyStudent("student-changes");
@@ -82,7 +82,6 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const [reason, setReason] = useState("");
   const [booking, setBooking] = useState<SchedulerSlot | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
-
   const now = Date.now();
   const time = (b: SchedulerBooking) => new Date(b.scheduledAt).getTime();
   const active = bookings.filter((b) => b.status === "SCHEDULED");
@@ -101,6 +100,18 @@ export function StudentScheduler(props: StudentSchedulerProps) {
       setSlotsBusy(false);
     }
   }
+  // The one "Book a class" button lives in the profile's top row and asks this card to open its box.
+  const ensureSlotsRef = useRef(ensureSlots);
+  ensureSlotsRef.current = ensureSlots;
+  useEffect(() => {
+    const open = () => {
+      setError(null);
+      setBookOpen(true);
+      void ensureSlotsRef.current();
+    };
+    window.addEventListener("bnp-open-book-class", open);
+    return () => window.removeEventListener("bnp-open-book-class", open);
+  }, []);
 
   function openMove(b: SchedulerBooking) {
     setError(null);
@@ -159,8 +170,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   async function doCancel() {
     if (!canceling) return;
     setBusy(true);
-    const result = await onCancel(canceling.id, reason.trim() || undefined, notify);
+    const hold = await toast.held("Canceling the class", () => onCancel(canceling.id, reason.trim() || undefined, notify), { mail: notify });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return setError(result.error);
     toast.success("Class canceled and refunded.");
     setCanceling(null);
@@ -229,20 +242,6 @@ export function StudentScheduler(props: StudentSchedulerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {planControls}
-          {planControls && <Hint label="About plan controls">Pause the plan, move the standing weekly time and every upcoming class on it together, or (owner) move the next bill to another day.</Hint>}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${studentName.split(" ")[0]}`} />
-          <Button type="button" size="sm" onClick={() => { setError(null); setBookOpen(true); void ensureSlots(); }}>
-            <CalendarPlus aria-hidden className="mr-1 h-4 w-4" />
-            Book a class
-          </Button>
-        </div>
-      </div>
-
       {needs.length > 0 && (
         <section>
           <h2 className="mb-1.5 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-amber-300">

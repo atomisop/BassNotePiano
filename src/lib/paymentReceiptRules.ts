@@ -29,6 +29,8 @@ export interface ReceiptFacts {
   groupSize: number | null;
   /** An extra one-off class: when it is. */
   extraClassAt: Date | null;
+  /** A group's combined 28-day bill: what each person's part was. */
+  bundleLines?: { name: string; amountCents: number; installmentNumber: number | null }[];
 }
 
 export interface Receipt {
@@ -52,6 +54,8 @@ export function receiptItem(f: ReceiptFacts): string {
     case "PAYMENT_PLAN_INSTALLMENT":
       if (!f.plan) return "Payment plan";
       return `${describePaymentPlan(f.plan.cadence, f.plan.term)}, payment ${f.plan.installmentNumber ?? 1} of ${f.plan.termMonths}`;
+    case "FAMILY_PLAN_INSTALLMENT":
+      return f.groupSize && f.groupSize > 1 ? `Group plan, 28-day bill for ${f.groupSize} people` : "Group plan, 28-day bill";
     case "FAMILY_PLAN_START":
       return f.groupSize && f.groupSize > 1 ? `Group plan, first payment for ${f.groupSize} people` : "Group plan, first payment";
     case "CLASS_CREDITS":
@@ -86,6 +90,9 @@ export function buildReceipt(f: ReceiptFacts): Receipt {
   if (f.periodEnd) {
     const start = new Date(f.periodEnd.getTime() - BILLING_CYCLE_DAYS * 86_400_000);
     rows.push({ label: "Covers", value: `${shortDate(start)} to ${shortDate(f.periodEnd)} (${BILLING_CYCLE_DAYS} days)` });
+  }
+  for (const line of f.bundleLines ?? []) {
+    rows.push({ label: line.name, value: `${usd(line.amountCents)}${line.installmentNumber ? `, payment ${line.installmentNumber}` : ""}` });
   }
   if (f.creditsStored && f.creditsStored > 0) rows.push({ label: "Classes added", value: creditsLabelFromStored(f.creditsStored) });
   if (f.nextBill) rows.push({ label: "Next bill", value: `${usd(f.nextBill.amountCents)} on ${longDate(f.nextBill.dueDate)}` });

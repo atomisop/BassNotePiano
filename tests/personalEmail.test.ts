@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const send = vi.fn();
 vi.mock("resend", () => ({ Resend: class { emails = { send }; } }));
+// Imported once, at the top: inside each test the import took longer than the 5s test timeout when the whole suite ran at once.
+const email = await import("@/lib/email");
 
 beforeEach(() => {
   send.mockReset();
@@ -11,7 +13,7 @@ beforeEach(() => {
 describe("sendPersonalEmail", () => {
   it("sends from the reply-able address, with a greeting and no template", async () => {
     send.mockResolvedValue({ data: { id: "1" }, error: null });
-    const { sendPersonalEmail } = await import("@/lib/email");
+    const { sendPersonalEmail } = email;
     await sendPersonalEmail("a@b.com", "Schedule", "Classes move to 6 PM.", { firstName: "Sam" });
     expect(send).toHaveBeenCalledTimes(1);
     const arg = send.mock.calls[0][0];
@@ -23,7 +25,7 @@ describe("sendPersonalEmail", () => {
 
   it("falls back to the standard sender when the custom one is not verified yet", async () => {
     send.mockResolvedValueOnce({ data: null, error: { message: "domain not verified" } }).mockResolvedValueOnce({ data: { id: "2" }, error: null });
-    const { sendPersonalEmail } = await import("@/lib/email");
+    const { sendPersonalEmail } = email;
     await sendPersonalEmail("a@b.com", "Hello", "Body");
     expect(send).toHaveBeenCalledTimes(2);
     expect(send.mock.calls[0][0].from).toContain("music@bassnotepiano.com");

@@ -1,5 +1,6 @@
 "use client";
 
+import { PAYMENT_LOCKED_CODE, PAYMENT_LOCKED_PATH } from "@/lib/paymentLockCodes";
 import { useEffect, useState, type FormEvent } from "react";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import Link from "next/link";
@@ -120,6 +121,7 @@ export function LoginForm({
     setSubmitting(true);
     const result = await signIn("credentials", { email, code: value, redirect: false });
     if (result?.error) {
+      if (result.error === PAYMENT_LOCKED_CODE) return window.location.assign(PAYMENT_LOCKED_PATH);
       setError(result.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "That code didn't work. Check it and try again, or request a new one.");
       setCode("");
       setSubmitting(false);
@@ -136,6 +138,7 @@ export function LoginForm({
     const result = await loginStepOneAction(email, password, needsSecondStep ? secondStep : undefined);
 
     if (!result.ok) {
+      if (result.error === PAYMENT_LOCKED_CODE) return window.location.assign(PAYMENT_LOCKED_PATH);
       setError(result.error);
       setSubmitting(false);
       return;
@@ -156,6 +159,7 @@ export function LoginForm({
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, secondStep: needsSecondStep ? secondStep : undefined, redirect: false });
     if (signInResult?.error) {
+      if (signInResult.error === PAYMENT_LOCKED_CODE) return window.location.assign(PAYMENT_LOCKED_PATH);
       setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Something went wrong logging in. Try again.");
       setSubmitting(false);
       return;

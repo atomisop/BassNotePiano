@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { motion } from "framer-motion";
@@ -26,12 +26,50 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "TERM_6", label: "6 Months" },
 ];
 
-/** The card that gets the animated border and the "Best value" badge (a marketing choice, not the lowest price). */
-const FEATURED_TERM: PaymentPlanTerm = "TERM_3";
+/** The card that gets the purple glow and the rising stars (a marketing choice, not the lowest price). */
+const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
+
+/**
+ * One look per plan length, for Just me and for a group. Every value is a registered CSS colour (globals.css), so flipping between
+ * the two glides from one colour to the other instead of switching.
+ */
+const TIER_LOOK: Record<"MONTHLY" | "TERM_3" | "TERM_6", { tag: string; solo: Look; family: Look }> = {
+  MONTHLY: {
+    tag: "Starter",
+    solo: { tint: "rgb(70 105 200)", accent: "rgb(165 195 255)", glow: "rgb(120 160 255)" },
+    family: { tint: "rgb(214 150 70)", accent: "rgb(255 205 150)", glow: "rgb(255 170 90)" },
+  },
+  TERM_3: {
+    tag: "Best value",
+    solo: { tint: "rgb(140 140 40)", accent: "rgb(225 232 120)", glow: "rgb(200 210 80)" },
+    family: { tint: "rgb(225 170 40)", accent: "rgb(255 224 120)", glow: "rgb(255 205 70)" },
+  },
+  TERM_6: {
+    tag: "Most popular",
+    solo: { tint: "rgb(120 80 210)", accent: "rgb(200 175 255)", glow: "rgb(170 130 255)" },
+    family: { tint: "rgb(226 78 42)", accent: "rgb(255 150 105)", glow: "rgb(255 105 55)" },
+  },
+};
+type Look = { tint: string; accent: string; glow: string };
+
+const STARS = [
+  { l: 8, s: 13, d: 3.6, y: 0 }, { l: 22, s: 16, d: 4.8, y: 1.4 }, { l: 36, s: 12, d: 3.9, y: 0.6 },
+  { l: 49, s: 15, d: 5.2, y: 2.2 }, { l: 61, s: 13, d: 4.1, y: 0.9 }, { l: 74, s: 17, d: 5, y: 1.8 },
+  { l: 86, s: 12, d: 3.7, y: 0.3 }, { l: 15, s: 14, d: 4.5, y: 2.9 }, { l: 68, s: 12, d: 4.3, y: 3.4 }, { l: 42, s: 14, d: 4.9, y: 3.8 },
+];
 
 const FEATURED_INDEX = Math.max(0, TERM_OPTIONS.findIndex((o) => o.value === FEATURED_TERM));
 
 type Audience = "solo" | "family";
+
+/** The retired yearly length has no card of its own; it borrows the six month look. */
+export function tierLook(term: PaymentPlanTerm) {
+  return TIER_LOOK[term === "MONTHLY" || term === "TERM_3" ? term : "TERM_6"];
+}
+
+export function tierVars(look: Look): CSSProperties {
+  return { "--tier-tint": look.tint, "--tier-accent": look.accent, "--tier-glow": look.glow } as CSSProperties;
+}
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -76,19 +114,24 @@ export function PaymentPlanTierGrid({
   personalDiscountPercent = 0,
   switchTo,
   narrow = false,
+  select,
 }: {
   pricing?: PricingConfig;
   personalDiscountPercent?: number;
   switchTo?: TierGridSwitch;
   /** For a column that is not the full page (Settings): dense cards, all three side by side whenever the column is wide enough, the swipe carousel only when it is not. */
   narrow?: boolean;
+  /** Pick mode (the plan form): the buttons choose a length instead of linking away, and the audience comes from the form. */
+  select?: { term: PaymentPlanTerm; onSelect: (term: PaymentPlanTerm) => void; audience: Audience };
 }) {
   // One plan on offer: a 45-minute class a week.
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
-  const [audience, setAudience] = useState<Audience>("solo");
+  const [pickedAudience, setAudience] = useState<Audience>("solo");
+  const audience = select ? select.audience : pickedAudience;
   const solo = (cents: number) => (personalDiscountPercent > 0 ? discountedPlanPriceCents(cents, personalDiscountPercent) : cents);
   const monthlyBaseline = solo(calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents);
   const isFamily = audience === "family" && !switchTo;
+  const look = (term: PaymentPlanTerm) => (isFamily ? tierLook(term).family : tierLook(term).solo);
 
   // One plan card. It is built once for the swipe carousel (phones) and once for the side-by-side grid (lg and up), never one
   // element placed in two spots, so each place gets its own copy.
@@ -136,19 +179,40 @@ export function PaymentPlanTierGrid({
       featured,
       node: (
           <div
-            className={`relative flex flex-1 flex-col ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} rounded-2xl ${
-              featured
-                ? "bg-neu-base shadow-raised-high ring-2 ring-amber-400 shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
-                : "glass-surface opacity-90 transition hover:opacity-100 hover:shadow-raised-high"
+            style={tierVars(look(option.value))}
+            className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} ${
+              featured ? "" : "transition hover:shadow-raised-high"
             }`}
           >
+            {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
+            {(["solo", "family"] as const).map((who) => (
+              <div
+                key={who}
+                aria-hidden
+                style={tierVars(tierLook(option.value)[who])}
+                className={`tier-layer tier-card pointer-events-none absolute inset-0 -z-10 rounded-2xl ${featured ? "tier-glow" : ""} ${(who === "family") === isFamily ? "opacity-100" : "opacity-0"}`}
+              />
+            ))}
+            {featured && (
+              <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+                {STARS.map((star, i) => (
+                  <span
+                    key={i}
+                    className="tier-star"
+                    style={{ left: `${star.l}%`, width: star.s, height: star.s, "--star-d": `${star.d}s`, "--star-delay": `${star.y}s` } as CSSProperties}
+                  />
+                ))}
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <p className="font-serif text-body text-slate-50">{option.label}</p>
-              {featured ? (
-                <span className="rounded-full bg-amber-400 px-3 py-1 text-small font-bold text-black">Best value</span>
-              ) : isMonthly && !isFamily && !narrow ? (
-                <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-300">No commitment</span>
-              ) : null}
+              <span
+                className={`rounded-full px-3 py-1 text-small font-bold ${
+                  isMonthly ? "tier-starter" : "tier-accent-bg text-black"
+                }`}
+              >
+                {tierLook(option.value).tag}
+              </span>
             </div>
     
             <div>
@@ -166,7 +230,7 @@ export function PaymentPlanTierGrid({
                 )}
               </p>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} ${featured ? "text-amber-400" : "text-slate-50"}`}>
+                <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} tier-price`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
                 <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>
@@ -184,34 +248,38 @@ export function PaymentPlanTierGrid({
               ))}
             </ul>
     
-            {switchTo ? (
-              <button
-                type="button"
-                disabled={option.value === switchTo.currentTerm || switchTo.pendingTerm !== null}
-                onClick={() => switchTo.onSwitch(option.value)}
-                className={`tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
-                  option.value === switchTo.currentTerm
-                    ? "bg-neu-base text-slate-400 shadow-pressed-low"
-                    : featured
-                      ? "bg-amber-400 text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low disabled:opacity-60"
-                      : "bg-neu-base text-slate-100 shadow-raised-low hover:text-slate-50 active:shadow-pressed-low disabled:opacity-60"
-                }`}
-              >
-                {switchTo.pendingTerm === option.value && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-                {option.value === switchTo.currentTerm ? "Your current plan" : `Switch to ${option.label}`}
-              </button>
-            ) : (
-              <Link
-                href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`}
-                className={`flex h-12 items-center justify-center rounded-full text-small font-semibold transition ${
-                  featured
-                    ? "bg-amber-400 text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
-                    : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-slate-50"
-                }`}
-              >
-                {isFamily ? "Bundle & save" : "Start plan"}
-              </Link>
-            )}
+            {(() => {
+              const cta = `tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
+                isMonthly ? "tier-starter hover:opacity-90" : "tier-accent-bg text-black hover:brightness-110"
+              } active:scale-[0.99]`;
+              if (switchTo) {
+                const current = option.value === switchTo.currentTerm;
+                return (
+                  <button
+                    type="button"
+                    disabled={current || switchTo.pendingTerm !== null}
+                    onClick={() => switchTo.onSwitch(option.value)}
+                    className={current ? "tap flex h-12 w-full items-center justify-center rounded-full bg-neu-base text-small font-semibold text-slate-400 shadow-pressed-low" : `${cta} disabled:opacity-60`}
+                  >
+                    {switchTo.pendingTerm === option.value && <MorphingSquare size={14} className="mr-2 shrink-0" />}
+                    {current ? "Your current plan" : `Switch to ${option.label}`}
+                  </button>
+                );
+              }
+              if (select) {
+                const chosen = select.term === option.value;
+                return (
+                  <button type="button" aria-pressed={chosen} onClick={() => select.onSelect(option.value)} className={chosen ? `${cta} ring-2 ring-offset-2 ring-offset-transparent ring-white/70` : cta}>
+                    {chosen ? "Selected" : "Choose this plan"}
+                  </button>
+                );
+              }
+              return (
+                <Link href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`} className={cta}>
+                  {isFamily ? "Bundle & save" : "Start plan"}
+                </Link>
+              );
+            })()}
           </div>
           ),
     };
@@ -219,7 +287,9 @@ export function PaymentPlanTierGrid({
 
   return (
     <div className={narrow ? "@container" : undefined}>
-      <div className={`mx-auto mb-8 flex flex-col items-center gap-3 ${switchTo ? "hidden" : ""}`}>
+      {/* The warm wash a group plan puts behind the page: it fills in from the bottom of the screen. */}
+      <div aria-hidden className="tier-wash" style={{ opacity: isFamily ? 1 : 0 }} />
+      <div className={`mx-auto mb-8 flex flex-col items-center gap-3 ${switchTo || select ? "hidden" : ""}`}>
         <Segmented
           label="Who is learning"
           value={audience}
@@ -238,7 +308,7 @@ export function PaymentPlanTierGrid({
 
       {/* Phones: one plan at a time, swipe left and right (the 6-month "best value" plan opens first). */}
       <div className={narrow ? "@xl:hidden" : "lg:hidden"}>
-        <SnapCarousel label="Plans" peek={34} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-6 py-8">
+        <SnapCarousel label="Plans" peek={34} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-12 py-14">
           {TERM_OPTIONS.map((option) => (
             <div key={option.value} className="relative flex h-full flex-col">
               {renderCard(option).node}

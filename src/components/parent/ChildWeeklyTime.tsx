@@ -92,9 +92,11 @@ export function EndChildPlanButton({ childId }: { childId: string }) {
   async function end() {
     if (!sure) return setSure(true);
     setBusy(true);
-    const result = await parentEndChildPlanAction(childId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    const hold = await toast.held("Ending the plan", () => parentEndChildPlanAction(childId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true });
     setBusy(false);
     setSure(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) return void toast.warning(result.error);
     toast.success("Plan ended");
     router.refresh();

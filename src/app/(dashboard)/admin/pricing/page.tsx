@@ -12,7 +12,7 @@ export default async function AdminPricingPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can change prices and discounts.</p>
       </div>
     );
@@ -40,7 +40,7 @@ export default async function AdminPricingPage() {
 
   return (
     <div>
-      <h1 className="sr-only">Pricing</h1>
+      <h1 data-page-title="" className="sr-only">Pricing</h1>
       <p className="mt-2 text-small text-slate-500">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</p>
       <div className="mt-6">
         <PricingManager

@@ -3,7 +3,7 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import { getLessonsForScale } from "@/lib/courseContent";
 import { isObjectStorageConfigured } from "@/lib/storage";
 import { AdminLessonManager } from "@/components/admin/AdminLessonManager";
-import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction } from "./actions";
+import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction, updateLessonTextAction } from "./actions";
 
 export const metadata = { title: "Admin: Lessons" };
 
@@ -52,6 +52,7 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
           onCreateLesson={createLessonAction}
           onDeleteLesson={deleteLessonAction}
           onReorder={reorderLessonsAction}
+          onEditLesson={updateLessonTextAction}
         />
       </div>
     </div>

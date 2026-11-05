@@ -40,7 +40,7 @@ async function notifyInstallment(
     type,
     title: isOverdue ? "Installment overdue" : "Installment due",
     body: isOverdue
-      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Your classes are on hold and your plan is canceled in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"} unless you pay.`
+      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. If it does not arrive in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"}, your plan is canceled and you lose access to your account.`
       : `${installmentLabel} on your ${planLabel} is ready to pay.`,
     // No emailCategory here on purpose, the email below is a dedicated
     // itemized invoice (sendPaymentPlanInvoiceEmail), not the generic
@@ -67,6 +67,53 @@ async function notifyInstallment(
     overdueDays,
     unsubscribe: { userId: plan.userId, category: "payments" },
   }).catch((err) => console.error(`Installment invoice email failed for user ${plan.userId} (non-blocking):`, err));
+}
+
+
+const usdLabel = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+/**
+ * A group's bill (the one combined bill, or one member's own bill while the group has fewer than two open): the payer is told it is
+ * theirs to pay and everyone else in a family group hears the same thing at the same moment, with nothing for them to pay. In parent
+ * mode only the parent is told. Nobody but the payer is ever sent a pay button.
+ */
+async function notifyGroupBill(plan: PaymentPlan, payment: ZellePayment, type: "PAYMENT_PLAN_INSTALLMENT_DUE" | "PAYMENT_PLAN_INSTALLMENT_OVERDUE", overdueDays?: number, lapseAfterDays = 7): Promise<void> {
+  const group = await prisma.familyPlanGroup.findUnique({
+    where: { id: plan.familyGroupId! },
+    select: { kind: true, payerId: true, payer: { select: { name: true, email: true } }, plans: { where: { status: "ACTIVE" }, select: { userId: true } } },
+  });
+  if (!group) return;
+  const isOverdue = type === "PAYMENT_PLAN_INSTALLMENT_OVERDUE";
+  const people = group.plans.length;
+  const amount = usdLabel(payment.amountCents);
+  const payerName = group.payer.name ?? group.payer.email;
+  await createNotification({
+    userId: group.payerId,
+    type,
+    title: isOverdue ? "Group bill overdue" : "Group bill ready to pay",
+    body: isOverdue
+      ? `Your group's 28-day bill of ${amount} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Classes are on hold and the plans are canceled in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"} unless it is paid.`
+      : `Your group's 28-day bill of ${amount}${people > 1 ? ` for ${people} people` : ""} is ready. One payment covers everyone, and you get one receipt.`,
+    emailCategory: "payments",
+    cta: { label: "Pay the bill", path: "/billing/plans" },
+  }).catch((err) => console.error(`Group bill notice failed for payer ${group.payerId} (non-blocking):`, err));
+  if (group.kind === "PARENT") return;
+  for (const member of group.plans) {
+    if (member.userId === group.payerId) continue;
+    await createNotification({
+      userId: member.userId,
+      type,
+      title: isOverdue ? "Your group's bill is overdue" : "Your group's bill is ready",
+      body: `${payerName} pays the group's 28-day bill and has been told. There is nothing for you to pay.`,
+      emailCategory: "payments",
+    }).catch((err) => console.error(`Group bill notice failed for member ${member.userId} (non-blocking):`, err));
+  }
+}
+
+async function isGroupMemberNotPayer(plan: PaymentPlan): Promise<boolean> {
+  if (!plan.familyGroupId) return false;
+  const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { payerId: true } });
+  return Boolean(group && group.payerId !== plan.userId);
 }
 
 // Runs once daily at 16:00 UTC (practice-reminders.ts already owns 15:00,
@@ -108,7 +155,12 @@ export const handler = schedule("0 16 * * *", async () =>
     // but the null check is what the type (rather than that invariant) can
     // actually guarantee.
     if (!wasCreated || !payment) continue;
-    await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
+    // A group's bill: the payer is told (and the rest of a family group at the same moment), never a member with a pay button.
+    if (payment.purpose === "FAMILY_PLAN_INSTALLMENT" || (await isGroupMemberNotPayer(plan))) {
+      await notifyGroupBill(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
+    } else {
+      await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
+    }
     opened++;
   }
 
@@ -122,6 +174,7 @@ export const handler = schedule("0 16 * * *", async () =>
   });
 
   let escalated = 0;
+  const bundlesEscalated = new Set<string>();
   for (const payment of overduePayments) {
     // paymentPlan is guaranteed non-null here: the where clause above only
     // matches rows whose related plan is ACTIVE, and every
@@ -131,7 +184,17 @@ export const handler = schedule("0 16 * * *", async () =>
     const plan = payment.paymentPlan!;
     const gap = daysSince(plan.nextDueDate, now);
     if (!overdueTriggerDays.includes(gap)) continue;
-    await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap, lapseAfterDays);
+    if (payment.bundleId) {
+      // Held in the group's combined bill: one overdue notice for the whole bill, not one per member.
+      if (bundlesEscalated.has(payment.bundleId)) continue;
+      bundlesEscalated.add(payment.bundleId);
+      const bundle = await prisma.zellePayment.findUnique({ where: { id: payment.bundleId } });
+      if (bundle && bundle.status === "AWAITING_TRANSFER") await notifyGroupBill(plan, bundle, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap, lapseAfterDays);
+    } else if (await isGroupMemberNotPayer(plan)) {
+      await notifyGroupBill(plan, payment, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap, lapseAfterDays);
+    } else {
+      await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap, lapseAfterDays);
+    }
     escalated++;
   }
 

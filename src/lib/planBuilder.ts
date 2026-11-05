@@ -59,6 +59,12 @@ export interface PlanBuilderContext {
   terms: { term: PaymentPlanTerm; label: string; cycles: number; amountCents: number }[];
 }
 
+// Each person on a group or parent plan has their own plan (weekly time, bills, credits), so it is rebuilt on its own like a solo one. Only a
+// group whose combined first payment is still open is left alone: that one payment starts every plan in it at once.
+function assertGroupPlanStarted(plan: { familyGroupId: string | null; installmentsPaid: number } | null) {
+  if (plan?.familyGroupId && plan.installmentsPaid < 1) throw new PaymentPlanError("This group plan has not started yet. Approve its combined first payment on Billing > Payments first.");
+}
+
 async function loadSlot(scheduleId: string, chunkIndex: number) {
   const schedule = await prisma.classSchedule.findUnique({ where: { id: scheduleId } });
   if (!schedule || !schedule.active) throw new PaymentPlanError("That class time is not offered.");
@@ -76,7 +82,7 @@ export async function getPlanBuilderContext(userId: string): Promise<PlanBuilder
     getDiscountPercent(userId),
     getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE]),
   ]);
-  if (plan?.familyGroupId) throw new PaymentPlanError("A group or parent plan is billed through its payer. Open the payer's own plan to rebuild it.");
+  assertGroupPlanStarted(plan);
   const terms = (["MONTHLY", "TERM_3", "TERM_6"] as PaymentPlanTerm[]).filter(isPlanTermOffered).map((term) => {
     const rate = calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, term, pricing);
     return { term, label: describePaymentPlan(OFFERED_PLAN_CADENCE, term), cycles: rate.termMonths, amountCents: discountedPlanPriceCents(rate.installmentAmountCents, discount) };
@@ -116,7 +122,7 @@ interface Resolved {
 
 async function resolve(input: PlanBuilderInput): Promise<Resolved> {
   const plan = await prisma.paymentPlan.findFirst({ where: { userId: input.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } });
-  if (plan?.familyGroupId) throw new PaymentPlanError("A group or parent plan is billed through its payer. Open the payer's own plan to rebuild it.");
+  assertGroupPlanStarted(plan);
   const { schedule, chunk } = await loadSlot(input.scheduleId, input.chunkIndex);
   const start = parseYmd(input.startDate);
   if (!start) throw new PaymentPlanError("Pick a real start date.");

@@ -182,7 +182,7 @@ function AboutClientInner() {
       <PageBack href="/account" />
       <div>
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Info</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>
       </div>
 
       <div className="mt-6 flex flex-col gap-8 lg:flex-row">

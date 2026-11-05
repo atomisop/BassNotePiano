@@ -1,6 +1,7 @@
 "use client";
 
 import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { Suspense, useEffect, useState, type FormEvent } from "react";
@@ -170,10 +171,12 @@ function RegisterForm() {
             id="email"
             type="email"
             autoComplete="email"
+            spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          <EmailTypoHint value={email} onFix={setEmail} />
         </div>
         {phoneRequired && (
           <div>

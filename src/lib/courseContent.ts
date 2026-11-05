@@ -101,6 +101,18 @@ export async function createLesson(input: CreateLessonInput): Promise<CourseLess
   return toCourseLesson(row);
 }
 
+export class LessonEditError extends Error {}
+
+/** Renames a lesson and changes its description. The file, its place in the order and everyone's progress stay as they are. */
+export async function updateLessonText(lessonId: string, title: string, description: string): Promise<CourseLesson> {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) throw new LessonEditError("Give the lesson a title.");
+  if (cleanTitle.length > 120) throw new LessonEditError("Keep the title under 120 characters.");
+  if (description.trim().length > 1000) throw new LessonEditError("Keep the description under 1,000 characters.");
+  const row = await prisma.lesson.update({ where: { id: lessonId }, data: { title: cleanTitle, description: description.trim() || null } });
+  return toCourseLesson(row);
+}
+
 /** Deletes the DB row and best-effort cleans up the backing file in object storage. */
 export async function deleteLesson(lessonId: string): Promise<void> {
   const lesson = await prisma.lesson.delete({ where: { id: lessonId } });
