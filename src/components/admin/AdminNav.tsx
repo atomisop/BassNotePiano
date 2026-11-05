@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type AppIcon } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { ADMIN_HUBS, hubWaiting, locateAdminPage, splitHubPages, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
 
 /**
  * The admin menu: six choices (Overview, Billing, People, Classes, Inbox, Setup). Each one holds its related pages as tabs
@@ -157,66 +157,34 @@ export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
 export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
   const pathname = usePathname();
   const located = locateAdminPage(pathname);
-  const [moreOpen, setMoreOpen] = useState(false);
   if (!located || located.hub.pages.length < 2) return null;
   const { hub, page: currentPage } = located;
-  const { tabs, more } = splitHubPages(hub);
-  const moreActive = more.some((p) => p.href === currentPage.href);
-  const moreWaiting = more.reduce((n, p) => n + Math.max(0, badges[p.href] ?? 0), 0);
-  const tabClass = (active: boolean) =>
-    `relative flex h-11 items-center justify-center gap-1 whitespace-nowrap px-1 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5 ${
-      active
-        ? "text-signal-fg after:absolute after:inset-x-1 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-signal md:after:inset-x-3"
-        : "text-slate-400 hover:text-slate-100"
-    }`;
 
   return (
-    <nav aria-label={`${hub.label} pages`} className="relative border-b border-(--neu-edge)">
+    <nav aria-label={`${hub.label} pages`} className="border-b border-(--neu-edge)">
       <ul className="flex">
-        {tabs.map((page) => {
+        {hub.pages.map((page) => {
           const active = page.href === currentPage.href;
           const count = badges[page.href] ?? 0;
           return (
             <li key={page.href} className="min-w-0 flex-auto md:flex-none">
-              <Link href={page.href} prefetch aria-current={active ? "page" : undefined} className={tabClass(active)}>
+              <Link
+                href={page.href}
+                prefetch
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-11 items-center justify-center gap-1 whitespace-nowrap px-1 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5 ${
+                  active
+                    ? "text-signal-fg after:absolute after:inset-x-1 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-signal md:after:inset-x-3"
+                    : "text-slate-400 hover:text-slate-100"
+                }`}
+              >
                 <span className="min-w-0 truncate">{page.label}</span>
                 {count > 0 && <span aria-label={`${count} waiting`} className="h-2 w-2 shrink-0 rounded-full bg-signal" />}
               </Link>
             </li>
           );
         })}
-        {more.length > 0 && (
-          <li className="min-w-0 flex-auto md:flex-none">
-            <button type="button" aria-expanded={moreOpen} aria-haspopup="menu" onClick={() => setMoreOpen((v) => !v)} className={`${tabClass(moreActive)} w-full`}>
-              <span className="min-w-0 truncate">{moreActive ? currentPage.label : "More"}</span>
-              <ChevronDown aria-hidden className={`h-3.5 w-3.5 shrink-0 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
-              {moreWaiting > 0 && <span aria-label={`${moreWaiting} waiting`} className="h-2 w-2 shrink-0 rounded-full bg-signal" />}
-            </button>
-          </li>
-        )}
       </ul>
-      {moreOpen && (
-        <>
-          <button type="button" aria-label="Close menu" tabIndex={-1} onClick={() => setMoreOpen(false)} className="fixed inset-0 z-20 cursor-default" />
-          <ul role="menu" className="glass-menu absolute right-0 top-full z-30 mt-1 min-w-[12rem] rounded-2xl p-1.5">
-            {more.map((page) => (
-              <li key={page.href} role="none">
-                <Link
-                  role="menuitem"
-                  href={page.href}
-                  prefetch
-                  onClick={() => setMoreOpen(false)}
-                  aria-current={page.href === currentPage.href ? "page" : undefined}
-                  className={`tap flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-small ${page.href === currentPage.href ? "text-signal-fg" : "text-slate-100 hover:bg-slate-50/10"}`}
-                >
-                  {page.label}
-                  {(badges[page.href] ?? 0) > 0 && <span aria-label={`${badges[page.href]} waiting`} className="h-2 w-2 rounded-full bg-signal" />}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </nav>
   );
 }

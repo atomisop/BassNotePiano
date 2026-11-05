@@ -18,7 +18,7 @@ export default async function AdminSecurityPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
       </div>
     );
@@ -41,7 +41,7 @@ export default async function AdminSecurityPage() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">System</h1>
+      <h1 className="sr-only">System</h1>
       {/* The site's machinery (moved here from the Overview 2026-10-30): the scheduled jobs and the page views, then the content
           security policy reports. */}
       <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

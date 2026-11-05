@@ -17,10 +17,7 @@ import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectSt
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
 import { consumeRateLimit, RateLimitError as RateLimitErr } from "@/lib/rateLimit";
 import { TwoStepError, beginSetup, confirmSetup, disableTwoStep, regenerateBackupCodes } from "@/lib/adminTwoStep";
-import { sendPasswordChangedEmail, sendNotificationEmail } from "@/lib/email";
-import { logAudit } from "@/lib/audit";
-import { isOwnerEmail } from "@/lib/adminNotifications";
-import { looksLikeEmail } from "@/lib/familyMemberCheck";
+import { sendPasswordChangedEmail } from "@/lib/email";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, pausePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 
@@ -84,90 +81,6 @@ export async function requestPasswordChangeCodeAction(currentPassword: string, n
     throw err;
   }
   return { ok: true as const };
-}
-
-// ---------------------------------------------------------------------------
-// Changing the sign-in email, for every role. The current password is
-// re-checked at both steps and the code goes to the NEW address, so only
-// someone who can read it can claim it. The owner's address is the one the
-// server settings name (OWNER_EMAIL), so it cannot be changed from here.
-// ---------------------------------------------------------------------------
-
-async function checkEmailChange(currentPassword: string, newEmailInput: string) {
-  const { id } = await requireSession();
-  const newEmail = newEmailInput.trim().toLowerCase();
-  if (!looksLikeEmail(newEmail)) return { ok: false as const, error: "Enter a valid email address." };
-  const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
-  if (!user) return { ok: false as const, error: "Not signed in." };
-  if (isOwnerEmail(user.email)) {
-    return { ok: false as const, error: "This is the studio owner address, which is set on the server, so it can't be changed here." };
-  }
-  if (!user.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
-    return { ok: false as const, error: "Current password is incorrect." };
-  }
-  if (newEmail === user.email.toLowerCase()) return { ok: false as const, error: "That is already your email." };
-  const taken = await prisma.user.findFirst({ where: { email: { equals: newEmail, mode: "insensitive" } }, select: { id: true } });
-  if (taken || isOwnerEmail(newEmail)) return { ok: false as const, error: "That email can't be used. Try another one." };
-  return { ok: true as const, id, newEmail, oldEmail: user.email, name: user.name };
-}
-
-/** Step 1: checks the password and the new address, then emails a code to the NEW address. */
-export async function requestEmailChangeCodeAction(currentPassword: string, newEmail: string) {
-  const { id } = await requireSession();
-  try {
-    await consumeRateLimit(prisma, `email-change:${id}`, { windowMinutes: 60, max: 6, message: "Too many tries. Wait a while and try again." });
-  } catch (err) {
-    if (err instanceof RateLimitErr) return { ok: false as const, error: err.message };
-    throw err;
-  }
-  const check = await checkEmailChange(currentPassword, newEmail);
-  if (!check.ok) return check;
-  try {
-    const result = await createAndSendCode({ email: check.newEmail, userId: check.id, purpose: "CHANGE_EMAIL" });
-    if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code. Try again in a moment." };
-  } catch (err) {
-    if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
-    throw err;
-  }
-  return { ok: true as const };
-}
-
-/** Step 2: re-checks everything and the code, then switches the account to the new address. */
-export async function updateEmailAction(currentPassword: string, newEmail: string, code: string) {
-  const check = await checkEmailChange(currentPassword, newEmail);
-  if (!check.ok) return check;
-  const verified = await verifyCode(check.newEmail, "CHANGE_EMAIL", code.trim());
-  if (!verified.ok) {
-    const REASON_MESSAGE: Record<typeof verified.reason, string> = {
-      not_found: "Request a verification code first.",
-      expired: "That code expired. Request a new one.",
-      too_many_attempts: "Too many incorrect attempts. Request a new code.",
-      incorrect: "Incorrect code.",
-    };
-    return { ok: false as const, error: REASON_MESSAGE[verified.reason] };
-  }
-  if (verified.userId !== check.id) return { ok: false as const, error: "Request a verification code first." };
-  try {
-    await prisma.user.update({
-      where: { id: check.id },
-      data: { email: check.newEmail, emailVerified: new Date(), sessionVersion: { increment: 1 } },
-    });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      return { ok: false as const, error: "That email can't be used. Try another one." };
-    }
-    throw err;
-  }
-  await logAudit({ actorId: check.id, actorEmail: check.newEmail, action: "account.email-change", targetType: "User", targetId: check.id, detail: `Sign-in email changed from ${check.oldEmail} to ${check.newEmail}` });
-  // The old address is told, so a takeover cannot go unnoticed.
-  try {
-    await sendNotificationEmail(check.oldEmail, "Your sign-in email was changed", `The email you sign in to Bass Note Piano with was changed to ${check.newEmail}. If this was not you, contact us right away at music@bassnotepiano.com.`, "notice");
-  } catch (err) {
-    console.error("Failed to send email-changed notice:", err);
-  }
-  // No revalidatePath here: it would re-render the page with this device's old session stamp, which the bump above has just
-  // made out of date. The screen calls update() next, which re-stamps the session, and shows the new address itself.
-  return { ok: true as const, email: check.newEmail };
 }
 
 /** Deleting the account also deletes its payment and booking records, so a student who is still paying (or whose payment is being checked) has to sort that out first. */
@@ -235,16 +148,6 @@ export async function signOutOtherDevicesAction() {
   return { ok: true as const };
 }
 
-/** Signs out one device from the list (never this one: that is the normal sign out). Its session stops working on its next request. */
-export async function signOutDeviceAction(deviceId: string) {
-  const { id } = await requireSession();
-  const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
-  if (deviceId === mine) return { ok: false as const, error: "Use Sign out to leave this device." };
-  const res = await prisma.knownDevice.updateMany({ where: { id: deviceId, userId: id }, data: { signedOutAt: new Date() } });
-  if (res.count === 0) return { ok: false as const, error: "That device is no longer in the list." };
-  return { ok: true as const };
-}
-
 export interface SignedInDevice {
   id: string;
   label: string;
@@ -260,7 +163,7 @@ export interface SignedInDevice {
 export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
   const { id } = await requireSession();
   const [rows, mine] = await Promise.all([
-    prisma.knownDevice.findMany({ where: { userId: id, signedOutAt: null }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
+    prisma.knownDevice.findMany({ where: { userId: id }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
     currentDeviceId(id, (await headers()).get("user-agent")),
   ]);
   const now = Date.now();

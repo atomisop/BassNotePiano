@@ -95,28 +95,6 @@ export async function listAnnouncements(): Promise<AdminAnnouncementRow[]> {
   }));
 }
 
-/**
- * Fixes an announcement's wording. The banner shows the new text at once, and the bell entries it already made are changed too (the
- * ones still carrying the old wording). An email already sent cannot be changed.
- */
-export async function updateAnnouncement(id: string, title: string, body: string) {
-  const trimmedTitle = title.trim();
-  const trimmedBody = body.trim();
-  if (!trimmedTitle) throw new AnnouncementError("Title can't be empty.");
-  if (!trimmedBody) throw new AnnouncementError("Message can't be empty.");
-  if (trimmedTitle.length > MAX_TITLE_LENGTH) throw new AnnouncementError(`Title is too long (${MAX_TITLE_LENGTH} characters max).`);
-  if (trimmedBody.length > MAX_BODY_LENGTH) throw new AnnouncementError(`Message is too long (${MAX_BODY_LENGTH} characters max).`);
-  const old = await prisma.announcement.findUnique({ where: { id } });
-  if (!old) throw new AnnouncementError("That announcement no longer exists.");
-  await prisma.$transaction([
-    prisma.announcement.update({ where: { id }, data: { title: trimmedTitle, body: trimmedBody } }),
-    prisma.notification.updateMany({
-      where: { type: "ANNOUNCEMENT", title: old.title, body: old.body, createdAt: { gte: new Date(old.createdAt.getTime() - 60_000) } },
-      data: { title: trimmedTitle, body: trimmedBody },
-    }),
-  ]);
-}
-
 export async function setAnnouncementActive(id: string, active: boolean) {
   return prisma.announcement.update({ where: { id }, data: { active } });
 }

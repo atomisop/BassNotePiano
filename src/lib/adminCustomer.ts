@@ -25,7 +25,6 @@
 // ============================================================================
 
 import type { Prisma } from "@prisma/client";
-import { latestActivity } from "@/lib/lastActivity";
 import { prisma } from "@/lib/prisma";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { getUserPaymentHistory, type UserPaymentRecord } from "@/lib/payments";
@@ -66,7 +65,6 @@ export interface CustomerProfile {
     lastActivityAt: Date | null;
     bannedAt: Date | null;
     bannedReason: string | null;
-    paymentLockedAt: Date | null;
   };
   roadmap: ScaleAccessState[];
   payments: UserPaymentRecord[];
@@ -100,10 +98,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       primaryInstrument: true,
       currentStreak: true,
       lastActivityDate: true,
-      knownDevices: { select: { lastSeenAt: true }, orderBy: { lastSeenAt: "desc" }, take: 1 },
       bannedAt: true,
       bannedReason: true,
-      paymentLockedAt: true,
     },
   });
   if (!user) return null;
@@ -142,10 +138,9 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       hasCurriculumAccess: user.hasCurriculumAccess,
       primaryInstrument: user.primaryInstrument,
       currentStreak: user.currentStreak,
-      lastActivityAt: latestActivity(user.knownDevices[0]?.lastSeenAt, user.lastActivityDate),
+      lastActivityAt: user.lastActivityDate,
       bannedAt: user.bannedAt,
       bannedReason: user.bannedReason,
-      paymentLockedAt: user.paymentLockedAt,
     },
     roadmap,
     payments,

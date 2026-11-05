@@ -118,14 +118,8 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   async function apply() {
     if (!input || !preview) return;
     setBusy(true);
-    const hold = await toast.held(
-      "Applying the plan",
-      () => planBuilderApplyAction(input, key, notify).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null, result: undefined })),
-      { mail: notify },
-    );
+    const result = await planBuilderApplyAction(input, key, notify).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null, result: undefined }));
     setBusy(false);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) return setError(result.error ?? "Could not apply.");
     const done = result.result;
     const classes = (stored: number) => `${stored / 2} credit${stored === 2 ? "" : "s"}`;

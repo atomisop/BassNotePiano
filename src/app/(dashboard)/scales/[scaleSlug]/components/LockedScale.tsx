@@ -48,11 +48,6 @@ export function LockedScale({ scaleLabel, scaleSlug, message }: { scaleLabel: st
               {message.primary.label}
             </Link>
           )}
-          {message.secondary && (
-            <Link href={message.secondary.href} className={buttonVariants({ variant: "secondary" })}>
-              {message.secondary.label}
-            </Link>
-          )}
           {message.canAsk && (
             <button
               type="button"

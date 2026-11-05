@@ -11,7 +11,6 @@ import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Coins } from "@/components/ui/appIcons";
-import { toast } from "@/components/ui/Toaster";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -134,12 +133,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     const parsed = creditsToStored(mode === "revoke" ? -Number(amount) : Number(amount));
     setSubmitting(true);
     try {
-      const h = await toast.held("Adjusting credits", () => onAdjust(selected.id, parsed, reason.trim(), notify), { mail: notify });
-      if (h.undone) {
-        setConfirming(false);
-        return;
-      }
-      const result = h.value;
+      const result = await onAdjust(selected.id, parsed, reason.trim(), notify);
       if (!result.ok) {
         setError(result.error);
         setConfirming(false);

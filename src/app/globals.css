@@ -1659,8 +1659,6 @@ body:has([data-surface="app"]) {
   transform: rotate(calc(var(--i) * 30deg));
   opacity: calc(var(--p, 0) * 12 - var(--i));
 }
-/* The ring is smaller than the old one (32px), so its spokes are scaled to match. */
-.ptr-well .ptr-spoke { width: 2px; height: 5px; margin: -9px 0 0 -1px; transform-origin: 50% 9px; }
 .ptr-well[data-phase="refreshing"] .ptr-spoke {
   opacity: 1;
   animation: ptr-fade 0.9s linear infinite;
@@ -1675,34 +1673,6 @@ body:has([data-surface="app"]) {
     animation: ptr-pulse 1.4s ease-in-out infinite;
     animation-delay: 0s;
   }
-}
-/* The pixel cat (PianoCat.tsx): still while you pull, dancing while it refreshes. Steps, not tweens, so it moves like pixel art. */
-.ptr-cat-body { transform-box: fill-box; transform-origin: 50% 100%; }
-.ptr-cat-note { opacity: 0; }
-.is-dancing .ptr-cat-body { animation: ptr-cat-sway 0.8s steps(1, end) infinite; }
-.is-dancing .ptr-cat-paw-a { animation: ptr-cat-paw 0.4s steps(1, end) infinite; }
-.is-dancing .ptr-cat-paw-b { animation: ptr-cat-paw 0.4s steps(1, end) infinite reverse; }
-.is-dancing .ptr-cat-note { animation: ptr-cat-note 1.6s steps(8, end) infinite; }
-@keyframes ptr-cat-sway {
-  0% { transform: translateY(0) rotate(-5deg); }
-  25% { transform: translateY(-4px) rotate(0deg); }
-  50% { transform: translateY(0) rotate(5deg); }
-  75% { transform: translateY(-4px) rotate(0deg); }
-}
-@keyframes ptr-cat-paw {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-@keyframes ptr-cat-note {
-  0% { opacity: 0; transform: translateY(8px); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-14px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .is-dancing .ptr-cat-body,
-  .is-dancing .ptr-cat-paw-a,
-  .is-dancing .ptr-cat-paw-b,
-  .is-dancing .ptr-cat-note { animation: none; }
 }
 @keyframes ptr-pulse {
   0%, 100% { opacity: 0.35; }
@@ -1979,11 +1949,6 @@ input[type="radio"],
   }
   html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] {
     height: min(560px, calc(var(--vv-height, 100svh) - 1.5rem)) !important;
-  }
-  /* On a phone Atom is a bottom sheet: it sits right on the keyboard and fills what is left above it. */
-  @media (max-width: 767px) {
-    html[data-keyboard="open"] .kb-atom { bottom: var(--kb-height, 0px) !important; }
-    html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] { height: calc(var(--vv-height, 100svh) - 0.5rem) !important; }
   }
   html[data-keyboard="open"] .kb-hide {
     display: none !important;
@@ -2337,24 +2302,7 @@ html[data-kb-motion="off"] .cmd-window {
 /* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
    still begins below the bar, by padding inside the scroll area. A notice banner, when there is one, takes the bar's room instead. */
 .app-scroll-under-bar {
-  /* --bar-h is the real height of the top card (BarTitle.tsx), which grows by a row when a page title sits in it on phones. */
-  padding-top: calc(var(--bar-h, calc(max(0.375rem, env(safe-area-inset-top)) + 3rem)) + 1rem);
-}
-/* On phones the page's own heading moves into the top card (BarTitle.tsx); what it copied is hidden here. */
-@media (max-width: 767.98px) {
-  html[data-bar-title] [data-deck-header] h1,
-  html[data-bar-title] h1[data-page-title],
-  html[data-bar-title] [data-deck-header] .tracking-caps:has(+ h1),
-  html[data-bar-title] [data-deck-header]:not(:has(> :not(h1):not(.tracking-caps))) {
-    display: none !important;
-  }
-  html .app-shell-col > .announcement-banner,
-  html .app-shell-col > .bill-bar {
-    margin-top: calc(var(--bar-h, calc(max(0.375rem, env(safe-area-inset-top)) + 3rem)) + 0.5rem);
-  }
-  html .app-shell-col > .announcement-banner ~ .bill-bar {
-    margin-top: 0.75rem;
-  }
+  padding-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3rem + 1rem);
 }
 @media (min-width: 768px) {
   .app-scroll-under-bar {
@@ -2370,16 +2318,6 @@ html[data-kb-motion="off"] .cmd-window {
   margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
 }
 .app-shell-col:has(> .announcement-banner) .app-scroll-under-bar {
-  padding-top: 1rem;
-}
-/* The bill bar (BillBar.tsx) sits in the same place, outside the scroll area so it never scrolls away; under the announcement when both show. */
-.app-shell-col > .bill-bar {
-  margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
-}
-.app-shell-col > .announcement-banner ~ .bill-bar {
-  margin-top: 0.75rem;
-}
-.app-shell-col:has(> .bill-bar) .app-scroll-under-bar {
   padding-top: 1rem;
 }
 
@@ -2537,56 +2475,31 @@ body:has([data-surface="app"]) .glass-surface-modal {
 [data-mode="light"] .app-dock-active {
   background: rgb(0 0 0 / 0.07);
 }
-/* The dock: an exact copy of Instagram's floating tab bar (measured from the owner's screenshots, 2026-10-31, after the lens version
-   drew as a square grey bar). A dark smoky tint over a heavy frost, a glass rim that is brightest along the top, a soft drop shadow, and a
-   light capsule behind the current tab. White icons on Ink, near-black on Paper. Keep this look unless the owner asks. */
-.ig-dock {
-  isolation: isolate;
-  corner-shape: round;
-  background: rgb(26 27 30 / 0.72);
-  -webkit-backdrop-filter: blur(26px) saturate(1.7);
-  backdrop-filter: blur(26px) saturate(1.7);
-  box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
-  --ig-icon: rgb(255 255 255);
+/* The dock (a copy of Instagram's tab bar): the lens (GlassLens) frosts and bends the page, so the pill itself only adds a smoky dark or
+   milky white tint, a hairline rim and a soft shadow, and carries no blur of its own (a backdrop-filter here would wall the lens off).
+   Brought back 2026-10-31 at the owner's request ("bring back the Instagram dock"), after the flat matte versions. */
+.app-dock.app-dock-lens {
+  background: rgb(44 44 47 / 0.66);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 28px -10px rgb(0 0 0 / 0.7);
+}
+[data-mode="light"] .app-dock.app-dock-lens {
+  background: rgb(252 252 253 / 0.72);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+}
+.app-dock-lens .app-dock-active {
+  background: rgb(255 255 255 / 0.16);
+}
+[data-mode="light"] .app-dock-lens .app-dock-active {
+  background: rgb(0 0 0 / 0.07);
+}
+/* The filled icon's cut-out details take the capsule's look over the pill. */
+.app-dock-lens .dock-icon {
   --dock-cut: rgb(78 78 81);
 }
-/* The rim: a 1px ring, bright at the top, faint down the sides, catching a little light again along the bottom curve. */
-.ig-dock::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.32) 0%, rgb(255 255 255 / 0.1) 35%, rgb(255 255 255 / 0.06) 65%, rgb(255 255 255 / 0.16) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  pointer-events: none;
-}
-.ig-dock-active {
-  corner-shape: round;
-  background: rgb(255 255 255 / 0.2);
-  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.12);
-}
-.ig-dock-icon {
-  color: var(--ig-icon);
-}
-.ig-dock-dot {
-  background: rgb(255 48 64);
-}
-[data-mode="light"] .ig-dock {
-  background: rgb(250 250 252 / 0.78);
-  box-shadow: 0 10px 30px -10px rgb(30 30 60 / 0.28), 0 2px 6px rgb(30 30 60 / 0.08);
-  --ig-icon: rgb(10 10 12);
-  --dock-cut: rgb(226 226 230);
-}
-[data-mode="light"] .ig-dock::before {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.95) 0%, rgb(0 0 0 / 0.06) 40%, rgb(0 0 0 / 0.06) 70%, rgb(255 255 255 / 0.6) 100%);
-}
-[data-mode="light"] .ig-dock-active {
-  background: rgb(0 0 0 / 0.08);
-  box-shadow: none;
+[data-mode="light"] .app-dock-lens .dock-icon {
+  --dock-cut: rgb(232 232 234);
 }
 
 
@@ -2680,24 +2593,22 @@ body {
   height: 8rem;
   background: rgb(var(--ground));
 }
-/* The pinned heading becomes a soft card (2026-11-01, owner: the blur under the greeting looked broken and did not fade in smoothly). While
-   pinned, a rounded card fades in behind the heading with a faint edge and a wide, soft shadow below it, so what scrolls underneath
-   meets a gentle halo instead of a band of blur that appears at once. It sits above the ground fill (a border-image is painted before
-   negative z-index children) and below the heading's own content. */
+/* Below the heading: what scrolls under it fades and softens gradually over 3rem (a soft blur that eases out with the fade), instead
+   of meeting a hard edge. It eases in when the heading pins rather than appearing at once. */
 .deck-header::after {
-  top: 0.25rem;
-  bottom: 0.25rem;
-  inset-inline: -0.75rem;
-  z-index: -1;
-  border-radius: 16px;
-  background: rgb(var(--neu-base, 22 22 23) / 0.92);
-  border: 1px solid rgb(255 255 255 / 0.07);
-  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.18);
-  transition: opacity 380ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-[data-mode="light"] .deck-header::after {
-  border-color: rgb(0 0 0 / 0.06);
-  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.22), 0 2px 6px rgb(0 0 0 / 0.08);
+  top: 100%;
+  height: 3rem;
+  background: linear-gradient(
+    rgb(var(--ground)) 0%,
+    rgb(var(--ground) / 0.82) 22%,
+    rgb(var(--ground) / 0.52) 48%,
+    rgb(var(--ground) / 0.22) 74%,
+    rgb(var(--ground) / 0) 100%
+  );
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
+  mask-image: linear-gradient(black 0%, black 30%, transparent 100%);
 }
 .deck-header[data-stuck]::before,
 .deck-header[data-stuck]::after {
@@ -2797,205 +2708,3 @@ html[data-offline] [data-top-banner] {
     padding: 0 !important;
   }
 }
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------
-   Opening animation of the installed phone app (see lib/launchSplash.ts). Only drawn while the boot script has set html[data-splash].
-   The mark settles in with a soft ring struck once behind it (a note played), the name follows, then the whole layer lifts away when
-   the app is ready (LaunchSplash adds .is-leaving). Opacity and transform only. If the script that lifts it never runs, the failsafe
-   animation hides it by itself, so it can never keep the app covered.
-   ------------------------------------------------------------------------------------------------------------------------------ */
-.bnp-splash {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  align-items: center;
-  justify-content: center;
-  /* Always true black with the logo dead centre, exactly like the phone's launch images (public/splash), so the hand-over from the
-     phone's own launch screen to this layer shows no change at all. */
-  background: #000;
-  pointer-events: auto;
-  animation: bnp-splash-failsafe 6s linear forwards;
-}
-html[data-splash] .bnp-splash {
-  display: flex;
-}
-.bnp-splash-stage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 112px;
-  height: 112px;
-}
-.bnp-splash-mark {
-  width: 112px;
-  height: 112px;
-  border-radius: 9999px;
-  background: url("/icon.png") center / cover no-repeat;
-  /* Already there on the first frame; it only breathes slowly. */
-  animation: bnp-splash-breathe 3200ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
-}
-.bnp-splash-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  border: 2px solid rgb(var(--signal, 255 138 76));
-  opacity: 0;
-  animation: bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 300ms 1 forwards, bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 1700ms 1 forwards;
-}
-.bnp-splash-word {
-  position: absolute;
-  top: calc(50% + 56px + 28px);
-  left: 0;
-  right: 0;
-  text-align: center;
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgb(245 245 245 / 0.72);
-  opacity: 0;
-  animation: bnp-splash-word-in 800ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards;
-}
-.bnp-splash.is-leaving {
-  animation: bnp-splash-out 320ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-}
-.bnp-splash.is-leaving .bnp-splash-stage {
-  transform: scale(1.06);
-  transition: transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-@keyframes bnp-splash-breathe {
-  0% { transform: scale(1); }
-  55% { transform: scale(1.07); }
-  100% { transform: scale(1.03); }
-}
-@keyframes bnp-splash-ring {
-  0% { opacity: 0.55; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.7); }
-}
-@keyframes bnp-splash-word-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes bnp-splash-out {
-  from { opacity: 1; }
-  to { opacity: 0; visibility: hidden; }
-}
-@keyframes bnp-splash-failsafe {
-  0%, 92% { opacity: 1; visibility: visible; }
-  100% { opacity: 0; visibility: hidden; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bnp-splash-mark { animation: none; }
-  .bnp-splash-word { animation: bnp-splash-fade 400ms ease 300ms forwards; }
-  .bnp-splash-ring { display: none; }
-  .bnp-splash.is-leaving .bnp-splash-stage { transform: none; transition: none; }
-  .bnp-splash.is-leaving { animation-duration: 200ms; }
-}
-@keyframes bnp-splash-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Date and time boxes on phones (2026-11-02, owner: the "Class already taught on" and "Billing cycle starts on" boxes in the plan builder were
-   invisible on an iPhone). An empty native date input on iOS draws nothing at all: no placeholder, no height, and a fill the same colour as
-   the sheet it sits in. Give every one a hairline edge, a real height, left-aligned text and a hint while it is empty, and let the picker
-   follow the theme. */
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"],
-input[type="month"] {
-  display: block;
-  min-height: 44px;
-  text-align: left;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  color-scheme: dark;
-}
-[data-mode="light"] input[type="date"],
-[data-mode="light"] input[type="time"],
-[data-mode="light"] input[type="datetime-local"],
-[data-mode="light"] input[type="month"] {
-  border-color: rgb(0 0 0 / 0.14);
-  color-scheme: light;
-}
-input[type="date"]::-webkit-date-and-time-value,
-input[type="time"]::-webkit-date-and-time-value,
-input[type="datetime-local"]::-webkit-date-and-time-value,
-input[type="month"]::-webkit-date-and-time-value {
-  text-align: left;
-  min-height: 1.5em;
-}
-/* Only on iPhone and iPad (the touch-callout test matches iOS only): Android and computers already draw mm/dd/yyyy in an empty box. */
-@supports (-webkit-touch-callout: none) {
-input[type="date"][value=""]::before,
-input[type="date"]:not([value])::before {
-  content: "Choose a date";
-  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
-}
-input[type="time"][value=""]::before {
-  content: "Choose a time";
-  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
-}
-}
-input[type="date"]:disabled,
-input[type="time"]:disabled {
-  opacity: 0.5;
-}
-
-/* Pricing cards: the colours are registered so a change (Just me to Group) glides instead of jumping. */
-/* Colours that change with the Just me / Group flip: plain transitions on ordinary properties (no registered custom properties,
-   so nothing below a card is restyled on every frame), and the gradient and glow are two stacked layers that cross-fade. */
-.tier-layer { transition: opacity 600ms ease; will-change: opacity; }
-.tier-card {
-  background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--tier-tint) 38%, transparent), color-mix(in srgb, var(--tier-tint) 6%, transparent) 62%, transparent);
-}
-.tier-accent { color: var(--tier-accent); transition: color 600ms ease; }
-.tier-accent-bg { background-color: var(--tier-accent); transition: background-color 600ms ease, filter 150ms ease; }
-.tier-glow {
-  /* Small enough to fade out inside the carousel's side padding on a phone, so nothing is cut off. */
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 26px -4px color-mix(in srgb, var(--tier-glow) 45%, transparent);
-}
-@media (min-width: 1024px) {
-  .tier-glow {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 56px -8px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 110px -34px color-mix(in srgb, var(--tier-glow) 40%, transparent);
-  }
-}
-.tier-price { color: #ffffff; }
-:root:not([data-theme="ink"]) .tier-price { color: #0b0b0b; }
-/* The warm wash behind the page while a group plan is on: strongest at the bottom edge of the screen, fading up. */
-.tier-wash {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  transition: opacity 600ms ease;
-  will-change: opacity;
-  background:
-    radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.2), rgb(255 122 48 / 0.07) 40%, transparent 68%);
-}
-@keyframes tier-star-rise {
-  0% { transform: translateY(0) scale(0.5); opacity: 0; }
-  15% { opacity: 0.95; }
-  100% { transform: translateY(-190px) scale(1); opacity: 0; }
-}
-.tier-star {
-  position: absolute;
-  bottom: 12%;
-  background: var(--tier-accent);
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-  will-change: transform, opacity;
-  transition: background-color 600ms ease;
-  animation: tier-star-rise var(--star-d, 4s) ease-out var(--star-delay, 0s) infinite;
-  opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .tier-star { display: none; }
-  .tier-layer, .tier-accent-bg, .tier-wash { transition-duration: 1ms; }
-}
-
-/* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
-.tier-starter { background-color: #ffffff; color: #000000; }
-:root:not([data-theme="ink"]) .tier-starter { background-color: #0b0b0b; color: #ffffff; }

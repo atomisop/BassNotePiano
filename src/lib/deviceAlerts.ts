@@ -82,7 +82,7 @@ export async function recordSignInDevice(user: { id: string; email: string; name
     const deviceHash = createHash("sha256").update(`${user.id}|${key}`).digest("hex");
     const known = await prisma.knownDevice.findUnique({ where: { userId_deviceHash: { userId: user.id, deviceHash } } });
     if (known) {
-      await prisma.knownDevice.update({ where: { id: known.id }, data: { lastSeenAt: new Date(), signedInAt: new Date(), signedOutAt: null, ...place } });
+      await prisma.knownDevice.update({ where: { id: known.id }, data: { lastSeenAt: new Date(), signedInAt: new Date(), ...place } });
       return;
     }
     const others = await prisma.knownDevice.count({ where: { userId: user.id } });
@@ -99,7 +99,7 @@ export async function recordSignInDevice(user: { id: string; email: string; name
   }
 }
 
-export function hashFor(userId: string, userAgent: string | null | undefined): string {
+function hashFor(userId: string, userAgent: string | null | undefined): string {
   return createHash("sha256").update(`${userId}|${describeDevice(userAgent).key}`).digest("hex");
 }
 
@@ -130,10 +130,4 @@ export async function touchDevice(userId: string, userAgent: string | null | und
   } catch (err) {
     console.error("Device check-in failed (non-blocking):", err);
   }
-}
-
-/** True when the person signed this browser out from the devices list; the session on it is then treated as signed out. */
-export async function isDeviceSignedOut(userId: string, userAgent: string | null | undefined): Promise<boolean> {
-  const row = await prisma.knownDevice.findUnique({ where: { userId_deviceHash: { userId, deviceHash: hashFor(userId, userAgent) } }, select: { signedOutAt: true } });
-  return Boolean(row?.signedOutAt);
 }

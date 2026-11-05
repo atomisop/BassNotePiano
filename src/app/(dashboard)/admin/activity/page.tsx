@@ -23,7 +23,7 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can see the activity log.</p>
       </div>
     );
@@ -59,7 +59,7 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Activity</h1>
+      <h1 className="sr-only">Activity</h1>
       <p className="mt-2 text-small text-slate-500">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</p>
 
       <form method="get" action="/admin/activity" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Filter the activity log">

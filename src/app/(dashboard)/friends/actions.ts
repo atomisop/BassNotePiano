@@ -10,8 +10,6 @@ import {
   unblockUser,
   SocialError,
 } from "@/lib/social";
-import { sendNudge } from "@/lib/nudge";
-import { getFriendProfile } from "@/lib/friendProfile";
 import { RateLimitError } from "@/lib/rateLimit";
 
 async function requireUserId(): Promise<string> {
@@ -41,22 +39,6 @@ export async function respondToFriendRequestAction(requestId: string, accept: bo
     const userId = await requireUserId();
     await respondToFriendRequest(userId, requestId, accept);
     revalidatePath("/friends");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
-  }
-}
-
-/** One friend's practice and badges, for the panel that opens under their row. Null unless they are an accepted friend (see getFriendProfile). */
-export async function getFriendProfileAction(username: string) {
-  const userId = await requireUserId();
-  return getFriendProfile(userId, username);
-}
-
-export async function nudgeFriendAction(friendId: string) {
-  try {
-    const userId = await requireUserId();
-    await sendNudge(userId, friendId);
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };

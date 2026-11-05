@@ -156,12 +156,11 @@ export function PianoKeyboard({
     <div>
       {/* Horizontal scroll rather than shrinking the keys: below roughly
           320px a two-octave keyboard gives each white key under 20px, which
-          is narrower than a fingertip. Scrolling keeps them playable. 42px a white key
-          makes a black key (60% of that) 25px, the minimum a finger can hit (2026-11-02). */}
+          is narrower than a fingertip. Scrolling keeps them playable. */}
       <div className="-mx-1 overflow-x-auto px-1 pb-2">
         <div
           className="relative mx-auto touch-manipulation select-none piano-case rounded-b-control rounded-t-sm p-1.5 pt-2 shadow-plane-mid"
-          style={{ minWidth: `${whiteCount * 42}px`, height: 176 }}
+          style={{ minWidth: `${whiteCount * 36}px`, height: 176 }}
           role="group"
           aria-label="Piano keyboard. Scale notes are marked; tap a key to hear it."
         >

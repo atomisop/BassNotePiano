@@ -126,7 +126,7 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
                     <p className="min-w-0 text-body font-medium text-slate-50">
                       {r.userId ? (
-                        <Link href={`/admin/users/${r.userId}`} className="tap inline-flex items-center underline-offset-4 hover:underline">{r.name ?? r.email}</Link>
+                        <Link href={`/admin/users/${r.userId}`} className="underline-offset-4 hover:underline">{r.name ?? r.email}</Link>
                       ) : (
                         <span>{r.email}</span>
                       )}
@@ -154,7 +154,7 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                     {r.userId && (
                       <>
                         <span aria-hidden>·</span>
-                        <Link href={link({ user: r.userId, page: 1 })} className="tap inline-flex items-center underline underline-offset-4 hover:text-slate-300">All sent to them</Link>
+                        <Link href={link({ user: r.userId, page: 1 })} className="underline underline-offset-4 hover:text-slate-300">All sent to them</Link>
                       </>
                     )}
                   </p>
@@ -189,7 +189,7 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                     <span className={`rounded-full px-2 py-0.5 font-medium ${CHANNEL_TONE[g.channel]}`}>{CHANNEL_LABEL[g.channel]}</span>
                     <span>{whenDay(g.firstAt) === whenDay(g.lastAt) ? whenDay(g.lastAt) : `${whenDay(g.firstAt)} to ${whenDay(g.lastAt)}`}</span>
                     <span aria-hidden>·</span>
-                    <Link href={link({ q: g.title, view: "people", page: 1, channel: g.channel })} className="tap inline-flex items-center underline underline-offset-4 hover:text-slate-300">Who got it</Link>
+                    <Link href={link({ q: g.title, view: "people", page: 1, channel: g.channel })} className="underline underline-offset-4 hover:text-slate-300">Who got it</Link>
                   </p>
                 </li>
               ))}

@@ -1,6 +1,4 @@
 import { PageHitBeacon } from "@/components/marketing/PageHitBeacon";
-import { SessionHintProvider } from "@/components/marketing/SessionHint";
-import { getServerAuthSession } from "@/lib/auth";
 import "./marketing.css";
 
 /**
@@ -24,11 +22,7 @@ import "./marketing.css";
  * navigation is rebuilt, by giving the portal content the same attribute.
  * Noting it here so it is not mistaken for a scoping bug later.
  */
-export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
-  // Read once here, with the request's cookies, so the header can draw "Log in / Get started" or the profile button on the
-  // first paint instead of a placeholder (see SessionHint.tsx). Every page under this layout is already rendered per request
-  // (the middleware gives each one a fresh CSP nonce), so this adds no new dynamic rendering.
-  const session = await getServerAuthSession();
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   // Always the dark "ink" theme here: the public pages have one look, whatever
   // light or dark theme a signed-in visitor picked for the app.
   return (
@@ -48,7 +42,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <PageHitBeacon />
       {/* How far down the page you are, in place of a scrollbar (see .scroll-progress in globals.css). */}
       <div aria-hidden className="scroll-progress scroll-progress-page" />
-      <SessionHintProvider signedIn={Boolean(session?.user)}>{children}</SessionHintProvider>
+      {children}
     </div>
   );
 }

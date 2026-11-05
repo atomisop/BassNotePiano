@@ -177,25 +177,7 @@ export async function listParentBills(parentId: string, zelleHandle: string): Pr
     for (const plan of group.plans) {
       if (plan.userId === parentId) continue; // the parent's own bill is on their own Billing page
       const { payment } = await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle);
-      if (payment?.purpose === "FAMILY_PLAN_INSTALLMENT") {
-        // The group's one combined bill: listed once, naming everyone it covers.
-        const existing = bills.find((b) => b.paymentId === payment.id);
-        if (existing) {
-          existing.childIds.push(plan.userId);
-          existing.childName = `${existing.childName}, ${plan.user.name ?? plan.user.email}`;
-        } else {
-          bills.push({
-            paymentId: payment.id,
-            childIds: [plan.userId],
-            childName: plan.user.name ?? plan.user.email,
-            label: "28-day bill",
-            status: payment.status as ParentBill["status"],
-            rejectionReason: payment.rejectionReason,
-            amountCents: payment.amountCents,
-            planName: describePaymentPlan(plan.cadence, plan.term),
-          });
-        }
-      } else if (payment) {
+      if (payment) {
         bills.push({
           paymentId: payment.id,
           childIds: [plan.userId],

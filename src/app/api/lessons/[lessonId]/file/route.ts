@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { reportError } from "@/lib/reportError";
 import { getServerAuthSession } from "@/lib/auth";
 import { canAccessScale } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
@@ -50,7 +49,7 @@ export async function GET(request: Request, props: { params: Promise<{ lessonId:
     const label = `${session.user.name ?? "Student"} (${session.user.email ?? session.user.id})`;
     // If a file cannot be stamped (damaged or locked), the student is not shown it unstamped.
     const stamped = await watermarkPdf(original, label).catch((err) => {
-      reportError(err, `Could not watermark lesson ${lesson.id}`);
+      console.error(`Could not watermark lesson ${lesson.id}:`, err);
       return null;
     });
     if (!stamped) return new NextResponse("This file could not be prepared. Please tell your teacher.", { status: 500 });

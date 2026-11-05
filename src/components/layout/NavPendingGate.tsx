@@ -9,6 +9,7 @@ import DashboardLoading from "@/app/(dashboard)/dashboard/loading";
 import RoadmapLoading from "@/app/(dashboard)/roadmap/loading";
 import LessonsLoading from "@/app/(dashboard)/lessons/loading";
 import FriendsLoading from "@/app/(dashboard)/friends/loading";
+import MessagesLoading from "@/app/(dashboard)/messages/loading";
 import AccountLoading from "@/app/(dashboard)/account/loading";
 
 export const NAV_PENDING_EVENT = "bnp-nav-pending";
@@ -18,6 +19,7 @@ const SKELETONS: Record<string, () => ReactNode> = {
   "/roadmap": () => <RoadmapLoading />,
   "/lessons": () => <LessonsLoading />,
   "/friends": () => <FriendsLoading />,
+  "/messages": () => <MessagesLoading />,
   "/account": () => <AccountLoading />,
 };
 

@@ -247,16 +247,6 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   (`lessonWatermark.ts`) and is never cached. Lessons live in a private bucket (`R2_PRIVATE_BUCKET_NAME`, `fileUrl` = `private:<key>`);
   until that is set and `scripts/move-lessons-private.mjs` has run, the old public addresses still work through the same route.
 
-## One combined bill per cycle for a group (added 2026-11-02, `paymentBundles.ts`)
-
-A group (family plan or parent mode) with two or more open 28-day bills pays ONE bill: a `FAMILY_PLAN_INSTALLMENT` payment owned by the group's payer, amount = the members' bills added up (a pause or discount just changes a member's own amount). Each member keeps their own bill row (it carries their credits and plan progress) but while it is open it points at the combined bill (`ZellePayment.bundleId`). `getOrCreateOpenInstallmentPayment` opens every started member's due bill, then `syncGroupBundle` builds, updates or dissolves the combined bill (fewer than two open bills, or a plan ended, dissolves it; a solo plan never joins one). Approving the combined bill (through `approveZellePayment`, so admin approval, auto-approval and bank-email matching all work) approves every member bill with `skipReceipt` and sends ONE receipt to the payer listing each person's part. A bank email is matched to the combined bill by the payer's name and the total; bundled member rows are left out of every matching query (`bundleId: null`). Revenue sums skip `FAMILY_PLAN_INSTALLMENT` rows so money is counted once (on the member rows); the admin list and a person's history show the combined bill, not its members. Only the payer ever pays or submits: a member (a child) is refused server-side and never sees a pay button, and the daily installments job notifies the payer with the pay button and, in a family group (not parent mode), the other members at the same moment with "nothing for you to pay". Refunding the combined bill refunds each member bill. `expireSettledGroupStarts` (daily `credit-expiry`) closes a group's combined FIRST payment once every member is already paid.
-
-## Owner controls for money (added 2026-11-02)
-
-Owner only, all audited (`payment.refund-undone`, `payment.cancel-bill`, `plan.progress`): **Undo refund** on a refunded payment in Billing > Payments (`undoRefundZellePayment`; optionally gives back the credits the refund took and runs the plan again if the refund ended it; classes canceled with it are not restored; a refunded combined group bill undoes every member bill). **Cancel bill** closes an unpaid or rejected bill as EXPIRED and keeps the record (`cancelOpenBill`; Delete still removes a row). **Plan progress** on the student page (`setPlanProgress`, `AdminPlanProgressButton`) sets bills paid and the next bill date with none of the bill-date limits (any date, a past one too; a finished plan reopens), closes unpaid bills, and never touches credits or booked classes. Refund a bill without ending its plan and the admin is warned the plan still counts it.
-
-**Money check** (Admin > Billing > Check, `/admin/money-check`, owner only, `src/lib/moneyCheck.ts`): lists what does not add up (a plan whose bills paid differs from its really paid bills, an open bill nobody owes, a group's combined first payment still open though every member paid), each with a two-step button (`applyMoneyFix`, re-checks first, quiet: the student is not told). Run against the live data on 2026-11-02 after the manual fixes it found nothing. A new kind of check goes in `findMoneyIssues` with a test in `tests/db/moneyCheck.test.ts`.
-
 ## Family plans (added 2026-10-14, `docs/FAMILY-PLANS.md`)
 
 2 to 8 accounts (`MIN_FAMILY_MEMBERS` / `MAX_FAMILY_MEMBERS` in `classCreditPricing.ts`, shared by the form and the server), one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
@@ -601,10 +591,6 @@ student's figures in four column groups (account, learning, classes and money, h
 Insights: fixed checks over the studio's own numbers (`buildInsights` in `adminInsightsRules.ts`, pure and tested), each a finding with its numbers and one thing to
 try; nothing is sent to Gemini or anywhere else, and a check needs `MIN_SAMPLE` (3) people before it speaks. Add a new check there with a test.
 
-## Admin navigation pattern (added 2026-11-05, `docs/ADMIN-PATTERN.md`)
-
-Two levels at most: six sections, each showing its everyday pages as tabs and the rest under a **More** tab (`more: true` in `adminNav.ts`, `splitHubPages`). A person's page is one scroll of six collapsible sections with a sticky index (no tabs hiding content), a single top row (Message, Add credits, Book a class, one Notify switch) and one **Plan** menu (`ActionMenu`) whose rare owner tools sit under "Advanced". Cmd-K does jobs for a person (`?do=` links, `commandRecents.ts`), the Overview opens with **Needs you** (`needsYou.ts`), and a tap on an Accounts row opens a side summary on computers (`PersonPeekPanel`). A job appears once per screen; never add a third row of tabs.
-
 ## Admin Overview (reworked 2026-10-30)
 
 `/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
@@ -681,11 +667,9 @@ naming the account), including the rare old curriculum payment that is approved 
 card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).
 
 The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
-down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
-grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
-its `::before` in globals.css; milky white with near-black icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
-current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
-down shrinks the whole pill in both directions (a scale anchored at its bottom). The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is the Instagram dock (#319, brought back 2026-10-31 at the owner's request after the flat matte
+versions):** a 53pt pill whose GlassLens frosts and bends the page, a smoky dark tint on Ink and a milky white one on Paper (`.app-dock.app-dock-lens` in globals.css), the BNP hand-drawn icons
+filled on the current tab, and scrolling down narrows it sideways (same height, icons closer) instead of shrinking it. The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
 
@@ -703,36 +687,3 @@ Reschedule (the arrows on a student's class, `StudentScheduler`) replaced Move: 
 any time, past ones too (`rescheduleClassBooking(..., { byAdmin: true, anyTime: true })`; the calendar's `allowPast` opens the last 180 days). A class
 booked on the wrong day is put on the right one and marked there, with no refund and re-charge; a marked class must be undone first. A move into the
 past never tells the student.
-
-## Switches (added 2026-10-31)
-
-Every on/off switch uses one look (`components/ui/switch.tsx`, the owner's request): off is a visible track (a tint of the theme's text color)
-with a small orange dot on the left; on is a full orange track with the dot grown into a white knob flipped right. Use `<Switch>`; a hand-built
-`role="switch"` button (one that carries its own label) draws `<SwitchLook on={...} />` inside it. Never style a switch some other way. The
-dark/light toggle in Appearance (`LiquidThemeToggle`) is a different control (a mode picker, not on/off) and keeps its own look.
-
-## Studio tools on the student page (added 2026-10-31)
-
-Each person on a group or parent plan has their own plan, so the studio manages it on its own: the plan builder, studio pause and late
-settling accept a group member's plan once the group's combined first payment is approved (`assertGroupPlanStarted` in `planBuilder.ts`).
-**Weekly time** (`AdminWeeklyTimeButton`, `adminWeeklyTime.ts`, any admin) moves one plan's standing time and every upcoming class on it
-(`changeReservedSlot(..., { byAdmin: true })`). Owner only: **Plan settings** (`AdminPlanSettingsButton`, `adminPlanTools.ts`: length,
-exact price per bill (refused while a personal discount sets it), next 28 days free as a $0 VERIFIED "Waived by the studio" installment
-through `applyPlanInstallment`), **Restart canceled plan**, and in the Account card **Edit details** / **Send reset code** / **Free trial**
-plus **Credit expiry** in the Class credits card (`adminAccountTools.ts`). Any admin: **Cancel all upcoming** (one notice) and Schedule >
-Reserved > **Close a day** (`adminClassTools.ts`: cancels the day's classes and keeps the day as a "Studio closed" owner reservation, released
-there to reopen). All take the Notify switch except the reset code, which always goes. Elements a server page passes into a client
-component's slot prop need a `key`, or React warns in development.
-
-Owner only, in `adminGroupTools.ts`: **Group** (Scheduler tab, `AdminGroupButton`) lists who is on a group or parent plan and who pays,
-moves one person onto their own plan (`separateFromGroup`: same time, term and credits, solo price with their discount from the next bill,
-their unpaid group bill closed; a group payer must hand over first) and changes the payer (`changeGroupPayer`: a running member of a group
-plan, or for a parent plan a parent linked to every child). **Parent links** (Account card, `AdminParentLinksButton`) shows a person's links
-both ways and links a parent and child directly as ACCEPTED (both told, the child can still end it) or ends one. **Fix** on an approved
-payment in the Money tab (`adminPaymentTools.ts`) corrects its amount or day (`reviewedAt`, noon Eastern) without touching what it paid
-for. Any admin: lessons can be renamed (`updateLessonText`) and announcements edited (`updateAnnouncement`, which also rewrites the bell
-entries still carrying the old words).
-
-## Bill bar and the non-payment lock (added 2026-11-02)
-
-`BillBar` (`components/billing/BillBar.tsx`, under the top bar on every signed-in screen, cannot be closed) shows from the day a renewal bill (second payment on) opens, `payments.installmentLeadDays` before it is due, until it is sent. It reads `billDue` from the live status (`getBillDue` in `meStatus.ts`; a parent sees a child's parent-plan bill and goes to `/parent`, the child never does). Wording is `billBarText` (`billBarRules.ts`, tested): a friendly reminder through the due day, red "we still haven't received your payment" for 2 late days, then "You will lose access in X days". When `payments.lapseAfterDays` pass, `lapsePlanForNonPayment` cancels the plan as before AND `lockForNonPayment` (`paymentLock.ts`) sets `User.paymentLockedAt` on whoever pays the bill (never an admin, never for a first bill that never arrived) and bumps `sessionVersion`. A locked account is refused like a ban (`authorize`, `loginStepOneAction`, `getServerAuthSession`) with `PAYMENT_LOCKED_CODE` (`paymentLockCodes.ts`, browser safe), and every sign-in screen then opens the public `/account-locked` page (contact support opens Atom). Only an admin lifts it ("Lift payment lock" on the student page, audited `user.payment-unlock`); the canceled plan stays canceled.

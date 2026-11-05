@@ -58,7 +58,7 @@ export default async function ProfilePage() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Profile</p>
-          <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">{user.name ?? "Student"}</h1>
+          <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">{user.name ?? "Student"}</h1>
           {user.username && <p className="text-small text-slate-500">@{user.username}</p>}
         </div>
         <ProfileEditButton

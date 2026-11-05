@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { announceChange } from "@/lib/liveEvents";
-import { PianoCat } from "./PianoCat";
 
 // Pull distance (px, after the rubber-band curve below) that counts as "refresh", where the page rests while it refreshes, and the
 // farthest it can ever travel.
-const THRESHOLD_PX = 76;
-const HOLD_PX = 76;
-const MAX_PX = 150;
+const THRESHOLD_PX = 64;
+const HOLD_PX = 56;
+const MAX_PX = 120;
+const SPOKES = 12;
 // The spinner shows for at least this long, so a fast refresh does not look like a flash.
 const MIN_SPIN_MS = 700;
 // Never leave the spinner up forever if the server is slow.
@@ -57,10 +57,6 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     setPhaseState(next);
   }
 
-  function topBar(): HTMLElement | null {
-    return document.querySelector<HTMLElement>("[data-topbar]");
-  }
-
   // Moves the page and the spinner to `pull` px without touching React state.
   function paint(pull: number, animate: boolean) {
     const content = contentRef.current;
@@ -69,12 +65,6 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     const ease = animate ? "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)" : "none";
     content.style.transition = ease;
     content.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
-    // The top card (logo, title, buttons) is pulled down together with the page, as one piece.
-    const bar = topBar();
-    if (bar) {
-      bar.style.transition = ease;
-      bar.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
-    }
     const progress = Math.min(1, pull / THRESHOLD_PX);
     indicator.style.transition = animate ? "opacity 200ms ease-out" : "none";
     indicator.style.opacity = String(Math.min(1, pull / 28));
@@ -90,11 +80,6 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     const clear = () => {
       content.style.transform = "";
       content.style.transition = "";
-      const bar = topBar();
-      if (bar) {
-        bar.style.transform = "";
-        bar.style.transition = "";
-      }
       content.removeEventListener("transitionend", clear);
     };
     content.addEventListener("transitionend", clear);
@@ -219,29 +204,31 @@ export function PullToRefreshMain({ className, children }: { className: string; 
         content.style.transform = "";
         content.style.transition = "";
       }
-      const bar = topBar();
-      if (bar) {
-        bar.style.transform = "";
-        bar.style.transition = "";
-      }
     };
   }, []);
 
   return (
     <main id="app-scroll" ref={mainRef} className={className}>
       <div ref={contentRef} className="relative">
-        {children}
-      </div>
-      <div
-        ref={indicatorRef}
-        aria-hidden
-        data-phase={phase}
-        className="ptr-well pointer-events-none fixed inset-x-0 top-[env(safe-area-inset-top)] z-[44] flex h-[76px] items-center justify-center gap-3 opacity-0"
-        style={{ ["--p" as string]: 0, ["--s" as string]: 0.6 }}
-      >
-        <div className={`ptr-cat-wrap ${phase === "refreshing" || phase === "armed" ? "is-dancing" : ""}`} style={{ transform: "scale(var(--s, 1))" }}>
-          <PianoCat size={76} />
+        <div
+          ref={indicatorRef}
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[-3.25rem] z-40 -translate-x-1/2 opacity-0"
+          style={{ ["--p" as string]: 0, ["--s" as string]: 0.6 }}
+        >
+          <div
+            data-phase={phase}
+            className={`ptr-well relative h-10 w-10 rounded-full bg-neu-base shadow-raised-mid transition-colors duration-150 ${
+              phase === "armed" || phase === "refreshing" ? "text-slate-50" : "text-slate-400"
+            }`}
+            style={{ transform: "scale(var(--s, 1))" }}
+          >
+            {Array.from({ length: SPOKES }).map((_, i) => (
+              <span key={i} className="ptr-spoke" style={{ ["--i" as string]: i }} />
+            ))}
+          </div>
         </div>
+        {children}
       </div>
       <span role="status" aria-live="polite" className="sr-only">
         {phase === "refreshing" ? "Refreshing" : phase === "armed" ? "Release to refresh" : ""}

@@ -6,7 +6,6 @@ import type { EmployeeRow } from "@/lib/admin";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { toast } from "@/components/ui/Toaster";
 
 export interface EmployeeListProps {
   employees: EmployeeRow[];
@@ -27,9 +26,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
     setBusyId(id);
     setError(null);
     try {
-      const hold = await toast.held("Removing their access", () => onRevoke(id));
-      if (hold.undone) return;
-      const result = hold.value;
+      const result = await onRevoke(id);
       if (!result.ok) {
         setError(result.error);
         return;

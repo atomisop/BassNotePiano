@@ -39,7 +39,7 @@ export function PrivacyContent() {
         <p>
           What you give us directly: your name, email, and password when you register; your
           profile photo, instrument, skill level, and goals if you fill those in; messages you
-          send to the studio through the app; private notes you write on a scale&apos;s lesson
+          send to friends or groups inside the app; private notes you write on a scale&apos;s lesson
           page (visible only to you, deleted with your account); and, when you pay by Zelle or Venmo, the sender name
           and reference code you type in so we can match your transfer. If you use the class
           registration form before creating an account, that&apos;s your name, email, phone number,
@@ -100,7 +100,7 @@ export function PrivacyContent() {
         </p>
         <p>
           Other students can see what you&apos;d expect from a social feature: your profile (name,
-          username, photo) if you add each other as friends, and a nudge to practice if a friend sends you one (fixed wording, never anything they type).
+          username, photo) if you add each other as friends, and anything you send them directly.
           If someone buys a &quot;family bundle&quot; of class credits for other accounts (say, a parent
           buying for each of their kids), typing your email into that flow tells them whether an
           account exists at that address and the name on it. That check requires them to already

@@ -1,10 +1,13 @@
 "use server";
 
 import { getServerAuthSession } from "@/lib/auth";
+import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getUnreadCount, getRecentNotifications, markAllNotificationsRead, markNotificationRead } from "@/lib/notifications";
 import { notificationTarget } from "@/lib/notificationTargets";
 import { dismissAnnouncement } from "@/lib/announcements";
 import { getMailUnreadCount, listMail } from "@/lib/mail";
+import { getTotalUnreadMessageCount } from "@/lib/messages";
+import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 
 export interface NotificationRow {
   id: string;
@@ -73,4 +76,21 @@ export async function dismissAnnouncementAction(announcementId: string): Promise
   const session = await getServerAuthSession();
   if (!session?.user) return;
   await dismissAnnouncement(session.user.id, announcementId);
+}
+
+// AppDock's own message badge used to be a plain server-rendered prop from
+// the dashboard layout, computed once per request, so reading a message
+// never cleared it until the next full navigation re-ran that layout (a
+// client-side route change inside the same layout doesn't re-fetch it).
+// Polled client-side now instead, same shape as fetchNotificationsAction
+// above.
+export async function fetchUnreadMessageCountAction(): Promise<number> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return 0;
+  const [direct, group, support] = await Promise.all([
+    getTotalUnreadMessageCount(session.user.id),
+    getTotalUnreadGroupMessageCount(session.user.id),
+    getSupportUnreadCount(session.user.id),
+  ]);
+  return direct + group + support;
 }

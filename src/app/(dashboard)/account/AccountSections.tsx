@@ -12,13 +12,12 @@ import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";
 import { AddToHomeSteps, isStandalone } from "@/components/pwa/AddToHomeSteps";
-import { updatePasswordAction, requestPasswordChangeCodeAction, signOutOtherDevicesAction, signOutDeviceAction, listSignedInDevicesAction, type SignedInDevice, updateNotificationPreferencesAction, requestAccountDeletionCodeAction, confirmAccountDeletionAction, type NotificationPreferencesInput } from "./actions";
+import { updatePasswordAction, requestPasswordChangeCodeAction, signOutOtherDevicesAction, listSignedInDevicesAction, type SignedInDevice, updateNotificationPreferencesAction, requestAccountDeletionCodeAction, confirmAccountDeletionAction, type NotificationPreferencesInput } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
 import { buttonVariants } from "@/components/ui/button";
 import { Laptop, Smartphone, Tablet } from "@/components/ui/appIcons";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { SectionCard } from "./SectionCard";
-import { toast } from "@/components/ui/Toaster";
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
 
@@ -184,6 +183,7 @@ export function PasswordSection() {
       <PushCard />
       <CalendarFeedCard />
       <SignedInDevicesCard />
+      <SignOutOtherDevicesCard />
     </div>
   );
 }
@@ -382,9 +382,6 @@ function CalendarFeedCard() {
   }
 
   async function reset() {
-    setConfirmReset(false);
-    // The old link stops working for good, so this waits for Undo.
-    if (!(await toast.hold("Making a new calendar link"))) return;
     setBusy(true);
     try {
       const r = await fetch("/api/me/calendar", { method: "POST" });
@@ -427,29 +424,7 @@ function CalendarFeedCard() {
 }
 
 function SignedInDevicesCard() {
-  const { update } = useSession();
   const [devices, setDevices] = useState<SignedInDevice[] | null>(null);
-  const [busyId, setBusyId] = useState<string | "all" | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function signOutOne(id: string) {
-    setBusyId(id);
-    setError(null);
-    const result = await signOutDeviceAction(id).catch(() => ({ ok: false as const, error: "That didn't go through. Try again." }));
-    setBusyId(null);
-    if (!result.ok) setError(result.error);
-    else setDevices((prev) => prev && prev.filter((d) => d.id !== id));
-  }
-
-  async function signOutAll() {
-    setBusyId("all");
-    setError(null);
-    await signOutOtherDevicesAction().catch(() => undefined);
-    // Re-stamp this device's own token first, so the device that clicked stays signed in.
-    await update();
-    setBusyId(null);
-    window.dispatchEvent(new Event("bnp:devices-changed"));
-  }
 
   useEffect(() => {
     let alive = true;
@@ -492,30 +467,51 @@ function SignedInDevicesCard() {
                     {new Date(d.signedInAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <span className="flex items-center gap-1.5 text-small text-slate-400">
-                    <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${d.active ? "bg-green-400 shadow-[0_0_6px_rgb(74_222_128/0.8)]" : "bg-slate-600"}`} />
-                    {d.active ? "Active now" : "Not active"}
-                  </span>
-                  {!d.isThisDevice && (
-                    <button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                      {busyId === d.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                      Sign out
-                    </button>
-                  )}
-                </div>
+                <span className="flex shrink-0 items-center gap-1.5 text-small text-slate-400">
+                  <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${d.active ? "bg-green-400 shadow-[0_0_6px_rgb(74_222_128/0.8)]" : "bg-slate-600"}`} />
+                  {d.active ? "Active now" : "Not active"}
+                </span>
               </li>
             );
           })}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
-      {devices && devices.some((d) => !d.isThisDevice) && (
-        <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", className: "mt-4" })}>
-          {busyId === "all" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-          Sign out of all other devices
-        </button>
-      )}
+    </SectionCard>
+  );
+}
+
+// Standalone, on-demand version of what a password change now also does,
+// for someone who wants this without changing their password, e.g. after
+// using a shared or public computer.
+function SignOutOtherDevicesCard() {
+  const { update } = useSession();
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleClick() {
+    setSubmitting(true);
+    await signOutOtherDevicesAction();
+    // Re-stamp this device's own token first, same reasoning as the
+    // password form above, so this button doesn't sign out the device that
+    // clicked it.
+    await update();
+    setSubmitting(false);
+    setSuccess(true);
+    window.dispatchEvent(new Event("bnp:devices-changed"));
+  }
+
+  return (
+    <SectionCard advanced title="Sign out of other devices">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={submitting}
+        className={buttonVariants({ variant: "secondary" })}
+      >
+        {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+        {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
+      </button>
+      {success && !submitting && <p className="mt-3 text-small text-slate-50">Done. This device stays signed in.</p>}
     </SectionCard>
   );
 }

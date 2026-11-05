@@ -11,7 +11,6 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "ACCOUNT_DELETED", label: "A student deleted their account while classes were booked", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "FAILED_LOGIN_SPIKE", label: "Many failed sign-in attempts in an hour", group: "People", defaultOn: false, ownerOnly: true },
   { kind: "ACCOUNT_BANNED", label: "An account was banned or a ban was lifted", group: "People", defaultOn: true, ownerOnly: false },
-  { kind: "EMAIL_BOUNCED", label: "An email to a student bounced (the address may be mistyped)", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_REGISTRATION", label: "New class registration", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },

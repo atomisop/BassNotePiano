@@ -70,8 +70,6 @@ export interface OpenInstallmentSummary {
   rejectionReason: string | null;
   amountCents: number;
   installmentNumber: number | null;
-  /** A group's one combined 28-day bill (everyone's part added up), paid once by the payer. */
-  isBundle?: boolean;
 }
 
 interface PaymentPlanEnrollmentFlowProps {
@@ -396,10 +394,10 @@ export function PaymentPlanEnrollmentFlow({
             {memberView
               ? fam.waitingForStart
                 ? `This is a group plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
-                : `This is a group plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill, together with everyone else's, from their own bank account. You never have to pay it yourself.`
+                : `This is a group plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`
               : fam.waitingForStart
                 ? `Group plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
-                : `Group plan for ${fam.memberCount} accounts. You pay one combined 28-day bill for everyone, from your own bank account, and get one receipt.`}
+                : `Group plan for ${fam.memberCount} accounts. You pay every member's 28-day bill from your own bank account.`}
             {fam.memberNames && fam.memberNames.length > 0 && ` In this group: ${fam.memberNames.join(", ")}.`}
             {fam.weeklyTime && ` Your own weekly class: ${fam.weeklyTime}. It is not a shared class, and everyone else in the group picks their own times.`}
           </p>
@@ -408,7 +406,7 @@ export function PaymentPlanEnrollmentFlow({
           <ZelleUnlockGate
             status={installment.status}
             rejectionReason={installment.rejectionReason}
-            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : installment.isBundle ? `One bill for ${fam?.memberCount ?? "everyone in the"} accounts` : `Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : `Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
             scaleTitle={planLabel}
             eyebrowLabel={fam ? "Group plan" : "Payment Plan"}
             amountCents={installment.amountCents}

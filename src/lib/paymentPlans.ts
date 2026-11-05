@@ -1,4 +1,3 @@
-import { lockForNonPayment } from "@/lib/paymentLock";
 import { addBillingCycles } from "@/lib/billingCycle";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
@@ -296,33 +295,6 @@ export async function getOrCreateOpenInstallmentPayment(
   planId: string,
   zelleHandle: string,
   now: Date = new Date(),
-): Promise<OpenInstallmentPayment> {
-  const startedAt = Date.now();
-  const result = await getOrCreateMemberInstallmentPayment(planId, zelleHandle, now);
-  // A group's open bills are held inside ONE combined bill (paymentBundles.ts): that is what the payer is shown, pays and gets a
-  // receipt for. A person on a plan of their own, or a group with fewer than two open bills, keeps the ordinary bill.
-  if (!result.payment || result.payment.status !== "AWAITING_TRANSFER") return result;
-  if (result.payment.bundleId) {
-    // Already held in a combined bill (possibly sent or rejected): that is the bill, never the member's own row.
-    const held = await prisma.zellePayment.findUnique({ where: { id: result.payment.bundleId } });
-    if (held && held.status !== "AWAITING_TRANSFER") return { payment: held, wasCreated: false };
-  }
-  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true, installmentsPaid: true } });
-  if (!plan?.familyGroupId || plan.installmentsPaid === 0) return result;
-  // Every started member's bill that is due is opened first, so the combined bill holds all of them whichever member's page asks first.
-  const siblings = await prisma.paymentPlan.findMany({ where: { familyGroupId: plan.familyGroupId, status: "ACTIVE", installmentsPaid: { gt: 0 }, id: { not: planId } }, select: { id: true } });
-  for (const sibling of siblings) await getOrCreateMemberInstallmentPayment(sibling.id, zelleHandle, now);
-  const { syncGroupBundle } = await import("@/lib/paymentBundles");
-  const { bundleId } = await syncGroupBundle(plan.familyGroupId, zelleHandle);
-  if (!bundleId) return result;
-  const bundle = await prisma.zellePayment.findUniqueOrThrow({ where: { id: bundleId } });
-  return { payment: bundle, wasCreated: bundle.createdAt.getTime() >= startedAt - 1000 };
-}
-
-async function getOrCreateMemberInstallmentPayment(
-  planId: string,
-  zelleHandle: string,
-  now: Date,
 ): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
@@ -1018,9 +990,6 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
     select: { id: true },
   });
   if (inReview) return false;
-  // The payer already sent the group's combined bill that holds this plan's bill: it is being reviewed.
-  const bundleInReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, bundle: { status: "PENDING_REVIEW" } }, select: { id: true } });
-  if (bundleInReview) return false;
   // A family that never started (its combined first payment did not arrive) ends together: no member is left half started.
   const failedFamilyStart = Boolean(plan.familyGroupId) && plan.installmentsPaid === 0;
 
@@ -1056,22 +1025,12 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
     }
   }
 
-  // A renewal bill that never arrived also locks the account of whoever pays it (a parent pays a child's): see paymentLock.ts.
-  let lockedUserId: string | null = null;
-  if (!options.firstBill && plan.installmentsPaid > 0) {
-    const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
-    const payerId = group?.kind === "PARENT" ? group.payerId : plan.userId;
-    if (await lockForNonPayment(payerId, plan.id)) lockedUserId = payerId;
-  }
-
   await createNotification({
     userId: plan.userId,
     type: "PAYMENT_PLAN_CANCELED",
     title: "Your plan was canceled",
     body: options.firstBill
       ? "Your first payment did not arrive in time, so your plan was canceled and your weekly time is open to others again. Start a new plan whenever you are ready."
-      : lockedUserId === plan.userId
-      ? "Your payment did not arrive in time, so your plan was canceled and access to your account is taken away. Contact support to resolve this."
       : "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
     emailCategory: "payments",
   });
@@ -1085,7 +1044,7 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
       ? `${student?.name ?? student?.email ?? "A family"} and the rest of their family never paid the combined first bill, so every member's plan was canceled and the weekly time is free again.`
       : options.firstBill
       ? `${student?.name ?? student?.email ?? "A student"} never paid their first bill, so their plan was canceled and the weekly time is free again.`
-      : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled${lockedUserId ? " and the account that pays it is locked until you lift it on the student page" : ""}.`,
+      : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
     emailCategory: "social",
     cta: { label: "See the plan", path: "/admin/payment-plans?status=CANCELED" },
   });
@@ -1510,7 +1469,7 @@ function money(cents: number): string {
 }
 
 /** A family member left and one person is left: that person pays the solo price from their next bill, and is told now. */
-export async function noticeFamilyShrank(groupId: string): Promise<void> {
+async function noticeFamilyShrank(groupId: string): Promise<void> {
   const remaining = await prisma.paymentPlan.findMany({
     where: { familyGroupId: groupId, status: "ACTIVE", installmentsPaid: { gt: 0 } },
     select: { userId: true, cadence: true, term: true, installmentAmountCents: true },

@@ -16,7 +16,6 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { AdminReservations } from "@/components/admin/AdminReservations";
-import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 
 type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
@@ -61,11 +60,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         <h1 className="sr-only">Weekly schedule</h1>
 
         {viewSwitcher}
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-small text-slate-400">A holiday or a sick day: close it and every class that day is canceled.</p>
-          <AdminCloseDay />
-        </div>
 
         <div className="mt-6">
           <AdminReservations hours={hours} reservations={reservations} />

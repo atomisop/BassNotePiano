@@ -91,8 +91,7 @@ export default async function BillingPlansPage(
       if (isPayer && !waitingForStart) {
         for (const member of group.plans.filter((plan) => plan.userId !== session.user.id)) {
           const { payment } = await getOrCreateOpenInstallmentPayment(member.id, zelleHandle);
-          // The group's combined bill is shown above as the one bill; only a member's own ordinary bill is listed here.
-          if (payment && payment.purpose !== "FAMILY_PLAN_INSTALLMENT") {
+          if (payment) {
             familyBills.push({
               planId: member.id,
               memberName: member.user.name ?? member.user.email,
@@ -181,7 +180,6 @@ export default async function BillingPlansPage(
                   rejectionReason: shownInstallment.rejectionReason,
                   amountCents: shownInstallment.amountCents,
                   installmentNumber: shownInstallment.installmentNumber,
-                  isBundle: shownInstallment.purpose === "FAMILY_PLAN_INSTALLMENT",
                 }
               : null
           }

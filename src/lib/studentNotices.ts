@@ -81,9 +81,7 @@ type AccountChange =
   | { kind: "discord-connected"; name: string }
   | { kind: "discord-disconnected"; by: "you" | "admin" }
   | { kind: "phone-cleared" }
-  | { kind: "signed-out-everywhere"; by: "you" | "admin" }
-  | { kind: "details-changed"; what: string }
-  | { kind: "trial-set"; until: Date | null };
+  | { kind: "signed-out-everywhere"; by: "you" | "admin" };
 
 /** Confirms a change to the account. The in-app notice is always written; the email follows the "Account updates" switch. */
 export function noticeAccountChange(userId: string, change: AccountChange): Promise<void> {
@@ -100,12 +98,6 @@ export function noticeAccountChange(userId: string, change: AccountChange): Prom
         return { title: "Your phone number was removed", body: "The studio removed the phone number from your account. You can add your own number again in Settings." };
       case "signed-out-everywhere":
         return { title: "You were signed out of your devices", body: change.by === "you" ? "You signed out of your other devices. Anyone using them must sign in again." : "The studio signed you out of all your devices. Sign in again to continue. If this is unexpected, change your password." };
-      case "details-changed":
-        return { title: "Your account details changed", body: `The studio updated your ${change.what}. If this looks wrong, message us.` };
-      case "trial-set":
-        return change.until
-          ? { title: "Your free trial was extended", body: `Your free trial now runs until ${change.until.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}.` }
-          : { title: "Your free trial ended", body: "The studio ended your free trial. Pick a class plan to keep learning with your teacher." };
     }
   })();
   return safely("Account change", () => createNotification({ userId, type: "ACCOUNT_UPDATE", title: text.title, body: text.body, emailCategory: "roleUpdates" }));

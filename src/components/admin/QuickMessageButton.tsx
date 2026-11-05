@@ -27,10 +27,8 @@ export function QuickMessageButton({ userId, name }: { userId: string; name: str
     if (!title.trim() || !body.trim()) return setError("Add a title and a message.");
     setBusy(true);
     setError(null);
-    const hold = await toast.held("Sending the message", () => sendMessageAction([userId], title.trim(), body.trim(), sendEmail, false).catch(() => ({ ok: false as const, error: "Something went wrong." })), { mail: sendEmail });
+    const result = await sendMessageAction([userId], title.trim(), body.trim(), sendEmail, false).catch(() => ({ ok: false as const, error: "Something went wrong." }));
     setBusy(false);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) return setError(result.error);
     toast.success(result.summary.emailed > 0 ? `Sent to ${name}, and by email` : `Sent to ${name}'s Mail`);
     setTitle("");

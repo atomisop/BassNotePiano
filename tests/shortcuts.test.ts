@@ -4,7 +4,7 @@ import { goKeysFor, nextShortcutStep, GO_SHORTCUTS } from "@/lib/shortcuts";
 describe("keyboard shortcuts", () => {
   it("G waits for a second key, then goes", () => {
     expect(nextShortcutStep("g", false, false)).toEqual({ kind: "wait" });
-    expect(nextShortcutStep("f", true, false)).toEqual({ kind: "go", href: "/friends" });
+    expect(nextShortcutStep("m", true, false)).toEqual({ kind: "go", href: "/messages" });
   });
   it("a second key that goes nowhere does nothing, and admin pages stay admin-only", () => {
     expect(nextShortcutStep("z", true, false)).toEqual({ kind: "none" });

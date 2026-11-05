@@ -15,7 +15,7 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   ROLE_UPDATED: "/admin",
   FRIEND_REQUEST_RECEIVED: "/friends#requests",
   FRIEND_REQUEST_ACCEPTED: "/friends",
-  NEW_MESSAGE: "/dashboard",
+  NEW_MESSAGE: "/messages",
   PRACTICE_REMINDER: "/practice",
   CLASS_REGISTRATION_RECEIVED: "/admin/students",
   CLASS_REGISTRATION_APPROVED: "/dashboard",
@@ -51,7 +51,6 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   BANNER_PHONE: "/account?tab=account#phone",
   BANNER_DISCORD: "/lessons",
   BANNER_PRACTICE: "/practice",
-  FRIEND_NUDGE: "/practice",
 };
 
 /** Only an in-app path is ever followed: a stored or passed link that is empty, absolute or protocol-relative is ignored. */

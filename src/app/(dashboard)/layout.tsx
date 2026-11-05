@@ -3,11 +3,13 @@ import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
 import { ScrollAssist } from "@/components/layout/ScrollAssist";
 import { DeckStack } from "@/components/layout/DeckStack";
 import { AutoRefresh } from "@/components/layout/AutoRefresh";
-import { PreloadPages } from "@/components/layout/PreloadPages";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getTotalUnreadMessageCount } from "@/lib/messages";
+import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
+import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { NavPendingGate } from "@/components/layout/NavPendingGate";
@@ -25,7 +27,6 @@ import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { TopBanners } from "@/components/ui/TopBanners";
-import { BillBar } from "@/components/billing/BillBar";
 import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
@@ -39,7 +40,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
   // Everything the shell needs is asked for at once, not one after another (it ran on every page).
-  const [user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
+  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
+    getTotalUnreadMessageCount(session.user.id),
+    getTotalUnreadGroupMessageCount(session.user.id),
+    getSupportUnreadCount(session.user.id),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true, notifyEmailReminders: true } }),
     getActiveAnnouncementForUser(session.user.id),
     phoneVerifyMode(),
@@ -49,6 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getPricingConfig(),
     getDiscountPercent(session.user.id),
   ]);
+  const unreadMessageCount = directUnreadCount + groupUnreadCount + supportUnreadCount;
 
   // Text confirmation is off by default. When the owner switches it on, an account made while it was on has to
   // finish confirming its number; older accounts are never blocked, they get a short popup (below) instead.
@@ -108,8 +113,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} alertCards={isAdmin ? sidebarCards : []} />
         <AnnouncementBanner announcement={activeAnnouncement} />
-        {/* An open renewal bill, until it is sent: cannot be closed (BillBar.tsx). */}
-        <BillBar />
         {/* How far down the page you are, in place of a scrollbar (see .scroll-progress in globals.css). */}
         <div aria-hidden className="status-bar-fill" />
         <div aria-hidden className="scroll-progress scroll-progress-app" />
@@ -124,15 +127,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
       <SwipeBack />
       <AutoRefresh />
-      <PreloadPages isAdmin={isAdmin} />
       <Suspense fallback={null}>
         <ScrollAssist />
       </Suspense>
       <DeckStack />
       <div className="lg:hidden">
-        <AppDock isAdmin={isAdmin} />
+        <AppDock unreadMessageCount={unreadMessageCount} ownerAdmin={isOwner} />
       </div>
-      <AppSidebar cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
+      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

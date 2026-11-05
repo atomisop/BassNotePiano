@@ -215,8 +215,5 @@ export const handler = schedule("* * * * *", async () =>
     });
 
     console.log(`Discord class channels: ${created} created, ${removed} removed`);
-    return { statusCode: 200, body: created + removed > 0 ? "changed" : "idle" };
-  }, {
-    // A run that opened or closed nothing writes a run row at most every 15 minutes (see runJob): every minute was 1,440 rows a day.
-    quietWhen: (r) => (r as { body?: string }).body !== "changed",
+    return { statusCode: 200 };
   }));

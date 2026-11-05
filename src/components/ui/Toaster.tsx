@@ -65,9 +65,6 @@ type ToastExtras = {
  * when a toast has a body. A bare one-line toast stays a flat pill and never morphs. So a toast given only a message shows a
  * short label in the pill and the message as the body; one given its own description keeps its own title.
  */
-/** How long an Undo toast waits before it goes away for good. */
-export const UNDO_MS = 5000;
-
 const PILL_LABEL = { success: "Done", error: "Something went wrong", warning: "Heads up", info: "Note" } as const;
 
 function withBody(kind: keyof typeof PILL_LABEL, title: string, description?: SileoOptions["description"]) {
@@ -84,13 +81,13 @@ function show(kind: "success" | "error" | "warning" | "info") {
 }
 
 /**
- * A toast that can be taken back: shows an Undo button for 5 seconds. Pass what to do on Undo; it is not called if the toast is
+ * A toast that can be taken back: shows an Undo button for a few seconds. Pass what to do on Undo; it is not called if the toast is
  * ignored. Use it for quick actions that are cheap to reverse (a removed item, a dismissed notice) instead of a confirm step.
  */
 function undo(title: string, onUndo: () => void | Promise<void>, extras: Omit<ToastExtras, "action"> = {}) {
   return sileo.info({
     ...withBody("info", title, extras.description),
-    duration: extras.duration ?? UNDO_MS,
+    duration: extras.duration ?? 6000,
     button: {
       title: "Undo",
       onClick: () => {
@@ -98,67 +95,6 @@ function undo(title: string, onUndo: () => void | Promise<void>, extras: Omit<To
       },
     },
   });
-}
-
-/** Emails go out 10 seconds after the click (the Undo button is still on screen for the first 5); everything else runs after 5. */
-export const MAIL_HOLD_MS = 10000;
-
-type HeldOptions = { mail?: boolean; description?: SileoOptions["description"] };
-type HeldResult<T> = { undone: true } | { undone: false; value: T };
-
-/**
- * For an action that cannot be reversed once it runs (a delete, a refund, an email). The real action is held back: Undo cancels it
- * (nothing ever happened), and doing nothing, or leaving the page, lets it run. Pass the action as `run`. Resolves `{ undone: true }`
- * if the person took it back, otherwise `{ undone: false, value }` with what the action returned (or throws what it threw), so a
- * caller can keep its own follow-up code. An action that sends an email (`mail: true`) is held 10 seconds instead of 5.
- */
-function held<T>(title: string, run: () => T | Promise<T>, options: HeldOptions = {}): Promise<HeldResult<T>> {
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const finish = () => {
-      clearTimeout(timer);
-      window.removeEventListener("pagehide", go);
-    };
-    const go = () => {
-      if (settled) return;
-      settled = true;
-      finish();
-      Promise.resolve()
-        .then(run)
-        .then((value) => resolve({ undone: false, value }), reject);
-    };
-    const timer = setTimeout(go, options.mail ? MAIL_HOLD_MS : UNDO_MS);
-    // Closing the tab inside the window must not lose what the person asked for.
-    window.addEventListener("pagehide", go);
-    sileo.info({
-      ...withBody("info", title, options.description),
-      duration: UNDO_MS,
-      button: {
-        title: "Undo",
-        onClick: () => {
-          if (settled) return;
-          settled = true;
-          finish();
-          resolve({ undone: true });
-        },
-      },
-    });
-  });
-}
-
-/** Holds the whole step that follows: resolves true to carry on, or false if the person tapped Undo. For code that is awkward to wrap. */
-async function hold(title: string, options: HeldOptions = {}): Promise<boolean> {
-  const r = await held(title, () => true, options);
-  return !r.undone;
-}
-
-/** `held` for something the screen already hid: runs `commit` after the hold, or `onUndo` if it was taken back. */
-function deferred(title: string, commit: () => void | Promise<void>, onUndo: () => void, options: HeldOptions = {}) {
-  void held(title, commit, options)
-    .then((r) => {
-      if (r.undone) onUndo();
-    })
-    .catch(() => {});
 }
 
 /**
@@ -185,9 +121,6 @@ async function run<T>(
 
 export const toast = {
   undo,
-  held,
-  hold,
-  deferred,
   run,
   success: show("success"),
   error: show("error"),

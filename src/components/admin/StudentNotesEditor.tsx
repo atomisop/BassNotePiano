@@ -8,7 +8,6 @@ import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
-import { toast } from "@/components/ui/Toaster";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -24,6 +23,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
   const [draft, setDraft] = useState("");
   const [hidden, setHidden] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,23 +62,13 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
     else setError(r.error);
   }
 
-  function remove(id: string) {
-    const gone = (notes ?? []).find((n) => n.id === id);
+  async function remove(id: string) {
+    setDeleting(true);
+    const r = await deleteStudentNoteAction(id);
+    setDeleting(false);
     setConfirmingDelete(null);
-    if (!gone) return;
-    // Hidden at once; the real delete waits 5 seconds so Undo can still cancel it.
-    setNotes((prev) => (prev ?? []).filter((n) => n.id !== id));
-    toast.deferred(
-      "Note deleted",
-      async () => {
-        const r = await deleteStudentNoteAction(id);
-        if (!r.ok) {
-          setNotes((prev) => [gone, ...(prev ?? [])]);
-          setError(r.error);
-        }
-      },
-      () => setNotes((prev) => [gone, ...(prev ?? [])].sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))),
-    );
+    if (r.ok) setNotes((prev) => (prev ?? []).filter((n) => n.id !== id));
+    else setError(r.error);
   }
 
   return (
@@ -188,7 +178,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   question="Delete this note for good?"
                   confirmLabel="Yes, delete it"
                   busyLabel="Deleting…"
-                  busy={false}
+                  busy={deleting}
                   onCancel={() => setConfirmingDelete(null)}
                   onConfirm={() => void remove(n.id)}
                 />

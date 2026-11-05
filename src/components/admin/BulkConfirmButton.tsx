@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
-import { toast } from "@/components/ui/Toaster";
 
 /** A button for a change that touches many rows at once: the first press asks, the second does it. */
 export function BulkConfirmButton({
@@ -31,9 +30,7 @@ export function BulkConfirmButton({
   async function run() {
     setBusy(true);
     try {
-      const hold = await toast.held(label, () => (notifyPlace ? onConfirm(notify) : onConfirm()), { mail: notifyPlace ? notify : true });
-      if (hold.undone) return;
-      const { message } = hold.value;
+      const { message } = await (notifyPlace ? onConfirm(notify) : onConfirm());
       setResult({ ok: true, text: message });
       router.refresh();
     } catch (err) {
