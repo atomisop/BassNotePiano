@@ -1,4 +1,5 @@
 import { noticeBookingConfirmed } from "@/lib/studentNotices";
+import { planHoldsOccurrence } from "@/lib/planHold";
 import { findOwnerReservation, OWNER_RESERVED_MESSAGE, reservationCovers, reservationIsFor } from "@/lib/ownerReservations";
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
@@ -342,14 +343,14 @@ async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: str
 
   const plans = await tx.paymentPlan.findMany({
     where: { userId: { not: studentId }, reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
-    select: { reservedScheduleId: true, reservedChunkIndex: true },
+    select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
   });
   if (plans.length > 0) {
     const schedules = await tx.classSchedule.findMany({ where: { id: { in: plans.map((p) => p.reservedScheduleId as string) }, dayOfWeek: occurrenceDate.getUTCDay() } });
     for (const plan of plans) {
       const schedule = schedules.find((s) => s.id === plan.reservedScheduleId);
       const chunk = schedule ? chunksForSchedule(schedule).find((c) => c.chunkIndex === plan.reservedChunkIndex) : undefined;
-      if (schedule && chunk && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
+      if (schedule && chunk && planHoldsOccurrence(plan.reservedBookings, occurrenceDate) && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
         throw new ClassBookingError("This time is reserved for another student's payment plan.");
       }
     }
@@ -418,6 +419,11 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
   const bookedKeys = new Set(
     bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
   );
+  // A time another student's plan holds that week shows as taken too, by the same rule the booking check uses.
+  const heldPlans = await prisma.paymentPlan.findMany({
+    where: { reservedScheduleId: { in: schedules.map((x) => x.id) }, ...(viewerId ? { userId: { not: viewerId } } : {}), OR: livePaymentPlanConditions() },
+    select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+  });
   const viewer = viewerId && ownerReservations.length > 0 ? await prisma.user.findUnique({ where: { id: viewerId }, select: { email: true, emailVerified: true } }) : null;
 
   return candidates
@@ -435,7 +441,7 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
         scheduledAt: c.scheduledAt,
         reservedByOwner: blocking.length > 0,
         reservedForYou: covering.length > 0 && blocking.length === 0,
-        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) || blocking.length > 0 || oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
+        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) || blocking.length > 0 || heldPlans.some((p) => p.reservedScheduleId === c.schedule.id && p.reservedChunkIndex === c.chunk.chunkIndex && planHoldsOccurrence(p.reservedBookings, c.occurrenceDate)) || oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
       };
     })
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
@@ -1080,10 +1086,11 @@ export async function bookFamilyClass(
         // reservation on the same chunk, regardless of who's in the family
         // group, since the reservation's own auto-booking is always a solo
         // row for exactly one student.
-        const reservedByPlan = await tx.paymentPlan.findFirst({
+        const reservedPlans = await tx.paymentPlan.findMany({
           where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, OR: livePaymentPlanConditions() },
-          select: { id: true },
+          select: { id: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
         });
+        const reservedByPlan = reservedPlans.some((p) => planHoldsOccurrence(p.reservedBookings, occurrenceDate));
         if (reservedByPlan) {
           throw new ClassBookingError("This time is reserved for another student's payment plan.");
         }
