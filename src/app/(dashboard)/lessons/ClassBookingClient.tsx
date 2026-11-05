@@ -24,6 +24,8 @@ import { MessageSupportButton } from "@/components/lessons/MessageSupportButton"
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { NETWORK_ERROR, type OccurrenceRow, type BookingRow, type BookingMode, type TabId, formatOccurrenceDay, creditsLabel, weekStartMs, formatOccurrenceTime, groupOccurrencesByWeek, groupByMonth, BookingCard, MonthGroup, AttendeeEmailRow } from "./BookingParts";
+import { MaskReveal } from "@/components/ui/MaskReveal";
+import { SuccessPulse } from "@/components/ui/SuccessPulse";
 
 export function ClassBookingClient({
   initialCredits,
@@ -83,6 +85,9 @@ export function ClassBookingClient({
   const [reschedulingKey, setReschedulingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // The message stays on screen while its wipe plays out after `success` is cleared.
+  const lastSuccess = useRef("");
+  if (success) lastSuccess.current = success;
   // Set by tapping a day on the calendar: the times for that day appear below it. It starts on the first day
   // with an open time, so the list of open and taken times is on screen the moment the page opens.
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(() => {
@@ -512,10 +517,14 @@ export function ClassBookingClient({
             {errorNeedsTeam(error) && <MessageSupportButton problem={error} label="Message support about this" />}
           </div>
         )}
-        {success && <p className="mb-4 text-small text-slate-50" role="status">{success}</p>}
+        <MaskReveal show={!!success} from="top">
+          <SuccessPulse pulseKey={success ?? ""}>
+            <p className="mb-4 text-small text-slate-50" role="status">{lastSuccess.current}</p>
+          </SuccessPulse>
+        </MaskReveal>
 
         {tab === "book" && (
-          <div className="min-w-0">
+          <div className="tab-in min-w-0">
             {fifthClassOffer && !extraPayment && (
               <div className="glass-surface mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
@@ -852,7 +861,7 @@ export function ClassBookingClient({
         )}
 
         {tab === "upcoming" && (
-          <div className="max-w-3xl">
+          <div className="tab-in max-w-3xl">
             {upcoming.length === 0 ? (
               <p className="text-small text-slate-500">No upcoming classes. Pick a time under Book.</p>
             ) : (
@@ -876,7 +885,7 @@ export function ClassBookingClient({
         )}
 
         {tab === "past" && (
-          <div className="max-w-3xl">
+          <div className="tab-in max-w-3xl">
             {historyGroups.length === 0 ? (
               <p className="text-small text-slate-500">No past classes yet.</p>
             ) : (

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type AppIcon } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
+import { SharedLayout, SharedLayoutGroup } from "@/components/ui/SharedLayout";
 import { ADMIN_HUBS, hubWaiting, locateAdminPage, splitHubPages, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
 
 /**
@@ -166,11 +167,15 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
   const tabClass = (active: boolean) =>
     `relative flex h-11 items-center justify-center gap-1 whitespace-nowrap px-1 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5 ${
       active
-        ? "text-signal-fg after:absolute after:inset-x-1 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-signal md:after:inset-x-3"
+        ? "text-signal-fg"
         : "text-slate-400 hover:text-slate-100"
     }`;
 
+  // The underline is one element that travels to the chosen tab (revamp rule 20, same layoutId), not a bar that appears on each one.
+  const underline = <SharedLayout id="admin-tab-underline" aria-hidden className="absolute inset-x-1 bottom-[-1px] h-0.5 rounded-full bg-signal md:inset-x-3" />;
+
   return (
+    <SharedLayoutGroup id="admin-section-tabs">
     <nav aria-label={`${hub.label} pages`} className="relative border-b border-(--neu-edge)">
       <ul className="flex">
         {tabs.map((page) => {
@@ -181,6 +186,7 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
               <Link href={page.href} prefetch aria-current={active ? "page" : undefined} className={tabClass(active)}>
                 <span className="min-w-0 truncate">{page.label}</span>
                 {count > 0 && <span aria-label={`${count} waiting`} className="h-2 w-2 shrink-0 rounded-full bg-signal" />}
+                {active && underline}
               </Link>
             </li>
           );
@@ -191,6 +197,7 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
               <span className="min-w-0 truncate">{moreActive ? currentPage.label : "More"}</span>
               <ChevronDown aria-hidden className={`h-3.5 w-3.5 shrink-0 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
               {moreWaiting > 0 && <span aria-label={`${moreWaiting} waiting`} className="h-2 w-2 shrink-0 rounded-full bg-signal" />}
+              {moreActive && underline}
             </button>
           </li>
         )}
@@ -198,7 +205,7 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
       {moreOpen && (
         <>
           <button type="button" aria-label="Close menu" tabIndex={-1} onClick={() => setMoreOpen(false)} className="fixed inset-0 z-20 cursor-default" />
-          <ul role="menu" className="glass-menu absolute right-0 top-full z-30 mt-1 min-w-[12rem] rounded-2xl p-1.5">
+          <ul role="menu" data-state="open" style={{ ["--radix-popper-transform-origin" as string]: "top right" }} className="pop glass-menu absolute right-0 top-full z-30 mt-1 min-w-[12rem] rounded-2xl p-1.5">
             {more.map((page) => (
               <li key={page.href} role="none">
                 <Link
@@ -218,5 +225,6 @@ export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
         </>
       )}
     </nav>
+    </SharedLayoutGroup>
   );
 }

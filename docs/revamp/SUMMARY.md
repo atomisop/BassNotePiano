@@ -18,11 +18,15 @@ The app was already on tokens. A script that measures every button, link, input 
 ## Not done, and why
 - **Not audited at all** (rows marked in `CHECKLIST.md`): the 6 public pages, the 10 sign-in and onboarding pages, the scale player, mail message, parent child view, receipt, and the admin student page, contact page and support thread. The browser pane went hidden and the dev server slowed to minutes per page (the machine ran at a load average near 100 and Next used about 8.7 GB), so I stopped.
 - **Admin screens at 390px and light theme** were not audited.
-- **Rules without a screen-level change:** 6 (cards with child content), 7 (arcs), 8 (success pulse), 9, 14 and 19 (rubber band on sheets and carousels), 16 (page and tab content overlap), 17 (mask reveals), 20 (`layoutId`). The pieces exist and are on the preview page, but I did not wire them into screens. Tabs already slide a thumb, toasts already confirm success, and sheets already have drag physics.
+- **Wired in the second pass (2026-11-05):**
+  - Rule 20: the admin section tab underline is one `SharedLayout` element that travels to the chosen tab (`AdminNav.tsx`); the "More" menu opens with `pop`.
+  - Rules 1 and 16: `tab-in` (fade and 6px rise) on the Lessons hub panels, the booking tabs (book, upcoming, past) and the parent child view tabs. The leaving panel goes at once, so old and new do not truly overlap; a real overlap would need both mounted.
+  - Rules 8 and 17: the "Booked / Canceled / Rescheduled" message on Lessons wipes in with `MaskReveal` and pulses once with `SuccessPulse`.
+  - Rule 6: Home's rows settle in with the stagger.
+- **Still without a screen change, with reasons:** 7 (arc: no screen where an object visibly moves between containers; `useArc` is ready), 14 (pull to refresh and sheet drags already drive refs with no tween while held), 19 (the snap carousel already has a wall spring at its ends and sheets rubber-band on release; `useRubberBand` is ready for a new drag), 9 (everything that moves on screen already uses ease-ios; `--ease-move` is defined but unused).
 - **Not verified in a browser after the change:** the new `ActionMenu` animation, the stagger lists, the icon swaps and the switch stretch. Lint passes on every touched file, and type-checking showed no errors in my files before the ActionMenu change (not re-run after it).
 - **No before and after shots** for screens other than the top bar.
 
 ## Needs your decision
 - Ask AI's orange ring and glow versus "accent only for the main action".
-- Whether to wire the unused pieces (rules 6 to 9, 14, 16, 17, 19, 20) into specific screens, and which.
 - The stray " 2" and " 3" duplicate files (about 40) fail the type check and clutter the repo; I touched none.

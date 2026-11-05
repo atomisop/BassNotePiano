@@ -52,7 +52,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
       </div>
 
       {tab === "progress" && (
-        <section className="mt-6" aria-label="Progress">
+        <section className="tab-in mt-6" aria-label="Progress">
           <p className="text-small text-slate-400">
             <span className="tabular-nums text-slate-50">{open.filter((s) => s.quizPassed).length}</span> of <span className="tabular-nums text-slate-50">{view.scales.length}</span> scales finished ·{" "}
             <span className="tabular-nums text-slate-50">{open.length}</span> open
@@ -92,7 +92,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
       )}
 
       {tab === "practice" && (
-        <section className="mt-6 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Practice">
+        <section className="tab-in mt-6 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Practice">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-small text-slate-400">
             <span>
               <span className="tabular-nums text-slate-50">{view.practice.doneLast7}/7</span> days this week
@@ -124,7 +124,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
       {tab === "classes" && <ChildClasses childId={view.id} upcoming={view.upcoming} recent={view.recent} creditsLabel={view.creditsLabel} />}
 
       {tab === "plan" && (
-        <section className="mt-6 space-y-4" aria-label="Plan">
+        <section className="tab-in mt-6 space-y-4" aria-label="Plan">
           {view.plan ? (
             <div className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
               <p className="text-body font-semibold text-slate-50">{view.plan.name}</p>

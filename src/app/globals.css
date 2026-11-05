@@ -3077,3 +3077,10 @@ html[data-kb-motion="off"] [data-stagger] > * { animation: none !important; }
   .menu-panel, .menu-panel[data-open] { transition: none; transform: none; }
 }
 html[data-kb-motion="off"] .menu-panel { transition: none; }
+
+/* Content that swaps in when a tab is chosen: a fade and a 6px rise on ease-ios (rules 1, 16). A conditionally rendered panel plays it on mount;
+   a panel toggled with `hidden` plays it again each time it becomes visible. The leaving panel goes at once, so the two never fight for space. */
+@media (prefers-reduced-motion: no-preference) {
+  .tab-in { animation: stagger-in var(--dur-base) var(--ease-ios) both; }
+}
+html[data-kb-motion="off"] .tab-in { animation: none !important; }
