@@ -11,13 +11,12 @@ import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
-import { adminBookClass, rescheduleClassBooking, getUpcomingOccurrences, ClassBookingError } from "@/lib/classSchedule";
+import { adminBookClass, rescheduleClassBooking, getUpcomingOccurrences, ClassBookingError, PlanHoldError } from "@/lib/classSchedule";
 import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 import { createOwnerReservation, releaseOwnerReservation, getReservableHours, type ReservableHour } from "@/lib/ownerReservationsAdmin";
 import { logAudit } from "@/lib/audit";
-import { cancelUpcomingClasses, closeStudioDay, previewClosedDay, type ClosedDayPreview } from "@/lib/adminClassTools";
 import { sendReservationEmail } from "@/lib/email";
 import { reportError } from "@/lib/reportError";
 
@@ -116,7 +115,7 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
 export async function getOpenSlotsAction() {
   await requireAdmin();
   const [upcoming, booked, windows] = await Promise.all([
-    getUpcomingOccurrences(),
+    getUpcomingOccurrences(undefined, { forAdmin: true }),
     prisma.classBooking.findMany({
       // From 180 days back (a class can be rescheduled into the past, and past classes may be marked already) to a year ahead.
       where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: new Date(Date.now() - 180 * 86_400_000), lte: new Date(Date.now() + 400 * 86_400_000) } },
@@ -130,8 +129,12 @@ export async function getOpenSlotsAction() {
     /** The weekdays the studio teaches (an active weekly window exists), so the calendar lights only those days. */
     weekdays: Array.from(new Set(windows.map((w) => w.dayOfWeek))),
     open: upcoming
-      .filter((o) => !o.isBooked)
+      .filter((o) => !o.isBooked && !o.heldByPlan)
       .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost })),
+    /** Free of classes but kept by another student's weekly plan (a paused plan, a canceled week). Reschedule offers them with a confirmation. */
+    held: upcoming
+      .filter((o) => !o.isBooked && o.heldByPlan)
+      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost, heldBy: o.heldByPlan as string })),
     booked: booked.map((b) => ({ id: b.id, scheduledAt: b.scheduledAt.toISOString(), name: b.student.name ?? b.student.email })),
   };
 }
@@ -140,32 +143,33 @@ export async function getOpenSlotsAction() {
  * Reschedule: moves a student's class to another open time in one step (the old class is freed and the new one booked together, or nothing
  * changes). Any class not yet marked Present or No-show can move, a past one too (`anyTime`).
  */
-export async function adminMoveBookingAction(bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify = true) {
+export async function adminMoveBookingAction(bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify = true, overridePlanHold = false) {
   return withStudentNotice(notify, async () => {
-    await requireAdmin();
+    const admin = await requireAdmin();
     try {
       const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
-      await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true, anyTime: true });
+      await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true, anyTime: true, overridePlanHold });
+      if (overridePlanHold) await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-over-plan-hold", targetType: "ClassBooking", targetId: bookingId, detail: "Moved into a weekly time another plan keeps" });
       revalidatePath("/", "layout");
       return { ok: true as const };
     } catch (err) {
-      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong.", planHold: err instanceof PlanHoldError };
     }
   });
 }
 
 /** Reschedule to any date and start time (ET), past or future, as long as its 45 minutes overlap no other class. */
-export async function adminMoveBookingToTimeAction(bookingId: string, date: string, time: string, notify = true) {
+export async function adminMoveBookingToTimeAction(bookingId: string, date: string, time: string, notify = true, overridePlanHold = false) {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
     try {
       const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
-      await rescheduleClassBooking(booking.studentId, bookingId, "", 0, 0, undefined, { byAdmin: true, anyTime: true, customTime: { date, time } });
-      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-custom", targetType: "ClassBooking", targetId: bookingId, detail: `${date} ${time} ET` });
+      await rescheduleClassBooking(booking.studentId, bookingId, "", 0, 0, undefined, { byAdmin: true, anyTime: true, customTime: { date, time }, overridePlanHold });
+      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-custom", targetType: "ClassBooking", targetId: bookingId, detail: `${date} ${time} ET${overridePlanHold ? " (over a plan's weekly time)" : ""}` });
       revalidatePath("/", "layout");
       return { ok: true as const };
     } catch (err) {
-      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+      return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong.", planHold: err instanceof PlanHoldError };
     }
   });
 }
@@ -283,45 +287,4 @@ export async function releaseReservationAction(groupId: string): Promise<{ ok: t
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "reservation.release", targetType: "OwnerReservation", targetId: groupId });
   revalidatePath("/", "layout");
   return { ok: true };
-}
-
-/** Cancels every upcoming class of one student, with one notice for all of them. */
-export async function cancelUpcomingClassesAction(userId: string, reason: string, notify = true): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
-  return withStudentNotice(notify, async () => {
-    const admin = await requireAdmin();
-    try {
-      const count = await cancelUpcomingClasses(admin.id, String(userId), String(reason ?? "").slice(0, 200));
-      revalidatePath("/", "layout");
-      return { ok: true as const, count };
-    } catch (err) {
-      if (err instanceof ClassBookingError) return { ok: false as const, error: err.message };
-      throw err;
-    }
-  });
-}
-
-/** What closing a day would cancel. Changes nothing. */
-export async function previewClosedDayAction(date: string): Promise<{ ok: true; preview: ClosedDayPreview } | { ok: false; error: string }> {
-  await requireAdmin();
-  try {
-    return { ok: true, preview: await previewClosedDay(String(date)) };
-  } catch (err) {
-    if (err instanceof ClassBookingError) return { ok: false, error: err.message };
-    throw err;
-  }
-}
-
-/** Closes the studio for a day: cancels its classes (each student told once) and keeps the day free of new bookings. */
-export async function closeStudioDayAction(date: string, reason: string, notify = true): Promise<{ ok: true; canceled: number; label: string } | { ok: false; error: string }> {
-  return withStudentNotice(notify, async () => {
-    const admin = await requireAdmin();
-    try {
-      const result = await closeStudioDay(admin.id, admin.email ?? "", String(date), String(reason ?? "").slice(0, 200));
-      revalidatePath("/", "layout");
-      return { ok: true as const, ...result };
-    } catch (err) {
-      if (err instanceof ClassBookingError) return { ok: false as const, error: err.message };
-      throw err;
-    }
-  });
 }

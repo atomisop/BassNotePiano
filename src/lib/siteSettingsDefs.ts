@@ -46,6 +46,7 @@ export const SETTING_CATEGORIES = [
   { id: "reminders", label: "Reminders and alerts", blurb: "Messages students and you receive." },
   { id: "discord", label: "Discord live classes", blurb: "How class calls are opened and who is told." },
   { id: "payments", label: "Payments and plans", blurb: "Installments and lapsing." },
+  { id: "messaging", label: "Messaging", blurb: "Student messages and group chats." },
   { id: "atom", label: "Atom and support", blurb: "The assistant and the human handoff." },
 ] as const;
 export type SettingCategory = (typeof SETTING_CATEGORIES)[number]["id"];
@@ -135,6 +136,13 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "attendance.autoChargeHours", category: "payments", type: "number", default: 48, min: 0, max: 240, unit: "hours", label: "Charge a class nobody marked, this long after it started", help: "A class that is still not marked Present or No-show this many hours after it started is charged as attended, so an unmarked class is never free. You get an alert about a day before. Set 0 to turn it off." },
   { key: "family.changeCooldownDays", category: "payments", type: "number", default: 60, min: 0, max: 365, unit: "days", label: "Days between family plan changes", help: "After someone starts or switches into a family plan, they cannot start another family plan for this long. Stops switching in and out for the discount. 0 turns it off." },
   { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is canceled." },
+
+  // ---- Messaging
+  { key: "messaging.enabled", category: "messaging", type: "toggle", default: true, label: "Allow student messages", help: "Off: direct messages between students are refused. Admin messages still work." },
+  { key: "messaging.reactionsEnabled", category: "messaging", type: "toggle", default: true, label: "Allow emoji reactions", help: "Off: students cannot react to messages." },
+  { key: "messaging.maxLength", category: "messaging", type: "number", default: 2000, min: 100, max: 10000, unit: "characters", label: "Longest message", help: "Applies to direct and group messages." },
+  { key: "messaging.groupsEnabled", category: "messaging", type: "toggle", default: true, label: "Allow group chats", help: "Off: new group chats cannot be made." },
+  { key: "messaging.maxGroupMembers", category: "messaging", type: "number", default: 24, min: 3, max: 100, unit: "people", label: "Largest group chat", help: "Including the person who makes it." },
 
   // ---- Atom and support
   { key: "atom.enabled", category: "atom", type: "toggle", default: true, label: "Atom answers questions", help: "Off: Atom says it is unavailable and offers the human handoff." },

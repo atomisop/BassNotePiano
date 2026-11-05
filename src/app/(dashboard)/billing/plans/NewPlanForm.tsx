@@ -1,7 +1,6 @@
 "use client";
 
-import { SwitchLook } from "@/components/ui/switch";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
@@ -18,21 +17,19 @@ import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
-import { tierLook, tierVars } from "@/components/marketing/PaymentPlanTierGrid";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+
+function usd(cents: number) {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "1 Month" },
   { value: "TERM_3", label: "3 Months" },
   { value: "TERM_6", label: "6 Months" },
 ];
-
-function usd(cents: number) {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
-
 
 const field =
   "h-11 min-w-0 flex-1 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -103,9 +100,6 @@ export function NewPlanForm({
 }) {
   const cadence = OFFERED_PLAN_CADENCE;
   const [audience, setAudience] = useState<Audience>(parent?.only || parent?.startOn ? "FAMILY" : initialAudience);
-  // The switch itself updates at once; the heavy re-render of cards, totals and the people list follows without blocking the next tap.
-  const [tabAudience, setTabAudience] = useState<Audience>(audience);
-  const [, startAudienceTransition] = useTransition();
   const [parentMode, setParentMode] = useState(Boolean(parent?.only || parent?.startOn));
   // The parent learns too unless they take themselves out (or already have a plan of their own).
   const [includeSelf, setIncludeSelf] = useState(Boolean(parent?.canIncludeSelf));
@@ -305,20 +299,18 @@ export function NewPlanForm({
           { id: "SOLO", label: "Just me" },
           { id: "FAMILY", label: "Me and others" },
         ]}
-        value={tabAudience}
+        value={audience}
         onChange={(next) => {
-          setTabAudience(next);
-          startAudienceTransition(() => {
-            setAudience(next);
-            setError(null);
-          });
+          setAudience(next);
+          setError(null);
         }}
       />
       </div>
       )}
 
-      {/* The plan length: three plain cards with just the price, in the plan colours (they fade to the group colours with the switch). */}
-      <div aria-hidden className="tier-wash" style={{ opacity: audience === "FAMILY" ? 1 : 0 }} />
+      {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
+      <div className="space-y-6">
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -326,40 +318,25 @@ export function NewPlanForm({
             const active = term === option.value;
             const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals });
             const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }).perPaymentCents) * 100);
-            const look = tierLook(option.value);
-            const who = audience === "FAMILY" ? look.family : look.solo;
             return (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setTerm(option.value)}
                 aria-pressed={active}
-                style={tierVars(who)}
-                className={`tap relative isolate overflow-hidden rounded-control border border-ink/10 bg-neu-base px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  active ? "ring-2 ring-[var(--tier-accent)]" : "opacity-90 hover:opacity-100"
+                className={`tap rounded-control bg-neu-base px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                {(["solo", "family"] as const).map((k) => (
-                  <span
-                    key={k}
-                    aria-hidden
-                    style={tierVars(look[k])}
-                    className={`tier-layer tier-card pointer-events-none absolute inset-0 -z-10 ${(k === "family") === (audience === "FAMILY") ? "opacity-100" : "opacity-0"}`}
-                  />
-                ))}
-                <span className="tier-accent block text-caption font-bold uppercase tracking-wide">{look.tag}</span>
-                <span className="mt-0.5 block text-small font-semibold text-slate-100">{option.label}</span>
-                <span className="tier-price mt-0.5 block text-body font-semibold tabular-nums">{usd(t.perPaymentCents)}</span>
-                <span className="block text-small text-slate-400">{off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
+                <span className={`block text-small font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</span>
+                <span className="mt-0.5 block text-body font-semibold tabular-nums text-slate-50">{usd(t.perPaymentCents)}</span>
+                <span className="block text-small text-slate-500">{off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
-      <div className="space-y-6">
       {isFamily && (
         <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
           {parent && !parent.only && (
@@ -413,7 +390,9 @@ export function NewPlanForm({
                   className="tap flex items-center gap-2 rounded-full text-slate-200 disabled:opacity-50"
                 >
                   <span>{includeSelf ? "I'm learning too" : "Just for them"}</span>
-                  <SwitchLook on={includeSelf} />
+                  <span aria-hidden className={`flex h-5 w-9 items-center rounded-full p-0.5 transition ${includeSelf ? "bg-signal" : "bg-slate-600"}`}>
+                    <span className={`h-4 w-4 rounded-full bg-white transition-transform ${includeSelf ? "translate-x-4" : ""}`} />
+                  </span>
                 </button>
               </li>
             ) : (

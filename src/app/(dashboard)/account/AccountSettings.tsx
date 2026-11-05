@@ -22,7 +22,6 @@ import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
 import { SectionCard } from "./SectionCard";
-import { EmailChange } from "./EmailChange";
 import { PasswordSection, DangerZoneSection, TutorialsSection, NotificationSettingsSection } from "./AccountSections";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -374,12 +373,36 @@ function DiscordAccountCard({ username }: { username: string | null }) {
   );
 }
 
+const ACCOUNT_JUMPS = [
+  { id: "profile", label: "Profile" },
+  { id: "contact", label: "Contact" },
+  { id: "security", label: "Sign-in & security" },
+  { id: "connections", label: "Connected accounts" },
+  { id: "privacy", label: "Privacy & data" },
+  { id: "danger", label: "Delete account" },
+] as const;
+
 // Everything about the person and their sign-in, in one place and in groups, so nothing account-related is
 // scattered across tabs: who you are, how we reach you, how you sign in, what is connected, what we keep, and
 // the one irreversible action last.
 function AccountSection({ account, history, twoStep }: { account: AccountOverview; history: AssistantMessage[]; twoStep: AccountSettingsProps["twoStep"] }) {
+  // Looked up inside this copy only: Settings renders the section twice (desktop column, phone panel), so ids would clash.
+  const root = useRef<HTMLDivElement>(null);
   return (
-    <div className="space-y-10">
+    <div ref={root} className="space-y-10">
+      <div className="flex flex-wrap gap-1.5" role="navigation" aria-label="Jump to a group">
+        {ACCOUNT_JUMPS.map((j) => (
+          <button
+            key={j.id}
+            type="button"
+            onClick={() => root.current?.querySelector(`[data-account-group="${j.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="tap rounded-full bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-100 active:shadow-pressed-low"
+          >
+            {j.label}
+          </button>
+        ))}
+      </div>
+
       <AccountGroup id="profile" title="Profile">
         <SectionCard title="Your account">
           <div className="divide-y divide-ink/10">
@@ -395,7 +418,10 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 
       <AccountGroup id="contact" title="Contact">
         <SectionCard title="Email address">
-          <EmailChange currentEmail={account.email} verified={account.emailVerified} renderBadge={(ok) => <Badge ok={ok}>{ok ? "Verified" : "Not verified"}</Badge>} />
+          <div className="flex flex-wrap items-center">
+            <span className="text-small text-slate-100">{account.email}</span>
+            <Badge ok={account.emailVerified}>{account.emailVerified ? "Verified" : "Not verified"}</Badge>
+          </div>
         </SectionCard>
         <PhoneCard state={account.phone} />
       </AccountGroup>

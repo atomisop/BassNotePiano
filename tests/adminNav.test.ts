@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage, splitHubPages } from "@/lib/adminNav";
+import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage } from "@/lib/adminNav";
 
 describe("admin menu", () => {
   it("has six choices", () => {
@@ -9,9 +9,9 @@ describe("admin menu", () => {
   it("lists every page once, so no page is missing and none is repeated", () => {
     const hrefs = allAdminPages().map((p) => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(hrefs).toHaveLength(21);
+    expect(hrefs).toHaveLength(20);
     // The pages the old menu had.
-    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/students", "/admin/users", "/admin/contacts", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps", "/admin/data"]) {
+    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/students", "/admin/users", "/admin/contacts", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps", "/admin/data"]) {
       expect(hrefs).toContain(href);
     }
   });
@@ -49,19 +49,5 @@ describe("hubWaiting", () => {
     expect(hubWaiting(billing, { "/admin/payments": 3, "/admin/payment-plans": 2, "/admin/support": 9 })).toBe(5);
     expect(hubWaiting(billing, {})).toBe(0);
     expect(hubWaiting(billing, { "/admin/payments": -4 })).toBe(0);
-  });
-});
-
-describe("splitHubPages", () => {
-  it("keeps every page reachable: tabs plus More are the whole hub, and no section shows more than three tabs", () => {
-    for (const hub of ADMIN_HUBS) {
-      const { tabs, more } = splitHubPages(hub);
-      expect([...tabs, ...more].map((p) => p.href).sort()).toEqual(hub.pages.map((p) => p.href).sort());
-      expect(tabs.length).toBeLessThanOrEqual(3);
-      expect(tabs.length).toBeGreaterThan(0);
-    }
-  });
-  it("still locates a page that sits under More", () => {
-    expect(locateAdminPage("/admin/pricing")?.hub.id).toBe("billing");
   });
 });

@@ -15,6 +15,7 @@ export const GO_SHORTCUTS: GoShortcut[] = [
   { key: "p", href: "/practice", label: "Practice" },
   { key: "l", href: "/lessons", label: "Online lessons" },
   { key: "f", href: "/friends", label: "Friends" },
+  { key: "m", href: "/messages", label: "Messages" },
   { key: "u", href: "/profile", label: "Profile" },
   { key: "s", href: "/account", label: "Settings" },
   { key: "a", href: "/admin", label: "Admin overview", adminOnly: true },

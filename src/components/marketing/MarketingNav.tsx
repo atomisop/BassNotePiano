@@ -15,7 +15,6 @@ import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { EASE_IOS } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { useSessionHint } from "@/components/marketing/SessionHint";
 import { X } from "@/components/ui/appIcons";
 
 /**
@@ -64,13 +63,10 @@ const LINKS = [
 
 export function MarketingNav() {
   const { data: session, status } = useSession();
-  // The server already knew whether this visitor is signed in (SessionHint.tsx, set by the marketing layout), so the right
-  // buttons render on the first paint; once the browser's own session answer arrives it takes over. Only a page rendered outside
-  // that layout has no hint, and there a quiet placeholder of the same size holds the place until the session answers, so the
-  // bar is never blank and nothing jumps.
-  const hint = useSessionHint();
-  const isLoggedIn = status === "loading" && hint !== null ? hint : Boolean(session?.user);
-  const loadingSession = status === "loading" && hint === null;
+  const isLoggedIn = Boolean(session?.user);
+  // Until the session answers we do not know which buttons to show. A quiet placeholder of the same size
+  // holds the place, so the bar is never blank and nothing jumps when the answer arrives.
+  const loadingSession = status === "loading";
   const reduced = useReducedMotion();
   const pathname = usePathname();
 

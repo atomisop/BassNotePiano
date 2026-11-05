@@ -1,5 +1,4 @@
 import { passwordRequirementError } from "@/lib/passwordRules";
-import { reportError } from "@/lib/reportError";
 import { attachReferral } from "@/lib/referrals";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
@@ -109,7 +108,7 @@ export async function POST(req: NextRequest) {
     // Someone approved for classes before they made an account gets their
     // free trial now. Best-effort, never blocks sign-up.
     if (await hasApprovedRegistration(user.email).catch(() => false)) {
-      await startTrialForEmail(user.email).catch((err) => reportError(err, "Starting the free trial failed"));
+      await startTrialForEmail(user.email).catch((err) => console.error("Starting the free trial failed (non-blocking):", err));
     }
     // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
     if (body?.ref) await attachReferral(user.id, body.ref);
@@ -125,7 +124,7 @@ export async function POST(req: NextRequest) {
       body: `${name} (${user.email}) just created an account and has not verified their email yet. You will get another email when they do.`,
       emailCategory: "social",
       cta: { label: "View account", path: `/admin/users/${user.id}` },
-    }).catch((err) => reportError(err, "New account alert failed"));
+    }).catch((err) => console.error("New account alert failed (non-blocking):", err));
     return NextResponse.json({ ...user, emailSent: sent.ok }, { status: 201 });
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });

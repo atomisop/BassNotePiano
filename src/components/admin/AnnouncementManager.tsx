@@ -1,8 +1,6 @@
 "use client";
 
-import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
-import { toast } from "@/components/ui/Toaster";
 import { useRouter } from "next/navigation";
 import type { AdminAnnouncementRow } from "@/lib/announcements";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -10,11 +8,8 @@ import {
   createAnnouncementAction,
   setAnnouncementActiveAction,
   deleteAnnouncementAction,
-  updateAnnouncementAction,
 } from "@/app/(dashboard)/admin/announcements/actions";
 import { buttonVariants } from "@/components/ui/button";
-
-const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function relativeTime(iso: Date): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -27,7 +22,24 @@ function relativeTime(iso: Date): string {
 }
 
 function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
-  return <Switch checked={checked} onCheckedChange={onChange} aria-label="Also send this announcement by email" />;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label="Also send this announcement by email"
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+        checked ? "bg-amber-400" : "bg-slate-700"
+      }`}
+    >
+      <span
+        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-slate-50 transition-transform ${
+          checked ? "translate-x-[20px]" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
 }
 
 function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublished: () => void }) {
@@ -41,10 +53,8 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
   async function publish() {
     setError(null);
     setSubmitting(true);
-    const hold = await toast.held("Publishing to everyone", () => createAnnouncementAction(title, body, sendEmail), { mail: true });
+    const result = await createAnnouncementAction(title, body, sendEmail);
     setSubmitting(false);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) {
       setError(result.error);
       return;
@@ -152,21 +162,6 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   // (PaymentQueue, StudentQueue, AdminLessonManager) instead of a native
   // confirm() dialog, which looks out of place next to the custom UI.
   const [deleting, setDeleting] = useState(false);
-  const [gone, setGone] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(announcement.title);
-  const [body, setBody] = useState(announcement.body);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSave() {
-    setError(null);
-    setBusy(true);
-    const result = await updateAnnouncementAction(announcement.id, title, body).catch(() => ({ ok: false as const, error: "Something went wrong." }));
-    setBusy(false);
-    if (!result.ok) return setError(result.error);
-    setEditing(false);
-    onChanged();
-  }
 
   async function handleToggleActive() {
     setBusy(true);
@@ -175,21 +170,13 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
     onChanged();
   }
 
-  function handleDelete() {
+  async function handleDelete() {
+    setBusy(true);
+    await deleteAnnouncementAction(announcement.id);
+    setBusy(false);
     setDeleting(false);
-    setGone(true);
-    // The real delete waits 5 seconds so Undo can still cancel it.
-    toast.deferred(
-      "Announcement deleted",
-      async () => {
-        await deleteAnnouncementAction(announcement.id);
-        onChanged();
-      },
-      () => setGone(false),
-    );
+    onChanged();
   }
-
-  if (gone) return null;
 
   return (
     <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
@@ -212,39 +199,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
         </div>
       </div>
 
-      {editing ? (
-        <div className="mt-3 grid gap-3">
-          <label className="grid gap-1.5">
-            <span className="text-small font-medium text-slate-200">Title</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className={editField} />
-          </label>
-          <label className="grid gap-1.5">
-            <span className="text-small font-medium text-slate-200">Message</span>
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} rows={4} className={`${editField} h-auto resize-none py-2.5`} />
-          </label>
-          <p className="text-small text-slate-500">The banner and the bell entries change at once. Emails already sent stay as they were.</p>
-          {error && <p className="text-small text-red-400">{error}</p>}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(false);
-                setTitle(announcement.title);
-                setBody(announcement.body);
-                setError(null);
-              }}
-              disabled={busy}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
-            >
-              Cancel
-            </button>
-            <button type="button" onClick={() => void handleSave()} disabled={busy || !title.trim() || !body.trim()} className={buttonVariants({ variant: "primary", size: "sm" })}>
-              {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
-              Save
-            </button>
-          </div>
-        </div>
-      ) : deleting ? (
+      {deleting ? (
         <div className="mt-3 space-y-2">
           <p className="text-small text-red-400">Delete this announcement? This can&apos;t be undone.</p>
           <div className="flex gap-2">
@@ -277,9 +232,6 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
           >
             {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {announcement.active ? "Deactivate" : "Reactivate"}
-          </button>
-          <button type="button" onClick={() => setEditing(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-            Edit
           </button>
           <button
             type="button"

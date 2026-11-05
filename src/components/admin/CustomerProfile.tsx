@@ -2,10 +2,10 @@
 
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarPlus, ChevronDown, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { CalendarPlus, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
 import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
@@ -18,23 +18,13 @@ import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
-import { toast } from "@/components/ui/Toaster";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
   /** Shown at the bottom of the Support tab (the changes admins made on this account). */
   changeLog?: React.ReactNode;
-  /** The "Plan" menu (pause, weekly time, bill date, plan settings...), built by the page and drawn in the top row. */
-  planMenu?: React.ReactNode;
   /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
   scheduler?: React.ReactNode;
-  /** Owner tools in the Account card (edit details, reset code, trial), built by the page. */
-  accountTools?: React.ReactNode;
-  /** Owner tool in the Class credits card (when credits expire), built by the page. */
-  creditTools?: React.ReactNode;
-  /** The owner can correct an approved payment's amount or day. */
-  canEditPayments?: boolean;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -47,8 +37,6 @@ export interface CustomerProfileProps {
   /** Bans the account for good (it can never sign in). The reason is a private note. */
   onBan: (userId: string, reason: string, notify?: boolean) => Promise<{ ok: true; summary: string } | { ok: false; error: string }>;
   onUnban: (userId: string, notify?: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
-  /** Lets an account locked for non-payment sign in again. */
-  onLiftPaymentLock: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function formatUsd(cents: number) {
@@ -148,18 +136,6 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "support", label: "Support" },
 ];
 
-/** The bar that opens and closes one section of the long page; it is also what the index scrolls to. */
-function SectionHeader({ id, label, open, onToggle }: { id: ProfileTab; label: string; open: boolean; onToggle: () => void }) {
-  return (
-    <h2 id={`sec-${id}`} className="scroll-mt-28 border-t border-slate-50/10 pt-3">
-      <button type="button" onClick={onToggle} aria-expanded={open} className="tap flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-left text-title font-semibold text-slate-50">
-        {label}
-        <ChevronDown aria-hidden className={`h-5 w-5 text-slate-50/60 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-    </h2>
-  );
-}
-
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-small text-slate-500">{children}</p>;
 }
@@ -167,11 +143,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 export function CustomerProfile({
   profile,
   changeLog,
-  planMenu,
   scheduler,
-  accountTools,
-  creditTools,
-  canEditPayments = false,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -182,7 +154,6 @@ export function CustomerProfile({
   onClearPhone,
   onBan,
   onUnban,
-  onLiftPaymentLock,
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
@@ -191,97 +162,22 @@ export function CustomerProfile({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // One long page, six sections. Each opens and closes on its own header; every section stays mounted (hidden, not removed), so a
-  // half-typed credit amount or an open confirmation survives closing it. The section in the address (#money) opens and scrolls to
-  // it, so a link or a refresh returns there. The index above follows what is on screen.
-  const [openSections, setOpenSections] = useState<Set<ProfileTab>>(() => new Set<ProfileTab>(["overview"]));
+  // Which group of sections is showing. Every section stays mounted (hidden, not removed), so a half-typed credit amount or an
+  // open confirmation survives a change of tab. The tab is kept in the address (#money) so a link or a refresh returns to it.
   const [tab, setTab] = useState<ProfileTab>("overview");
-  const isOpen = (id: ProfileTab) => openSections.has(id);
-  const toggleSection = (id: ProfileTab) =>
-    setOpenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  function chooseTab(next: ProfileTab) {
-    setOpenSections((prev) => new Set(prev).add(next));
-    setTab(next);
-    window.history.replaceState(null, "", `#${next}`);
-    // Scroll once React has opened the section (see the effect below): scrolling now would stop short, the page is not tall enough yet.
-    pendingScroll.current = next;
-  }
-  const pendingScroll = useRef<ProfileTab | null>(null);
-  // The admin menu pins itself at the top; the index sticks just under it, wherever its height ends up on this screen size.
-  const [stickyTop, setStickyTop] = useState(60);
-  useEffect(() => {
-    const deck = document.querySelector<HTMLElement>("[data-deck-header]");
-    if (!deck) return;
-    const measure = () => setStickyTop(Math.max(0, deck.offsetHeight - 16 + 4));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(deck);
-    return () => ro.disconnect();
-  }, []);
-  useEffect(() => {
-    const target = pendingScroll.current;
-    if (!target) return;
-    pendingScroll.current = null;
-    document.getElementById(`sec-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [openSections, tab]);
   useEffect(() => {
     const fromAddress = () => {
       const match = PROFILE_TABS.find((t) => t.id === window.location.hash.replace("#", ""));
-      if (match) chooseTab(match.id);
+      if (match) setTab(match.id);
     };
     fromAddress();
     window.addEventListener("hashchange", fromAddress);
     return () => window.removeEventListener("hashchange", fromAddress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // `?do=` (from the command menu) opens the account with one job ready: credits, a class, the plan tools, or payments.
-  // Read from the address so a pick that lands on the page already open (the same person) works too, not only a fresh visit.
-  const doJob = useSearchParams().get("do");
-  useEffect(() => {
-    const job = doJob;
-    if (!job) return;
-    // The address is cleaned only when the job runs: in development React mounts the page twice, and cleaning it on the first
-    // pass left the second one with nothing to do.
-    const t = window.setTimeout(() => {
-      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
-      if (job === "credits") {
-        chooseTab("classes");
-        window.setTimeout(() => {
-          const input = document.getElementById("cp-amount");
-          input?.scrollIntoView({ behavior: "smooth", block: "center" });
-          input?.focus({ preventScroll: true });
-        }, 120);
-      } else if (job === "book") {
-        chooseTab("scheduler");
-        window.dispatchEvent(new Event("bnp-open-book-class"));
-      } else if (job === "plan") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        window.dispatchEvent(new Event("bnp-open-plan-menu"));
-      } else if (job === "payments") {
-        chooseTab("money");
-      }
-    }, 150);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doJob]);
-  // Scroll-spy: the index highlights the section nearest the top of the screen.
-  useEffect(() => {
-    const els = PROFILE_TABS.map((t) => document.getElementById(`sec-${t.id}`)).filter((e): e is HTMLElement => !!e);
-    const io = new IntersectionObserver(
-      (entries) => {
-        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (top) setTab(top.target.id.replace("sec-", "") as ProfileTab);
-      },
-      { rootMargin: "-80px 0px -60% 0px" },
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+  function chooseTab(next: ProfileTab) {
+    setTab(next);
+    window.history.replaceState(null, "", `#${next}`);
+  }
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [creditSuccess, setCreditSuccess] = useState<string | null>(null);
@@ -292,7 +188,6 @@ export function CustomerProfile({
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
   const [confirmingUnban, setConfirmingUnban] = useState(false);
-  const [confirmingUnlock, setConfirmingUnlock] = useState(false);
   const [confirmingClearPhone, setConfirmingClearPhone] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banSummary, setBanSummary] = useState<string | null>(null);
@@ -304,7 +199,7 @@ export function CustomerProfile({
   // right below it.
   const [pendingAction, setPendingAction] = useState<"role" | "curriculum" | "history" | null>(null);
 
-  async function withBusy(fn: () => Promise<unknown>) {
+  async function withBusy(fn: () => Promise<void>) {
     setBusy(true);
     setError(null);
     try {
@@ -340,12 +235,7 @@ export function CustomerProfile({
     setBusy(true);
     setError(null);
     setCreditSuccess(null);
-    const h = await toast.held("Adjusting credits", () => onAdjustCredits(user.id, amount, creditReason.trim(), notify), { mail: notify });
-    if (h.undone) {
-      setBusy(false);
-      return;
-    }
-    const result = h.value;
+    const result = await onAdjustCredits(user.id, amount, creditReason.trim(), notify);
     if (!result.ok) {
       setError(result.error);
       setBusy(false);
@@ -362,12 +252,7 @@ export function CustomerProfile({
   async function handleBan() {
     setBusy(true);
     setError(null);
-    const h = await toast.held("Banning this account", () => onBan(user.id, banReason, notify), { mail: notify });
-    if (h.undone) {
-      setBusy(false);
-      return;
-    }
-    const result = h.value;
+    const result = await onBan(user.id, banReason, notify);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingBan(false);
@@ -383,21 +268,6 @@ export function CustomerProfile({
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setConfirmingUnban(false);
-    router.refresh();
-  }
-
-  async function handleLiftLock() {
-    setBusy(true);
-    setError(null);
-    const h = await toast.held("Lifting the payment lock", () => onLiftPaymentLock(user.id));
-    if (h.undone) {
-      setBusy(false);
-      return;
-    }
-    const result = h.value;
-    setBusy(false);
-    if (!result.ok) return setError(result.error);
-    setConfirmingUnlock(false);
     router.refresh();
   }
 
@@ -449,18 +319,10 @@ export function CustomerProfile({
           <Coins aria-hidden className="h-4 w-4" />
           Add credits
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            chooseTab("scheduler");
-            window.dispatchEvent(new Event("bnp-open-book-class"));
-          }}
-          className={buttonVariants({ variant: "secondary", size: "sm" })}
-        >
+        <button type="button" onClick={() => chooseTab("scheduler")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           <CalendarPlus aria-hidden className="h-4 w-4" />
           Book a class
         </button>
-        {planMenu}
         <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
           Payments
@@ -468,14 +330,10 @@ export function CustomerProfile({
         <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="ml-auto" />
       </div>
 
-      {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
-      <div className="z-20 md:sticky" style={{ top: stickyTop }}>
-        <Tabs<ProfileTab> label="Jump to a section of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
-      </div>
+      <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
 
       <div className="space-y-5">
-        <SectionHeader id="overview" label="Overview" open={isOpen("overview")} onToggle={() => toggleSection("overview")} />
-        <div hidden={!isOpen("overview")} className="space-y-5">
+        <div hidden={tab !== "overview"} className="space-y-5">
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
@@ -483,28 +341,6 @@ export function CustomerProfile({
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
-              </div>
-            )}
-            {user.paymentLockedAt && !user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
-                <p className="font-semibold">Locked for non-payment on {formatDate(user.paymentLockedAt)}. They cannot sign in.</p>
-                <p className="mt-1">Their plan was canceled when the bill went unpaid. Lift the lock once it is sorted out.</p>
-                {confirmingUnlock ? (
-                  <InlineConfirm
-                    className="mt-3"
-                    question="Lift the payment lock?"
-                    detail="They will be able to sign in again. Their canceled plan stays canceled; they can start a new one."
-                    confirmLabel="Yes, lift the lock"
-                    busyLabel="Lifting…"
-                    busy={busy}
-                    onCancel={() => setConfirmingUnlock(false)}
-                    onConfirm={() => void handleLiftLock()}
-                  />
-                ) : (
-                  <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={`${buttonVariants({ variant: "secondary", size: "sm" })} mt-3`}>
-                    Lift payment lock
-                  </button>
-                )}
               </div>
             )}
             {confirmingUnban && user.bannedAt && (
@@ -578,7 +414,7 @@ export function CustomerProfile({
                     busyLabel="Clearing…"
                     busy={busy}
                     onCancel={() => setConfirmingClearPhone(false)}
-                    onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
+                    onConfirm={() => void withBusy(() => onClearPhone(user.id, notify)).then(() => setConfirmingClearPhone(false))}
                   />
                 )}
                 <p className="mt-1 text-small text-slate-500">
@@ -608,7 +444,6 @@ export function CustomerProfile({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
-              {accountTools}
               {pendingAction === "curriculum" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
@@ -646,7 +481,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
+                    onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -673,7 +508,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
+                    onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
@@ -709,7 +544,7 @@ export function CustomerProfile({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
+                    onClick={() => withBusy(() => onForceSignOut(user.id)).then(() => setConfirmingSignOut(false))}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Confirm
@@ -724,8 +559,7 @@ export function CustomerProfile({
 
         </div>
 
-        <SectionHeader id="learning" label="Learning" open={isOpen("learning")} onToggle={() => toggleSection("learning")} />
-        <div hidden={!isOpen("learning")} className="space-y-5">
+        <div hidden={tab !== "learning"} className="space-y-5">
           {/* Curriculum roadmap */}
           <SectionCard title="Daily practice">
             <PracticeStrip practice={profile.practice} />
@@ -770,10 +604,9 @@ export function CustomerProfile({
 
         </div>
 
-        <SectionHeader id="classes" label="Classes" open={isOpen("classes")} onToggle={() => toggleSection("classes")} />
-        <div hidden={!isOpen("classes")} className="space-y-5">
+        <div hidden={tab !== "classes"} className="space-y-5">
           {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
+          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
@@ -840,13 +673,11 @@ export function CustomerProfile({
 
         </div>
 
-        <SectionHeader id="scheduler" label="Scheduler" open={isOpen("scheduler")} onToggle={() => toggleSection("scheduler")} />
-        <div hidden={!isOpen("scheduler")} className="space-y-5">
+        <div hidden={tab !== "scheduler"} className="space-y-5">
           {scheduler}
         </div>
 
-        <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
-        <div hidden={!isOpen("money")} className="space-y-5">
+        <div hidden={tab !== "money"} className="space-y-5">
           {/* Payments */}
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
@@ -874,7 +705,6 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
-                  {p.status === "VERIFIED" && canEditPayments && <AdminEditPaymentButton paymentId={p.id} amountCents={p.amountCents} paidAt={p.reviewedAt ?? p.updatedAt} />}
                   {p.status === "VERIFIED" && (
                     <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
                       Receipt
@@ -917,8 +747,7 @@ export function CustomerProfile({
           </SectionCard>
         </div>
 
-        <SectionHeader id="support" label="Support" open={isOpen("support")} onToggle={() => toggleSection("support")} />
-        <div hidden={!isOpen("support")} className="space-y-5">
+        <div hidden={tab !== "support"} className="space-y-5">
           {/* Support history */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}

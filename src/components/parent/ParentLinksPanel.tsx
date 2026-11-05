@@ -86,14 +86,7 @@ export function ParentLinksPanel() {
 
   async function run(key: string, work: () => Promise<{ ok: boolean; error?: string } | void>, done: string) {
     setBusy(key);
-    // Ending or withdrawing a link cannot be taken back once done, so those wait for Undo; sending a request goes at once.
-    const slow = key.startsWith("end:") || key.startsWith("cancel:");
-    const hold = slow ? await toast.held(done.replace(/^Link ended$/, "Ending the link").replace(/^Request withdrawn$/, "Withdrawing the request"), () => work().catch(() => ({ ok: false, error: "Something went wrong. Try again." })), { mail: true }) : null;
-    if (hold?.undone) {
-      setBusy(null);
-      return;
-    }
-    const result = hold ? hold.value : await work().catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
+    const result = await work().catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
     setBusy(null);
     if (result && result.ok === false) return void toast.warning(result.error ?? "Could not do that.");
     toast.success(done);

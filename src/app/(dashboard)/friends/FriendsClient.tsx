@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
-import { Ban, ChevronDown } from "@/components/ui/appIcons";
+import { Ban } from "@/components/ui/appIcons";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";
@@ -19,10 +19,6 @@ import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { PageBack } from "@/components/ui/BackLink";
-import { NudgeButton } from "@/components/social/NudgeButton";
-import { nudgeSenderLabel } from "@/lib/nudgeRules";
-import { FriendDetail } from "./FriendDetail";
-import { toast } from "@/components/ui/Toaster";
 
 interface PublicProfile {
   id: string;
@@ -105,8 +101,6 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
   // existing friendship, so it gets the same one-more-click safety net as
   // every other hard-to-walk-back admin/account action in the app.
   const [blockingId, setBlockingId] = useState<string | null>(null);
-  // The friend whose practice panel is open (one at a time).
-  const [openId, setOpenId] = useState<string | null>(null);
 
   async function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -138,7 +132,6 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
   }
 
   async function handleRespond(requestId: string, accept: boolean) {
-    if (!accept && !(await toast.hold("Declining the request"))) return;
     hide(`req:${requestId}`);
     const done = await action.run(async () => {
       try {
@@ -231,59 +224,49 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             ) : (
               <div className="space-y-2">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="rounded-lg bg-neu-base shadow-raised-low">
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-2.5">
-                      {/* The name opens that friend's practice, badges and streak right here: one place for looking and nudging. */}
-                      <button
-                        type="button"
-                        onClick={() => setOpenId(openId === friend.id ? null : friend.id)}
-                        aria-expanded={openId === friend.id}
-                        aria-label={`${openId === friend.id ? "Hide" : "Show"} ${friend.name ?? friend.username ?? "friend"}'s practice`}
-                        className="tap flex min-w-[9.5rem] flex-1 items-center gap-3 text-left"
-                      >
-                        <Avatar profile={friend} />
-                        <ProfileLine profile={friend} />
-                        <ChevronDown size={16} strokeWidth={1.75} aria-hidden className={`ml-auto shrink-0 text-slate-500 transition-transform ${openId === friend.id ? "rotate-180" : ""}`} />
-                      </button>
-                      {blockingId === friend.id ? (
-                        <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
-                          Block {friend.name ?? friend.username ?? "them"}?
-                          <button
-                            type="button"
-                            onClick={() => handleBlock(friend.id)}
-                            disabled={action.pending}
-                            className={`tap inline-flex items-center px-2 font-semibold underline underline-offset-2 ${busy}`}
-                          >
-                            {action.isPending(`block:${friend.id}`) && spin}
-                            Confirm
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBlockingId(null)}
-                            disabled={action.pending}
-                            className={`tap inline-flex items-center px-2 text-slate-400 underline underline-offset-2 ${busy}`}
-                          >
-                            Never mind
-                          </button>
-                        </span>
-                      ) : (
-                        <div className="flex shrink-0 gap-2">
-                          <NudgeButton friendId={friend.id} friendName={nudgeSenderLabel(friend.name ?? friend.username)} />
-                          <button
-                            type="button"
-                            onClick={() => setBlockingId(friend.id)}
-                            aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
-                            title="Block"
-                            className="tap flex h-9 w-9 items-center justify-center rounded-full text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                          >
-                            <Ban size={18} strokeWidth={1.75} aria-hidden />
-                          </button>
-                        </div>
-                      )}
+                  <div key={friend.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar profile={friend} />
+                      <ProfileLine profile={friend} />
                     </div>
-                    {openId === friend.id && friend.username && (
-                      <div className="border-t border-ink/10 p-3">
-                        <FriendDetail username={friend.username} />
+                    {blockingId === friend.id ? (
+                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
+                        Block {friend.name ?? friend.username ?? "them"}?
+                        <button
+                          type="button"
+                          onClick={() => handleBlock(friend.id)}
+                          disabled={action.pending}
+                          className={`tap inline-flex items-center px-2 font-semibold underline underline-offset-2 ${busy}`}
+                        >
+                          {action.isPending(`block:${friend.id}`) && spin}
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBlockingId(null)}
+                          disabled={action.pending}
+                          className={`tap inline-flex items-center px-2 text-slate-400 underline underline-offset-2 ${busy}`}
+                        >
+                          Never mind
+                        </button>
+                      </span>
+                    ) : (
+                      <div className="flex shrink-0 gap-2">
+                        <Link
+                          href={`/messages?with=${friend.id}`}
+                          className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        >
+                          Message
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setBlockingId(friend.id)}
+                          aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
+                          title="Block"
+                          className="tap flex h-9 w-9 items-center justify-center rounded-full text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                        >
+                          <Ban size={18} strokeWidth={1.75} aria-hidden />
+                        </button>
                       </div>
                     )}
                   </div>
@@ -326,12 +309,12 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search @username"
-                className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
+                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
               <button
                 type="submit"
                 disabled={action.pending || query.trim().length < 2}
-                className={buttonVariants({ variant: "primary", className: "shrink-0 whitespace-nowrap" })}
+                className={buttonVariants({ variant: "primary" })}
               >
                 {searching && spin}
                 {searching ? "Searching…" : "Search"}

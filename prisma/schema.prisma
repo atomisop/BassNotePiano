@@ -56,9 +56,6 @@ enum PaymentPurpose {
   // The one combined first payment of a family plan (every member's first month, paid together by the one payer). Its approval
   // starts every member's plan at once, so a family can never start with only some members. See FamilyPlanGroup.
   FAMILY_PLAN_START
-  // One combined 28-day bill for a group's members (2+ open member bills), paid once by the group's payer. Its approval approves every
-  // member bill it holds (ZellePayment.bundleId) and sends one receipt. See paymentBundles.ts.
-  FAMILY_PLAN_INSTALLMENT
 }
 
 // A student's standing commitment to pay for class credits in periodic
@@ -379,7 +376,6 @@ enum VerificationPurpose {
   CHANGE_AVATAR // confirm a profile photo change
   PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
   SWITCH_TO_FAMILY // confirm turning a paid plan into a family plan (the old plan is cancelled when the family's first payment is approved)
-  CHANGE_EMAIL // confirm a new sign-in email: the code is sent to the NEW address, so only someone who can read it can claim it
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
@@ -506,7 +502,6 @@ enum NotificationType {
   BANNER_PHONE // to the student, each time the "add your phone number" banner pops up (kept in the bell even if they close it)
   BANNER_DISCORD // same, for the "connect your Discord" banner
   BANNER_PRACTICE // same, for the "time to practice" banner
-  FRIEND_NUDGE // to a student, when a friend taps "Nudge to practice" on their profile (fixed wording, banner plus bell)
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -859,9 +854,6 @@ model User {
   // private note for the owner, never shown to the person. Lifting the ban clears both.
   bannedAt     DateTime?
   bannedReason String?
-  // Set on the day an unpaid renewal bill cancels their plan (payments.lapseAfterDays past due): they are signed out and cannot sign
-  // in again, and see /account-locked instead. Only an admin lifts it ("Lift payment lock" on the student page). See paymentLock.ts.
-  paymentLockedAt DateTime?
 
   // Optional, nothing in the app requires it except the friends/messages
   // system, which prompts for it inline rather than forcing it through the
@@ -1154,8 +1146,6 @@ model KnownDevice {
   city        String?
   region      String?
   country     String?
-  // Set when the person signs this one device out from the list; cleared by the next sign-in on it. Other sessions are untouched.
-  signedOutAt DateTime?
 
   @@unique([userId, deviceHash])
 }
@@ -1558,12 +1548,6 @@ model ZellePayment {
   familyGroupId String?
   familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
 
-  // Set on a member's own 28-day bill while it is held inside a group's combined bill (a FAMILY_PLAN_INSTALLMENT row): the member's
-  // bill still carries their credits and plan progress, but the one payer pays and gets a receipt for the bundle.
-  bundleId String?
-  bundle   ZellePayment?  @relation("PaymentBundle", fields: [bundleId], references: [id], onDelete: SetNull)
-  bundled  ZellePayment[] @relation("PaymentBundle")
-
   // Only set on a CLASS_CREDITS row created through the Schedule screen's
   // guided "buy an extra session" flow (getOrCreatePendingExtraSessionPayment
   // in payments.ts), the exact one-off occurrence the student picked before
@@ -1620,7 +1604,6 @@ model ZellePayment {
 
   @@index([status])
   @@index([familyGroupId])
-  @@index([bundleId])
   @@index([userId])
   @@index([paymentPlanId])
 }

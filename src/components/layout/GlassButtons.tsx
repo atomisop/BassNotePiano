@@ -140,10 +140,10 @@ export function GlassButtons() {
     const scan = () => {
       document.querySelectorAll<HTMLElement>(GLASS_SELECTOR).forEach((node) => {
         if (node.matches(SKIP)) return;
-        // Already-lensed buttons are left alone: the ResizeObserver reports a size change, so re-measuring every button on every class change only forced layout.
-        if (seen.has(node)) return;
-        seen.add(node);
-        resize.observe(node);
+        if (!seen.has(node)) {
+          seen.add(node);
+          resize.observe(node);
+        }
         apply(node);
       });
     };

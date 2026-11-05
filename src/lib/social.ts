@@ -48,7 +48,7 @@ export async function searchUsersByUsername(query: string, currentUserId: string
   });
 }
 
-export async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boolean> {
+async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boolean> {
   const block = await prisma.block.findFirst({
     where: {
       OR: [
@@ -70,7 +70,7 @@ async function acceptFriendRequestById(requestId: string) {
     userId: request.senderId,
     type: "FRIEND_REQUEST_ACCEPTED",
     title: "Friend request accepted",
-    body: "Your friend request was accepted. You can now see each other's profile and nudge each other to practice.",
+    body: "Your friend request was accepted. You can now message each other.",
     emailCategory: "social",
   });
 

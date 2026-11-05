@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { Providers } from "./providers";
 import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
-import { LAUNCH_SPLASH_SCRIPT } from "@/lib/launchSplash";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -99,28 +98,6 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
 
-  // The phone's own launch screen when the installed app opens: the logo on black, so there is no blank black screen before the page loads.
-  // iOS reads the launch images only for a page that says it is a web app in its own words; Next emits just the newer name, so add Apple's.
-  other: { "apple-mobile-web-app-capable": "yes" },
-  appleWebApp: {
-    capable: true,
-    title: SITE_NAME,
-    startupImage: [
-      { url: "/splash/1290x2796.png", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1179x2556.png", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1284x2778.png", media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1170x2532.png", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1125x2436.png", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1242x2688.png", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/828x1792.png", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
-      { url: "/splash/1242x2208.png", media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/750x1334.png", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
-      { url: "/splash/1320x2868.png", media: "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/1206x2622.png", media: "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
-      { url: "/splash/640x1136.png", media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
-    ],
-  },
-
   // Ethiopian spellings are the terms someone actually searches for, and the
   // transliterations vary, so both the ñ form and the plain-ASCII form are
   // present in the copy the crawler sees.
@@ -180,8 +157,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
-        {/* Marks this visit for the opening animation (installed app, phone, first load of a launch) before first paint. It is first in the head so it runs before the stylesheets can hold it back. */}
-        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: LAUNCH_SPLASH_SCRIPT }} />
         {/* Applies the saved theme before first paint. Without this the page
             renders in the default theme and then snaps to the stored one,
             the classic dark-mode flash. Has to be inline and synchronous;
@@ -189,14 +164,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-screen bg-ground font-sans text-slate-100 antialiased">
-        {/* The opening animation of the installed phone app. Hidden unless the script above marked this visit; see globals.css. */}
-        <div id="bnp-splash" className="bnp-splash" aria-hidden>
-          <div className="bnp-splash-stage">
-            <span className="bnp-splash-ring" />
-            <span className="bnp-splash-mark" />
-          </div>
-          <p className="bnp-splash-word">Bass Note Piano</p>
-        </div>
         {/* No flat ambient wash here by design, each area (marketing sections,
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}

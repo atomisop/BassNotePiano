@@ -1,6 +1,5 @@
 "use server";
 
-import { PAYMENT_LOCKED_CODE } from "@/lib/paymentLockCodes";
 import { getNumberSetting } from "@/lib/siteSettings";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -102,8 +101,6 @@ async function loginStepOneWork(email: string, password: string, secondStep?: st
 
   // Said only after the right password, so it cannot be used to find out which emails are banned.
   if (user.bannedAt) return { ok: false, error: BANNED_MESSAGE };
-  // Likewise only after the right password: the form opens the locked page instead of showing this code.
-  if (user.paymentLockedAt) return { ok: false, error: PAYMENT_LOCKED_CODE };
 
   // An admin with two-step sign-in on is asked for the second step only AFTER the right password, so nothing
   // here tells anyone whether an account exists. No sign-in code is issued until the second step is right, and the

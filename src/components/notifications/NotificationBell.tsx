@@ -1,12 +1,9 @@
 "use client";
 
-import { OPEN_NOTIFICATIONS, OPEN_SUPPORT, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
+import { OPEN_NOTIFICATIONS, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
 import { notificationTarget } from "@/lib/notificationTargets";
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useMeStatus } from "@/components/layout/MeStatusProvider";
-import { SupportThread } from "@/components/notifications/SupportThread";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -118,7 +115,6 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   ATTENDANCE_RECORDED: { key: "bookings", label: "Bookings" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
   FRIEND_REQUEST_ACCEPTED: { key: "friends", label: "Friends" },
-  FRIEND_NUDGE: { key: "reminders", label: "Reminders" },
   PRACTICE_REMINDER: { key: "reminders", label: "Reminders" },
   BANNER_PHONE: { key: "reminders", label: "Reminders" },
   BANNER_DISCORD: { key: "reminders", label: "Reminders" },
@@ -288,7 +284,7 @@ function NotificationGroup({
               : "border-transparent bg-neu-base shadow-raised-low"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal-fg">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -336,8 +332,6 @@ function NotificationGroup({
 }
 
 
-type InboxTab = "NOTIFICATIONS" | "MAIL" | "SUPPORT";
-
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const inboxRef = useDialogFocus<HTMLDivElement>(open);
@@ -345,12 +339,7 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [mailUnreadCount, setMailUnreadCount] = useState(0);
   const [mail, setMail] = useState<NotificationRow[]>([]);
-  const [tab, setTab] = useState<InboxTab>("NOTIFICATIONS");
-  // The Support tab is for students; the team answers from Admin > Support Chat. Its count is part of the shared status.
-  const { data: session } = useSession();
-  const hasSupport = session?.user?.role !== "ADMIN";
-  const supportUnread = useMeStatus()?.unreadMessages ?? 0;
-  const badgeCount = unreadCount + mailUnreadCount + (hasSupport ? supportUnread : 0);
+  const [tab, setTab] = useState<"NOTIFICATIONS" | "MAIL">("NOTIFICATIONS");
   const [mounted, setMounted] = useState(false);
   // Which stacked groups are currently expanded, keyed by NotificationCluster.key.
   // Left as-is across polls/reopens rather than reset, so an in-progress poll
@@ -409,15 +398,7 @@ export function NotificationBell() {
 
   // The profile menu (the only way in on phones) opens this panel, and shows this count on the profile picture.
   useEffect(() => listen(OPEN_NOTIFICATIONS, () => setOpen(true)), []);
-  useEffect(
-    () =>
-      listen(OPEN_SUPPORT, () => {
-        setTab("SUPPORT");
-        setOpen(true);
-      }),
-    [],
-  );
-  useEffect(() => announce(UNREAD_COUNT, badgeCount), [badgeCount]);
+  useEffect(() => announce(UNREAD_COUNT, unreadCount + mailUnreadCount), [unreadCount, mailUnreadCount]);
 
   useEffect(() => {
     refresh();
@@ -498,14 +479,13 @@ export function NotificationBell() {
 
   const shown = tab === "MAIL" ? mail : notifications;
   const onItem = tab === "MAIL" ? handleMailClick : handleNotificationClick;
-  const supportOpen = open && tab === "SUPPORT" && hasSupport;
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={badgeCount > 0 ? `Notifications, mail and support, ${badgeCount} unread` : "Notifications, mail and support"}
+        aria-label={unreadCount + mailUnreadCount > 0 ? `Notifications and mail, ${unreadCount + mailUnreadCount} unread` : "Notifications and mail"}
         aria-expanded={open}
         data-tour="notification-bell"
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
@@ -515,9 +495,9 @@ export function NotificationBell() {
         }`}
       >
         <Bell size={18} strokeWidth={1.5} />
-        {badgeCount > 0 && (
+        {unreadCount + mailUnreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
-            {badgeCount > 9 ? "9+" : badgeCount}
+            {unreadCount + mailUnreadCount > 9 ? "9+" : unreadCount + mailUnreadCount}
           </span>
         )}
       </button>
@@ -555,7 +535,7 @@ export function NotificationBell() {
                   aria-modal="true"
                   aria-label="Inbox"
                   style={{ willChange: "transform" }}
-                  className="relative flex h-full w-[94%] max-w-md flex-col border-l border-ink/10 bg-surface min-[420px]:w-[86%]"
+                  className="relative flex h-full w-[86%] max-w-md flex-col border-l border-ink/10 bg-surface"
                 >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
@@ -567,11 +547,11 @@ export function NotificationBell() {
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
                   <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Inbox</h1>
-                  {tab !== "SUPPORT" && (tab === "MAIL" ? mailUnreadCount : unreadCount) > 0 && (
+                  {(tab === "MAIL" ? mailUnreadCount : unreadCount) > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal-fg transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-small text-signal transition hover:opacity-70"
                     >
                       <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
@@ -579,15 +559,14 @@ export function NotificationBell() {
                   )}
                 </div>
 
-                <div className="border-b border-ink/10 px-4 py-3 min-[420px]:px-6">
-                  <Tabs<InboxTab>
+                <div className="border-b border-ink/10 px-6 py-3">
+                  <Tabs<"NOTIFICATIONS" | "MAIL">
                     label="Inbox"
                     value={tab}
                     onChange={setTab}
                     items={[
                       { id: "NOTIFICATIONS", label: "Notifications", count: unreadCount },
                       { id: "MAIL", label: "Mail", count: mailUnreadCount },
-                      ...(hasSupport ? [{ id: "SUPPORT" as const, label: "Support", count: supportUnread }] : []),
                     ]}
                   />
                 </div>
@@ -599,11 +578,6 @@ export function NotificationBell() {
                     document.body, so an uncontained rubber-band bounce
                     here can visibly slide over that header for an instant
                     on the way back from the bottom. */}
-                {tab === "SUPPORT" && hasSupport ? (
-                  <div className="mx-auto min-h-0 w-full max-w-xl flex-1">
-                    <SupportThread active={supportOpen} />
-                  </div>
-                ) : (
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {shown.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
@@ -615,7 +589,7 @@ export function NotificationBell() {
                         <Link
                           href="/account?tab=notifications"
                           onClick={() => setOpen(false)}
-                          className="text-small text-signal-fg transition hover:opacity-70"
+                          className="text-small text-signal transition hover:opacity-70"
                         >
                           Notification settings
                         </Link>
@@ -651,7 +625,6 @@ export function NotificationBell() {
                     </div>
                   )}
                 </div>
-                )}
                 </motion.div>
               </motion.div>
             )}

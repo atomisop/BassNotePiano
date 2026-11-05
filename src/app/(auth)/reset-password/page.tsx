@@ -1,6 +1,5 @@
 "use client";
 
-import { PAYMENT_LOCKED_CODE, PAYMENT_LOCKED_PATH } from "@/lib/paymentLockCodes";
 import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
@@ -68,7 +67,6 @@ function ResetPasswordForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      if (signInResult.error === PAYMENT_LOCKED_CODE) return window.location.assign(PAYMENT_LOCKED_PATH);
       setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Password changed, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;

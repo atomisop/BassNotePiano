@@ -110,25 +110,23 @@ export default async function StreakPage() {
                 <span className="hidden md:inline">Last 6 months</span>
               </span>
             </div>
-            {/* Six months is 26 columns: 20px cells fit a full-width card but not the narrower left column a computer gets from lg
-                (the grid ran under the right column, 2026-11-02 audit), so lg uses the phone's 16px cells and 2xl goes back to 20px. */}
             <div className="mt-4 flex gap-1.5" role="img" aria-label={`${days.length} practiced days in all, ${status.streak} in a row now`}>
-              <div aria-hidden className="grid shrink-0 grid-rows-7 gap-1 pr-1 md:gap-1.5 lg:gap-1 2xl:gap-1.5 text-caption leading-none text-slate-500">
+              <div aria-hidden className="grid shrink-0 grid-rows-7 gap-1 pr-1 md:gap-1.5 text-[0.625rem] leading-none text-slate-500">
                 {WEEKDAY_LETTERS.map((l, i) => (
-                  <span key={i} className="flex h-[var(--cell)] items-center [--cell:1rem] md:[--cell:1.25rem] lg:[--cell:1rem] 2xl:[--cell:1.25rem]">
+                  <span key={i} className="flex h-[var(--cell)] items-center [--cell:1rem] md:[--cell:1.25rem]">
                     {l}
                   </span>
                 ))}
               </div>
               <div className="flex min-w-0 flex-1 justify-between gap-1">
                 {calendar.map((week, w) => (
-                  <div key={week[0].day} className={cn("grid grid-rows-7 gap-1 md:gap-1.5 lg:gap-1 2xl:gap-1.5", w < WEEKS_WIDE - WEEKS_PHONE && "hidden md:grid")}>
+                  <div key={week[0].day} className={cn("grid grid-rows-7 gap-1 md:gap-1.5", w < WEEKS_WIDE - WEEKS_PHONE && "hidden md:grid")}>
                     {week.map((cell) => (
                       <span
                         key={cell.day}
                         title={cell.future ? undefined : `${cell.day}: ${cell.practiced ? "practiced" : "not practiced"}`}
                         className={cn(
-                          "block h-4 w-4 rounded-[0.25rem] md:h-5 md:w-5 lg:h-4 lg:w-4 2xl:h-5 2xl:w-5",
+                          "block h-4 w-4 rounded-[0.25rem] md:h-5 md:w-5",
                           cell.future ? "bg-transparent" : cell.practiced ? "bg-signal" : "bg-neu-base shadow-pressed-low",
                           cell.isToday && "ring-[1.5px] ring-inset ring-slate-300",
                         )}

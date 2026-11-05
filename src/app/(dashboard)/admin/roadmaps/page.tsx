@@ -11,7 +11,7 @@ export default async function AdminRoadmapsPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can change the roadmaps.</p>
       </div>
     );
@@ -19,7 +19,7 @@ export default async function AdminRoadmapsPage() {
   const roadmaps = await listRoadmapsForAdmin();
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Roadmaps</h1>
+      <h1 className="sr-only">Roadmaps</h1>
       <p className="mt-2 max-w-2xl text-small text-slate-500">
         Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you
         already give. A new roadmap starts hidden: add its scales (and their lessons under Classes &gt; Lessons), then turn it on.

@@ -18,8 +18,6 @@ export interface LockedScaleMessage {
   lines: string[];
   /** The one thing the student can do about it. */
   primary: { label: string; href: string } | null;
-  /** A quieter second way forward, when there is one. */
-  secondary?: { label: string; href: string };
   /** Show the "ask my teacher" button. */
   canAsk: boolean;
 }
@@ -27,12 +25,11 @@ export interface LockedScaleMessage {
 export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): LockedScaleMessage {
   if (f.lockedBecause === "no-plan") {
     return {
-      heading: "Start a plan to open your scales",
+      heading: "Scales come with live classes",
       lines: [
-        "Every plan includes live classes with your teacher and all of the lessons. Pick a plan and your first scale opens right away.",
+        "The curriculum opens one scale at a time as you and your teacher move through it. Start a class plan to begin, or apply for a free trial class to try the first lessons.",
       ],
-      primary: { label: "Choose a plan", href: "/billing/plans" },
-      secondary: { label: "Try a free class first", href: "/classes" },
+      primary: { label: "See class plans", href: "/billing/plans" },
       canAsk: false,
     };
   }

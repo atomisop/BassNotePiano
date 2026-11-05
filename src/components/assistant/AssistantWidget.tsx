@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { AnimatePresence, motion, useDragControls } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
 import { ArrowRight, Sparkles } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
-import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
+import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent, type AtomAnchor } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
 import { Hint } from "@/components/ui/Hint";
@@ -19,7 +19,7 @@ import { ThumbsDown, ThumbsUp, X } from "@/components/ui/appIcons";
 
 /**
  * Atom, the "ask me anything" assistant, floating on every page (mounted
- * once in providers.tsx, same pattern as Toaster).
+ * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
  *
  * The launcher (and the open panel's header icon, and every per-message
  * accent) run `AiBorder`/`GenerateAIButton` from `components/ui/button-33.tsx`,
@@ -46,6 +46,15 @@ import { ThumbsDown, ThumbsUp, X } from "@/components/ui/appIcons";
  * `lib/overlayNav.ts` for why this doesn't just trust the z-index. Both
  * overlays broadcast `FULLSCREEN_NAV_EVENT` while open; this widget listens
  * and hides itself (`navOverlayOpen` below) for as long as one is up.
+ *
+ * COOKIE BANNER COLLISION, the same problem running the other way: the
+ * open chat panel is itself a `fixed`, body-portaled element claiming the
+ * same corner of the screen CookieConsentBanner does (`z-[70]`), which had
+ * no idea this panel existed and rendered on top of it, confirmed live
+ * (a first visitor opening Atom before deciding on cookies got the banner
+ * sitting over the bottom of the open panel). Fixed from this side too,
+ * broadcasting `ATOM_PANEL_OPEN_EVENT` whenever `open` changes so the
+ * banner can step aside while this is up, same `lib/overlayNav.ts`.
  *
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
@@ -329,8 +338,6 @@ export function AssistantWidget() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  // On a phone Atom is a bottom sheet (pull the handle down to close); from tablet width up it stays the small floating window.
-  const sheetDrag = useDragControls();
   // Model-predicted follow-ups for the chips; empty until the first answer
   // lands (the built-in SUGGESTIONS cover the empty chat).
   const [generatedSuggestions, setGeneratedSuggestions] = useState<string[]>([]);
@@ -375,6 +382,14 @@ export function AssistantWidget() {
     window.addEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
     return () => window.removeEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
   }, []);
+
+  // Tells CookieConsentBanner (a separate fixed, body-portaled element
+  // claiming the same corner of the screen) to hold itself back while this
+  // panel is open, see overlayNav.ts.
+  useEffect(() => {
+    setAtomPanelOpen(open);
+    return () => setAtomPanelOpen(false);
+  }, [open]);
 
   // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
   // the floating launcher while it is mounted, and opens
@@ -780,22 +795,9 @@ export function AssistantWidget() {
   );
   const hasSupportReply = threadMessages.some((m) => m.sender === "SUPPORT");
 
-  const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
-
   return createPortal(
-    <>
-    {phone && open && !navOverlayOpen && (
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => setOpen(false)}
-        className="fixed inset-0 z-30 bg-black/45"
-      />
-    )}
     <div
-      className={`kb-atom fixed z-40 flex flex-col gap-3 max-md:inset-x-0 max-md:bottom-0! max-md:items-stretch max-md:gap-0 ${anchor && open ? "items-start" : "right-6 items-end"} ${navOverlayOpen ? "hidden" : ""}`}
+      className={`kb-atom fixed z-40 flex flex-col gap-3 ${anchor && open ? "items-start" : "right-6 items-end"} ${navOverlayOpen ? "hidden" : ""}`}
       style={
         anchor && open
           ? { left: anchor.left, bottom: `calc(100vh - ${anchor.top}px + 14px)` }
@@ -805,18 +807,10 @@ export function AssistantWidget() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={phone ? { y: "100%" } : { opacity: 0, y: 16, scale: 0.96 }}
-            animate={phone ? { y: 0 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={phone ? { y: "100%" } : { opacity: 0, y: 16, scale: 0.96 }}
-            transition={phone ? { type: "spring", duration: 0.4, bounce: 0 } : SPRING.snappy}
-            drag={phone ? "y" : false}
-            dragControls={sheetDrag}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 120 || info.velocity.y > 600) setOpen(false);
-            }}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            transition={SPRING.snappy}
             style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}`, transformOrigin: anchor ? `${Math.min(anchor.width / 2, 40)}px 100%` : "100% 100%" }}
             // No local `--elev-border`/`--elev-bg` override anymore: Atom
             // used to force its own teal/blue material here regardless of
@@ -826,7 +820,7 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="atom-panel relative h-[min(70vh,560px)] w-[min(92vw,380px)] rounded-3xl text-primary max-md:h-[72dvh] max-md:w-full max-md:rounded-b-none max-md:pb-[env(safe-area-inset-bottom)]"
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] rounded-3xl text-primary"
             role="dialog"
             aria-label="Chat with Atom"
             // Lenis (marketing smooth scroll) hijacks wheel events window-wide;
@@ -841,8 +835,8 @@ export function AssistantWidget() {
                 style={{ left: Math.min(anchor.width / 2, 40) - 7 }}
               />
             )}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl max-md:rounded-b-none">
-            <AiBorder rounded="rounded-3xl max-md:rounded-b-none" glow surface="bg-neu-base" />
+            <div className="absolute inset-0 overflow-hidden rounded-3xl">
+            <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
                 icon's old color mix, the icon is signal green now (the
@@ -850,13 +844,6 @@ export function AssistantWidget() {
                 the whole header would compete with the message bubbles
                 below that also use it, so the header stays plain neutral
                 at every width instead. */}
-            {/* The pull handle of the phone sheet: drag it down to close. */}
-            <div
-              onPointerDown={(e) => sheetDrag.start(e)}
-              className="hidden shrink-0 touch-none justify-center pt-2 pb-1 max-md:flex"
-            >
-              <span aria-hidden className="h-1 w-10 rounded-full bg-slate-500/50" />
-            </div>
             <div className="flex items-center gap-3 border-b border-border px-4 py-3">
               <Sparkles className="size-6 shrink-0 text-primary" fill="currentColor" />
               <div className="min-w-0 flex-1">
@@ -1069,8 +1056,7 @@ export function AssistantWidget() {
       </AnimatePresence>
 
       {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Ask AI: chat with Atom, your personal assistant" />}
-    </div>
-    </>,
+    </div>,
     document.body,
   );
 }

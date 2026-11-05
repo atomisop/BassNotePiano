@@ -17,7 +17,7 @@ export function CreditsBadge() {
   const { credits, heldCredits } = status;
   const label = `${formatCredits(credits)} credit${credits === 1 ? "" : "s"}`;
   return (
-    <Link href="/lessons" aria-label={`${label} available. Open lessons.`} className="tap inline-flex items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal">
+    <Link href="/lessons" aria-label={`${label} available. Open lessons.`} className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal">
       <UsageBadge
         icon={<Coins className="h-4 w-4 text-signal-fg" aria-hidden />}
         planName="Credits"

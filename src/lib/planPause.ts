@@ -64,6 +64,7 @@ export interface AdminPausablePlan {
 /** Why the studio cannot pause this plan to `until` (null = indefinitely), in plain words, or null when it can. */
 export function adminPauseBlockedReason(plan: AdminPausablePlan, until: Date | null, now: Date): string | null {
   if (plan.status !== "ACTIVE") return "Only a running plan can be paused.";
+  if (plan.familyGroupId) return "A family plan cannot be paused here.";
   if (plan.installmentsPaid < 1) return "The first payment has not been made yet.";
   if (isPausedNow(plan, now)) return "This plan is already paused. Resume it first.";
   if (until !== null) {

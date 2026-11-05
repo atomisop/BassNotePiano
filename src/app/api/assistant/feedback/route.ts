@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { reportError } from "@/lib/reportError";
 import { clientAddress } from "@/lib/assistantInput";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
@@ -51,7 +50,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    reportError(err, "POST /api/assistant/feedback failed");
+    console.error("POST /api/assistant/feedback failed:", err);
     return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
   }
 }

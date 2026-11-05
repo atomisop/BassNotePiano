@@ -1,6 +1,6 @@
 /**
  * Small preference cookies the server sets so a choice sticks to the device
- * (set by the server, not written from JavaScript, so Safari does not clear it with page storage).
+ * (see cookieConsent.ts for why server-set, not written from JavaScript).
  */
 
 export const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;

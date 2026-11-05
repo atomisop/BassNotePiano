@@ -8,8 +8,8 @@ import { etDayKey } from "@/lib/fingerPractice";
  * not type anything), goes out as an in-app notice plus the email their own switches allow, and is only sent when the reason
  * still holds right now. Never twice to the same person for the same reason on the same day.
  */
-export type ReminderKind = "overdue" | "atRisk" | "trial" | "credits" | "discord";
-export const REMINDER_KINDS: ReminderKind[] = ["overdue", "atRisk", "trial", "credits", "discord"];
+export type ReminderKind = "overdue" | "atRisk" | "trial" | "credits";
+export const REMINDER_KINDS: ReminderKind[] = ["overdue", "atRisk", "trial", "credits"];
 
 const DAY = 86_400_000;
 
@@ -28,8 +28,6 @@ async function stillApplies(kind: ReminderKind, userId: string, now: Date): Prom
     }
     case "trial":
       return (await prisma.user.count({ where: { id: userId, trialEndsAt: { gt: now, lt: new Date(t + DAY) }, classBookings: { none: {} } } })) > 0;
-    case "discord":
-      return (await prisma.user.count({ where: { id: userId, discordId: null, paymentPlans: { some: { status: "ACTIVE" } } } })) > 0;
     case "credits":
       return (await prisma.creditGrant.count({ where: { userId, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now, lt: new Date(t + 7 * DAY) } } })) > 0;
   }
@@ -81,16 +79,6 @@ export async function sendFollowUpReminder(kind: ReminderKind, userId: string, n
         body: "Book a class before they lapse so none go to waste.",
         emailCategory: "classes",
         cta: { label: "Book a class", path: "/lessons" },
-      });
-      break;
-    case "discord":
-      await createNotification({
-        userId,
-        type: "BANNER_DISCORD",
-        title: "Connect Discord to join your class",
-        body: "Your live classes are held on Discord. Connect your account so you can join on time.",
-        emailCategory: "classes",
-        cta: { label: "Connect Discord", path: "/lessons" },
       });
       break;
   }

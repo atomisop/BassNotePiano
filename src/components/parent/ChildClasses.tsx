@@ -49,11 +49,9 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
   async function cancel(id: string) {
     if (sure !== id) return setSure(id);
     setBusy(id);
-    const hold = await toast.held("Canceling the class", () => parentCancelClassAction(childId, id).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true });
+    const result = await parentCancelClassAction(childId, id).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setBusy(null);
     setSure(null);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) return void toast.warning(result.error);
     toast.success("Class canceled");
     router.refresh();

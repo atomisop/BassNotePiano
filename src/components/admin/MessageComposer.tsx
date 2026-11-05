@@ -12,7 +12,6 @@ import {
   type MessageRecipient,
 } from "@/app/(dashboard)/admin/messages/actions";
 import { buttonVariants } from "@/components/ui/button";
-import { toast } from "@/components/ui/Toaster";
 
 interface SentRow {
   id: string;
@@ -89,21 +88,14 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
     setError(null);
     setNotice(null);
     setSubmitting(true);
-    const hold = await toast.held(
-      "Sending the message",
-      () =>
-        sendMessageAction(
-          recipients.map((r) => r.id),
-          title,
-          body,
-          sendEmail,
-          supportCta,
-        ),
-      { mail: sendEmail },
+    const result = await sendMessageAction(
+      recipients.map((r) => r.id),
+      title,
+      body,
+      sendEmail,
+      supportCta,
     );
     setSubmitting(false);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) {
       setError(result.error);
       return;
@@ -211,12 +203,12 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
 
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between rounded-lg bg-neu-base px-3 py-2.5 shadow-raised-low">
-            <label htmlFor="composer-send-email" className="cursor-pointer text-small font-medium text-slate-200">Send email</label>
-            <Switch id="composer-send-email" checked={sendEmail} onCheckedChange={setSendEmail} aria-label="Also send this message by email" />
+            <p className="text-small font-medium text-slate-200">Send email</p>
+            <Switch checked={sendEmail} onCheckedChange={setSendEmail} aria-label="Also send this message by email" />
           </div>
           <div className="flex items-center justify-between rounded-lg bg-neu-base px-3 py-2.5 shadow-raised-low">
-            <label htmlFor="composer-support-cta" className="cursor-pointer text-small font-medium text-slate-200">Include &ldquo;Click here to contact support&rdquo;</label>
-            <Switch id="composer-support-cta" checked={supportCta} onCheckedChange={setSupportCta} aria-label="Include a contact support link" />
+            <p className="text-small font-medium text-slate-200">Include &ldquo;Click here to contact support&rdquo;</p>
+            <Switch checked={supportCta} onCheckedChange={setSupportCta} aria-label="Include a contact support link" />
           </div>
         </div>
 

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { reportError } from "@/lib/reportError";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
@@ -25,7 +24,7 @@ export async function GET(_req: Request, props: { params: Promise<{ id: string }
     if (!thread) return NextResponse.json({ error: "Not found." }, { status: 404 });
     return NextResponse.json(thread);
   } catch (err) {
-    reportError(err, "GET /api/assistant/support/[id] failed");
+    console.error("GET /api/assistant/support/[id] failed:", err);
     return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
   }
 }
@@ -64,7 +63,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
       throw err;
     }
   } catch (err) {
-    reportError(err, "POST /api/assistant/support/[id] failed");
+    console.error("POST /api/assistant/support/[id] failed:", err);
     return NextResponse.json({ error: "Something went wrong sending that. Please try again." }, { status: 500 });
   }
 }

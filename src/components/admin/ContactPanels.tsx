@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/Card";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import type { ContactInput, HoldChoice } from "@/lib/contacts";
-import { toast } from "@/components/ui/Toaster";
 
 const STATUS_LABEL: Record<string, string> = { INTERESTED: "Interested", TRIAL: "Trial", ACTIVE: "Active", PAUSED: "Paused" };
 const selectClass =
@@ -255,9 +254,7 @@ export function ContactSessions({
 
   function remove(id: string) {
     start(async () => {
-      const hold = await toast.held("Deleting the class entry", () => onDelete(id));
-      if (hold.undone) return;
-      const result = hold.value;
+      const result = await onDelete(id);
       if (!result.ok) return setError(result.error);
       router.refresh();
     });

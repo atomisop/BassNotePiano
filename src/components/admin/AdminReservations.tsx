@@ -52,22 +52,15 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
     if (!date) return toast.warning("Pick a day.");
     if (dayHours.length === 0) return toast.warning("There are no classes that day.");
     setBusy(true);
-    const hold = await toast.held(
-      "Reserving for the customer",
-      () =>
-        reserveForCustomerAction({
-          date,
-          hours: whole ? null : dayHours.filter((h) => picked.has(key(h))).map((h) => ({ scheduleId: h.scheduleId, chunkIndex: h.chunkIndex })),
-          name,
-          email,
-          phone,
-          note,
-        }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })),
-      { mail: true },
-    );
+    const result = await reserveForCustomerAction({
+      date,
+      hours: whole ? null : dayHours.filter((h) => picked.has(key(h))).map((h) => ({ scheduleId: h.scheduleId, chunkIndex: h.chunkIndex })),
+      name,
+      email,
+      phone,
+      note,
+    }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setBusy(false);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) return toast.warning(result.error);
     if (result.emailed) toast.success(`Reserved. ${name.trim().split(/\s+/)[0] || "The customer"} was emailed.`);
     else toast.warning("Reserved, but the email could not be sent. Tell the customer yourself.");
@@ -86,13 +79,9 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
       return;
     }
     setReleasing(groupId);
-    const hold = await toast.held("Releasing the reservation", () =>
-      releaseReservationAction(groupId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })),
-    );
+    const result = await releaseReservationAction(groupId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setReleasing(null);
     setSure(null);
-    if (hold.undone) return;
-    const result = hold.value;
     if (!result.ok) return toast.warning(result.error);
     toast.success("Released");
     router.refresh();
