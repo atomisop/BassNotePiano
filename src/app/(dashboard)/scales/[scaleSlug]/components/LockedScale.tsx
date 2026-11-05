@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { openAtomWithCase } from "@/lib/atomTrigger";
 import { cn } from "@/lib/utils";
@@ -54,15 +54,15 @@ export function LockedScale({ scaleLabel, scaleSlug, message }: { scaleLabel: st
             </Link>
           )}
           {message.canAsk && (
-            <Button
+            <button
               type="button"
               onClick={ask}
               disabled={busy}
-              variant="secondary"
+              className={buttonVariants({ variant: "secondary" })}
             >
               {busy && <MorphingSquare size={13} className="shrink-0" />}
               Ask my teacher to release it
-            </Button>
+            </button>
           )}
         </div>
         {error && (

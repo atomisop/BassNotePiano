@@ -21,7 +21,7 @@ import {
   createFamilyBundlePaymentAction,
   submitClassCreditsPaymentAction,
 } from "./actions";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 interface PendingPayment {
   id: string;
@@ -182,13 +182,13 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   if (payment) {
     return (
       <div>
-        <Button
+        <button
           type="button"
           onClick={() => setPayment(null)}
-          variant="secondary" size="sm" className="mb-4"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "mb-4" })}
         >
           ← Change bundle
-        </Button>
+        </button>
         <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">
             {perRecipientClasses} classes each, for {emails.length} accounts ({emails.length * perRecipientClasses} classes total)
@@ -321,14 +321,14 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
 
         {checkError && <p className="mt-2 text-small text-red-400">{checkError}</p>}
 
-        <Button
+        <button
           type="button"
           onClick={addRecipient}
           disabled={emails.length >= MAX_FAMILY_BUNDLE_RECIPIENTS}
-          variant="secondary" size="sm" className="mt-3"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
         >
           + Add another recipient
-        </Button>
+        </button>
       </div>
 
       <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
@@ -368,15 +368,15 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
 
       {submitError && <p className="text-small text-red-400">{submitError}</p>}
 
-      <Button
+      <button
         type="button"
         onClick={handleContinue}
         disabled={!canSubmit}
-        variant="primary" className="flex w-full"
+        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Loading…" : `Continue to payment · ${formatUsd(total.totalCents)}`}
-      </Button>
+      </button>
       {!allRowsVerified && (
         <p className="text-center text-small text-slate-500">
           Every recipient needs a verified Bass Note Piano account before you can continue.

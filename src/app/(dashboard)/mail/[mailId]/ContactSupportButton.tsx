@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { openAtomWithCase } from "@/lib/atomTrigger";
 import { contactSupportFromMailAction } from "../actions";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
 export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string; alreadyOpened: boolean }) {
@@ -29,15 +29,15 @@ export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string
 
   return (
     <div>
-      <Button
+      <button
         type="button"
         onClick={handleClick}
         disabled={busy}
-        variant="secondary"
+        className={buttonVariants({ variant: "secondary" })}
       >
         {busy && <MorphingSquare size={13} className="shrink-0" />}
         {opened ? "Open your support chat" : "Contact support"}
-      </Button>
+      </button>
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
     </div>
   );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { groupSentNotices, listSentNotices, NOTICE_PAGE_SIZE, type NoticeAudience, type NoticeChannel } from "@/lib/adminNotices";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = { title: "Admin: Sent" };
 
@@ -103,7 +103,7 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
           </select>
         </div>
         <div className="col-span-3 flex items-end gap-2 lg:col-span-1">
-          <Button type="submit" variant="primary" size="sm" className="h-11 text-black">Search</Button>
+          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "h-11 text-black" })}>Search</button>
           {filtered && <Link href={view === "messages" ? "/admin/sent?view=messages" : "/admin/sent"} className={buttonVariants({ variant: "secondary", size: "sm", className: "h-11" })}>Clear</Link>}
         </div>
       </form>

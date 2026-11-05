@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TOUR_STEPS } from "./tourSteps";
 import { markOnboardingTourSeenAction } from "@/app/(dashboard)/about/actions";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { X } from "@/components/ui/appIcons";
 
@@ -313,21 +313,21 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
           </button>
           <div className="flex items-center gap-2">
             {!isFirst && (
-              <Button
+              <button
                 type="button"
                 onClick={goBack}
-                variant="secondary" size="sm"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Back
-              </Button>
+              </button>
             )}
-            <Button
+            <button
               type="button"
               onClick={goNext}
-              variant="primary" size="sm"
+              className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               {isLast ? "Finish" : "Next"}
-            </Button>
+            </button>
           </div>
         </div>
       </div>

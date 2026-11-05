@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { MessageSquare } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
@@ -40,10 +40,10 @@ export function QuickMessageButton({ userId, name }: { userId: string; name: str
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)} variant="secondary" size="sm">
+      <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
         <MessageSquare aria-hidden className="h-4 w-4" />
         Message
-      </Button>
+      </button>
       <Dialog
         open={open}
         onOpenChange={(next) => {
@@ -53,10 +53,10 @@ export function QuickMessageButton({ userId, name }: { userId: string; name: str
         title={`Message ${name}`}
         description="It lands in their Mail in the app."
         footer={
-          <Button type="button" onClick={() => void send()} disabled={busy} variant="primary" className="w-full sm:w-auto">
+          <button type="button" onClick={() => void send()} disabled={busy} className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}>
             {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {busy ? "Sending…" : "Send"}
-          </Button>
+          </button>
         }
       >
         <div className="space-y-3">

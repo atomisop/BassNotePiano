@@ -3,7 +3,6 @@
 import { useTheme } from "@/components/theme/ThemeProvider";
 import type { ThemeChoice } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { LiquidGlassControl } from "@/components/theme/LiquidGlassControl";
 
 const CHOICES: { id: ThemeChoice; label: string }[] = [
   { id: "paper", label: "Light" },
@@ -45,7 +44,6 @@ function Preview({ choice }: { choice: ThemeChoice }) {
 export function AppearanceTiles({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme } = useTheme();
   return (
-    <>
     <div role="radiogroup" aria-label="Appearance" className={cn("grid grid-cols-3", compact ? "gap-2" : "gap-3")}>
       {CHOICES.map((c) => {
         const on = theme === c.id;
@@ -72,7 +70,5 @@ export function AppearanceTiles({ compact = false }: { compact?: boolean }) {
         );
       })}
     </div>
-    {!compact && <div className="mt-5"><LiquidGlassControl /></div>}
-    </>
   );
 }

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pause, Play } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { pausePlanAdminAction, resumePlanAdminAction } from "@/app/(dashboard)/admin/payment-plans/actions";
@@ -91,14 +91,14 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
             aria-label="Pause until"
             className="h-11 min-w-0 flex-1 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
-          <Button type="button" disabled={!date || busy !== null} onClick={() => void run("date")} aria-busy={busy === "date"} variant="primary">
+          <button type="button" disabled={!date || busy !== null} onClick={() => void run("date")} aria-busy={busy === "date"} className={buttonVariants({ variant: "primary" })}>
             {busy === "date" && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             Pause
-          </Button>
-          <Button type="button" disabled={busy !== null} onClick={() => void run("indefinite")} aria-busy={busy === "indefinite"} variant="secondary">
+          </button>
+          <button type="button" disabled={busy !== null} onClick={() => void run("indefinite")} aria-busy={busy === "indefinite"} className={buttonVariants({ variant: "secondary" })}>
             {busy === "indefinite" && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             Indefinitely
-          </Button>
+          </button>
         </div>
       </Dialog>
     </>

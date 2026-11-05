@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import type { MoneyFixId, MoneyIssue } from "@/lib/moneyCheck";
 
@@ -36,15 +36,15 @@ export function MoneyIssueCard({ issue, onFix }: { issue: MoneyIssue; onFix: (ke
               <p className="text-small text-slate-300">{fix.hint}</p>
               <div className="mt-2 flex gap-2">
                 <button type="button" onClick={() => setConfirming(null)} disabled={busy} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low disabled:opacity-50">Not now</button>
-                <Button type="button" onClick={() => apply(fix.id)} disabled={busy} variant="primary" className="flex-1">
+                <button type="button" onClick={() => apply(fix.id)} disabled={busy} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
                   {busy ? "Fixing…" : "Yes, fix it"}
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
-            <Button key={fix.id} type="button" onClick={() => setConfirming(fix.id)} variant="secondary" size="sm" className="mr-2">
+            <button key={fix.id} type="button" onClick={() => setConfirming(fix.id)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mr-2" })}>
               {fix.label}
-            </Button>
+            </button>
           ),
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { NumberTicker } from "@/components/ui/number-ticker";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
         {total && <p className="mt-0.5 text-small leading-snug text-slate-400">{total}</p>}
       </div>
       {/* Looks off while something is missing, but stays pressable: the press explains what is missing in a popup. */}
-      <Button
+      <button
         type="button"
         aria-disabled={hint !== null}
         onClick={() => {
@@ -51,10 +51,10 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
           }
           onAction();
         }}
-        variant="primary" size="lg" className={cn("shrink-0 md:min-w-40", hint !== null && "cursor-not-allowed")}
+        className={buttonVariants({ variant: "primary", size: "lg", className: cn("shrink-0 md:min-w-40", hint !== null && "cursor-not-allowed") })}
       >
         {actionLabel}
-      </Button>
+      </button>
     </div>
   );
 }

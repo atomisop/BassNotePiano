@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Hourglass } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
@@ -47,10 +47,10 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <Button type="button" onClick={() => void show()} aria-haspopup="dialog" variant="secondary" size="sm">
+      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
         <Hourglass aria-hidden className="h-4 w-4" />
         Credit expiry
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="When credits expire">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         {grants === null ? (
@@ -79,14 +79,14 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
                       onChange={(e) => setDates((d) => ({ ...d, [g.id]: e.target.value }))}
                       className="h-11 rounded-control border border-(--field-edge) bg-neu-base px-3 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
-                    <Button type="button" disabled={!!busy || !date || !changed} onClick={() => void save(g, date)} variant="primary" size="sm">
+                    <button type="button" disabled={!!busy || !date || !changed} onClick={() => void save(g, date)} className={buttonVariants({ variant: "primary", size: "sm" })}>
                       {busy === g.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       Save date
-                    </Button>
+                    </button>
                     {g.expiresAt && (
-                      <Button type="button" disabled={!!busy} onClick={() => void save(g, null)} variant="ghost" size="sm">
+                      <button type="button" disabled={!!busy} onClick={() => void save(g, null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                         Never expire
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </li>

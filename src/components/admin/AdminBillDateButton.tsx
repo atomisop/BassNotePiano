@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { changeBillDateAction } from "@/app/(dashboard)/admin/payment-plans/actions";
@@ -41,18 +41,18 @@ export function AdminBillDateButton({ planId, currentDay, compact = false }: { p
 
   return (
     <>
-      <Button
+      <button
         type="button"
         onClick={() => {
           setDay(currentDay);
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        variant="secondary" size="sm" className={compact ? "h-8 px-2.5" : ""}
+        className={buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}
       >
         <CalendarClock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Bill date
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Move the next bill">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
         <div className="grid gap-4">
@@ -70,13 +70,13 @@ export function AdminBillDateButton({ planId, currentDay, compact = false }: { p
             />
           </label>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" disabled={busy} onClick={() => setOpen(false)} variant="secondary">
+            <button type="button" disabled={busy} onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
               Cancel
-            </Button>
-            <Button type="button" disabled={busy || !day || day === currentDay} onClick={() => void save()} aria-busy={busy} variant="primary">
+            </button>
+            <button type="button" disabled={busy || !day || day === currentDay} onClick={() => void save()} aria-busy={busy} className={buttonVariants({ variant: "primary" })}>
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               {day && day !== currentDay ? `Move to ${pretty(day)}` : "Move bill"}
-            </Button>
+            </button>
           </div>
         </div>
       </Dialog>

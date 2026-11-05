@@ -10,7 +10,7 @@ import type { CourseLesson } from "@/lib/courseContent";
 import { Collapse } from "@/components/ui/Collapse";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FileText } from "@/components/ui/appIcons";
 
@@ -251,14 +251,14 @@ export function AdminLessonManager({
         <p className="text-small text-slate-400">
           {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
         </p>
-        <Button
+        <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
           disabled={!storageConfigured}
-          variant="primary"
+          className={buttonVariants({ variant: "primary" })}
         >
           {showForm ? "Cancel" : "Upload a lesson"}
-        </Button>
+        </button>
       </div>
 
       <Collapse open={showForm}>
@@ -300,14 +300,14 @@ export function AdminLessonManager({
 
           {error && <p className="text-small text-red-400">{error}</p>}
 
-          <Button
+          <button
             type="submit"
             disabled={uploading}
-            variant="primary" className="flex w-full"
+            className={buttonVariants({ variant: "primary", className: "flex w-full" })}
           >
             {uploading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {uploading ? "Uploading…" : "Upload"}
-          </Button>
+          </button>
         </form>
       </Collapse>
 
@@ -329,60 +329,60 @@ export function AdminLessonManager({
 
               {deletingId === lesson.id ? (
                 <div className="flex shrink-0 items-center gap-1.5">
-                  <Button
+                  <button
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busy}
-                    variant="secondary" size="sm"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Keep
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
                     onClick={() => handleDelete(lesson.id)}
                     disabled={busy}
-                    variant="danger" size="sm" className="bg-red-500/95"
+                    className={buttonVariants({ variant: "danger", size: "sm", className: "bg-red-500/95" })}
                   >
                     {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busy ? "Deleting…" : "Delete"}
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="flex shrink-0 items-center">
-                  <Button
+                  <button
                     type="button"
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    variant="secondary" size="iconSm"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    variant="secondary" size="iconSm"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <ChevronDown className="h-4 w-4" />
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
                     onClick={() => startEdit(lesson)}
                     aria-label={`Rename ${lesson.title}`}
-                    variant="secondary" size="iconSm"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
                     aria-label={`Delete ${lesson.title}`}
-                    variant="secondary" size="iconSm"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -402,13 +402,13 @@ export function AdminLessonManager({
             <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} maxLength={1000} rows={3} className={`${editField} h-auto resize-none py-2.5`} />
           </label>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" disabled={busy} onClick={() => setEditing(null)} variant="secondary">
+            <button type="button" disabled={busy} onClick={() => setEditing(null)} className={buttonVariants({ variant: "secondary" })}>
               Cancel
-            </Button>
-            <Button type="button" disabled={busy || !editTitle.trim()} onClick={() => void handleEdit()} aria-busy={busy} variant="primary">
+            </button>
+            <button type="button" disabled={busy || !editTitle.trim()} onClick={() => void handleEdit()} aria-busy={busy} className={buttonVariants({ variant: "primary" })}>
               {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
               Save
-            </Button>
+            </button>
           </div>
         </div>
       </Dialog>

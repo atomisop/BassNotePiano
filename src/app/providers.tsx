@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
-import { LiquidGlassApply } from "@/components/theme/LiquidGlassControl";
 import { OfflineNotice } from "@/components/ui/OfflineNotice";
 import { ServiceWorkerSetup } from "@/components/pwa/ServiceWorkerSetup";
 import { LaunchSplash } from "@/components/pwa/LaunchSplash";
@@ -42,7 +41,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
               ramp, they're rendered in a portal, but the CSS variables they
               resolve against come from <html data-theme>, which this sets. */}
           <Toaster />
-          <LiquidGlassApply />
           <OfflineNotice />
           <ServiceWorkerSetup />
           <LaunchSplash />
