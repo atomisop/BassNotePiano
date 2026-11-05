@@ -56,7 +56,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const hasAdvanced = isOwner && (!!plan || !!lastCanceled);
   const planMenu =
     plan || isOwner || nextBooking ? (
-      <ActionMenu label="Plan" openEvent="bnp-open-plan-menu" icon={<Wrench aria-hidden className="mr-1.5 h-4 w-4" />}>
+      <ActionMenu key="plan-menu" label="Plan" openEvent="bnp-open-plan-menu" icon={<Wrench aria-hidden className="mr-1.5 h-4 w-4" />}>
         {/* Group and parent plans too: each person on one has their own plan, paused, moved and rebuilt on its own. */}
         {plan && <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />}
         {plan && !planPaused && <AdminWeeklyTimeButton planId={plan.id} compact />}
@@ -118,6 +118,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           }
           scheduler={
             <StudentScheduler
+              key="scheduler"
               studentId={params.userId}
               studentName={profile.user.name ?? profile.user.email}
               bookings={profile.bookings.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent, status: b.status, attendance: b.attendance, inPerson: b.inPerson }))}
@@ -133,7 +134,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           }
           changeLog={
             changes.length > 0 ? (
-              <section className="glass-surface p-5">
+              <section key="change-log" className="glass-surface p-5">
                 <div className="flex items-baseline justify-between gap-3">
                   <h2 className="text-title font-semibold text-slate-50">Changes made on this account</h2>
                   <Link href={`/admin/activity?user=${params.userId}&days=all`} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">See all</Link>

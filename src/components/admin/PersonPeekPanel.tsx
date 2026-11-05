@@ -36,7 +36,7 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
 
   const job = "tap inline-flex items-center";
   return (
-    <aside aria-label="Account summary" className="glass-surface fixed bottom-4 right-4 top-24 z-30 hidden w-[22rem] flex-col overflow-y-auto p-5 lg:flex">
+    <aside aria-label="Account summary" className="glass-surface fixed bottom-4 right-4 top-[4.25rem] z-50 hidden w-[22rem] flex-col overflow-y-auto p-5 lg:flex">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-title font-semibold text-slate-50">{data ? (data.name ?? data.email) : "Loading…"}</p>

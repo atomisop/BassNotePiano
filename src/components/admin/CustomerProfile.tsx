@@ -2,8 +2,8 @@
 
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
-import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CalendarPlus, ChevronDown, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
 import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
@@ -151,7 +151,7 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 /** The bar that opens and closes one section of the long page; it is also what the index scrolls to. */
 function SectionHeader({ id, label, open, onToggle }: { id: ProfileTab; label: string; open: boolean; onToggle: () => void }) {
   return (
-    <h2 id={`sec-${id}`} className="scroll-mt-16 border-t border-slate-50/10 pt-3">
+    <h2 id={`sec-${id}`} className="scroll-mt-28 border-t border-slate-50/10 pt-3">
       <button type="button" onClick={onToggle} aria-expanded={open} className="tap flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-left text-title font-semibold text-slate-50">
         {label}
         <ChevronDown aria-hidden className={`h-5 w-5 text-slate-50/60 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -208,9 +208,27 @@ export function CustomerProfile({
     setOpenSections((prev) => new Set(prev).add(next));
     setTab(next);
     window.history.replaceState(null, "", `#${next}`);
-    // Wait a frame so the section has opened, then bring it under the index.
-    window.requestAnimationFrame(() => document.getElementById(`sec-${next}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    // Scroll once React has opened the section (see the effect below): scrolling now would stop short, the page is not tall enough yet.
+    pendingScroll.current = next;
   }
+  const pendingScroll = useRef<ProfileTab | null>(null);
+  // The admin menu pins itself at the top; the index sticks just under it, wherever its height ends up on this screen size.
+  const [stickyTop, setStickyTop] = useState(60);
+  useEffect(() => {
+    const deck = document.querySelector<HTMLElement>("[data-deck-header]");
+    if (!deck) return;
+    const measure = () => setStickyTop(Math.max(0, deck.offsetHeight - 16 + 4));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(deck);
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    const target = pendingScroll.current;
+    if (!target) return;
+    pendingScroll.current = null;
+    document.getElementById(`sec-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [openSections, tab]);
   useEffect(() => {
     const fromAddress = () => {
       const match = PROFILE_TABS.find((t) => t.id === window.location.hash.replace("#", ""));
@@ -222,11 +240,15 @@ export function CustomerProfile({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // `?do=` (from the command menu) opens the account with one job ready: credits, a class, the plan tools, or payments.
+  // Read from the address so a pick that lands on the page already open (the same person) works too, not only a fresh visit.
+  const doJob = useSearchParams().get("do");
   useEffect(() => {
-    const job = new URLSearchParams(window.location.search).get("do");
+    const job = doJob;
     if (!job) return;
-    window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    // The address is cleaned only when the job runs: in development React mounts the page twice, and cleaning it on the first
+    // pass left the second one with nothing to do.
     const t = window.setTimeout(() => {
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
       if (job === "credits") {
         chooseTab("classes");
         window.setTimeout(() => {
@@ -246,7 +268,7 @@ export function CustomerProfile({
     }, 150);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [doJob]);
   // Scroll-spy: the index highlights the section nearest the top of the screen.
   useEffect(() => {
     const els = PROFILE_TABS.map((t) => document.getElementById(`sec-${t.id}`)).filter((e): e is HTMLElement => !!e);
@@ -447,7 +469,7 @@ export function CustomerProfile({
       </div>
 
       {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
-      <div className="sticky top-2 z-20">
+      <div className="z-20 md:sticky" style={{ top: stickyTop }}>
         <Tabs<ProfileTab> label="Jump to a section of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
       </div>
 
