@@ -11,6 +11,9 @@ export interface AdminPage {
   /** The tab's name; it is also the page's own heading. Kept to one short word so a hub's tabs fit across a 320px phone (four,
       or five when one of them is as short as "Data"). */
   label: string;
+  /** A page used now and then: it sits under the section's "More" tab instead of being a tab of its own. Still a page with its own
+      address, still found by `locateAdminPage`, still counted by `hubWaiting`. */
+  more?: boolean;
 }
 
 export interface AdminHub {
@@ -27,8 +30,8 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Plans" },
-      { href: "/admin/pricing", label: "Pricing" },
-      { href: "/admin/money-check", label: "Check" },
+      { href: "/admin/pricing", label: "Pricing", more: true },
+      { href: "/admin/money-check", label: "Check", more: true },
     ],
   },
   {
@@ -37,8 +40,8 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/users", label: "Accounts" },
       { href: "/admin/students", label: "Applicants" },
-      { href: "/admin/contacts", label: "Contacts" },
-      { href: "/admin/employees", label: "Staff" },
+      { href: "/admin/contacts", label: "Contacts", more: true },
+      { href: "/admin/employees", label: "Staff", more: true },
     ],
   },
   {
@@ -48,7 +51,7 @@ export const ADMIN_HUBS: AdminHub[] = [
       { href: "/admin/today", label: "Today" },
       { href: "/admin/schedule", label: "Schedule" },
       { href: "/admin/lessons", label: "Lessons" },
-      { href: "/admin/discord", label: "Discord" },
+      { href: "/admin/discord", label: "Discord", more: true },
     ],
   },
   {
@@ -57,7 +60,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/support", label: "Support Chat" },
       { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/sent", label: "Sent" },
+      { href: "/admin/sent", label: "Sent", more: true },
     ],
   },
   {
@@ -66,9 +69,9 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/settings", label: "Settings" },
       { href: "/admin/security", label: "System" },
-      { href: "/admin/activity", label: "Activity" },
-      { href: "/admin/roadmaps", label: "Roadmaps" },
-      { href: "/admin/data", label: "Data" },
+      { href: "/admin/activity", label: "Activity", more: true },
+      { href: "/admin/roadmaps", label: "Roadmaps", more: true },
+      { href: "/admin/data", label: "Data", more: true },
     ],
   },
 ];
@@ -102,4 +105,9 @@ export function hubWaiting(hub: AdminHub, badges: AdminNavBadges): number {
 /** Every page, once: a hub's pages are the menu's whole content, so nothing can be missing or listed twice. */
 export function allAdminPages(): AdminPage[] {
   return ADMIN_HUBS.flatMap((hub) => hub.pages);
+}
+
+/** The tabs a section shows, and the pages tucked under "More". A section whose pages are all everyday ones has no More. */
+export function splitHubPages(hub: AdminHub): { tabs: AdminPage[]; more: AdminPage[] } {
+  return { tabs: hub.pages.filter((p) => !p.more), more: hub.pages.filter((p) => p.more) };
 }

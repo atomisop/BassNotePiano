@@ -10,6 +10,8 @@ import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPa
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
+import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
+import { Wrench } from "@/components/ui/appIcons";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminBillDateButton } from "@/components/admin/AdminBillDateButton";
 import { AdminPlanProgressButton } from "@/components/admin/AdminPlanProgressButton";
@@ -48,14 +50,18 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const viewer = await getServerAuthSession();
   const isOwner = isOwnerEmail(viewer?.user?.email);
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
-  const planControls =
+  // One "Plan" menu replaces a row of seven buttons: the two everyday jobs first, the owner's rare or risky tools under "Advanced".
+  // The buttons stay mounted inside the menu (it only hides), and each one's dialog opens in a portal, so tapping one never loses it.
+  const upcomingCount = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).length;
+  const hasAdvanced = isOwner && (!!plan || !!lastCanceled);
+  const planMenu =
     plan || isOwner || nextBooking ? (
-      <>
+      <ActionMenu label="Plan" openEvent="bnp-open-plan-menu" icon={<Wrench aria-hidden className="mr-1.5 h-4 w-4" />}>
         {/* Group and parent plans too: each person on one has their own plan, paused, moved and rebuilt on its own. */}
-        {plan && (
-          <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-        )}
+        {plan && <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />}
         {plan && !planPaused && <AdminWeeklyTimeButton planId={plan.id} compact />}
+        <AdminCancelAllButton userId={params.userId} firstName={(profile.user.name ?? "student").split(" ")[0]} upcoming={upcomingCount} />
+        {hasAdvanced && <ActionMenuLabel>Advanced (owner)</ActionMenuLabel>}
         {/* Each person's bill has its own date, group and parent plans included, so the owner can move any running one. */}
         {plan && isOwner && !planPaused && <AdminBillDateButton planId={plan.id} currentDay={etDayKey(plan.nextDueDate)} compact />}
         {plan && isOwner && <AdminPlanProgressButton planId={plan.id} billsPaid={plan.installmentsPaid} termMonths={plan.termMonths} currentDay={etDayKey(plan.nextDueDate)} compact />}
@@ -65,8 +71,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         {plan?.familyGroupId && isOwner && <AdminGroupButton groupId={plan.familyGroupId} planId={plan.id} userId={params.userId} />}
         {!plan && isOwner && lastCanceled && <AdminRestartPlanButton planId={lastCanceled.id} label={describePaymentPlan(lastCanceled.cadence, lastCanceled.term)} compact />}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}
-        <AdminCancelAllButton userId={params.userId} firstName={(profile.user.name ?? "student").split(" ")[0]} upcoming={profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).length} />
-      </>
+      </ActionMenu>
     ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
     {
@@ -103,6 +108,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          planMenu={planMenu}
           creditTools={isOwner ? <AdminCreditExpiryButton key="credit-tools" userId={params.userId} /> : null}
           canEditPayments={isOwner}
           accountTools={
@@ -116,7 +122,6 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
               studentName={profile.user.name ?? profile.user.email}
               bookings={profile.bookings.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent, status: b.status, attendance: b.attendance, inPerson: b.inPerson }))}
               loadOpenSlots={getOpenSlotsAction}
-              planControls={planControls}
               onMove={adminMoveBookingAction}
               onMoveToTime={adminMoveBookingToTimeAction}
               onCancel={adminCancelBookingAction}

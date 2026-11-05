@@ -5,7 +5,7 @@ import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredi
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarPlus, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { CalendarPlus, ChevronDown, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
 import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
@@ -25,6 +25,8 @@ export interface CustomerProfileProps {
   profile: CustomerProfileData;
   /** Shown at the bottom of the Support tab (the changes admins made on this account). */
   changeLog?: React.ReactNode;
+  /** The "Plan" menu (pause, weekly time, bill date, plan settings...), built by the page and drawn in the top row. */
+  planMenu?: React.ReactNode;
   /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
   scheduler?: React.ReactNode;
   /** Owner tools in the Account card (edit details, reset code, trial), built by the page. */
@@ -146,6 +148,18 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "support", label: "Support" },
 ];
 
+/** The bar that opens and closes one section of the long page; it is also what the index scrolls to. */
+function SectionHeader({ id, label, open, onToggle }: { id: ProfileTab; label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <h2 id={`sec-${id}`} className="scroll-mt-16 border-t border-slate-50/10 pt-3">
+      <button type="button" onClick={onToggle} aria-expanded={open} className="tap flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-left text-title font-semibold text-slate-50">
+        {label}
+        <ChevronDown aria-hidden className={`h-5 w-5 text-slate-50/60 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+    </h2>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-small text-slate-500">{children}</p>;
 }
@@ -153,6 +167,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 export function CustomerProfile({
   profile,
   changeLog,
+  planMenu,
   scheduler,
   accountTools,
   creditTools,
@@ -176,22 +191,75 @@ export function CustomerProfile({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Which group of sections is showing. Every section stays mounted (hidden, not removed), so a half-typed credit amount or an
-  // open confirmation survives a change of tab. The tab is kept in the address (#money) so a link or a refresh returns to it.
+  // One long page, six sections. Each opens and closes on its own header; every section stays mounted (hidden, not removed), so a
+  // half-typed credit amount or an open confirmation survives closing it. The section in the address (#money) opens and scrolls to
+  // it, so a link or a refresh returns there. The index above follows what is on screen.
+  const [openSections, setOpenSections] = useState<Set<ProfileTab>>(() => new Set<ProfileTab>(["overview"]));
   const [tab, setTab] = useState<ProfileTab>("overview");
+  const isOpen = (id: ProfileTab) => openSections.has(id);
+  const toggleSection = (id: ProfileTab) =>
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  function chooseTab(next: ProfileTab) {
+    setOpenSections((prev) => new Set(prev).add(next));
+    setTab(next);
+    window.history.replaceState(null, "", `#${next}`);
+    // Wait a frame so the section has opened, then bring it under the index.
+    window.requestAnimationFrame(() => document.getElementById(`sec-${next}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
   useEffect(() => {
     const fromAddress = () => {
       const match = PROFILE_TABS.find((t) => t.id === window.location.hash.replace("#", ""));
-      if (match) setTab(match.id);
+      if (match) chooseTab(match.id);
     };
     fromAddress();
     window.addEventListener("hashchange", fromAddress);
     return () => window.removeEventListener("hashchange", fromAddress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  function chooseTab(next: ProfileTab) {
-    setTab(next);
-    window.history.replaceState(null, "", `#${next}`);
-  }
+  // `?do=` (from the command menu) opens the account with one job ready: credits, a class, the plan tools, or payments.
+  useEffect(() => {
+    const job = new URLSearchParams(window.location.search).get("do");
+    if (!job) return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    const t = window.setTimeout(() => {
+      if (job === "credits") {
+        chooseTab("classes");
+        window.setTimeout(() => {
+          const input = document.getElementById("cp-amount");
+          input?.scrollIntoView({ behavior: "smooth", block: "center" });
+          input?.focus({ preventScroll: true });
+        }, 120);
+      } else if (job === "book") {
+        chooseTab("scheduler");
+        window.dispatchEvent(new Event("bnp-open-book-class"));
+      } else if (job === "plan") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.dispatchEvent(new Event("bnp-open-plan-menu"));
+      } else if (job === "payments") {
+        chooseTab("money");
+      }
+    }, 150);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Scroll-spy: the index highlights the section nearest the top of the screen.
+  useEffect(() => {
+    const els = PROFILE_TABS.map((t) => document.getElementById(`sec-${t.id}`)).filter((e): e is HTMLElement => !!e);
+    const io = new IntersectionObserver(
+      (entries) => {
+        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (top) setTab(top.target.id.replace("sec-", "") as ProfileTab);
+      },
+      { rootMargin: "-80px 0px -60% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [creditSuccess, setCreditSuccess] = useState<string | null>(null);
@@ -359,10 +427,18 @@ export function CustomerProfile({
           <Coins aria-hidden className="h-4 w-4" />
           Add credits
         </button>
-        <button type="button" onClick={() => chooseTab("scheduler")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+        <button
+          type="button"
+          onClick={() => {
+            chooseTab("scheduler");
+            window.dispatchEvent(new Event("bnp-open-book-class"));
+          }}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+        >
           <CalendarPlus aria-hidden className="h-4 w-4" />
           Book a class
         </button>
+        {planMenu}
         <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
           Payments
@@ -370,10 +446,14 @@ export function CustomerProfile({
         <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="ml-auto" />
       </div>
 
-      <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
+      {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
+      <div className="sticky top-2 z-20">
+        <Tabs<ProfileTab> label="Jump to a section of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
+      </div>
 
       <div className="space-y-5">
-        <div hidden={tab !== "overview"} className="space-y-5">
+        <SectionHeader id="overview" label="Overview" open={isOpen("overview")} onToggle={() => toggleSection("overview")} />
+        <div hidden={!isOpen("overview")} className="space-y-5">
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
@@ -622,7 +702,8 @@ export function CustomerProfile({
 
         </div>
 
-        <div hidden={tab !== "learning"} className="space-y-5">
+        <SectionHeader id="learning" label="Learning" open={isOpen("learning")} onToggle={() => toggleSection("learning")} />
+        <div hidden={!isOpen("learning")} className="space-y-5">
           {/* Curriculum roadmap */}
           <SectionCard title="Daily practice">
             <PracticeStrip practice={profile.practice} />
@@ -667,7 +748,8 @@ export function CustomerProfile({
 
         </div>
 
-        <div hidden={tab !== "classes"} className="space-y-5">
+        <SectionHeader id="classes" label="Classes" open={isOpen("classes")} onToggle={() => toggleSection("classes")} />
+        <div hidden={!isOpen("classes")} className="space-y-5">
           {/* Credits + bookings */}
           <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
@@ -736,11 +818,13 @@ export function CustomerProfile({
 
         </div>
 
-        <div hidden={tab !== "scheduler"} className="space-y-5">
+        <SectionHeader id="scheduler" label="Scheduler" open={isOpen("scheduler")} onToggle={() => toggleSection("scheduler")} />
+        <div hidden={!isOpen("scheduler")} className="space-y-5">
           {scheduler}
         </div>
 
-        <div hidden={tab !== "money"} className="space-y-5">
+        <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
+        <div hidden={!isOpen("money")} className="space-y-5">
           {/* Payments */}
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
@@ -811,7 +895,8 @@ export function CustomerProfile({
           </SectionCard>
         </div>
 
-        <div hidden={tab !== "support"} className="space-y-5">
+        <SectionHeader id="support" label="Support" open={isOpen("support")} onToggle={() => toggleSection("support")} />
+        <div hidden={!isOpen("support")} className="space-y-5">
           {/* Support history */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}
