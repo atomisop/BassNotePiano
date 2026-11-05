@@ -13,6 +13,13 @@ import { getBoolSetting, getNumberSetting, getTextSetting } from "@/lib/siteSett
 
 export class ClassBookingError extends Error {}
 
+/** Another student's live payment plan keeps this weekly time. The studio can still move a class there on purpose (see `overridePlanHold`). */
+export class PlanHoldError extends ClassBookingError {
+  constructor() {
+    super("This time is reserved for another student's payment plan.");
+  }
+}
+
 // Three tiers, by direct instruction:
 //  - Solo (1:1): one student books an occurrence alone, 1-2 credits (up to
 //    an hour) of their own choosing, at their own pace. The default now,
@@ -188,6 +195,8 @@ export interface ClassOccurrence {
   reservedByOwner?: boolean;
   /** The owner is keeping this time for the person looking (see getUpcomingOccurrences' viewerId): open to them, taken for everyone else. */
   reservedForYou?: boolean;
+  /** Admin view only: whose weekly plan keeps this time while nobody has a class in it (a paused plan, or a week its class was canceled). */
+  heldByPlan?: string;
 }
 
 /**
@@ -317,7 +326,7 @@ async function oneOffOverlap(tx: Prisma.TransactionClient, scheduledAt: Date, st
  * Refuses a custom time that overlaps any other class, an owner reservation held for someone else, or another student's
  * payment-plan weekly time. Same-student classes count too (one student cannot be in two places).
  */
-async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: string, scheduledAt: Date, occurrenceDate: Date, excludeBookingId: string) {
+async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: string, scheduledAt: Date, occurrenceDate: Date, excludeBookingId: string, overridePlanHold = false) {
   const span = CLASS_MINUTES * 60_000;
   const clash = await tx.classBooking.findFirst({
     where: {
@@ -341,17 +350,19 @@ async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: str
     }
   }
 
-  const plans = await tx.paymentPlan.findMany({
-    where: { userId: { not: studentId }, reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
-    select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
-  });
+  const plans = overridePlanHold
+    ? []
+    : await tx.paymentPlan.findMany({
+        where: { userId: { not: studentId }, reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+        select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+      });
   if (plans.length > 0) {
     const schedules = await tx.classSchedule.findMany({ where: { id: { in: plans.map((p) => p.reservedScheduleId as string) }, dayOfWeek: occurrenceDate.getUTCDay() } });
     for (const plan of plans) {
       const schedule = schedules.find((s) => s.id === plan.reservedScheduleId);
       const chunk = schedule ? chunksForSchedule(schedule).find((c) => c.chunkIndex === plan.reservedChunkIndex) : undefined;
       if (schedule && chunk && planHoldsOccurrence(plan.reservedBookings, occurrenceDate) && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
-        throw new ClassBookingError("This time is reserved for another student's payment plan.");
+        throw new PlanHoldError();
       }
     }
   }
@@ -362,7 +373,7 @@ async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: str
  * Pass `viewerId` for a screen shown to one student: a time the owner reserved for that student (their verified email matches)
  * is then open for them and marked `reservedForYou`; without it every reservation reads as taken.
  */
-export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOccurrence[]> {
+export async function getUpcomingOccurrences(viewerId?: string, options: { forAdmin?: boolean } = {}): Promise<ClassOccurrence[]> {
   const schedules = await prisma.classSchedule.findMany({ where: { active: true }, orderBy: { dayOfWeek: "asc" } });
   if (schedules.length === 0) return [];
 
@@ -419,17 +430,24 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
   const bookedKeys = new Set(
     bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
   );
-  // A time another student's plan holds that week shows as taken too, by the same rule the booking check uses.
-  const heldPlans = await prisma.paymentPlan.findMany({
-    where: { reservedScheduleId: { in: schedules.map((x) => x.id) }, ...(viewerId ? { userId: { not: viewerId } } : {}), OR: livePaymentPlanConditions() },
-    select: { reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+  // A weekly time another student's live plan keeps is not free even in a week with no class in it (a paused plan, a canceled week):
+  // bookClass and Reschedule refuse it, so students never see it as open. The admin sees it apart, with the holder's name.
+  const holdingPlans = await prisma.paymentPlan.findMany({
+    where: { reservedScheduleId: { not: null }, reservedChunkIndex: { not: null }, ...(viewerId ? { userId: { not: viewerId } } : {}), OR: livePaymentPlanConditions() },
+    select: { reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } }, reservedBookings: { select: { occurrenceDate: true, status: true } } },
   });
+  // Same rule as the booking check (planHoldsOccurrence): no hold before the plan's first class or on a skipped or canceled week.
+  const holderOf = (scheduleId: string, chunkIndex: number, occurrenceDate: Date) => {
+    const plan = holdingPlans.find((p) => p.reservedScheduleId === scheduleId && p.reservedChunkIndex === chunkIndex && planHoldsOccurrence(p.reservedBookings, occurrenceDate));
+    return plan ? (plan.user.name ?? plan.user.email) : undefined;
+  };
   const viewer = viewerId && ownerReservations.length > 0 ? await prisma.user.findUnique({ where: { id: viewerId }, select: { email: true, emailVerified: true } }) : null;
 
   return candidates
     .map((c): ClassOccurrence => {
       const covering = ownerReservations.filter((r) => reservationCovers(r, c.schedule.id, c.occurrenceDate, c.chunk.chunkIndex));
       const blocking = covering.filter((r) => !reservationIsFor(r.email, viewer));
+      const holder = holderOf(c.schedule.id, c.chunk.chunkIndex, c.occurrenceDate);
       return {
         scheduleId: c.schedule.id,
         label: c.schedule.label,
@@ -441,7 +459,12 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
         scheduledAt: c.scheduledAt,
         reservedByOwner: blocking.length > 0,
         reservedForYou: covering.length > 0 && blocking.length === 0,
-        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) || blocking.length > 0 || heldPlans.some((p) => p.reservedScheduleId === c.schedule.id && p.reservedChunkIndex === c.chunk.chunkIndex && planHoldsOccurrence(p.reservedBookings, c.occurrenceDate)) || oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
+        heldByPlan: options.forAdmin ? holder : undefined,
+        isBooked:
+          bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) ||
+          blocking.length > 0 ||
+          (holder !== undefined && !options.forAdmin) ||
+          oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
       };
     })
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
@@ -649,7 +672,7 @@ export async function bookClass(
           select: { id: true },
         });
         if (reservedByOtherPlan) {
-          throw new ClassBookingError("This time is reserved for another student's payment plan.");
+          throw new PlanHoldError();
         }
 
         // (studentId, scheduleId, occurrenceDate) is unique, so a student who
@@ -1092,7 +1115,7 @@ export async function bookFamilyClass(
         });
         const reservedByPlan = reservedPlans.some((p) => planHoldsOccurrence(p.reservedBookings, occurrenceDate));
         if (reservedByPlan) {
-          throw new ClassBookingError("This time is reserved for another student's payment plan.");
+          throw new PlanHoldError();
         }
 
         const created: Prisma.ClassBookingGetPayload<Record<string, never>>[] = [];
@@ -1583,9 +1606,12 @@ export async function rescheduleClassBooking(
      * No-show moves (undo the mark first). The student is told only when the new time is still ahead.
      */
     anyTime?: boolean;
+    /** Admin only: move the class into a weekly time another student's plan holds. That plan keeps the time for its own weeks. */
+    overridePlanHold?: boolean;
   } = {},
 ) {
   const byAdmin = Boolean(options.byAdmin);
+  const overridePlanHold = byAdmin && Boolean(options.overridePlanHold);
   const anyTime = byAdmin && Boolean(options.anyTime);
   const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
@@ -1647,7 +1673,7 @@ export async function rescheduleClassBooking(
         // A custom time lives on its own hidden one-off schedule and is checked by overlap; a weekly slot by its exact instant.
         const targetScheduleId = custom ? (await oneOffScheduleFor(tx, newOccurrenceDate, custom.startTime)).id : newScheduleId;
         if (custom) {
-          await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id);
+          await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id, overridePlanHold);
         } else {
           const takenByAnyone = await tx.classBooking.findFirst({
             where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
@@ -1660,12 +1686,14 @@ export async function rescheduleClassBooking(
           }
           if (await findOwnerReservation(tx, newScheduleId, newOccurrenceDate, newChunkIndex, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
-          const reservedByOtherPlan = await tx.paymentPlan.findFirst({
+          const reservedByOtherPlan = overridePlanHold
+            ? null
+            : await tx.paymentPlan.findFirst({
             where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
             select: { id: true },
           });
           if (reservedByOtherPlan) {
-            throw new ClassBookingError("This time is reserved for another student's payment plan.");
+            throw new PlanHoldError();
           }
         }
 

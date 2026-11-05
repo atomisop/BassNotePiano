@@ -11,6 +11,8 @@ export interface PickerSlot {
   label: string | null;
   scheduledAt: string;
   creditCost: number;
+  /** Set on a time another student's weekly plan keeps: free of classes, but moving there needs the studio's confirmation. */
+  heldBy?: string;
 }
 
 export interface BookedTime {
@@ -57,6 +59,7 @@ export function SlotCalendarPicker({
   ownTime,
   onOwnTime,
   allowPast = false,
+  held = [],
 }: {
   slots: PickerSlot[];
   /** Classes already booked, shown on the chosen day so a custom time can be picked around them. */
@@ -71,6 +74,8 @@ export function SlotCalendarPicker({
   ownTime: string;
   onOwnTime: (time: string) => void;
   allowPast?: boolean;
+  /** Times a plan keeps (Reschedule only): shown apart from the open ones. */
+  held?: PickerSlot[];
 }) {
   const occurrences = useMemo(() => {
     if (!allowAnyDay) return slots.map((s) => ({ occurrenceDateMs: s.occurrenceDateMs, isBooked: false }));
@@ -89,6 +94,7 @@ export function SlotCalendarPicker({
   }, [day, ownTime, dayBooked]);
 
   const daySlots = useMemo(() => (day ? slots.filter((s) => dayKey(s.occurrenceDateMs) === day) : []), [slots, day]);
+  const dayHeld = useMemo(() => (day ? held.filter((s) => dayKey(s.occurrenceDateMs) === day) : []), [held, day]);
 
   return (
     <div>
@@ -128,8 +134,35 @@ export function SlotCalendarPicker({
               </div>
             </>
           )}
-          {dayBooked.length > 0 && (
+          {dayHeld.length > 0 && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
+              <p className="mb-1.5 flex items-center gap-1 text-small font-medium text-slate-200">
+                Kept by a plan
+                <Hint label="About plan times">Free this week, but another student&apos;s weekly plan keeps this time. You can still move the class here; you will be asked first.</Hint>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {dayHeld.map((s) => {
+                  const active = picked ? slotKey(picked) === slotKey(s) : false;
+                  return (
+                    <button
+                      key={slotKey(s)}
+                      type="button"
+                      title={`${s.heldBy}'s plan`}
+                      onClick={() => {
+                        onPick(s);
+                        onOwnTime("");
+                      }}
+                      className={`tap rounded-lg px-3 py-1.5 text-small font-medium transition ${active ? "bg-amber-300 text-slate-950" : "bg-amber-300/10 text-amber-200"}`}
+                    >
+                      {timeOf(s.scheduledAt)} · {(s.heldBy ?? "").split(" ")[0]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {dayBooked.length > 0 && (
+            <div className={daySlots.length > 0 || dayHeld.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 text-small font-medium text-slate-200">Already booked</p>
               <div className="flex flex-wrap gap-1.5">
                 {dayBooked.map((b) => (
@@ -140,7 +173,7 @@ export function SlotCalendarPicker({
               </div>
             </div>
           )}
-          {allowAnyDay && daySlots.length === 0 && <p className="mb-2 text-small text-slate-500">No weekly times that day. Type a start time to create one.</p>}
+          {allowAnyDay && daySlots.length === 0 && dayHeld.length === 0 && <p className="mb-2 text-small text-slate-500">No weekly times that day. Type a start time to create one.</p>}
           {allowAnyDay && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 flex items-center gap-1 text-small font-medium text-slate-200">

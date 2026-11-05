@@ -31,6 +31,7 @@ const LABELS: Record<string, string> = {
   "user.password-reset-sent": "Sent a password reset code",
   "user.trial": "Set or ended a free trial",
   "booking.move-custom": "Moved a class to a custom date and time",
+  "booking.move-over-plan-hold": "Moved a class into a time another plan keeps",
   "plan.build": "Built or re-anchored a plan from a start date",
   "plan.settle-late": "Settled a late payment (payment recorded, class charged, next bill 28 days out)",
   "reservation.create": "Reserved a time for a customer",
