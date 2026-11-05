@@ -1,62 +1,49 @@
 "use client";
 
-import { GlassLens } from "@/components/ui/GlassLens";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
-import { ICON_PATHS } from "@/components/layout/navIcons";
+import { COOLICONS } from "@/components/layout/coolicons";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
 
-// The app's own (BNP) icons, the hand-drawn set in navIcons.tsx, with a filled version for the tab you are on, the way Instagram's tab
-// bar fills the current icon. `fill` is the solid shape; `cut` is the inner detail drawn over it in the capsule's color (the calendar's
-// line and check, the gear's center), so the filled icon still reads; `line` is drawn in the icon color in both states.
-type DockGlyph = { outline: string; fill?: string; cut?: string; line?: string; /** The drawn size differs per icon; this evens them out. */ scale?: number };
-// The owner's Admin tab: a shield with a check (the usual sign for "admin"), so it is not mistaken for an overview grid.
-const SHIELD = "M12 3.25 19.25 6v5.6c0 4.45-3 8.2-7.25 9.65C7.75 19.8 4.75 16.05 4.75 11.6V6z";
-const SHIELD_CHECK = "M8.9 12.1l2.15 2.15 4.05-4.05";
-const DOCK_GLYPHS: Record<string, DockGlyph> = {
-  admin: { outline: `${SHIELD}${SHIELD_CHECK}`, fill: SHIELD, cut: SHIELD_CHECK },
-  home: { outline: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z", fill: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z" },
-  roadmap: { outline: ICON_PATHS.roadmap },
-  lessons: {
-    outline: ICON_PATHS.lessons,
-    fill: "M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z",
-    cut: "M4 9h16M9 14l2 2 4-4",
-    line: "M8 3v3M16 3v3",
-  },
-  messages: { outline: ICON_PATHS.messages, fill: ICON_PATHS.messages },
-  settings: {
-    outline: `${ICON_PATHS.settings}M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z`,
-    fill: ICON_PATHS.settings,
-    cut: "M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z",
-    scale: 1.45,
-  },
+// The dock's icons are coolicons (coolicons.ts, copied exactly from the published set, chosen by the owner 2026-10-31). Like Instagram's bar,
+// the current tab's icon is filled: `fill` names which of the icon's own paths are solid shapes, and `cut` which are its inner details,
+// drawn over the fill in the capsule's color (the shield's check, the gear's center). Icons whose drawing is open lines (the map, the
+// calendar) cannot be filled without redrawing them, so they get a bolder line instead.
+type DockIcon = { paths: string[]; fill?: number[]; cut?: number[] };
+// coolicons' shield-check is one path, the check first ("m15 9l-4 4l-2-2") then the shield, which starts where the check ends plus
+// "m11-.835", that is at (20, 10.165). Split at that point, unchanged, so the shield can be filled under its check.
+const SHIELD_CHECK = COOLICONS.admin.paths[0];
+const SHIELD_SPLIT = SHIELD_CHECK.indexOf("m11-.835");
+const DOCK_ICONS: Record<string, DockIcon> = {
+  home: { paths: COOLICONS.home.paths, fill: [0] },
+  roadmap: { paths: COOLICONS.roadmap.paths },
+  lessons: { paths: COOLICONS.lessons.paths },
+  friends: { paths: COOLICONS.friends.paths },
+  admin: { paths: [`M20 10.165${SHIELD_CHECK.slice(SHIELD_SPLIT + "m11-.835".length)}`, SHIELD_CHECK.slice(0, SHIELD_SPLIT)], fill: [0], cut: [1] },
+  settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
 };
 
-function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean }) {
-  const s = glyph.scale ?? 1;
-  const stroke = { stroke: "currentColor", strokeWidth: (active ? 2 : 1.75) / s, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
+  const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const filled = active && Boolean(icon.fill?.length);
   return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[23px] w-[23px]">
-      <g transform={s === 1 ? undefined : `translate(12 12) scale(${s}) translate(-12 -12)`}>
-      {active && glyph.fill ? (
-        <>
-          <path d={glyph.fill} fill="currentColor" {...stroke} />
-          {glyph.cut && <path d={glyph.cut} {...stroke} stroke="var(--dock-cut)" />}
-          {glyph.line && <path d={glyph.line} {...stroke} />}
-        </>
-      ) : (
-        <path d={glyph.outline} {...stroke} strokeWidth={(active ? 2.4 : 1.75) / s} />
+    <svg aria-hidden viewBox="0 0 24 24" className="h-[26px] w-[26px]">
+      {icon.paths.map((d, i) =>
+        filled && icon.fill?.includes(i) ? (
+          <path key={i} d={d} {...line} fill="currentColor" strokeWidth={2} />
+        ) : filled && icon.cut?.includes(i) ? (
+          <path key={i} d={d} {...line} stroke="var(--dock-cut)" strokeWidth={2} />
+        ) : (
+          <path key={i} d={d} {...line} strokeWidth={active ? 2.5 : 2} />
+        ),
       )}
-      </g>
     </svg>
   );
 }
@@ -68,9 +55,8 @@ function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean })
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
-  unreadMessageCount: number;
-  /** The owner's own dock (2026-10-30, by their request): Admin takes Messages' place. Messages is still in the sidebar and menu. */
-  ownerAdmin?: boolean;
+  /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
+  isAdmin?: boolean;
 }
 
 // "About" and "Sign out" live inside Settings now, not as dock icons,
@@ -96,10 +82,10 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
+  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
-const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
+const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -139,8 +125,8 @@ const OWNER_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/messages" ? { h
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAdmin = false }: AppDockProps) {
-  const items = ownerAdmin ? OWNER_NAV_ITEMS : NAV_ITEMS;
+export function AppDock({ isAdmin = false }: AppDockProps) {
+  const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -151,12 +137,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
   }, [router, items]);
-  // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
-  // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
-  const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
-
-  // Like Instagram's bar: scrolling down narrows the pill (same height, icons closer together); scrolling up or reaching the top
-  // widens it again. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
+  // Like Instagram's bar: scrolling down shrinks the pill in both directions; scrolling up or reaching the top brings it back. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     let last = 0;
@@ -198,31 +179,33 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
     <div
       role="navigation"
       aria-label="Primary"
-      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
+      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-[22px]"
     >
-      {/* A copy of Instagram's floating tab bar: a 53pt glass pill 20pt from the edges, five icon slots with no names, and a lighter
-          capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
-          words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
+      {/* An exact copy of Instagram's floating tab bar (measured from the owner's screenshots, 2026-10-31): a 58pt pill 22pt from the
+          screen edges, a dark smoky tint over a heavy frost with a bright glass rim, five icon slots 10pt in from the ends, and an
+          82 by 50pt light capsule behind the current tab that slides to the next one. Colors in .ig-dock in globals.css, one set per theme. */}
       <div
-        data-glass=""
-        style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
-        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
+        // Scrolling down shrinks the whole pill (both ways, like Instagram's), anchored at the bottom so it stays above the home bar.
+        style={{
+          transform: narrow ? "scale(0.84)" : "scale(1)",
+          transformOrigin: "50% 100%",
+          transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
+        }}
+        className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
       >
-        <GlassLens radius="full" bezel={24} strength={30} magnify={0.45} blur={7} />
         {items.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
           const active =
             at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
           const current = pathname === item.href;
-          const badge = item.href === "/messages" ? unreadMessageCount : 0;
-          const glyph = DOCK_GLYPHS[item.icon];
+          const icon = DOCK_ICONS[item.icon];
           return (
             <Link
               key={item.href}
               href={item.href}
-              data-prerender={item.href === "/messages" ? undefined : ""}
-              aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
+              data-prerender=""
+              aria-label={item.label}
               aria-current={current ? "page" : undefined}
               // The current tab again means "take me to the top" (it would only reload the same page).
               onClick={
@@ -243,17 +226,16 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount, ownerAd
                 <motion.span
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-full"
+                  className="ig-dock-active pointer-events-none absolute -inset-x-[4.5px] inset-y-0 rounded-full"
                 />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
+                className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
               >
-                <DockGlyphIcon glyph={glyph} active={active} />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-unread" />}
+                <DockGlyphIcon icon={icon} active={active} />
               </motion.span>
 
             </Link>

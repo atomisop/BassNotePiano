@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 /** Removes the contact, their reserved times and their class log. Asks once first. */
 export function DeleteContactButton({
@@ -38,7 +39,9 @@ export function DeleteContactButton({
           loading={pending}
           onClick={() =>
             start(async () => {
-              const result = await onDelete(contactId);
+              const hold = await toast.held("Deleting this person", () => onDelete(contactId));
+              if (hold.undone) return;
+              const result = hold.value;
               if (!result.ok) return setError(result.error);
               router.push("/admin/contacts");
             })

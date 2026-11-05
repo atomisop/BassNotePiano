@@ -237,7 +237,7 @@ export function AdminAttendanceQuickPanel() {
               <Link
                 href="/admin/schedule?view=ATTENDANCE"
                 onClick={() => setOpen(false)}
-                className="tap shrink-0 text-small font-medium text-signal transition hover:opacity-70"
+                className="tap shrink-0 text-small font-medium text-signal-fg transition hover:opacity-70"
               >
                 Full view
               </Link>
@@ -298,7 +298,7 @@ export function AdminAttendanceQuickPanel() {
                                   <Link
                                     href="/admin/payments"
                                     onClick={() => setOpen(false)}
-                                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-signal" })}
+                                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-signal-fg" })}
                                   >
                                     Review payment
                                   </Link>

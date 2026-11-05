@@ -1,4 +1,5 @@
 import { noticeAccountChange } from "@/lib/studentNotices";
+import { reportError } from "@/lib/reportError";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
     const joined = await addToGuild(identity.id, identity.accessToken).catch(() => "failed" as const);
     return back(joined === "failed" ? "linked-nojoin" : "linked");
   } catch (err) {
-    console.error("Discord connect failed:", err);
+    reportError(err, "Discord connect failed");
     return back("error");
   }
 }

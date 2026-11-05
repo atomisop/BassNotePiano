@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CheckCheck } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { toast } from "@/components/ui/Toaster";
 
 export interface StudentQueueProps {
   registrations: AdminClassRegistration[];
@@ -53,7 +54,8 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
-      await onApprove(id, notify);
+      const hold = await toast.held("Approving the application", () => onApprove(id, notify), { mail: notify });
+      if (hold.undone) return;
       router.refresh();
       setApprovingId(null);
     } finally {
@@ -65,7 +67,8 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
     if (!reason.trim()) return;
     setBusyId(id);
     try {
-      await onReject(id, reason.trim(), notify);
+      const hold = await toast.held("Rejecting the application", () => onReject(id, reason.trim(), notify), { mail: notify });
+      if (hold.undone) return;
       router.refresh();
       setRejectingId(null);
       setReason("");

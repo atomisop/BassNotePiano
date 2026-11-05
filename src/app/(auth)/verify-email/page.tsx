@@ -1,5 +1,6 @@
 "use client";
 
+import { PAYMENT_LOCKED_CODE, PAYMENT_LOCKED_PATH } from "@/lib/paymentLockCodes";
 import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { Suspense, useState, type FormEvent } from "react";
@@ -52,6 +53,7 @@ function VerifyEmailForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
+      if (signInResult.error === PAYMENT_LOCKED_CODE) return window.location.assign(PAYMENT_LOCKED_PATH);
       setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Verified, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;

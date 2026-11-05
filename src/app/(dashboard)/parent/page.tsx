@@ -48,6 +48,8 @@ export default async function ParentPage() {
         </section>
       )}
 
+      {/* Two columns from lg (children beside the link form), so a computer screen is not one narrow strip (2026-11-02 audit). */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8">
       <section className="mt-6" aria-label="Your children">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
@@ -60,7 +62,7 @@ export default async function ParentPage() {
           </Link>
         </div>
         {children.length === 0 ? (
-          <p className="mt-3 rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No linked children yet. Add one below.</p>
+          <p className="mt-3 rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No linked children yet. Add one with the form.</p>
         ) : (
           <ul className="mt-3 grid gap-3 md:grid-cols-2">
             {children.map((c) => (
@@ -98,10 +100,11 @@ export default async function ParentPage() {
         )}
       </section>
 
-      <section className="mt-8 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Add or manage children">
+      <section className="mt-8 rounded-2xl bg-neu-base p-5 shadow-raised-low lg:mt-6" aria-label="Add or manage children">
         <h2 className="mb-4 text-title font-semibold text-slate-50">Link an account</h2>
         <ParentLinksPanel />
       </section>
+      </div>
     </WideLayout>
   );
 }

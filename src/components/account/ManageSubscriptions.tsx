@@ -124,7 +124,12 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
   async function handleChangeTerm(term: PaymentPlanTerm) {
     setPendingTerm(term);
     setTermError(null);
-    const result = await onChangeTerm(term);
+    const hold = await toast.held("Changing your plan length", () => onChangeTerm(term), { mail: true });
+    if (hold.undone) {
+      setPendingTerm(null);
+      return;
+    }
+    const result = hold.value;
     if (!result.ok) {
       const message = result.error ?? "Something went wrong. Please try again.";
       setPendingTerm(null);
@@ -161,7 +166,12 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     }
     setCancelStage("canceling");
     setCancelError(null);
-    const result = await onCancel(reason, trimmedNote || null);
+    const hold = await toast.held("Canceling your plan", () => onCancel(reason, trimmedNote || null), { mail: true });
+    if (hold.undone) {
+      setCancelStage("reason");
+      return;
+    }
+    const result = hold.value;
     if (!result.ok) {
       const message = result.error ?? "Something went wrong. Please try again.";
       setCancelStage("reason");

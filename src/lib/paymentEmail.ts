@@ -178,7 +178,7 @@ type OpenPayment = {
 
 /** The one payer of the family this payment belongs to, or null for any other payment. */
 export function familyPayerOf(payment: Pick<OpenPayment, "paymentPlan" | "purpose" | "user">): { name: string | null; payerAliases: { name: string }[] } | null {
-  if (payment.purpose === "FAMILY_PLAN_START") return payment.user;
+  if (payment.purpose === "FAMILY_PLAN_START" || payment.purpose === "FAMILY_PLAN_INSTALLMENT") return payment.user;
   return payment.paymentPlan?.familyGroup?.payer ?? null;
 }
 
@@ -370,17 +370,35 @@ async function reportUnreadable(input: { messageId: string; from: string; subjec
   }
 }
 
-/** A forwarded bank email that failed its sender check: it is not used, and the owner is told once so a real payment is not missed. */
+/**
+ * A forwarded bank email that failed its sender check: it is not used, and the owner is told so a real payment is not missed.
+ *
+ * Told how depends on why it failed. A plain signature failure is what Gmail forwarding does to most bank mail (19 of the 29
+ * alerts in October 2026 said exactly this), so those go into the next morning's email as one line listing the senders and
+ * subjects (see admin-daily-summary) instead of a bell and an email each; anything else still alerts at once. Either way the
+ * email is remembered once by its Message-ID, with what it was, so the morning email can name it.
+ */
+export function isQuietRejection(reason: string): boolean {
+  return /signature check did not pass/i.test(reason);
+}
+
+export const REJECTED_EMAIL_MARKER = "payment-email-rejected:";
+
 export async function reportRejectedBankEmail(input: { messageId: string; from: string; subject: string; reason: string }): Promise<void> {
   try {
-    const key = `payment-email-rejected:${normalizeMessageId(input.messageId).slice(0, 160)}`;
+    const key = `${REJECTED_EMAIL_MARKER}${normalizeMessageId(input.messageId).slice(0, 160)}`;
+    const remembered = JSON.stringify({ at: Date.now(), from: input.from.replace(/<.*>/, "").trim().slice(0, 80), subject: input.subject.slice(0, 120), reason: input.reason.slice(0, 200) });
     try {
-      await prisma.appSetting.create({ data: { key, value: String(Date.now()) } });
+      await prisma.appSetting.create({ data: { key, value: remembered } });
     } catch (err) {
       if ((err as { code?: string })?.code === "P2002") return; // already reported
       throw err;
     }
-    await prisma.appSetting.deleteMany({ where: { key: { startsWith: "payment-email-rejected:" }, updatedAt: { lt: new Date(Date.now() - 45 * 24 * 3600 * 1000) } } });
+    await prisma.appSetting.deleteMany({ where: { key: { startsWith: REJECTED_EMAIL_MARKER }, updatedAt: { lt: new Date(Date.now() - 45 * 24 * 3600 * 1000) } } });
+    if (isQuietRejection(input.reason)) {
+      console.log(`Rejected bank email remembered for the morning email (${input.reason})`);
+      return;
+    }
     await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
       type: "ADMIN_ALERT",
       title: "A forwarded payment email was ignored",
@@ -403,7 +421,7 @@ export async function holdUnverifiedPaymentEmail(input: { messageId: string; fro
     const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
     const code = parsed ? referenceInMemo(parsed.memo) : null;
     if (parsed && code) {
-      const open = await prisma.zellePayment.findMany({ where: { status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
+      const open = await prisma.zellePayment.findMany({ where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
       const hits = open.filter((payment) => normalizedCodeOf(payment.id) === code);
       if (hits.length === 1) {
         const hit = hits[0];
@@ -490,7 +508,7 @@ export async function ingestPaymentEmail(
   }
 
   const candidates = (await prisma.zellePayment.findMany({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
   })) as (OpenPayment & { userId: string; createdAt: Date })[];
 
@@ -572,11 +590,11 @@ async function pickByAmountAlone<T extends OpenPayment & { userId: string; creat
  */
 async function warnAboutAmountMismatch(receipt: ReceiptFacts) {
   const sameAmount = await prisma.zellePayment.count({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: receipt.amountCents },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: receipt.amountCents },
   });
   if (sameAmount > 0) return;
   const open = await prisma.zellePayment.findMany({
-    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { gte: new Date(Date.now() - OPEN_PAYMENT_LOOKBACK_MS) } },
+    where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { gte: new Date(Date.now() - OPEN_PAYMENT_LOOKBACK_MS) } },
     select: { userId: true, amountCents: true, user: openPaymentSelect.user },
     orderBy: { createdAt: "desc" },
     take: 500,
@@ -655,7 +673,7 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
   if (!full || Date.now() - full.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return false;
   if (memoHasOtherReference(receipt.memo, payment.id)) return false;
   const others = await prisma.zellePayment.findMany({
-    where: { id: { not: payment.id }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: payment.amountCents },
+    where: { id: { not: payment.id }, bundleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: payment.amountCents },
     select: { userId: true },
   });
   if (others.some((other) => other.userId !== full.userId)) return false;

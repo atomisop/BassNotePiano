@@ -15,6 +15,7 @@ import {
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import type { DiscountCandidate, PricingFormValues } from "@/app/(dashboard)/admin/pricing/actions";
+import { toast } from "@/components/ui/Toaster";
 
 export interface PricingDiscountRow {
   userId: string;
@@ -129,7 +130,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
                 className={`${inputClass} w-28`}
               />
               {f.unit === "%" && <span className="text-slate-400">%</span>}
-              {parsed.values[f.key] !== initial[f.key] && <span className="text-small text-signal">Changed</span>}
+              {parsed.values[f.key] !== initial[f.key] && <span className="text-small text-signal-fg">Changed</span>}
             </div>
             <p className="mt-1 text-small text-slate-500">{f.help}</p>
           </div>
@@ -216,7 +217,7 @@ function PlanLine({ plan, percent }: { plan: { monthlyCents: number; listCents: 
       {after !== plan.monthlyCents && (
         <>
           {" "}
-          → <span className="font-semibold text-signal">{usd(after)}</span>
+          → <span className="font-semibold text-signal-fg">{usd(after)}</span>
         </>
       )}
     </span>
@@ -236,9 +237,11 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
   async function run(action: () => Promise<{ ok: true; message: string } | { ok: false; error: string }>) {
     setBusy(true);
     setMsg(null);
-    const res = await action().catch(() => ({ ok: false as const, error: "That did not go through. Please try again." }));
+    const hold = await toast.held("Changing the discount", () => action().catch(() => ({ ok: false as const, error: "That did not go through. Please try again." })), { mail: true });
     setBusy(false);
     setRemoving(false);
+    if (hold.undone) return;
+    const res = hold.value;
     setMsg(res.ok ? { ok: true, text: res.message } : { ok: false, text: res.error });
     if (res.ok) router.refresh();
   }
@@ -312,9 +315,11 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
     if (!picked || !valid) return;
     setBusy(true);
     setMsg(null);
-    const res = await onSet(picked.id, p, note).catch(() => ({ ok: false as const, error: "That did not go through. Please try again." }));
+    const hold = await toast.held("Adding the discount", () => onSet(picked.id, p, note).catch(() => ({ ok: false as const, error: "That did not go through. Please try again." })), { mail: true });
     setBusy(false);
     setAsking(false);
+    if (hold.undone) return;
+    const res = hold.value;
     if (!res.ok) return setMsg({ ok: false, text: res.error });
     setMsg({ ok: true, text: res.message });
     setPicked(null);

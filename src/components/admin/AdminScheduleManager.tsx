@@ -7,6 +7,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CalendarPlus } from "@/components/ui/appIcons";
+import { toast } from "@/components/ui/Toaster";
 
 interface ScheduleRow {
   id: string;
@@ -195,8 +196,10 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
   const [confirmOffId, setConfirmOffId] = useState<string | null>(null);
 
   async function handleToggleActive(row: ScheduleRow, cancelUpcoming = false) {
-    setBusyId(row.id);
     setConfirmOffId(null);
+    // Retiring a time cancels the classes booked on it, which cannot be brought back, so that one waits for Undo.
+    if (cancelUpcoming && !(await toast.hold("Retiring this weekly time", { mail: true }))) return;
+    setBusyId(row.id);
     await onSetActive(row.id, !row.active, cancelUpcoming);
     setBusyId(null);
     router.refresh();

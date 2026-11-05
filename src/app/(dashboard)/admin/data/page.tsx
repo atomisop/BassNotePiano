@@ -26,7 +26,7 @@ export default async function AdminDataPage(props: { searchParams: Promise<{ tab
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data</h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data</h1>
         <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
       </div>
     );
@@ -36,7 +36,7 @@ export default async function AdminDataPage(props: { searchParams: Promise<{ tab
 
   return (
     <div>
-      <h1 className="sr-only">Data</h1>
+      <h1 data-page-title="" className="sr-only">Data</h1>
       <p className="mt-2 max-w-2xl text-small text-slate-400">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</p>
 
       <nav aria-label="Data views" className={`mt-5 ${TAB_TRACK}`}>

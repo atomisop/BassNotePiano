@@ -1,5 +1,6 @@
 "use client";
 
+import { OpenSupportLink } from "@/components/notifications/OpenSupportLink";
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useState } from "react";
@@ -17,6 +18,7 @@ import { errorNeedsTeam } from "@/lib/bookingRules";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
+import { toast } from "@/components/ui/Toaster";
 
 interface UpcomingBooking {
   id: string;
@@ -49,7 +51,6 @@ interface WeeklyTime {
 }
 
 interface ScheduleClientProps {
-  supportContactId: string | null;
   /** Hours before class that changing or cancelling stops being self-service. */
   cancellationCutoffHours: number;
   /** The owner can switch self-cancel and self-reschedule off (Settings → Cancel and reschedule). */
@@ -68,7 +69,6 @@ interface ScheduleClientProps {
 }
 
 export function ScheduleClient({
-  supportContactId,
   cancellationCutoffHours,
   canCancel,
   canReschedule,
@@ -86,7 +86,12 @@ export function ScheduleClient({
   async function handleSkip(bookingId: string) {
     setSkippingId(bookingId);
     setSkipError(null);
-    const result = await cancelClassBookingAction(bookingId);
+    const hold = await toast.held("Skipping this class", () => cancelClassBookingAction(bookingId), { mail: true });
+    if (hold.undone) {
+      setSkippingId(null);
+      return;
+    }
+    const result = hold.value;
     announceChange("booking");
     setSkippingId(null);
     if (!result.ok) {
@@ -156,13 +161,7 @@ export function ScheduleClient({
         ) : (
           <p className="mt-2 text-small text-slate-300">
             No weekly time set.{" "}
-            {supportContactId ? (
-              <Link href={`/messages?with=${supportContactId}`} className="text-slate-50 underline hover:opacity-70">
-                Message support
-              </Link>
-            ) : (
-              "Message support"
-            )}
+            <OpenSupportLink />
           </p>
         )}
       </div>

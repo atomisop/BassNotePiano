@@ -15,11 +15,12 @@ const nextConfig = {
   // unused optional dependency is simply never touched.
   serverExternalPackages: ["resend"],
   experimental: {
+    // `static` is how long a page fetched ahead of the tap (PreloadPages) stays usable, so it must outlive the gap between preloads.
     // A visited page is reused for 30 seconds, so going back to a screen you just left is instant instead of waiting on the
     // server and database again (a zero here made every click a full round trip, and the loading skeleton flashed on
     // pages already seen). Staleness is bounded: every server action calls revalidatePath, which empties this cache,
     // `announceChange` / router.refresh() do the same, and AutoRefresh re-fetches the open page every 30 seconds.
-    staleTimes: { dynamic: 30, static: 30 },
+    staleTimes: { dynamic: 30, static: 180 },
   },
 
   // Old URLs that no longer have a page of their own. Kept as redirects (in
@@ -27,6 +28,12 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/schedule", destination: "/lessons", permanent: false },
+      // Student chat is gone; an old link lands on Home. Done here, not with redirect() in the page, which streams after the loading screen.
+      { source: "/messages", destination: "/dashboard", permanent: false },
+      // The breadcrumb links every path segment, and these folders have no page of their own.
+      { source: "/billing", destination: "/billing/plans", permanent: false },
+      { source: "/billing/receipt", destination: "/billing/history", permanent: false },
+      { source: "/scales", destination: "/roadmap", permanent: false },
       { source: "/billing/credits", destination: "/lessons?tab=extra", permanent: false },
       { source: "/billing/curriculum", destination: "/billing/plans", permanent: false },
       { source: "/billing/curriculum/family", destination: "/billing/plans", permanent: false },

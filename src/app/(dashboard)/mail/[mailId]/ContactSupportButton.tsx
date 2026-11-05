@@ -5,6 +5,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { openAtomWithCase } from "@/lib/atomTrigger";
 import { contactSupportFromMailAction } from "../actions";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string; alreadyOpened: boolean }) {
   const [busy, setBusy] = useState(false);
@@ -14,8 +15,10 @@ export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string
   async function handleClick() {
     setBusy(true);
     setError(null);
-    const result = await contactSupportFromMailAction(mailId);
+    const hold = await toast.held("Contacting support", () => contactSupportFromMailAction(mailId), { mail: true });
     setBusy(false);
+    if (hold.undone) return;
+    const result = hold.value;
     if (!result.ok) {
       setError(result.error);
       return;

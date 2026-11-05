@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getOverviewStats, getRevenueSummary, getSubscriptionStats } from "@/lib/admin";
+import { getAdminNavBadges, getOverviewStats, getRevenueSummary, getSubscriptionStats } from "@/lib/admin";
+import { getFollowUps } from "@/lib/adminFollowUps";
+import { buildNeedsYou } from "@/lib/needsYou";
 import { getDueWeek } from "@/lib/adminDue";
 import { getTeachingDay, getWeekSchedule } from "@/lib/teachingToday";
 import { changeLabel } from "@/lib/revenueSummary";
@@ -37,14 +39,17 @@ export const metadata = { title: "Admin: Overview" };
  * Payments, and what is waiting shows as dots on the admin menu and in the alerts button.
  */
 export default async function AdminOverviewPage() {
-  const [stats, subs, dueWeek, revenue, today, week] = await Promise.all([
+  const [stats, subs, dueWeek, revenue, today, week, badges, followUps] = await Promise.all([
     getOverviewStats(),
     getSubscriptionStats(),
     getDueWeek(),
     getRevenueSummary(),
     getTeachingDay(),
     getWeekSchedule(),
+    getAdminNavBadges().catch(() => ({} as Record<string, number>)),
+    getFollowUps().catch(() => []),
   ]);
+  const needsYou = buildNeedsYou(badges, followUps);
 
   const classesToday = today.slots.reduce((n, slot) => n + slot.students.length, 0);
   const upcoming = today.slots.find((s) => s.startsAt.getTime() > Date.now() - 45 * 60_000) ?? null;
@@ -57,6 +62,25 @@ export default async function AdminOverviewPage() {
     <div>
       {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
       <h1 className="sr-only">Overview</h1>
+
+      {/* Needs you: the jobs waiting right now, each one tap from where it is done. Empty is a good day. */}
+      <section aria-label="Needs you" className="mb-8">
+        <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Needs you</h2>
+        {needsYou.length > 0 ? (
+          <ul className={PANEL}>
+            {needsYou.map((row) => (
+              <li key={row.id}>
+                <Link href={row.href} className="tap flex items-center justify-between gap-3 px-4 py-3 text-body text-slate-50 hover:bg-slate-50/5">
+                  <span>{row.text}</span>
+                  <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-50/60" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-body text-slate-50/80">Nothing needs you right now.</p>
+        )}
+      </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         {/* Schedule */}
@@ -154,7 +178,7 @@ export default async function AdminOverviewPage() {
           <section aria-label="Money" className="min-w-0">
             <div className="flex items-baseline justify-between gap-3 px-1">
               <h2 className="text-title font-semibold text-slate-50">Money</h2>
-              <Link href="/admin/payments" className="text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
+              <Link href="/admin/payments" className="tap inline-flex items-center text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
                 Payments
               </Link>
             </div>

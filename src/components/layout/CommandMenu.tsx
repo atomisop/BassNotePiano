@@ -15,6 +15,7 @@ import {
 import { Dialog } from "@/components/ui/Dialog";
 import { Kbd } from "@/components/ui/Kbd";
 import { markKeyboardAction } from "@/lib/keyboardMotion";
+import { OPEN_SUPPORT, announce } from "@/lib/topBarEvents";
 import {
   ACTION_SHORTCUTS,
   CHORD_WINDOW_MS,
@@ -26,6 +27,7 @@ import {
   TOGGLE_SIDEBAR_EVENT,
   goKeysFor,
 } from "@/lib/shortcuts";
+import { readRecentCommands, rememberCommand, personActionHref, type RecentCommand } from "@/lib/commandRecents";
 import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/admin/quick-find-actions";
 
 /**
@@ -39,6 +41,13 @@ import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/a
  * unpaid student who picks a locked scale still lands on /billing/plans
  * exactly as if they'd clicked it on the roadmap.
  */
+const PERSON_ACTIONS = [
+  { id: "credits", label: "Add credits", keywords: "grant credit balance" },
+  { id: "book", label: "Book a class", keywords: "schedule lesson" },
+  { id: "plan", label: "Plan tools", keywords: "pause weekly time bill date settings cancel upcoming" },
+  { id: "payments", label: "See payments", keywords: "money bill receipt refund" },
+] as const;
+
 export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -113,9 +122,16 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
     };
   }, [router, isAdmin]);
 
+  // The last few things picked from here, shown first when the box is empty, so a repeat job is one keystroke.
+  const [recent, setRecent] = React.useState<RecentCommand[]>([]);
+  React.useEffect(() => {
+    setRecent(readRecentCommands());
+  }, [open]);
+
   const go = React.useCallback(
-    (href: string) => {
+    (href: string, label?: string) => {
       setOpen(false);
+      if (label) setRecent(rememberCommand({ href, label }));
       router.push(href);
     },
     [router],
@@ -137,6 +153,16 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
       <CommandList>
         <CommandEmpty>Nothing matches that.</CommandEmpty>
 
+        {isAdmin && !search.trim() && recent.length > 0 && (
+          <CommandGroup heading="Recent">
+            {recent.map((r) => (
+              <CommandItem key={r.href + r.label} value={`recent ${r.label}`} onSelect={() => go(r.href, r.label)}>
+                <span className="truncate">{r.label}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
         {isAdmin && people.length > 0 && (
           <CommandGroup heading="People">
             {people.map((p) => (
@@ -144,13 +170,31 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
                 key={p.id}
                 // cmdk filters on `value`; the server already matched, so the typed text is part of it to keep every result visible.
                 value={`${search} ${p.name ?? ""} ${p.email}`}
-                onSelect={() => go(`/admin/users/${p.id}`)}
+                onSelect={() => go(`/admin/users/${p.id}`, p.name ?? p.email)}
               >
                 <span className="truncate">{p.name ?? p.email}</span>
                 {p.name && <span className="ml-2 truncate text-small text-slate-500">{p.email}</span>}
                 {p.banned && <span className="ml-auto text-small text-red-300">Banned</span>}
               </CommandItem>
             ))}
+          </CommandGroup>
+        )}
+
+        {/* The jobs done most, for the first people found: type a name, then pick what to do. They open the account with that job ready. */}
+        {isAdmin && people.length > 0 && people.length <= 3 && (
+          <CommandGroup heading="Do for this person">
+            {people.flatMap((p) => {
+              const who = (p.name ?? p.email).split(" ")[0];
+              return PERSON_ACTIONS.map((a) => (
+                <CommandItem
+                  key={`${p.id}-${a.id}`}
+                  value={`${search} ${p.name ?? ""} ${p.email} ${a.id} ${a.keywords}`}
+                  onSelect={() => go(personActionHref(p.id, a.id), `${a.label} for ${who}`)}
+                >
+                  <span className="truncate">{a.label} for {who}</span>
+                </CommandItem>
+              ));
+            })}
           </CommandGroup>
         )}
 
@@ -167,9 +211,8 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             Book a class
             {hint("/lessons")}
           </CommandItem>
-          <CommandItem value="messages chat" onSelect={() => go("/messages")}>
-            Messages
-            {hint("/messages")}
+          <CommandItem value="support help message contact" onSelect={() => { announce(OPEN_SUPPORT); setOpen(false); }}>
+            Message support
           </CommandItem>
           <CommandItem value="friends classmates" onSelect={() => go("/friends")}>
             Friends
@@ -232,36 +275,36 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
 
         {isAdmin && (
           <CommandGroup heading="Admin">
-            <CommandItem value="admin overview studio" onSelect={() => go("/admin")}>
+            <CommandItem value="admin overview studio" onSelect={() => go("/admin", "Studio overview")}>
               Studio overview
             {hint("/admin")}
             </CommandItem>
-            <CommandItem value="admin students" onSelect={() => go("/admin/students")}>
+            <CommandItem value="admin students" onSelect={() => go("/admin/students", "Students")}>
               Students
             </CommandItem>
-            <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments")}>
+            <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments", "Payments")}>
               Payments
             {hint("/admin/payments")}
             </CommandItem>
-            <CommandItem value="admin lessons upload" onSelect={() => go("/admin/lessons")}>
+            <CommandItem value="admin lessons upload" onSelect={() => go("/admin/lessons", "Lesson content")}>
               Lesson content
             </CommandItem>
-            <CommandItem value="admin bookings roster schedule" onSelect={() => go("/admin/schedule?view=ATTENDANCE")}>
+            <CommandItem value="admin bookings roster schedule" onSelect={() => go("/admin/schedule?view=ATTENDANCE", "Class bookings")}>
               Class bookings
             </CommandItem>
-            <CommandItem value="admin support chat inbox" onSelect={() => go("/admin/support")}>
+            <CommandItem value="admin support chat inbox" onSelect={() => go("/admin/support", "Support chat")}>
               Support chat
             </CommandItem>
-            <CommandItem value="admin accounts people users" onSelect={() => go("/admin/users")}>
+            <CommandItem value="admin accounts people users" onSelect={() => go("/admin/users", "Accounts")}>
               Accounts
             </CommandItem>
-            <CommandItem value="admin pricing prices discount percent off plan" onSelect={() => go("/admin/pricing")}>
+            <CommandItem value="admin pricing prices discount percent off plan" onSelect={() => go("/admin/pricing", "Pricing and discounts")}>
               Pricing and discounts
             </CommandItem>
-            <CommandItem value="admin credits grant adjust" onSelect={() => go("/admin/payments?tab=credits")}>
+            <CommandItem value="admin credits grant adjust" onSelect={() => go("/admin/payments?tab=credits", "Grant or take credits")}>
               Grant or take credits
             </CommandItem>
-            <CommandItem value="admin settings owner switches" onSelect={() => go("/admin/settings")}>
+            <CommandItem value="admin settings owner switches" onSelect={() => go("/admin/settings", "Settings")}>
               Settings
             </CommandItem>
           </CommandGroup>

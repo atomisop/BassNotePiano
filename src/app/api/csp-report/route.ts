@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportError } from "@/lib/reportError";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
         });
       }
     } catch (err) {
-      console.error("CSP violation could not be counted (non-blocking):", err);
+      reportError(err, "CSP violation could not be counted");
     }
   }
   return new NextResponse(null, { status: 204 });

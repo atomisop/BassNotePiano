@@ -43,10 +43,11 @@ describe("the studio's pause rules", () => {
     expect(adminPauseBlockedReason(base, new Date("2026-12-01T12:00:00Z"), now)).toBeNull();
     expect(adminPauseBlockedReason(base, null, now)).toBeNull();
   });
-  it("refuses a date in the past or beyond a year, a family plan, an unpaid first bill and a plan already paused", () => {
+  it("refuses a date in the past or beyond a year, an unpaid first bill (a group plan included) and a plan already paused", () => {
     expect(adminPauseBlockedReason(base, new Date("2026-10-24T12:00:00Z"), now)).toMatch(/after today/);
     expect(adminPauseBlockedReason(base, new Date("2028-01-01T12:00:00Z"), now)).toMatch(/within a year/);
-    expect(adminPauseBlockedReason({ ...base, familyGroupId: "g" }, null, now)).toMatch(/family/);
+    expect(adminPauseBlockedReason({ ...base, familyGroupId: "g" }, null, now)).toBeNull();
+    expect(adminPauseBlockedReason({ ...base, familyGroupId: "g", installmentsPaid: 0 }, null, now)).toMatch(/first payment/);
     expect(adminPauseBlockedReason({ ...base, installmentsPaid: 0 }, null, now)).toMatch(/first payment/);
     expect(adminPauseBlockedReason({ ...base, pausedAt: new Date("2026-10-20T00:00:00Z"), pauseUntil: new Date("2026-11-20T00:00:00Z") }, null, now)).toMatch(/already paused/);
   });

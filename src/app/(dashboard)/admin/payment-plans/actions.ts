@@ -10,6 +10,10 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
+import { restartPlan, setPlanLength, setPlanPrice, setPlanProgress, waiveNextBill } from "@/lib/adminPlanTools";
+import type { PaymentPlanTerm } from "@prisma/client";
+import { adminLinkParent, adminUnlinkParent, changeGroupPayer, getGroupView, listLinksFor, separateFromGroup, type AdminLinkRow, type GroupView } from "@/lib/adminGroupTools";
+import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 
 // The admin layout's redirect only protects rendering, Server Actions are
@@ -111,6 +115,22 @@ export async function changeBillDateAction(planId: string, day: string, notify =
   });
 }
 
+/** Owner only: sets how many bills are paid and the next bill date, with none of the usual limits (see setPlanProgress). */
+export async function setPlanProgressAction(planId: string, billsPaid: number, nextBillDay: string, notify = true): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a plan's progress." };
+    try {
+      const { warnings } = await setPlanProgress(admin.id, String(planId), { billsPaid: Number(billsPaid), nextBillDay: String(nextBillDay) });
+      revalidatePath("/", "layout");
+      return { ok: true, error: null, warning: warnings.join(" ") };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+  });
+}
+
 /** Owner only: what settling a late payer would do (the bill, the classes taught on credit, the new due date). Changes nothing. */
 export async function lateSettlementPreviewAction(planId: string): Promise<{ ok: true; preview: LateSettlementPreview } | { ok: false; error: string }> {
   const admin = await requireAdmin();
@@ -190,4 +210,105 @@ export async function planBuilderApplyAction(input: PlanBuilderInput, key?: stri
     if (result.ok) revalidatePath("/", "layout");
     return result;
   });
+}
+
+/** The plan's weekly time and the free times it could move to. Changes nothing. */
+export async function weeklyTimeChoicesAction(planId: string): Promise<{ ok: true; current: WeeklyTimeChoice | null; choices: WeeklyTimeChoice[] } | { ok: false; error: string }> {
+  await requireAdmin();
+  try {
+    return { ok: true, ...(await getWeeklyTimeChoices(String(planId))) };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+/** Moves one person's weekly time and every upcoming class on it, group and parent plans included. */
+export async function moveWeeklyTimeAction(planId: string, scheduleId: string, chunkIndex: number, notify = true): Promise<{ ok: boolean; error: string | null; label?: string }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    try {
+      const label = await moveWeeklyTime(String(planId), admin.id, String(scheduleId), Number(chunkIndex));
+      revalidatePath("/", "layout");
+      return { ok: true, error: null, label };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+  });
+}
+
+type PlanToolResult = { ok: true; message: string } | { ok: false; error: string };
+
+// The owner only, like the bill date and the plan builder: these change what a student pays.
+async function ownerPlanTool(notify: boolean, work: (adminId: string) => Promise<string>): Promise<PlanToolResult> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can do this." };
+    try {
+      const message = await work(admin.id);
+      revalidatePath("/", "layout");
+      return { ok: true, message };
+    } catch (err) {
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      throw err;
+    }
+  });
+}
+
+export async function setPlanLengthAction(planId: string, term: PaymentPlanTerm, newPrice: boolean, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Now ${await setPlanLength(adminId, String(planId), term, Boolean(newPrice))}`);
+}
+
+export async function setPlanPriceAction(planId: string, dollars: number, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Each bill is now ${await setPlanPrice(adminId, String(planId), Math.round(Number(dollars) * 100))}`);
+}
+
+export async function waiveNextBillAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => {
+    const next = await waiveNextBill(adminId, String(planId));
+    return next ? `Next 28 days are free. Next bill ${next.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : "Last bill waived, the plan is complete";
+  });
+}
+
+export async function restartPlanAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => {
+    const { keptTime } = await restartPlan(adminId, String(planId));
+    return keptTime ? "Plan restarted with its weekly time" : "Plan restarted. Its weekly time was taken, so pick a new one with Weekly time";
+  });
+}
+
+/** Who is on this group or parent plan, who pays, and who could pay instead. Owner only. */
+export async function groupViewAction(groupId: string): Promise<{ ok: true; view: GroupView } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can do this." };
+  try {
+    return { ok: true, view: await getGroupView(String(groupId)) };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+export async function separateFromGroupAction(planId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Moved onto their own plan, ${await separateFromGroup(adminId, String(planId))} a bill`);
+}
+
+export async function changeGroupPayerAction(groupId: string, newPayerId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `${await changeGroupPayer(adminId, String(groupId), String(newPayerId))} pays for the group now`);
+}
+
+export async function listParentLinksAction(userId: string): Promise<AdminLinkRow[]> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return [];
+  return listLinksFor(String(userId));
+}
+
+export async function linkParentAction(userId: string, otherEmail: string, userIs: "parent" | "child", notify = true): Promise<PlanToolResult> {
+  if (userIs !== "parent" && userIs !== "child") return { ok: false, error: "Pick parent or child." };
+  return ownerPlanTool(notify, async (adminId) => `Linked to ${await adminLinkParent(adminId, String(userId), String(otherEmail), userIs)}`);
+}
+
+export async function unlinkParentAction(userId: string, linkId: string, notify = true): Promise<PlanToolResult> {
+  return ownerPlanTool(notify, async (adminId) => `Link with ${await adminUnlinkParent(adminId, String(userId), String(linkId))} ended`);
 }

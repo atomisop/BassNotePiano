@@ -12,6 +12,8 @@ import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
+import { toast } from "@/components/ui/Toaster";
+import { PersonPeekPanel } from "@/components/admin/PersonPeekPanel";
 
 export interface UserListRow {
   id: string;
@@ -47,6 +49,8 @@ export function UserList({
   const [query, setQuery] = useState(initialQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // On a computer a tap on a row opens a summary beside the list; on a phone (or with a modifier key) it opens the full page as before.
+  const [peekId, setPeekId] = useState<string | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const pickedList = [...picked].filter((id) => rows.some((r) => r.id === id));
   const toggle = (id: string, on: boolean) =>
@@ -69,7 +73,8 @@ export function UserList({
     setBusyId(userId);
     setError(null);
     try {
-      await onApproveNext(userId, false, notify);
+      const hold = await toast.held("Releasing the next scale", () => onApproveNext(userId, false, notify), { mail: notify });
+      if (hold.undone) return;
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -116,7 +121,17 @@ export function UserList({
           {(row) => (
             <li key={row.id} className="flex items-center gap-2">
               <RowCheck checked={picked.has(row.id)} onChange={(on) => toggle(row.id, on)} label={`Select ${row.name ?? row.email}`} />
-              <Link href={`/admin/users/${row.id}`} className="tap flex min-w-0 flex-1 items-center gap-3 py-3.5">
+              <Link
+                href={`/admin/users/${row.id}`}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  if (!window.matchMedia("(min-width: 1024px)").matches) return;
+                  e.preventDefault();
+                  setPeekId(row.id);
+                }}
+                aria-current={peekId === row.id ? "true" : undefined}
+                className={`tap flex min-w-0 flex-1 items-center gap-3 py-3.5 ${peekId === row.id ? "text-signal-fg" : ""}`}
+              >
                 {/* Name first with the room it needs; the facts about the account sit on their own line under it, so a badge never
                     squeezes the name on a phone (Law of Proximity: each fact sits next to the person it is about). */}
                 <div className="min-w-0 flex-1">
@@ -153,6 +168,7 @@ export function UserList({
           </ViewMore>
         </ul>
       )}
+      {peekId && <PersonPeekPanel userId={peekId} onClose={() => setPeekId(null)} />}
     </div>
   );
 }

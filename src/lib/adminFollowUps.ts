@@ -21,7 +21,7 @@ const label = (u: { name: string | null; email: string }) => u.name ?? u.email;
 
 export async function getFollowUps(now = new Date()): Promise<FollowUp[]> {
   const t = now.getTime();
-  const [overdue, plans, trials, grants, staleApps] = await Promise.all([
+  const [overdue, plans, trials, grants, staleApps, noDiscord] = await Promise.all([
     prisma.paymentPlan.findMany({
       where: { status: "ACTIVE", nextDueDate: { lt: now } },
       orderBy: { nextDueDate: "asc" },
@@ -44,6 +44,10 @@ export async function getFollowUps(now = new Date()): Promise<FollowUp[]> {
       where: { status: "PENDING", createdAt: { lt: new Date(t - DAY) } },
       orderBy: { createdAt: "asc" },
       select: { id: true, fullName: true },
+    }),
+    prisma.user.findMany({
+      where: { role: "STUDENT", bannedAt: null, discordId: null, paymentPlans: { some: { status: "ACTIVE" } } },
+      select: { id: true, name: true, email: true },
     }),
   ]);
 
@@ -70,6 +74,7 @@ export async function getFollowUps(now = new Date()): Promise<FollowUp[]> {
     { key: "atRisk", title: "Not practicing", hint: "Paying, but no full practice day in 7 days. A short check-in helps.", total: atRisk.length, people: atRisk.slice(0, SHOWN).map(person), href: "/admin/users?filter=idle" },
     { key: "trial", title: "Trial ends within a day", hint: "No class booked yet.", total: trials.length, people: trials.slice(0, SHOWN).map(person), href: "/admin/users" },
     { key: "credits", title: "Credits expire this week", hint: "They still have unused credits that lapse within 7 days.", total: grantU.length, people: grantU.slice(0, SHOWN).map(person), href: "/admin/users" },
+    { key: "discord", title: "Discord not connected", hint: "Paying, but not linked to Discord, where classes are held.", total: noDiscord.length, people: noDiscord.slice(0, SHOWN).map(person), href: "/admin/users" },
   ];
   const apps: FollowUp = {
     key: "apps",
