@@ -53,16 +53,19 @@ export function ActionMenu({ label, icon, children, align = "left", className, o
         {label}
         <CaretDown aria-hidden className={cn("ml-1 h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
+      {/* Stays mounted while closed (a dialog opened from a button in here keeps its state); it fades and shrinks from the trigger's corner
+          (rules 10, 11, 12, 15) and is taken out of the tab order and the pointer path once it has left. */}
       <div
         id={panelId}
-        hidden={!open}
+        aria-hidden={!open}
+        data-open={open ? "" : undefined}
         // A tap on any action closes the panel on the next turn, after that action's own click has run.
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("button, a")) window.setTimeout(() => setOpen(false), 0);
         }}
         className={cn(
-          "glass-menu absolute top-full z-30 mt-2 flex min-w-[15rem] max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1 rounded-2xl p-2 [&>*]:justify-start [&_button]:w-full [&_button]:justify-start",
-          align === "right" ? "right-0" : "left-0",
+          "menu-panel glass-menu absolute top-full z-30 mt-2 flex min-w-[15rem] max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1 rounded-2xl p-2 [&>*]:justify-start [&_button]:w-full [&_button]:justify-start",
+          align === "right" ? "right-0 origin-top-right" : "left-0 origin-top-left",
         )}
       >
         {children}

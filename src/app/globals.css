@@ -3056,3 +3056,24 @@ html[data-kb-motion="off"] .stagger-item { animation: none !important; }
   [data-stagger] > :nth-child(n+8) { animation-delay: calc(7 * var(--stagger)); }
 }
 html[data-kb-motion="off"] [data-stagger] > * { animation: none !important; }
+
+/* A menu that stays mounted while closed (ActionMenu): grows from its corner at 0.95, leaves 20% faster, and is out of the tab order and the pointer path once gone
+   (visibility flips after the exit). Rules 2, 10, 11, 12, 15. */
+.menu-panel {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(var(--pop-scale));
+  transition: opacity var(--dur-menu-exit) var(--ease-ios), transform var(--dur-menu-exit) var(--ease-ios), visibility 0s linear var(--dur-menu-exit);
+}
+.menu-panel[data-open] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity var(--dur-menu) var(--ease-ios), transform var(--dur-menu) var(--ease-ios), visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel, .menu-panel[data-open] { transition: none; transform: none; }
+}
+html[data-kb-motion="off"] .menu-panel { transition: none; }
