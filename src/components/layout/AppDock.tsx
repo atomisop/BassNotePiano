@@ -125,7 +125,7 @@ function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: r
 /** A bend map for feDisplacementMap: neutral in the middle, pushing inward more toward every edge (red sideways, green up and down). */
 function glassMap(w: number, h: number): string {
   const edge = (a: string, b: string) =>
-    `<stop offset="0" stop-color="${a}"/><stop offset=".2" stop-color="${b}"/><stop offset=".8" stop-color="${b}"/><stop offset="1" stop-color="${a.replace("255", "0")}"/>`;
+    `<stop offset="0" stop-color="${a}"/><stop offset=".3" stop-color="${b}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${a.replace("255", "0")}"/>`;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
     `<defs><linearGradient id="x" x1="0" x2="1" y1="0" y2="0">${edge("rgb(255,0,0)", "rgb(128,0,0)")}</linearGradient>` +
@@ -147,7 +147,7 @@ function DockGlassFilter({ id, w, h }: { id: string; w: number; h: number }) {
       <feImage href={map} x="0" y="0" width={w} height={h} preserveAspectRatio="none" result="map" />
       {(["r", "g", "b"] as const).map((c, i) => (
         <Fragment key={c}>
-          <feDisplacementMap in="SourceGraphic" in2="map" scale={[26, 22, 18][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
+          <feDisplacementMap in="SourceGraphic" in2="map" scale={[46, 38, 30][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
           <feColorMatrix
             in={`d${c}`}
             type="matrix"
