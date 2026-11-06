@@ -2346,7 +2346,8 @@ html[data-kb-motion="off"] .cmd-window {
   html[data-bar-title] [data-deck-header] h1,
   html[data-bar-title] h1[data-page-title],
   html[data-bar-title] [data-deck-header] .tracking-caps:has(+ h1),
-  html[data-bar-title] [data-deck-header]:not(:has(> :not(h1):not(.tracking-caps))) {
+  html[data-bar-title] [data-deck-header]:not(:has(> :not(h1):not(.tracking-caps))),
+  html[data-bar-title] [data-deck-header]:has(> [data-bar-source]) {
     display: none !important;
   }
   html .app-shell-col > .announcement-banner,

@@ -10,6 +10,8 @@ import { PianoCat } from "./PianoCat";
 const THRESHOLD_PX = 76;
 const HOLD_PX = 76;
 const MAX_PX = 150;
+// The cover is a little taller than the longest pull and tucks 1px under the card, so no seam shows.
+const COVER_PX = MAX_PX + 1;
 // The spinner shows for at least this long, so a fast refresh does not look like a flash.
 const MIN_SPIN_MS = 700;
 // Never leave the spinner up forever if the server is slow.
@@ -44,6 +46,7 @@ export function PullToRefreshMain({ className, children }: { className: string; 
   const mainRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
   const [phase, setPhaseState] = useState<Phase>("idle");
   const phaseRef = useRef<Phase>("idle");
   const [isPending, startTransition] = useTransition();
@@ -74,6 +77,13 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     if (bar) {
       bar.style.transition = ease;
       bar.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
+    }
+    // The strip the card leaves behind is solid ground, so nothing from the page (a pinned card, a scrolled row) can show above the card
+    // or behind the cat: whatever is scrolled stays under the one card.
+    const cover = coverRef.current;
+    if (cover) {
+      cover.style.transition = ease;
+      cover.style.transform = `translate3d(0, ${pull - COVER_PX}px, 0)`;
     }
     const progress = Math.min(1, pull / THRESHOLD_PX);
     indicator.style.transition = animate ? "opacity 200ms ease-out" : "none";
@@ -232,6 +242,12 @@ export function PullToRefreshMain({ className, children }: { className: string; 
       <div ref={contentRef} className="relative">
         {children}
       </div>
+      <div
+        ref={coverRef}
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-[43] bg-ground"
+        style={{ height: COVER_PX, transform: `translate3d(0, ${-COVER_PX}px, 0)` }}
+      />
       <div
         ref={indicatorRef}
         aria-hidden
