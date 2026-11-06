@@ -34,7 +34,7 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
   const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   const filled = active && Boolean(icon.fill?.length);
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-[26px] w-[26px]">
+    <svg aria-hidden viewBox="0 0 24 24" className={`h-[26px] w-[26px] origin-center transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${active ? "scale-[1.14]" : ""}`}>
       {icon.paths.map((d, i) =>
         filled && icon.fill?.includes(i) ? (
           <path key={i} d={d} {...line} fill="currentColor" strokeWidth={2} />
@@ -225,15 +225,15 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
               {active && (
                 <motion.span
                   layoutId="dock-active-pill"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="ig-dock-active pointer-events-none absolute -inset-x-[4.5px] inset-y-0 rounded-full"
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 24, mass: 0.9 }}
+                  className="ig-dock-active pointer-events-none absolute -inset-x-[6px] -inset-y-[7px] rounded-full"
                 />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
+                className={`ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center ${active ? "is-on" : ""}`}
               >
                 <DockGlyphIcon icon={icon} active={active} />
               </motion.span>
