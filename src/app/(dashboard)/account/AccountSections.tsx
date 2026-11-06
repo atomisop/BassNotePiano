@@ -19,6 +19,8 @@ import { Laptop, Smartphone, Tablet } from "@/components/ui/appIcons";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { SectionCard } from "./SectionCard";
 import { toast } from "@/components/ui/Toaster";
+import { claimScholarshipAction } from "./scholarship-actions";
+import { normalizeScholarshipCode } from "@/lib/scholarshipRules";
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
 
@@ -180,11 +182,63 @@ export function PasswordSection() {
           <ParentLinksPanel />
         </SectionCard>
       </div>
+      <ScholarshipCard />
       <ReferralCard />
       <PushCard />
       <CalendarFeedCard />
       <SignedInDevicesCard />
     </div>
+  );
+}
+
+/** Type the 16 digit scholarship code to add its free classes. The server checks it was made for this account's email. */
+function ScholarshipCard() {
+  const router = useRouter();
+  const [raw, setRaw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const digits = raw.replace(/\D/g, "").slice(0, 16);
+  const shown = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+
+  async function claim(e: React.FormEvent) {
+    e.preventDefault();
+    if (!normalizeScholarshipCode(digits)) return setError("Enter all 16 digits.");
+    setBusy(true);
+    setError(null);
+    setDone(null);
+    const res = await claimScholarshipAction(digits);
+    setBusy(false);
+    if (!res.ok) return setError(res.error);
+    setDone(res.message);
+    setRaw("");
+    toast.success("Scholarship claimed");
+    router.refresh();
+  }
+
+  return (
+    <SectionCard title="Claim a scholarship" hint="A scholarship code is made for one email address and works once.">
+      <form onSubmit={claim} className="space-y-3">
+        <p className="text-small text-slate-400">Got a 16 digit scholarship code? Enter it to add your free classes. It only works while you are signed in with the email it was made for.</p>
+        <label htmlFor="scholarship-code" className="sr-only">Scholarship code</label>
+        <input
+          id="scholarship-code"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="0000 0000 0000 0000"
+          value={shown}
+          onChange={(e) => setRaw(e.target.value)}
+          maxLength={19}
+          className="h-11 w-full rounded-lg bg-neu-base px-3 font-mono text-body tracking-wider text-slate-50 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        {error && <p role="alert" className="text-small text-red-400">{error}</p>}
+        {done && <p role="status" className="text-small text-slate-50">{done}</p>}
+        <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+          {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+          {busy ? "Checking…" : "Claim scholarship"}
+        </button>
+      </form>
+    </SectionCard>
   );
 }
 

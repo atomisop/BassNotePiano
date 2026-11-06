@@ -40,6 +40,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/users", label: "Accounts" },
       { href: "/admin/students", label: "Applicants" },
+      { href: "/admin/scholarships", label: "Scholarships" },
       { href: "/admin/contacts", label: "Contacts", more: true },
       { href: "/admin/employees", label: "Staff", more: true },
     ],

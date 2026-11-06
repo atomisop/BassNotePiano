@@ -1,5 +1,10 @@
 /** Plain words for the audit log's short action codes (anything not listed shows as its code). */
 const LABELS: Record<string, string> = {
+  "scholarship.create": "Made a scholarship code",
+  "scholarship.update": "Changed a scholarship code",
+  "scholarship.regenerate": "Gave a scholarship code new digits",
+  "scholarship.revoke": "Revoked a scholarship code",
+  "scholarship.claim": "Claimed a scholarship",
   "user.ban": "Banned an account",
   "account.email-change": "Changed their sign-in email",
   "user.unban": "Lifted a ban",
