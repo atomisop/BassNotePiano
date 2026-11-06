@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
     let escalationId: string;
     try {
-      const escalation = await createAssistantEscalation({ identifier, userId, contactName, contactEmail, transcript });
+      const escalation = await createAssistantEscalation({ identifier, userId, contactName, contactEmail, transcript, transcriptFromBrowser: true });
       escalationId = escalation.id;
     } catch (err) {
       if (err instanceof AssistantEscalationError) return NextResponse.json({ error: err.message }, { status: 400 });

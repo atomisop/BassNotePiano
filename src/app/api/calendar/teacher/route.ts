@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isValidTeacherCalendarToken } from "@/lib/teacherCalendar";
+import { currentTeacherCalendarVersion, isValidTeacherCalendarToken } from "@/lib/teacherCalendar";
 
 // The teacher's classes as a calendar feed. Calendar apps poll this link, so
 // it is protected by a secret in the link rather than a sign-in.
@@ -12,12 +12,12 @@ function stampOf(date: Date): string {
 }
 
 function escapeText(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
 }
 
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("t") ?? "";
-  if (!isValidTeacherCalendarToken(token)) return new NextResponse("Not found", { status: 404 });
+  if (!isValidTeacherCalendarToken(token, await currentTeacherCalendarVersion())) return new NextResponse("Not found", { status: 404 });
 
   const now = new Date();
   const bookings = await prisma.classBooking.findMany({

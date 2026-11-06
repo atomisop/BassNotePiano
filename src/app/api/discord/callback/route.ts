@@ -23,6 +23,13 @@ export async function GET(req: Request) {
   const cookieNonce = req.headers.get("cookie")?.match(new RegExp(`${DISCORD_STATE_COOKIE}=([^;]+)`))?.[1];
   if (!checkState(url.searchParams.get("state"), cookieNonce, session.user.id)) return back("error");
 
+  // A link is good once: the state's nonce is spent here, so replaying the same callback address does nothing the second time.
+  try {
+    await prisma.idempotencyKey.create({ data: { userId: session.user.id, scope: "discord-state", key: String(cookieNonce) } });
+  } catch {
+    return back("error");
+  }
+
   const code = url.searchParams.get("code");
   if (!code) return back("denied");
 

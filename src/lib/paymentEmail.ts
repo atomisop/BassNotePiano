@@ -75,14 +75,21 @@ export function isAllowedSender(from: string): boolean {
 }
 
 /** Reads the payer, amount, memo and (when the bank shows one) the sender's phone out of a Zelle or Venmo "you received money" email. */
-export function parsePaymentEmail(subject: string, body: string): ParsedPaymentEmail | null {
-  const core = parseCore(subject, body);
+export function parsePaymentEmail(subject: string, body: string, from?: string): ParsedPaymentEmail | null {
+  const core = parseCore(subject, body, from);
   if (!core) return null;
   const clues = extractPhoneClues(`${subject}\n${body}`);
   return { ...core, senderPhone: clues.phone, senderPhoneLast4: clues.last4 };
 }
 
-function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "senderPhone" | "senderPhoneLast4"> | null {
+/** True for mail from SoFi itself. Only SoFi's own template may be read with the SoFi parser. */
+function isSofiSender(from: string): boolean {
+  const match = from.toLowerCase().match(/@([a-z0-9.-]+)>?\s*$/);
+  if (!match) return false;
+  return ["sofi.org", "sofi.com"].some((allowed) => match[1] === allowed || match[1].endsWith(`.${allowed}`));
+}
+
+function parseCore(subject: string, body: string, from?: string): Omit<ParsedPaymentEmail, "senderPhone" | "senderPhoneLast4"> | null {
   const cleanSubject = subject.replace(/Zelle®?/gi, "").replace(/\s+/g, " ").trim();
   const lines = body
     .split(/\r?\n/)
@@ -92,8 +99,16 @@ function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "sen
   // SoFi: the body reads "The $199.99 sent to you by JORDAN ALEMU will be automatically deposited to your account.",
   // then the sender's note, then a notice that SoFi is not responsible for it. The subject varies, so the body
   // is what is read, and it is read first so the note comes through.
-  const sofi = parseSofi(body);
-  if (sofi) return sofi;
+  //
+  // The sender's note sits inside every bank's body, and the payer writes it. So the SoFi reader runs only on mail from
+  // SoFi itself (when the sender is known), and when the subject also states an amount (Venmo "paid you", bank "sent you")
+  // the two must agree, otherwise a note written to look like SoFi's sentence could change the amount and the code.
+  const sofi = from === undefined || isSofiSender(from) ? parseSofi(body) : null;
+  if (sofi) {
+    const subjectAmount = cleanSubject.match(/(?:sent you|paid you|received) \$([\d,]+(?:\.\d{2})?)/i);
+    if (subjectAmount && toCents(subjectAmount[1]) !== sofi.amountCents) return null;
+    return sofi;
+  }
 
   // Bank alerts: "Jordan Alemu sent you $25.00"
   let match = cleanSubject.match(/^(.+?) sent you \$([\d,]+(?:\.\d{2})?)/i);
@@ -418,7 +433,7 @@ export async function reportRejectedBankEmail(input: { messageId: string; from: 
  */
 export async function holdUnverifiedPaymentEmail(input: { messageId: string; from: string; subject: string; body: string; reason: string }): Promise<"held" | "rejected"> {
   try {
-    const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
+    const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body, input.from) : null;
     const code = parsed ? referenceInMemo(parsed.memo) : null;
     if (parsed && code) {
       const open = await prisma.zellePayment.findMany({ where: { bundleId: null, status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
@@ -477,7 +492,7 @@ export async function ingestPaymentEmail(
   if (!isAllowedSender(input.from)) return "ignored";
   // Money taken back by Venmo (a reversed or cancelled payment) is not a new payment; the admins are told instead.
   if (await reportReversal(input)) return "ignored";
-  const parsed = parsePaymentEmail(input.subject, input.body);
+  const parsed = parsePaymentEmail(input.subject, input.body, input.from);
   if (!parsed) {
     if (looksLikePayment(input.subject, input.body)) {
       await reportUnreadable(input);

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { LessonMediaType } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { createPresignedLessonUpload } from "@/lib/storage";
+import { createPresignedLessonUpload, isAcceptableLessonFileRef } from "@/lib/storage";
 import { createLesson, deleteLesson, reorderLessons, updateLessonText, LessonEditError, type CreateLessonInput } from "@/lib/courseContent";
 import { logAudit } from "@/lib/audit";
 
@@ -43,6 +43,7 @@ export interface CreateLessonActionInput {
 
 export async function createLessonAction(input: CreateLessonActionInput) {
   const admin = await requireAdmin();
+  if (!isAcceptableLessonFileRef(input.fileUrl)) throw new Error("That file address is not an uploaded lesson file.");
   const payload: CreateLessonInput = { ...input, uploadedById: admin.id };
   const lesson = await createLesson(payload);
   revalidatePath("/admin/lessons");

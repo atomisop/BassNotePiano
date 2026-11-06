@@ -14,7 +14,9 @@ type SignInUser = { role?: "STUDENT" | "ADMIN"; hasCurriculumAccess?: boolean; n
  * - a fresh sign-in uses the user row `authorize` just read from the database.
  */
 export function tokenWhenEntitlementsUnknown(token: JWT, user: SignInUser | undefined): JWT | null {
-  if (typeof token.onboarded === "boolean") return token;
+  // An admin's session is not carried through a database outage on the old token: a demoted or revoked admin must not keep working
+  // because the lookup that would have said so timed out. Everyone else keeps the last known values.
+  if (typeof token.onboarded === "boolean") return token.role === "ADMIN" && !user ? null : token;
   if (user && typeof user.onboarded === "boolean") {
     token.role = user.role ?? "STUDENT";
     token.hasCurriculumAccess = Boolean(user.hasCurriculumAccess);

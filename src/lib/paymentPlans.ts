@@ -364,18 +364,31 @@ async function getOrCreateMemberInstallmentPayment(
     amountCents = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig()).installmentAmountCents;
   }
 
-  const payment = await prisma.zellePayment.create({
-    data: {
-      userId: plan.userId,
-      purpose: "PAYMENT_PLAN_INSTALLMENT",
-      amountCents,
-      zelleHandle,
-      lessonQuantity: plan.creditsPerInstallment,
-      installmentNumber: plan.installmentsPaid + 1,
-      paymentPlanId: plan.id,
-      status: "AWAITING_TRANSFER",
-    },
+  // One open bill per plan, even when a page load and the daily job (or several tabs) ask at the same moment: they take turns on a
+  // per-plan lock, and whoever comes second finds the bill the first one made instead of making another.
+  let createdHere = false;
+  const payment = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"member-bill:" + plan.id}))`;
+    const already = await tx.zellePayment.findFirst({
+      where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (already) return already;
+    createdHere = true;
+    return tx.zellePayment.create({
+      data: {
+        userId: plan.userId,
+        purpose: "PAYMENT_PLAN_INSTALLMENT",
+        amountCents,
+        zelleHandle,
+        lessonQuantity: plan.creditsPerInstallment,
+        installmentNumber: plan.installmentsPaid + 1,
+        paymentPlanId: plan.id,
+        status: "AWAITING_TRANSFER",
+      },
+    });
   });
+  if (!createdHere) return { payment, wasCreated: false };
   if (payment.amountCents === 0) {
     const { settleFreeBill } = await import("@/lib/freeBills");
     await settleFreeBill(payment.id);
@@ -1048,11 +1061,18 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
   // A family that never started (its combined first payment did not arrive) ends together: no member is left half started.
   const failedFamilyStart = Boolean(plan.familyGroupId) && plan.installmentsPaid === 0;
 
+  let stale = false;
   await prisma.$transaction(async (tx) => {
-    await tx.paymentPlan.update({
-      where: { id: planId },
+    // Cancel only the plan as it was when the decision was made: a payment approved in the meantime moves the due date or the count,
+    // and then nothing is canceled (nobody who has just paid is locked out).
+    const done = await tx.paymentPlan.updateMany({
+      where: { id: planId, status: "ACTIVE", nextDueDate: plan.nextDueDate, installmentsPaid: plan.installmentsPaid },
       data: { status: "CANCELED", canceledAt: new Date(), cancellationReason: "NON_PAYMENT" },
     });
+    if (done.count !== 1) {
+      stale = true;
+      return;
+    }
     await tx.zellePayment.updateMany({
       where: { OR: [{ paymentPlanId: planId }, ...(failedFamilyStart ? [{ familyGroupId: plan.familyGroupId }] : [])], status: "AWAITING_TRANSFER" },
       data: { status: "EXPIRED" },
@@ -1062,6 +1082,7 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
       data: { status: "CANCELED", refunded: true },
     });
   });
+  if (stale) return false;
 
   if (failedFamilyStart) {
     const siblings = await prisma.paymentPlan.findMany({

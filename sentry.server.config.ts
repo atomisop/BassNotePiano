@@ -7,6 +7,7 @@
 // here with the server-side `SENTRY_DSN` var (not `NEXT_PUBLIC_`-prefixed,
 // since the server doesn't need it exposed to the browser bundle).
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "@/lib/sentryScrub";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -23,7 +24,9 @@ Sentry.init({
   // Same scrub as the client config, server errors are exactly where a
   // caught Prisma error or a thrown SocialError/ClassBookingError could
   // otherwise carry a request body straight into Sentry's stored payload.
+  sendDefaultPii: false,
   beforeSend(event) {
+    scrubEvent(event);
     const scrub = (obj: Record<string, unknown> | undefined) => {
       if (!obj) return;
       for (const key of Object.keys(obj)) {

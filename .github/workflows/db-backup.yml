@@ -36,8 +36,11 @@ jobs:
           PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASSPHRASE" --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
-          rm backup.dump
+          # The passphrase goes through a private file, never onto the command line where process listings could show it.
+          umask 077
+          printf '%s' "$PASSPHRASE" > .passphrase
+          gpg --batch --yes --pinentry-mode loopback --passphrase-file .passphrase --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
+          shred -u backup.dump .passphrase 2>/dev/null || rm -f backup.dump .passphrase
 
       - name: Upload to R2
         env:

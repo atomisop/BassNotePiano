@@ -18,9 +18,16 @@ async function requireAdmin() {
   return session.user;
 }
 
+// Owner only: approving marks a bill paid and grants its plan or credits. Staff accounts must not be able to give value away.
+async function requireOwnerAdmin() {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) redirect("/admin/payments");
+  return admin;
+}
+
 export async function approvePaymentAction(paymentId: string, notify = true) {
   return withStudentNotice(notify, async () => {
-    const admin = await requireAdmin();
+    const admin = await requireOwnerAdmin();
     await approveZellePayment(paymentId, admin.id);
     revalidatePath("/", "layout");
   });
@@ -109,7 +116,7 @@ export async function cancelBillAction(paymentId: string): Promise<{ ok: boolean
 /** Attaches a bank or Venmo email that matched nobody to an open payment for the same amount, and approves it. */
 export async function matchReceiptAction(receiptId: string, paymentId: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
   return withStudentNotice(notify, async () => {
-    const admin = await requireAdmin();
+    const admin = await requireOwnerAdmin();
     try {
       await matchReceiptToPayment({ receiptId, paymentId, admin: { id: admin.id, email: admin.email ?? null } });
       revalidatePath("/", "layout");

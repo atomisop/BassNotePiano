@@ -4,6 +4,18 @@ import { createAndSendCode, RateLimitError, verifyCode } from "@/lib/verificatio
 import { assessPhone } from "@/lib/phoneValidity";
 import { checkVerifySession, isSmsConfigured, smsAvailable, startVerifySession } from "@/lib/sms";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
+import { consumeRateLimit, RateLimitError as LimitError } from "@/lib/rateLimit";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+/** Countries a confirmation text may be sent to. A text to a premium-rate or far-away number costs real money, so the default is the studio's own region. */
+const SMS_COUNTRIES = new Set(["US", "CA"]);
+/** A hard ceiling on texts sent per hour across the whole site, so a flood of accounts cannot run up the bill. */
+const SMS_GLOBAL_PER_HOUR = 60;
+
+/** Answers "is this number already a student's" at most this often per person: the answer tells a stranger who is enrolled. */
+export async function limitPhoneLookups(userId: string): Promise<void> {
+  await consumeRateLimit(prisma, `phonecheck:${userId}`, { windowMinutes: 60, max: 20, message: "Too many number checks. Please wait a while and try again." });
+}
 
 export type PhoneResult<T = unknown> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -45,6 +57,15 @@ const TOO_MANY = "Too many codes requested. Please wait a few minutes and try ag
  */
 async function sendProviderCode(user: { id: string; email: string }, phone: string): Promise<PhoneResult> {
   const email = user.email.toLowerCase();
+  // Recorded BEFORE the paid text goes out (and so cannot be raced by parallel requests): per person, per number, and site-wide.
+  try {
+    await consumeRateLimit(prisma, `sms:user:${user.id}`, { windowMinutes: 60, max: 5, message: TOO_MANY });
+    await consumeRateLimit(prisma, `sms:num:${phone}`, { windowMinutes: 24 * 60, max: 3, message: TOO_MANY });
+    await consumeRateLimit(prisma, "sms:global", { windowMinutes: 60, max: SMS_GLOBAL_PER_HOUR, message: TOO_MANY });
+  } catch (err) {
+    if (err instanceof LimitError) return { ok: false, error: TOO_MANY };
+    throw err;
+  }
   const windowStart = new Date(Date.now() - (await getNumberSetting("security.codeIssueWindowMinutes")) * 60_000);
   const recent = await prisma.verificationCode.count({ where: { email, purpose: "PHONE_VERIFY", createdAt: { gte: windowStart } } });
   if (recent >= (await getNumberSetting("security.codeIssueLimit"))) return { ok: false, error: TOO_MANY };
@@ -118,6 +139,18 @@ export async function startPhoneVerification(userId: string, rawPhone: string): 
   const assessed = assessPhone(rawPhone);
   if (!assessed.ok) return assessed;
   const phone = assessed.phone;
+  // A paid text is only ever sent when the owner has text confirmation switched on, and only to an allowed country.
+  if (isSmsConfigured()) {
+    if (!(await getBoolSetting("phone.verifyBySms"))) return { ok: false, error: "Text confirmation is not turned on." };
+    const country = parsePhoneNumberFromString(phone)?.country;
+    if (!country || !SMS_COUNTRIES.has(country)) return { ok: false, error: "We can only text numbers in the United States and Canada." };
+  }
+  try {
+    await limitPhoneLookups(userId);
+  } catch (err) {
+    if (err instanceof LimitError) return { ok: false, error: err.message };
+    throw err;
+  }
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, phone: true, phoneVerifiedAt: true } });
   if (!user) return { ok: false, error: "Account not found." };
   if (user.phone === phone && user.phoneVerifiedAt) return { ok: false, error: "That number is already verified on your account." };
@@ -142,6 +175,7 @@ async function tellPhoneChanged(userId: string, change: "changed" | "removed"): 
 export async function resendPhoneCode(userId: string): Promise<PhoneResult> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, pendingPhone: true } });
   if (!user?.pendingPhone) return { ok: false, error: "Enter a phone number first." };
+  if (isSmsConfigured() && !(await getBoolSetting("phone.verifyBySms"))) return { ok: false, error: "Text confirmation is not turned on." };
   return sendCode(user, user.pendingPhone);
 }
 
@@ -182,6 +216,12 @@ export async function savePhone(userId: string, rawPhone: string): Promise<Phone
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
   if (!user) return { ok: false, error: "Account not found." };
   if (user.phone !== assessed.phone) {
+    try {
+      await limitPhoneLookups(userId);
+    } catch (err) {
+      if (err instanceof LimitError) return { ok: false, error: err.message };
+      throw err;
+    }
     if (await isTaken(assessed.phone, userId)) return { ok: false, error: TAKEN };
     try {
       await prisma.user.update({ where: { id: userId }, data: { phone: assessed.phone, phoneVerifiedAt: null, pendingPhone: null } });

@@ -86,7 +86,14 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/dashboard";
+  // Only an address on this site is ever opened, whatever the push says.
+  let url = (event.notification.data && event.notification.data.url) || "/dashboard";
+  try {
+    const parsed = new URL(url, self.location.origin);
+    url = parsed.origin === self.location.origin ? parsed.pathname + parsed.search + parsed.hash : "/dashboard";
+  } catch (e) {
+    url = "/dashboard";
+  }
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) {

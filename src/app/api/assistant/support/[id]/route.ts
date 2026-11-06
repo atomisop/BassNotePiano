@@ -4,6 +4,7 @@ import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clientAddress } from "@/lib/assistantInput";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getThreadForVisitor, postVisitorMessage, AssistantEscalationError } from "@/lib/support";
 
@@ -13,8 +14,9 @@ const MAX_MESSAGE_LENGTH = 2000;
 // genuine conversation, tight enough to stop a loop hammering the endpoint.
 const SEND_LIMIT = { windowMinutes: 10, max: 30 };
 
-function resolveIdentifier(userId: string | undefined, forwardedFor: string | null): string {
-  return userId ? `user:${userId}` : forwardedFor?.split(",")[0]?.trim() ?? "unknown";
+function resolveIdentifier(userId: string | undefined, headerList: Pick<Headers, "get">): string {
+  // The address the platform vouches for (or the last forwarding hop), never the first hop, which the sender writes.
+  return userId ? `user:${userId}` : clientAddress(headerList);
 }
 
 /** Polls a support thread's live messages, the widget calls this on an interval while a handoff is active. */
@@ -42,7 +44,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
     }
 
     const session = await getServerAuthSession();
-    const identifier = resolveIdentifier(session?.user?.id, (await headers()).get("x-forwarded-for"));
+    const identifier = resolveIdentifier(session?.user?.id, await headers());
 
     try {
       await assertRateLimit(

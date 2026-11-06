@@ -330,7 +330,9 @@ export async function undoAttendance(bookingId: string): Promise<void> {
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "SCHEDULED", attendance: null } });
+    // Claim the undo first: of two clicks at once only one finds the class still marked, so the credit comes back once.
+    const claimed = await tx.classBooking.updateMany({ where: { id: bookingId, status: "COMPLETED" }, data: { status: "SCHEDULED", attendance: null } });
+    if (claimed.count !== 1) throw new ClassBookingError("This booking isn't marked yet. Nothing to undo.");
     await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
   });
   await recordCreditGrant(booking.studentId, booking.creditsSpent, { source: "ADMIN_ADJUSTMENT", expiresAt: null });

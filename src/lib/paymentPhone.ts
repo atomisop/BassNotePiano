@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { assessPhone } from "@/lib/phoneValidity";
 import { getBoolSetting } from "@/lib/siteSettings";
-import { isPhoneConflict, isPhoneTaken, PHONE_TAKEN } from "@/lib/phoneVerification";
+import { isPhoneConflict, isPhoneTaken, limitPhoneLookups, PHONE_TAKEN } from "@/lib/phoneVerification";
 
 // The number a student pays from is tied to their account's own number, so nobody can type an enrolled student's
 // number at payment time to borrow their identity: it must equal the number saved on the paying account, and
@@ -47,6 +47,11 @@ export async function checkPaymentPhone(userId: string, rawPhone: string): Promi
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
   if (!user) return { status: "invalid", error: "Account not found." };
   if (user.phone) return user.phone === assessed.phone ? { status: "match" } : { status: "mismatch" };
+  try {
+    await limitPhoneLookups(userId);
+  } catch (err) {
+    return { status: "invalid", error: err instanceof Error ? err.message : "Too many number checks. Please wait a while." };
+  }
   return (await isPhoneTaken(assessed.phone, userId)) ? { status: "taken" } : { status: "free" };
 }
 

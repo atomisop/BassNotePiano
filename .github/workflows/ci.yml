@@ -13,6 +13,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -40,12 +43,12 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
       # step this session), same Node version in CI as in dev and on
       # Netlify, not a separate floating version.
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -63,7 +66,7 @@ jobs:
       # reads the schema file, it doesn't connect.
       - run: npx prisma generate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       - run: npm run typecheck
       - run: npm run lint
@@ -80,8 +83,8 @@ jobs:
       # whole approach is wrong.
       - run: npm run build
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-placeholder-secret-not-for-production-use' }}
           NEXTAUTH_URL: "http://localhost:3000"
 

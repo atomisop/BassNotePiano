@@ -5,6 +5,7 @@ import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getBoolSetting } from "@/lib/siteSettings";
 import {
   assertSuggestionRateLimit,
   generateSuggestions,
@@ -24,6 +25,8 @@ export async function POST(req: Request) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);
+    // Honors the same on/off switch as the chat itself.
+    if (!(await getBoolSetting("atom.enabled"))) return NextResponse.json({ suggestions: [] });
     const raw = Array.isArray(body?.messages) ? body.messages : null;
     if (!raw || raw.length === 0) return NextResponse.json({ suggestions: [] });
 

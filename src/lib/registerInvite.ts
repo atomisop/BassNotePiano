@@ -20,6 +20,8 @@ const markerKey = (email: string) => `register-invite:${createHash("sha256").upd
  * and a daily limit per sender, so it cannot be used to mail strangers. The invitation carries the sender's own invite link.
  */
 export async function sendRegisterInvite(senderId: string, rawEmail: string): Promise<RegisterInviteResult> {
+  // Whether an address already has an account is an answer worth guarding, so even the "exists" and "recent" answers are limited.
+  await consumeRateLimit(prisma, `register-invite-lookup:${senderId}`, { windowMinutes: 60, max: 30, message: "Too many tries. Please wait a while and try again." });
   const email = rawEmail.trim().toLowerCase();
   if (!EMAIL_SHAPE.test(email) || email.length > 254) return "invalid";
   if (await prisma.user.findUnique({ where: { email }, select: { id: true } })) return "exists";

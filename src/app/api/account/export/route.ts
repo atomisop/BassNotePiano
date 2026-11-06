@@ -15,7 +15,7 @@ export async function GET() {
   if (!session?.user?.id) return new NextResponse("Not signed in", { status: 401 });
   const userId = session.user.id;
 
-  const [account, bookings, payments, plans, quizAttempts, lessonProgress, badges, notes] = await Promise.all([
+  const [account, bookings, payments, plans, quizAttempts, lessonProgress, badges, notes, supportThreads, atomChats, practiceDays, notifications, friendRequests] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -31,9 +31,19 @@ export async function GET() {
     prisma.lessonProgress.findMany({ where: { userId }, select: { lessonId: true, completedAt: true } }),
     prisma.userBadge.findMany({ where: { userId }, select: { code: true, earnedAt: true } }),
     prisma.studentNote.findMany({ where: { studentId: userId, hiddenFromStudent: false }, select: { body: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: "desc" } }),
+    // Support conversations (the team's private notes are not theirs to export), Atom chats, practice, notices and friends.
+    prisma.assistantEscalation.findMany({
+      where: { userId },
+      select: { subject: true, source: true, status: true, createdAt: true, messages: { where: { sender: { not: "INTERNAL" } }, select: { sender: true, body: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.assistantConversationMessage.findMany({ where: { userId }, select: { role: true, content: true, createdAt: true }, orderBy: { createdAt: "asc" } }),
+    prisma.fingerPracticeDay.findMany({ where: { userId }, select: { day: true, seconds: true, completedAt: true }, orderBy: { day: "desc" } }),
+    prisma.notification.findMany({ where: { userId }, select: { type: true, title: true, body: true, readAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 500 }),
+    prisma.friendRequest.findMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] }, select: { status: true, createdAt: true, sender: { select: { username: true } }, receiver: { select: { username: true } } } }),
   ]);
 
-  const file = { exportedAt: new Date().toISOString(), account, classBookings: bookings, payments, paymentPlans: plans, quizAttempts, lessonProgress, badges, notesFromYourTeacher: notes };
+  const file = { exportedAt: new Date().toISOString(), account, classBookings: bookings, payments, paymentPlans: plans, quizAttempts, lessonProgress, badges, notesFromYourTeacher: notes, supportConversations: supportThreads, atomChats, practiceDays, notifications, friends: friendRequests };
   return new NextResponse(JSON.stringify(file, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",

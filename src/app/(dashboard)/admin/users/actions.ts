@@ -49,6 +49,8 @@ export async function setUserRoleAction(targetUserId: string, role: Role, notify
 export async function setCurriculumAccessAction(targetUserId: string, hasAccess: boolean, notify = true) {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
+    // Free access is value given away: only the owner grants it (anyone may remove it).
+    if (hasAccess && !isOwnerEmail(admin.email)) redirect("/admin/users");
     const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { email: true } });
     await setCurriculumAccess(targetUserId, hasAccess);
     await logAudit({

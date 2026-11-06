@@ -19,6 +19,10 @@ import { reportError } from "@/lib/reportError";
 // or standing up a new rate-limit table (this reuses the [email, purpose]
 // index the VerificationCode model already has).
 
+/** Wrong tries allowed across all of one email's codes for one purpose within the window: this many times the per-code limit. */
+const CUMULATIVE_GUESS_WINDOW_MS = 60 * 60 * 1000;
+const CUMULATIVE_GUESS_MULTIPLE = 3;
+
 export class RateLimitError extends Error {
   constructor() {
     super("Too many codes requested for this email. Please wait a few minutes and try again.");
@@ -147,6 +151,16 @@ export async function verifyCode(email: string, purpose: VerificationPurpose, su
 
   if (!record) return { ok: false, reason: "not_found" };
   if (record.expiresAt < new Date()) return { ok: false, reason: "expired" };
+  // Guesses are also counted across every code issued for this email and purpose in the last hour, so asking for a fresh code
+  // after each five wrong tries does not reset the count. (Sign-in has its own failed-attempt lockout.)
+  if (purpose !== "LOGIN_2FA") {
+    const maxAttempts = await getNumberSetting("security.maxCodeAttempts");
+    const recent = await prisma.verificationCode.aggregate({
+      _sum: { attempts: true },
+      where: { email: normalizedEmail, purpose, createdAt: { gte: new Date(Date.now() - CUMULATIVE_GUESS_WINDOW_MS) } },
+    });
+    if ((recent._sum.attempts ?? 0) >= maxAttempts * CUMULATIVE_GUESS_MULTIPLE) return { ok: false, reason: "too_many_attempts" };
+  }
   // Claim one guess atomically: the increment only happens while the code still
   // has guesses left, so a burst of parallel requests cannot all read "attempts
   // is 0" and each get a free try. Counted whether or not the guess is right.

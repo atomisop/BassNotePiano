@@ -63,6 +63,8 @@ export interface CreateAssistantEscalationInput {
   subject?: string;
   /** Replaces the default "Atom handoff" admin notification text. */
   notice?: { title: string; body: string };
+  /** True when the transcript came from the visitor's browser (the chat handoff), so the team is told it cannot be verified. */
+  transcriptFromBrowser?: boolean;
 }
 
 export async function createAssistantEscalation(input: CreateAssistantEscalationInput) {
@@ -77,6 +79,23 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
     throw new AssistantEscalationError("Ask Atom something first. There's no conversation to hand off yet.");
   }
 
+  const handoffMessages: { sender: SupportMessageSender; body: string; identifier: string | null }[] = [
+    ...transcript.map((m) => ({
+      sender: (m.role === "user" ? "VISITOR" : "ATOM") as SupportMessageSender,
+      body: m.content,
+      identifier: m.role === "user" ? input.identifier : null,
+    })),
+    // The earlier turns arrive from the visitor's browser and cannot be checked, lines shown as Atom included.
+    ...(input.transcriptFromBrowser
+      ? [
+          {
+            sender: "INTERNAL" as SupportMessageSender,
+            body: "Everything above this note was sent from the visitor's browser when they asked for a person. It cannot be verified, including lines shown as Atom.",
+            identifier: null,
+          },
+        ]
+      : []),
+  ];
   const escalation = await prisma.assistantEscalation.create({
     data: {
       identifier: input.identifier,
@@ -85,11 +104,7 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
       contactEmail,
       subject: input.subject?.trim().slice(0, 200) || null,
       messages: {
-        create: transcript.map((m) => ({
-          sender: (m.role === "user" ? "VISITOR" : "ATOM") satisfies SupportMessageSender,
-          body: m.content,
-          identifier: m.role === "user" ? input.identifier : null,
-        })),
+        create: handoffMessages,
       },
     },
   });
@@ -654,8 +669,9 @@ export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome:
     });
     threadId = parent?.escalationId ?? null;
   }
-  // 2) Mail clients that drop the reply headers: same sender and same subject.
-  if (!threadId) {
+  // 2) Mail clients that drop the reply headers: same sender and same subject. Only for a sender whose address was checked: a From
+  // anyone can forge must not be able to add words to a real customer's thread (an unverified message opens its own thread instead).
+  if (!threadId && mail.senderVerified) {
     const recent = await prisma.assistantEscalation.findMany({
       where: { source: "EMAIL", contactEmail: mail.fromEmail },
       orderBy: { createdAt: "desc" },
@@ -741,6 +757,13 @@ export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome:
 const SUPPORT_TYPING_STALE_MS = 8_000;
 
 /** Called while someone writes in a thread. The customer is VISITOR, the team is SUPPORT. */
+/** The visitor's own typing signal: only for a chat thread that is theirs (a signed-in thread needs their session), like every other visitor route. */
+export async function setVisitorTyping(escalationId: string, typing: boolean): Promise<void> {
+  const escalation = await loadEscalationForVisitor(escalationId);
+  if (!escalation) return;
+  await setSupportTyping(escalationId, "VISITOR", typing);
+}
+
 export async function setSupportTyping(escalationId: string, side: "VISITOR" | "SUPPORT", typing = true): Promise<void> {
   if (!typing) {
     await clearSupportTyping(escalationId, side);

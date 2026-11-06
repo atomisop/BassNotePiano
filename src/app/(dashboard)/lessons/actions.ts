@@ -46,6 +46,7 @@ export async function bookClassBundleAction(selections: BundleBookingSelection[]
   if (await hasParentControl(session.user.id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
 
   if (selections.length === 0) return { ok: false as const, error: "Select at least one class first." };
+  if (selections.length > 10) return { ok: false as const, error: "You can book up to 10 classes at once." };
 
   const results = await bookClassBundle(session.user.id, selections);
   revalidatePath("/", "layout");

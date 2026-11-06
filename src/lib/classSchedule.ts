@@ -228,6 +228,25 @@ export function nextOccurrenceDates(dayOfWeek: number, count: number): Date[] {
 }
 
 /**
+ * The occurrence date a booking is stored under, made from the browser's number: the UTC calendar day only (the same stand-in
+ * for an ET day that nextOccurrenceDates hands out), so a number a millisecond off cannot make a second, different key for the
+ * same class. For a student it must fall on the schedule's weekday and within the next 120 days; the studio's own moves are not limited that way. Every conflict check compares
+ * this exact value, so it must never be taken from the browser as it came.
+ */
+export function canonicalOccurrenceDate(dayOfWeek: number, occurrenceDateMs: number, options: { allowAnyDate?: boolean } = {}): Date {
+  if (typeof occurrenceDateMs !== "number" || !Number.isFinite(occurrenceDateMs)) throw new ClassBookingError("Pick a real date.");
+  const raw = new Date(occurrenceDateMs);
+  if (Number.isNaN(raw.getTime())) throw new ClassBookingError("Pick a real date.");
+  const day = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
+  // The studio may move a class to any day (a make-up on another weekday); a student's date must be one the schedule really offers.
+  if (!options.allowAnyDate) {
+    if (day.getUTCDay() !== dayOfWeek) throw new ClassBookingError("That class isn't offered on that day.");
+    if (day.getTime() > Date.now() + 120 * 86_400_000) throw new ClassBookingError("That date is too far ahead to book.");
+  }
+  return day;
+}
+
+/**
  * The real UTC instant a specific chunk of a schedule starts on a specific
  * occurrence date, the same etWallTimeToUtc + chunk.offsetMin computation
  * bookClass/bookFamilyClass/getUpcomingOccurrences each already do inline,
@@ -612,7 +631,7 @@ export async function bookClass(
     throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
-  const occurrenceDate = new Date(occurrenceDateMs);
+  const occurrenceDate = canonicalOccurrenceDate(schedule.dayOfWeek, occurrenceDateMs, { allowAnyDate: Boolean(options.isAdminAssisted) });
   const { hour, minute } = parseStartTime(schedule.startTime);
   const scheduledAt = new Date(
     etWallTimeToUtc(
@@ -959,6 +978,29 @@ export interface FamilyAttendeeCheck {
 }
 
 /**
+ * The accounts (out of `ids`) that have said yes to being booked with `callerId`: an accepted friend request in either direction,
+ * or an accepted parent link in either direction. Nobody is put into a class, or even looked up by email for one, without it.
+ */
+async function consentedAccountIds(callerId: string, ids: string[]): Promise<Set<string>> {
+  const others = ids.filter((id) => id !== callerId);
+  if (others.length === 0) return new Set();
+  const [friends, links] = await Promise.all([
+    prisma.friendRequest.findMany({
+      where: { status: "ACCEPTED", OR: [{ senderId: callerId, receiverId: { in: others } }, { receiverId: callerId, senderId: { in: others } }] },
+      select: { senderId: true, receiverId: true },
+    }),
+    prisma.parentLink.findMany({
+      where: { status: "ACCEPTED", OR: [{ parentId: callerId, childId: { in: others } }, { childId: callerId, parentId: { in: others } }] },
+      select: { parentId: true, childId: true },
+    }),
+  ]);
+  const ok = new Set<string>();
+  for (const f of friends) ok.add(f.senderId === callerId ? f.receiverId : f.senderId);
+  for (const l of links) ok.add(l.parentId === callerId ? l.childId : l.parentId);
+  return ok;
+}
+
+/**
  * Live, side-effect-free-beyond-its-own-rate-limit-ledger lookup used while
  * the booker is still filling in attendee emails, same shape and reasoning
  * as payments.ts's checkFamilyBundleRecipients (a typo should be caught and
@@ -985,7 +1027,9 @@ export async function checkFamilyClassAttendees(callerId: string, emails: string
     where: { email: { in: normalized } },
     select: { id: true, email: true, name: true, emailVerified: true },
   });
-  const byEmail = new Map(users.map((u) => [u.email, u]));
+  const consented = await consentedAccountIds(callerId, users.map((u) => u.id));
+  // Someone who is not a friend (or linked parent/child) looks exactly like a missing account: no name, no confirmation they exist.
+  const byEmail = new Map(users.filter((u) => u.id === callerId || consented.has(u.id)).map((u) => [u.email, u]));
 
   return normalized.map((email) => {
     const user = byEmail.get(email);
@@ -1037,7 +1081,7 @@ export async function bookFamilyClass(
     throw new ClassBookingError("This time slot is too short for a family class.");
   }
 
-  const occurrenceDate = new Date(occurrenceDateMs);
+  const occurrenceDate = canonicalOccurrenceDate(schedule.dayOfWeek, occurrenceDateMs);
   const { hour, minute } = parseStartTime(schedule.startTime);
   const scheduledAt = new Date(
     etWallTimeToUtc(
@@ -1069,6 +1113,22 @@ export async function bookFamilyClass(
   const unresolved = normalizedEmails.filter((e) => !byEmail.get(e)?.emailVerified);
   if (unresolved.length > 0) {
     throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
+  }
+
+  // Consent: everyone other than the person booking must already be their accepted friend or linked parent/child.
+  const consented = await consentedAccountIds(initiatorId, attendees.map((u) => u.id));
+  const notConsented = attendees.filter((u) => u.id !== initiatorId && !consented.has(u.id));
+  if (notConsented.length > 0) {
+    throw new ClassBookingError("You can only book a family class with friends who have accepted your friend request, or with your linked parent or child.");
+  }
+
+  // A child whose schedule a parent controls cannot cancel on their own, so nobody else may put them into a class either.
+  const controlled = await prisma.parentLink.findMany({
+    where: { childId: { in: attendees.map((u) => u.id).filter((id) => id !== initiatorId) }, status: "ACCEPTED" },
+    select: { childId: true },
+  });
+  if (controlled.length > 0) {
+    throw new ClassBookingError("One of these accounts has its schedule controlled by a parent, so it can't be booked here.");
   }
 
   // Same rule bookClass enforces for a solo self-booking, applied per
@@ -1645,7 +1705,7 @@ export async function rescheduleClassBooking(
     throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
-  const newOccurrenceDate = custom ? custom.occurrenceDate : new Date(newOccurrenceDateMs);
+  const newOccurrenceDate = custom ? custom.occurrenceDate : canonicalOccurrenceDate(newSchedule!.dayOfWeek, newOccurrenceDateMs, { allowAnyDate: byAdmin });
   const newScheduledAt = custom ? custom.scheduledAt : computeScheduledAt(newSchedule!, newOccurrenceDate, chunk);
   const newIsPast = newScheduledAt.getTime() <= Date.now();
   if (newIsPast && !anyTime) {
