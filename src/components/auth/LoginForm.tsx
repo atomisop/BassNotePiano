@@ -210,7 +210,12 @@ export function LoginForm({
               className="space-y-4"
             >
               <p className="text-small text-slate-400">
-                Code sent to <span className="text-slate-200">{email.trim()}</span>.
+                If <span className="text-slate-200">{email.trim()}</span> has an account, a code is on its way. Nothing
+                after a minute? Check spam, or{" "}
+                <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+                  create an account
+                </Link>
+                .
               </p>
               <div>
                 <Label htmlFor={codeId} className={fieldLabel}>

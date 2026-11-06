@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { normalizePhone, PHONE_HELP, signupPhoneError, signupPhoneNote } from "@/lib/phone";
 import { UserPlus } from "@/components/ui/appIcons";
 
 const cardVariants = {
@@ -54,22 +53,6 @@ function RegisterForm() {
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  // A child or sibling who has no number of their own can skip it (one number belongs to one account, so a shared family number cannot be used).
-  const [noPhone, setNoPhone] = useState(false);
-  // Whether this sign-up asks for a phone number (it does whenever texts can be sent).
-  const [phoneRequired, setPhoneRequired] = useState(false);
-  // Whether a text code is really sent. The words under the phone box depend on it.
-  const [verifyBySms, setVerifyBySms] = useState(false);
-  useEffect(() => {
-    fetch("/api/auth/signup-options")
-      .then((r) => r.json())
-      .then((o) => {
-        setPhoneRequired(Boolean(o?.phoneRequired));
-        setVerifyBySms(Boolean(o?.verifyBySms));
-      })
-      .catch(() => undefined);
-  }, []);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -85,10 +68,6 @@ function RegisterForm() {
 
     if (!hasFirstAndLastName(name)) {
       setError(FULL_NAME_MESSAGE);
-      return;
-    }
-    if (phoneRequired && !noPhone && !normalizePhone(phone)) {
-      setError(signupPhoneError(verifyBySms));
       return;
     }
     const passwordError = passwordRequirementError(password);
@@ -110,7 +89,7 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken, ref: searchParams.get("ref") }),
+      body: JSON.stringify({ name, email, phone: "", noPhone: true, password, website, turnstileToken, ref: searchParams.get("ref") }),
     });
 
     if (!res.ok) {
@@ -147,7 +126,7 @@ function RegisterForm() {
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="reg-hp">Leave this empty</label>
-        <input id="reg-hp" name="hp_company" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        <input id="reg-hp" name="bn_trap_x7" type="text" tabIndex={-1} autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
         <div>
           <Label htmlFor="name" className={fieldLabel}>
@@ -178,29 +157,6 @@ function RegisterForm() {
           />
           <EmailTypoHint value={email} onFix={setEmail} />
         </div>
-        {phoneRequired && (
-          <div>
-            <Label htmlFor="phone" className={fieldLabel}>
-              Phone number
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="(555) 123-4567"
-              required={!noPhone}
-              disabled={noPhone}
-              value={noPhone ? "" : phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
-            <label className="mt-2 flex cursor-pointer items-center gap-2 text-small text-slate-400">
-              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-slate-50" />
-              I do not have my own phone number
-            </label>
-          </div>
-        )}
         <div>
           <Label htmlFor="password" className={fieldLabel}>
             Password
