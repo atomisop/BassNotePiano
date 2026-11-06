@@ -147,7 +147,7 @@ function DockGlassFilter({ id, w, h }: { id: string; w: number; h: number }) {
       <feImage href={map} x="0" y="0" width={w} height={h} preserveAspectRatio="none" result="map" />
       {(["r", "g", "b"] as const).map((c, i) => (
         <Fragment key={c}>
-          <feDisplacementMap in="SourceGraphic" in2="map" scale={[46, 38, 30][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
+          <feDisplacementMap in="SourceGraphic" in2="map" scale={[64, 54, 44][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
           <feColorMatrix
             in={`d${c}`}
             type="matrix"

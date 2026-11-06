@@ -2545,9 +2545,9 @@ body:has([data-surface="app"]) .glass-surface-modal {
 .ig-dock {
   isolation: isolate;
   corner-shape: round;
-  background: rgb(64 68 76 / 0.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
-  backdrop-filter: blur(22px) saturate(1.7);
+  background: rgb(36 38 44 / 0.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.7);
+  backdrop-filter: blur(16px) saturate(1.7);
   box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
   --ig-icon: rgb(255 255 255);
   --dock-cut: rgb(78 78 81);
@@ -2560,7 +2560,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   z-index: -1;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.32) 0%, rgb(255 255 255 / 0.1) 35%, rgb(255 255 255 / 0.06) 65%, rgb(255 255 255 / 0.16) 100%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.62) 0%, rgb(255 255 255 / 0.18) 30%, rgb(255 255 255 / 0.1) 65%, rgb(255 255 255 / 0.3) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -2633,10 +2633,10 @@ body:has([data-surface="app"]) .glass-surface-modal {
 }
 @supports (backdrop-filter: url(#a)) {
   .ig-glass-main {
-    backdrop-filter: url(#bnp-glass-main) blur(8px) saturate(1.7);
+    backdrop-filter: url(#bnp-glass-main) blur(5px) saturate(1.7);
   }
   .ig-glass-island {
-    backdrop-filter: url(#bnp-glass-island) blur(8px) saturate(1.7);
+    backdrop-filter: url(#bnp-glass-island) blur(5px) saturate(1.7);
   }
 }
 [data-mode="light"] .ig-dock {
