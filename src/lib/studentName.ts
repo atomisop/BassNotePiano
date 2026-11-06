@@ -8,3 +8,9 @@ export function hasFirstAndLastName(name: string | null | undefined): boolean {
 }
 
 export const FULL_NAME_MESSAGE = "Enter your first and last name, the way it appears on your bank or Venmo account.";
+
+/** A name as it is stored: no control characters (a carriage return or line break inside a name can break files built from it, such as the calendar feed), single spaces, trimmed. */
+export function cleanPersonName(name: string): string {
+  // eslint-disable-next-line no-control-regex
+  return name.replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, " ").replace(/\s+/g, " ").trim();
+}

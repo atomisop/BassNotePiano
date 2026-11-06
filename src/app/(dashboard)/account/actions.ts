@@ -5,6 +5,8 @@ import { removeDiscordPresence } from "@/lib/discordCleanup";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
+import { canonicalEmail } from "@/lib/canonicalEmail";
+import { leaveSessionProof } from "@/lib/sessionProofCookie";
 import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
@@ -21,7 +23,7 @@ import { sendPasswordChangedEmail, sendNotificationEmail } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { looksLikeEmail } from "@/lib/familyMemberCheck";
-import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
+import { FULL_NAME_MESSAGE, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, pausePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 
 
@@ -40,7 +42,7 @@ async function requireSession() {
 // ---------------------------------------------------------------------------
 
 export async function updateNameAction(newName: string) {
-  const trimmed = newName.trim();
+  const trimmed = cleanPersonName(newName);
   if (!trimmed) return { ok: false as const, error: "Name can't be empty." };
   if (!hasFirstAndLastName(trimmed)) return { ok: false as const, error: FULL_NAME_MESSAGE };
 
@@ -150,8 +152,8 @@ export async function updateEmailAction(currentPassword: string, newEmail: strin
   try {
     await prisma.user.update({
       where: { id: check.id },
-      data: { email: check.newEmail, emailVerified: new Date(), sessionVersion: { increment: 1 } },
-    });
+      data: { email: check.newEmail, emailCanonical: canonicalEmail(check.newEmail), emailVerified: new Date(), sessionVersion: { increment: 1 } },
+    }).then((u) => leaveSessionProof(u.id, u.sessionVersion));
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return { ok: false as const, error: "That email can't be used. Try another one." };
@@ -202,10 +204,12 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
   // devices" (below) true, see the jwt callback in src/lib/auth.ts. The
   // client re-syncs its OWN session to the new version right after this
   // call succeeds, via next-auth's update(), so only other devices drop.
-  await prisma.user.update({
+  const bumped = await prisma.user.update({
     where: { id: check.id },
     data: { passwordHash: newPasswordHash, passwordChangedAt: new Date(), sessionVersion: { increment: 1 } },
+    select: { sessionVersion: true },
   });
+  await leaveSessionProof(check.id, bumped.sessionVersion);
 
   try {
     await sendPasswordChangedEmail(check.email, check.name);
@@ -227,7 +231,8 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 
 export async function signOutOtherDevicesAction() {
   const { id } = await requireSession();
-  await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } } });
+  const bumped = await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } }, select: { sessionVersion: true } });
+  await leaveSessionProof(id, bumped.sessionVersion);
   // The devices that were just signed out no longer belong in the list; this one stays. If one signs in again it is a new device.
   const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
   await prisma.knownDevice.deleteMany({ where: { userId: id, ...(mine ? { id: { not: mine } } : {}) } });

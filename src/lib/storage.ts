@@ -83,14 +83,39 @@ export function isPrivateBucketConfigured(): boolean {
   return Boolean(process.env.R2_PRIVATE_BUCKET_NAME);
 }
 
+/**
+ * A storage key is only ever a plain path of real names. A dot segment ("..", "."), an empty segment, a backslash, a percent
+ * escape or a control character could make a key mean a different object than the folder prefix it was checked against.
+ */
+export function isSafeObjectKey(key: string): boolean {
+  if (!key || key.length > 1024) return false;
+  if (/[\\%\u0000-\u001f\u007f]/.test(key)) return false;
+  return key.split("/").every((part) => part !== "" && part !== "." && part !== "..");
+}
+
 /** Where a stored lesson fileUrl points: "private:<key>" or a public address in the public bucket. */
 export function resolveLessonFile(fileUrl: string): { bucket: string; key: string } | null {
   if (fileUrl.startsWith(PRIVATE_REF)) {
     const bucket = lessonBucketName();
-    return bucket ? { bucket, key: fileUrl.slice(PRIVATE_REF.length) } : null;
+    const key = fileUrl.slice(PRIVATE_REF.length);
+    return bucket && isSafeObjectKey(key) ? { bucket, key } : null;
   }
   const key = keyFromPublicUrl(fileUrl);
   return key && process.env.R2_BUCKET_NAME ? { bucket: process.env.R2_BUCKET_NAME, key } : null;
+}
+
+/**
+ * A lesson address an admin may save: when it points into our storage it must be a safe key under lessons/ (what the upload
+ * step hands out), so a lesson can never name some other object (a backup, an avatar) that deleting the lesson would remove.
+ * An address that does not point into our storage is left to the caller.
+ */
+export function isAcceptableLessonFileRef(fileUrl: string): boolean {
+  const base = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
+  const isPrivate = fileUrl.startsWith(PRIVATE_REF);
+  const isPublic = Boolean(base) && fileUrl.startsWith(`${base}/`);
+  if (!isPrivate && !isPublic) return true;
+  const key = isPrivate ? fileUrl.slice(PRIVATE_REF.length) : fileUrl.slice(base!.length + 1);
+  return isSafeObjectKey(key) && key.startsWith("lessons/");
 }
 
 /** What a lesson row stores for a freshly uploaded key. */
@@ -108,7 +133,8 @@ export async function getLessonObject(fileUrl: string, range?: string) {
 /** Best-effort delete of a lesson's backing file, wherever it lives. */
 export async function deleteLessonFile(fileUrl: string): Promise<void> {
   const where = resolveLessonFile(fileUrl);
-  if (!where) return;
+  // Only ever objects under lessons/: a lesson row must not be able to delete anything else in the bucket.
+  if (!where || !where.key.startsWith("lessons/")) return;
   try {
     await getClient().send(new DeleteObjectCommand({ Bucket: where.bucket, Key: where.key }));
   } catch (err) {
@@ -252,6 +278,11 @@ export async function createPresignedAvatarUpload(
 
 /** Best-effort delete of any object by key, failure here should never block whatever DB change triggered it (a Lesson delete, an avatar replacement, etc). */
 export async function deleteObject(key: string): Promise<void> {
+  // Only avatars and lesson files are ever deleted this way; never backups/ or anything outside those folders.
+  if (!isSafeObjectKey(key) || !(key.startsWith("avatars/") || key.startsWith("lessons/"))) {
+    console.error(`Refused to delete R2 object outside avatars/ and lessons/: "${key.slice(0, 80)}"`);
+    return;
+  }
   try {
     await getClient().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
   } catch (err) {
@@ -263,7 +294,8 @@ export async function deleteObject(key: string): Promise<void> {
 export function keyFromPublicUrl(publicUrl: string): string | null {
   const base = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
   if (!base || !publicUrl.startsWith(`${base}/`)) return null;
-  return publicUrl.slice(base.length + 1);
+  const key = publicUrl.slice(base.length + 1);
+  return isSafeObjectKey(key) ? key : null;
 }
 
 // ---------------------------------------------------------------------------

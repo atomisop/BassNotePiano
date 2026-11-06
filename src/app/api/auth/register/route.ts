@@ -15,7 +15,7 @@ import { assessPhone } from "@/lib/phoneValidity";
 import { isPhoneConflict, isPhoneTaken, PHONE_TAKEN, phoneVerifyMode } from "@/lib/phoneVerification";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
+import { FULL_NAME_MESSAGE, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     throw err;
   }
 
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const name = typeof body?.name === "string" ? cleanPersonName(body.name) : "";
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 

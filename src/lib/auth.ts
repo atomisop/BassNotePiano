@@ -14,6 +14,8 @@ import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
 import { consumeSecondStep } from "@/lib/adminTwoStep";
 import { placeFromHeaders, recordSignInDevice, isDeviceSignedOut } from "@/lib/deviceAlerts";
 import { headers } from "next/headers";
+import { isValidSessionProof } from "@/lib/sessionProof";
+import { readSessionProof } from "@/lib/sessionProofCookie";
 import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 type Entitlements = {
@@ -274,11 +276,16 @@ export const authOptions: NextAuthOptions = {
       // the comparison below fails and returning `{}` drops it (no `sub`,
       // so getServerAuthSession/useSession see it as logged out).
       if (entitlements.sessionVersion !== SESSION_VERSION_UNKNOWN) {
-        if (user || trigger === "update") {
-          // Fresh sign-in, or this exact device just called update()
-          // right after triggering the bump itself, bake in the current
-          // version so the device that DID the bump doesn't sign itself
-          // out too.
+        if (user) {
+          // Fresh sign-in: bake in the current version.
+          token.sessionVersion = entitlements.sessionVersion;
+        } else if (trigger === "update") {
+          // The device that just bumped the version calls update() to re-stamp ITSELF. next-auth lets anyone holding a
+          // signed cookie call update(), so a stale token is re-stamped only when this browser also carries the short-lived
+          // proof the bumping action left behind (see sessionProof.ts); a copied old cookie has no proof and is dropped.
+          if (typeof token.sessionVersion === "number" && token.sessionVersion !== entitlements.sessionVersion) {
+            if (!isValidSessionProof(await readSessionProof(), token.sub, entitlements.sessionVersion)) return {} as JWT;
+          }
           token.sessionVersion = entitlements.sessionVersion;
         } else if (typeof token.sessionVersion !== "number") {
           // A token issued before this field existed. Adopt the current

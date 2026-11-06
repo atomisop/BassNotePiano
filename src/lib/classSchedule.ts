@@ -228,6 +228,22 @@ export function nextOccurrenceDates(dayOfWeek: number, count: number): Date[] {
 }
 
 /**
+ * The occurrence date a booking is stored under, made from the browser's number: the UTC calendar day only (the same stand-in
+ * for an ET day that nextOccurrenceDates hands out), so a number a millisecond off cannot make a second, different key for the
+ * same class. It must fall on the schedule's weekday and, for a student, within the next 120 days. Every conflict check compares
+ * this exact value, so it must never be taken from the browser as it came.
+ */
+export function canonicalOccurrenceDate(dayOfWeek: number, occurrenceDateMs: number, options: { allowAnyDate?: boolean } = {}): Date {
+  if (typeof occurrenceDateMs !== "number" || !Number.isFinite(occurrenceDateMs)) throw new ClassBookingError("Pick a real date.");
+  const raw = new Date(occurrenceDateMs);
+  if (Number.isNaN(raw.getTime())) throw new ClassBookingError("Pick a real date.");
+  const day = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
+  if (day.getUTCDay() !== dayOfWeek) throw new ClassBookingError("That class isn't offered on that day.");
+  if (!options.allowAnyDate && day.getTime() > Date.now() + 120 * 86_400_000) throw new ClassBookingError("That date is too far ahead to book.");
+  return day;
+}
+
+/**
  * The real UTC instant a specific chunk of a schedule starts on a specific
  * occurrence date, the same etWallTimeToUtc + chunk.offsetMin computation
  * bookClass/bookFamilyClass/getUpcomingOccurrences each already do inline,
@@ -612,7 +628,7 @@ export async function bookClass(
     throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
-  const occurrenceDate = new Date(occurrenceDateMs);
+  const occurrenceDate = canonicalOccurrenceDate(schedule.dayOfWeek, occurrenceDateMs, { allowAnyDate: Boolean(options.isAdminAssisted) });
   const { hour, minute } = parseStartTime(schedule.startTime);
   const scheduledAt = new Date(
     etWallTimeToUtc(
@@ -1037,7 +1053,7 @@ export async function bookFamilyClass(
     throw new ClassBookingError("This time slot is too short for a family class.");
   }
 
-  const occurrenceDate = new Date(occurrenceDateMs);
+  const occurrenceDate = canonicalOccurrenceDate(schedule.dayOfWeek, occurrenceDateMs);
   const { hour, minute } = parseStartTime(schedule.startTime);
   const scheduledAt = new Date(
     etWallTimeToUtc(
@@ -1069,6 +1085,15 @@ export async function bookFamilyClass(
   const unresolved = normalizedEmails.filter((e) => !byEmail.get(e)?.emailVerified);
   if (unresolved.length > 0) {
     throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
+  }
+
+  // A child whose schedule a parent controls cannot cancel on their own, so nobody else may put them into a class either.
+  const controlled = await prisma.parentLink.findMany({
+    where: { childId: { in: attendees.map((u) => u.id).filter((id) => id !== initiatorId) }, status: "ACCEPTED" },
+    select: { childId: true },
+  });
+  if (controlled.length > 0) {
+    throw new ClassBookingError("One of these accounts has its schedule controlled by a parent, so it can't be booked here.");
   }
 
   // Same rule bookClass enforces for a solo self-booking, applied per
@@ -1645,7 +1670,7 @@ export async function rescheduleClassBooking(
     throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
-  const newOccurrenceDate = custom ? custom.occurrenceDate : new Date(newOccurrenceDateMs);
+  const newOccurrenceDate = custom ? custom.occurrenceDate : canonicalOccurrenceDate(newSchedule!.dayOfWeek, newOccurrenceDateMs, { allowAnyDate: byAdmin });
   const newScheduledAt = custom ? custom.scheduledAt : computeScheduledAt(newSchedule!, newOccurrenceDate, chunk);
   const newIsPast = newScheduledAt.getTime() <= Date.now();
   if (newIsPast && !anyTime) {

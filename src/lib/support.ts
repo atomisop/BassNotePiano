@@ -654,8 +654,9 @@ export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome:
     });
     threadId = parent?.escalationId ?? null;
   }
-  // 2) Mail clients that drop the reply headers: same sender and same subject.
-  if (!threadId) {
+  // 2) Mail clients that drop the reply headers: same sender and same subject. Only for a sender whose address was checked: a From
+  // anyone can forge must not be able to add words to a real customer's thread (an unverified message opens its own thread instead).
+  if (!threadId && mail.senderVerified) {
     const recent = await prisma.assistantEscalation.findMany({
       where: { source: "EMAIL", contactEmail: mail.fromEmail },
       orderBy: { createdAt: "desc" },
