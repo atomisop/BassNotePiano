@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown as CaretDown } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,21 @@ export function ActionMenu({ label, icon, children, align = "left", className, o
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const panelId = useId();
+  const panel = useRef<HTMLDivElement>(null);
+  // How far to pull the panel sideways so it stays on screen (a phone's narrow width would otherwise let it run past the edge).
+  const [shift, setShift] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!open || !panel.current || !root.current) return;
+    const margin = 16;
+    const width = panel.current.offsetWidth;
+    const anchor = root.current.getBoundingClientRect();
+    const left = align === "right" ? anchor.right - width : anchor.left;
+    let next = 0;
+    if (left + width > window.innerWidth - margin) next = window.innerWidth - margin - (left + width);
+    if (left + next < margin) next = margin - left;
+    setShift(next);
+  }, [open, align]);
 
   useEffect(() => {
     if (!openEvent) return;
@@ -57,6 +72,8 @@ export function ActionMenu({ label, icon, children, align = "left", className, o
           (rules 10, 11, 12, 15) and is taken out of the tab order and the pointer path once it has left. */}
       <div
         id={panelId}
+        ref={panel}
+        style={shift ? { translate: `${shift}px 0` } : undefined}
         aria-hidden={!open}
         data-open={open ? "" : undefined}
         // A tap on any action closes the panel on the next turn, after that action's own click has run.
