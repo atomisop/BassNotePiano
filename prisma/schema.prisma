@@ -2123,7 +2123,9 @@ model ScholarshipCode {
   id            String    @id @default(cuid())
   code          String    @unique
   assignedEmail String
-  credits       Int
+  // Percent off the 6 Month plan's price (see SCHOLARSHIP_TERM). `credits` is only set on codes made when scholarships gave class credits.
+  percent       Int       @default(0)
+  credits       Int?
   note          String?
   // The last day it can be claimed; null never lapses.
   expiresAt     DateTime?

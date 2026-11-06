@@ -425,12 +425,33 @@ export function calculateFamilyBundleTotal(
 /** The most the owner can take off one account (a free account is "complimentary access", not a 100% discount). */
 export const MAX_PERSONAL_DISCOUNT_PERCENT = 90;
 
+/** The most a scholarship can take off the 6 Month plan: 100 makes it free. The owner's general personal discount stays capped at 90. */
+export const MAX_SCHOLARSHIP_PERCENT = 100;
+
+/** The one plan length a scholarship discount prices. Every other length ignores it. */
+export const SCHOLARSHIP_TERM = "TERM_6" as const;
+
+/** What discounts one account has: the owner's general percent (any length) and a scholarship percent (the 6 Month plan only). */
+export interface PersonalDiscount {
+  percent: number;
+  scholarshipPercent: number;
+}
+
+/** The percent off that applies to a plan of this length. The best of the two applies, they never add up. */
+export function discountPercentForTerm(discount: { percent?: number; scholarshipPercent?: number }, term: string): number {
+  const general = discount.percent ?? 0;
+  const scholarship = term === SCHOLARSHIP_TERM ? (discount.scholarshipPercent ?? 0) : 0;
+  return Math.max(general, scholarship);
+}
+
 /**
  * A plan price after a personal discount: the percentage off the price before it, then nearest dollar and a cent under it, the same
  * ".99" ending every price in the app has ($219.99 with 25% off is $164.99). Never below 99 cents. 0 (or less) changes nothing.
  */
 export function discountedPlanPriceCents(listCents: number, percent: number): number {
   if (!Number.isFinite(percent) || percent <= 0) return listCents;
+  // 100% is a free plan (only a scholarship can give it): the bill is $0 and settles by itself (freeBills.ts).
+  if (percent >= MAX_SCHOLARSHIP_PERCENT) return 0;
   const capped = Math.min(percent, MAX_PERSONAL_DISCOUNT_PERCENT);
   return Math.max(99, toCharmPriceCents(Math.round(listCents * (1 - capped / 100))));
 }

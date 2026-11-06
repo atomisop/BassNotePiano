@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
 import { claimScholarshipCode, ScholarshipError } from "@/lib/scholarships";
 import { RateLimitError } from "@/lib/rateLimit";
-import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { describePaymentPlan, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
 
 export type ClaimResult = { ok: true; message: string } | { ok: false; error: string };
 
@@ -13,9 +13,11 @@ export async function claimScholarshipAction(code: string): Promise<ClaimResult>
   const session = await getServerAuthSession();
   if (!session?.user?.id) return { ok: false, error: "Sign in first." };
   try {
-    const { credits, balance } = await claimScholarshipCode(session.user.id, code);
+    const { percent, planChange } = await claimScholarshipCode(session.user.id, code);
     revalidatePath("/", "layout");
-    return { ok: true, message: `Scholarship claimed. ${creditsLabelFromStored(credits)} added, your balance is now ${creditsLabelFromStored(balance)}.` };
+    const plan = describePaymentPlan(OFFERED_PLAN_CADENCE, "TERM_6");
+    const price = planChange && planChange.fromCents !== planChange.toCents ? ` Your running plan is now ${(planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} per payment.` : "";
+    return { ok: true, message: `Scholarship claimed: ${percent}% off the 6 Month plan (${plan}). It only applies to the 6 Month plan.${price}` };
   } catch (err) {
     if (err instanceof ScholarshipError || err instanceof RateLimitError) return { ok: false, error: err.message };
     console.error("Scholarship claim failed:", err);

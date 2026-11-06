@@ -49,7 +49,7 @@ async function grantTimedDiscount(userId: string, expiresAt: Date, note: string)
       update: { percent: REFERRAL_PERCENT, note, expiresAt, createdById: null },
       create: { userId, percent: REFERRAL_PERCENT, note, expiresAt },
     });
-    return applyToRunningPlan(tx, userId, REFERRAL_PERCENT);
+    return applyToRunningPlan(tx, userId);
   });
   if (change === "skip") return false;
   const until = expiresAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
@@ -101,7 +101,7 @@ export async function expireTimedDiscounts(now: Date): Promise<number> {
     try {
       const change = await prisma.$transaction(async (tx) => {
         const gone = await tx.accountDiscount.deleteMany({ where: { userId, expiresAt: { lte: now } } });
-        return gone.count === 1 ? applyToRunningPlan(tx, userId, 0) : "skip";
+        return gone.count === 1 ? applyToRunningPlan(tx, userId) : "skip";
       });
       if (change === "skip") continue;
       ended += 1;

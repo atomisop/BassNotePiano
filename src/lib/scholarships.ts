@@ -1,10 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { creditsToStored, creditsLabelFromStored } from "@/lib/classCreditPricing";
-import { recordCreditGrant } from "@/lib/creditLedger";
-import { createNotification } from "@/lib/notifications";
+import { MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
+import { settleFreeBillsFor } from "@/lib/freeBills";
+import { applyToRunningPlan, type PlanPriceChange } from "@/lib/accountDiscounts";
+import { noticePlanUpdated } from "@/lib/studentNotices";
 import { consumeRateLimit } from "@/lib/rateLimit";
-import { MAX_SCHOLARSHIP_CLASSES, makeScholarshipCode, normalizeScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
+import { makeScholarshipCode, normalizeScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
+
+const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+/** Tells the student their running 6 Month plan changed price, when it did. */
+async function tellPriceChange(userId: string, change: PlanPriceChange | null) {
+  if (!change || change.fromCents === change.toCents) return;
+  await noticePlanUpdated({
+    userId,
+    title: "Your plan price changed",
+    body: `Your price per payment is now ${money(change.toCents)} (it was ${money(change.fromCents)}). It applies to your next bill${change.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
+  });
+}
 
 export class ScholarshipError extends Error {}
 
@@ -21,9 +34,9 @@ export async function findScholarshipAccount(rawEmail: string) {
   return user ? { id: user.id, name: user.name, email: user.email, verified: Boolean(user.emailVerified) } : null;
 }
 
-function checkClasses(classes: number) {
-  if (!Number.isInteger(classes) || classes < 1 || classes > MAX_SCHOLARSHIP_CLASSES) {
-    throw new ScholarshipError(`Classes must be a whole number from 1 to ${MAX_SCHOLARSHIP_CLASSES}.`);
+function checkPercent(percent: number) {
+  if (!Number.isInteger(percent) || percent < 1 || percent > MAX_SCHOLARSHIP_PERCENT) {
+    throw new ScholarshipError(`The discount must be a whole number from 1 to ${MAX_SCHOLARSHIP_PERCENT} percent.`);
   }
 }
 
@@ -33,7 +46,7 @@ function checkClasses(classes: number) {
  */
 export async function createScholarshipCode(input: {
   email: string;
-  classes: number;
+  percent: number;
   code?: string | null;
   note?: string | null;
   expiresAt?: Date | null;
@@ -41,7 +54,7 @@ export async function createScholarshipCode(input: {
 }) {
   const account = await findScholarshipAccount(input.email);
   if (!account) throw new ScholarshipError("No student account has that email. They need to create an account first.");
-  checkClasses(input.classes);
+  checkPercent(input.percent);
   if (input.expiresAt && input.expiresAt <= new Date()) throw new ScholarshipError("The last claim day must be in the future.");
   const custom = input.code?.trim() ? normalizeScholarshipCode(input.code) : null;
   if (input.code?.trim() && !custom) throw new ScholarshipError("A custom code must be exactly 16 digits.");
@@ -49,9 +62,9 @@ export async function createScholarshipCode(input: {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const row = await prisma.scholarshipCode.create({
-        data: { code: custom ?? makeScholarshipCode(), assignedEmail: account.email.toLowerCase(), credits: creditsToStored(input.classes), note, expiresAt: input.expiresAt ?? null, createdById: input.actor.id },
+        data: { code: custom ?? makeScholarshipCode(), assignedEmail: account.email.toLowerCase(), percent: input.percent, note, expiresAt: input.expiresAt ?? null, createdById: input.actor.id },
       });
-      await logAudit({ actorId: input.actor.id, actorEmail: input.actor.email, action: "scholarship.create", detail: `${input.classes} classes for ${account.email}` });
+      await logAudit({ actorId: input.actor.id, actorEmail: input.actor.email, action: "scholarship.create", detail: `${input.percent}% off the 6 Month plan for ${account.email}` });
       return row;
     } catch (err) {
       if ((err as { code?: string }).code !== "P2002") throw err;
@@ -61,16 +74,16 @@ export async function createScholarshipCode(input: {
   throw new ScholarshipError("Could not make a code. Try again.");
 }
 
-/** Owner: changes the amount, note or last claim day of a code nobody has claimed. */
-export async function updateScholarshipCode(id: string, input: { classes: number; note?: string | null; expiresAt?: Date | null }, actor: { id: string; email: string | null }) {
-  checkClasses(input.classes);
+/** Owner: changes the percent, note or last claim day of a code nobody has claimed. */
+export async function updateScholarshipCode(id: string, input: { percent: number; note?: string | null; expiresAt?: Date | null }, actor: { id: string; email: string | null }) {
+  checkPercent(input.percent);
   if (input.expiresAt && input.expiresAt <= new Date()) throw new ScholarshipError("The last claim day must be in the future.");
   const res = await prisma.scholarshipCode.updateMany({
     where: { id, claimedAt: null, revokedAt: null },
-    data: { credits: creditsToStored(input.classes), note: input.note?.trim().slice(0, 200) || null, expiresAt: input.expiresAt ?? null },
+    data: { percent: input.percent, note: input.note?.trim().slice(0, 200) || null, expiresAt: input.expiresAt ?? null },
   });
   if (res.count === 0) throw new ScholarshipError("Only an unclaimed, active code can be changed.");
-  await logAudit({ actorId: actor.id, actorEmail: actor.email, action: "scholarship.update", detail: `${id}: ${input.classes} classes` });
+  await logAudit({ actorId: actor.id, actorEmail: actor.email, action: "scholarship.update", detail: `${id}: ${input.percent}%` });
 }
 
 /** Owner: swaps an unclaimed code for a fresh random one (the old digits stop working). Returns the new digits. */
@@ -89,11 +102,21 @@ export async function regenerateScholarshipCode(id: string, actor: { id: string;
   throw new ScholarshipError("Could not make a code. Try again.");
 }
 
-/** Owner: stops an unclaimed code from working. A claimed code is history and cannot be revoked. */
+/**
+ * Owner: stops a code from working. An unclaimed code can no longer be claimed. A claimed one ENDS its discount: the student's running
+ * 6 Month plan goes back to the price without it, and they are told.
+ */
 export async function revokeScholarshipCode(id: string, actor: { id: string; email: string | null }): Promise<void> {
-  const res = await prisma.scholarshipCode.updateMany({ where: { id, claimedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
-  if (res.count === 0) throw new ScholarshipError("Only a code nobody has claimed can be revoked.");
-  await logAudit({ actorId: actor.id, actorEmail: actor.email, action: "scholarship.revoke", detail: id });
+  const row = await prisma.scholarshipCode.findUnique({ where: { id }, select: { claimedAt: true, claimedById: true, revokedAt: true } });
+  if (!row || row.revokedAt) throw new ScholarshipError("That code is already revoked.");
+  let change: PlanPriceChange | null = null;
+  await prisma.$transaction(async (tx) => {
+    const res = await tx.scholarshipCode.updateMany({ where: { id, revokedAt: null }, data: { revokedAt: new Date() } });
+    if (res.count === 0) throw new ScholarshipError("That code is already revoked.");
+    if (row.claimedAt && row.claimedById) change = await applyToRunningPlan(tx, row.claimedById);
+  });
+  await logAudit({ actorId: actor.id, actorEmail: actor.email, action: row.claimedAt ? "scholarship.end" : "scholarship.revoke", detail: id });
+  if (row.claimedById) await tellPriceChange(row.claimedById, change);
 }
 
 export async function listScholarshipCodes(limit = 200) {
@@ -102,14 +125,14 @@ export async function listScholarshipCodes(limit = 200) {
 
 /** What the signed-in person sees: scholarships they claimed. Never the unclaimed codes of anyone. */
 export async function listClaimedScholarships(userId: string) {
-  return prisma.scholarshipCode.findMany({ where: { claimedById: userId }, orderBy: { claimedAt: "desc" }, select: { id: true, credits: true, claimedAt: true } });
+  return prisma.scholarshipCode.findMany({ where: { claimedById: userId }, orderBy: { claimedAt: "desc" }, select: { id: true, percent: true, claimedAt: true } });
 }
 
 /**
  * Claims a code for the signed-in account. The account's email must be the one the code was made for. The claim is one atomic
  * conditional update (unclaimed, not revoked, not lapsed, right email), so two taps or two devices can never both succeed.
  */
-export async function claimScholarshipCode(userId: string, rawCode: unknown): Promise<{ credits: number; balance: number }> {
+export async function claimScholarshipCode(userId: string, rawCode: unknown): Promise<{ percent: number; planChange: PlanPriceChange | null }> {
   // Guessing a 16 digit number is hopeless, but every try is still counted so nobody can hammer it.
   await consumeRateLimit(prisma, `scholarship-claim:${userId}`, { windowMinutes: 60, max: 10, message: "Too many tries. Please wait an hour and try again." });
   const code = normalizeScholarshipCode(rawCode);
@@ -123,27 +146,22 @@ export async function claimScholarshipCode(userId: string, rawCode: unknown): Pr
   const row = await prisma.scholarshipCode.findUnique({ where: { code } });
   if (!row || !sameInbox(row.assignedEmail, user.email)) throw new ScholarshipError(NOT_VALID);
   const status = scholarshipStatus(row);
-  if (status === "claimed") throw new ScholarshipError("That code has already been claimed.");
-  if (status !== "available") throw new ScholarshipError(NOT_VALID);
+  if (status === "claimed" || status === "ended") throw new ScholarshipError("That code has already been claimed.");
+  if (status !== "available" || row.percent < 1) throw new ScholarshipError(NOT_VALID);
 
   const now = new Date();
-  const balance = await prisma.$transaction(async (tx) => {
+  const planChange = await prisma.$transaction(async (tx) => {
     const won = await tx.scholarshipCode.updateMany({
       where: { id: row.id, claimedAt: null, revokedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       data: { claimedAt: now, claimedById: user.id },
     });
     if (won.count === 0) throw new ScholarshipError("That code has already been claimed.");
-    const updated = await tx.user.update({ where: { id: user.id }, data: { classCredits: { increment: row.credits } }, select: { classCredits: true } });
-    return updated.classCredits;
+    // A running 6 Month plan is repriced now; any other length is untouched (the discount only prices the 6 Month plan).
+    return applyToRunningPlan(tx, user.id);
   });
-  await recordCreditGrant(user.id, row.credits, { source: "SCHOLARSHIP", expiresAt: null });
-  await logAudit({ actorId: user.id, actorEmail: user.email, action: "scholarship.claim", detail: `${row.id}: ${creditsLabelFromStored(row.credits)}` });
-  await createNotification({
-    userId: user.id,
-    type: "CREDIT_ADJUSTED",
-    title: `Scholarship claimed: ${creditsLabelFromStored(row.credits)} added`,
-    body: `Your scholarship is yours. New balance: ${creditsLabelFromStored(balance)}.`,
-    emailCategory: "payments",
-  }).catch(() => undefined);
-  return { credits: row.credits, balance };
+  await logAudit({ actorId: user.id, actorEmail: user.email, action: "scholarship.claim", detail: `${row.id}: ${row.percent}% off the 6 Month plan` });
+  await tellPriceChange(user.id, planChange);
+  // A 100% scholarship on a running 6 Month plan leaves its open bill at $0: settle it now rather than wait for a job.
+  if (row.percent >= MAX_SCHOLARSHIP_PERCENT) await settleFreeBillsFor(user.id);
+  return { percent: row.percent, planChange };
 }

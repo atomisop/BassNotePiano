@@ -92,6 +92,7 @@ interface PaymentPlanEnrollmentFlowProps {
   pricing: PricingConfig;
   /** This account's personal percent off a solo plan (set by the owner), 0 when none. */
   personalDiscountPercent?: number;
+  scholarshipPercent?: number;
   /** Opened from the Parent page (?who=parent): only the form for paying for linked children, even when this person has a plan of their own. */
   initialParentMode?: boolean;
 }
@@ -253,6 +254,7 @@ export function PaymentPlanEnrollmentFlow({
   initialAudience,
   pricing,
   personalDiscountPercent = 0,
+  scholarshipPercent = 0,
   initialParentMode = false,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
@@ -331,6 +333,12 @@ export function PaymentPlanEnrollmentFlow({
       return { ok: false, error: result.error ?? "Something went wrong starting your plan." };
     }
     startKey.current = newIdempotencyKey();
+    if (result.amountCents === 0) {
+      // A free plan (100% scholarship): the first bill settled by itself, so there is nothing to pay. Show the started plan.
+      setEnrolled({ plan: { id: result.planId, cadence, term, installmentsPaid: 1, termMonths: termPayments }, installment: null });
+      router.refresh();
+      return { ok: true };
+    }
     setEnrolled({
       plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
       installment: { id: result.installmentPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },
@@ -470,6 +478,7 @@ export function PaymentPlanEnrollmentFlow({
     <NewPlanForm
       pricing={pricing}
       personalDiscountPercent={personalDiscountPercent}
+      scholarshipPercent={scholarshipPercent}
       initialTerm={initialTerm}
       initialAudience={initialAudience}
       loadSlots={() => getReservableSlotsAction(cadence)}

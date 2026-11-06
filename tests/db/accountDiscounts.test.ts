@@ -48,7 +48,7 @@ describe("a personal discount", () => {
     expect(after.installmentAmountCents).toBe(16499);
     expect(after.listAmountCents).toBe(21999);
     expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: bill.id } })).amountCents).toBe(16499);
-    expect(await getDiscountPercent(stu.id)).toBe(25);
+    expect(await getDiscountPercent(stu.id, "MONTHLY")).toBe(25);
     // The notice goes to their Mail (plan and billing notices are routed there), or the bell.
     expect((await prisma.notification.count({ where: { userId: stu.id } })) + (await prisma.mailMessage.count({ where: { userId: stu.id } }))).toBeGreaterThan(0);
 
@@ -61,7 +61,7 @@ describe("a personal discount", () => {
     const restored = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
     expect(restored).toMatchObject({ installmentAmountCents: 21999, listAmountCents: null });
     expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: bill.id } })).amountCents).toBe(21999);
-    expect(await getDiscountPercent(stu.id)).toBe(0);
+    expect(await getDiscountPercent(stu.id, "MONTHLY")).toBe(0);
   });
 
   it("leaves a bill that was already sent for review, and a paid bill, alone", async () => {

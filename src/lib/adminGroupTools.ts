@@ -83,7 +83,7 @@ export async function separateFromGroup(adminId: string, planId: string): Promis
   if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it on Billing > Payments first.");
 
   const rate = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig());
-  const discount = await getDiscountPercent(plan.userId);
+  const discount = await getDiscountPercent(plan.userId, plan.term);
   const price = discountedPlanPriceCents(rate.installmentAmountCents, discount);
   const groupId = plan.familyGroupId;
   await prisma.$transaction([

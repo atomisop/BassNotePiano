@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { discountedPlanPriceCents, MAX_PERSONAL_DISCOUNT_PERCENT } from "@/lib/classCreditPricing";
+import { discountedPlanPriceCents, discountPercentForTerm, MAX_PERSONAL_DISCOUNT_PERCENT, type PersonalDiscount } from "@/lib/classCreditPricing";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
 
@@ -13,10 +13,26 @@ import { logAudit } from "@/lib/audit";
 
 export class AccountDiscountError extends Error {}
 
-/** This account's personal percent off, 0 when it has none. */
-export async function getDiscountPercent(userId: string): Promise<number> {
+/** This account's general personal percent off (any plan length), 0 when it has none. */
+export async function getGeneralDiscountPercent(userId: string): Promise<number> {
   const row = await prisma.accountDiscount.findUnique({ where: { userId }, select: { percent: true } });
   return row?.percent ?? 0;
+}
+
+type DiscountReader = Pick<typeof prisma, "accountDiscount" | "scholarshipCode">;
+
+/** Both discounts an account has: the general one and the best claimed, still active scholarship (which only prices the 6 Month plan). */
+export async function getPersonalDiscount(userId: string, db: DiscountReader = prisma): Promise<PersonalDiscount> {
+  const [general, scholarship] = await Promise.all([
+    db.accountDiscount.findUnique({ where: { userId }, select: { percent: true } }),
+    db.scholarshipCode.aggregate({ where: { claimedById: userId, claimedAt: { not: null }, revokedAt: null }, _max: { percent: true } }),
+  ]);
+  return { percent: general?.percent ?? 0, scholarshipPercent: scholarship._max.percent ?? 0 };
+}
+
+/** The percent off a plan of this length would get for this account. Every place that prices a plan reads it here. */
+export async function getDiscountPercent(userId: string, term: string): Promise<number> {
+  return discountPercentForTerm(await getPersonalDiscount(userId), term);
 }
 
 export interface PlanPriceChange {
@@ -27,14 +43,18 @@ export interface PlanPriceChange {
   openBillChanged: boolean;
 }
 
-/** Rewrites the account's running solo plan (and its unpaid open bill) to the price a given percent gives. Runs inside the caller's transaction. */
+/**
+ * Rewrites the account's running solo plan (and its unpaid open bill) to the price its discounts give. The percent is read from the
+ * database inside the caller's transaction (so set or delete the discount first), and depends on the plan's length: a scholarship only
+ * counts on a 6 Month plan. Runs inside the caller's transaction.
+ */
 export async function applyToRunningPlan(
-  tx: Pick<typeof prisma, "paymentPlan" | "zellePayment">,
+  tx: Pick<typeof prisma, "paymentPlan" | "zellePayment" | "accountDiscount" | "scholarshipCode">,
   userId: string,
-  percent: number,
 ): Promise<PlanPriceChange | null> {
   const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", familyGroupId: null }, orderBy: { createdAt: "desc" } });
   if (!plan) return null;
+  const percent = discountPercentForTerm(await getPersonalDiscount(userId, tx), plan.term);
   const list = plan.listAmountCents ?? plan.installmentAmountCents;
   const next = percent > 0 ? discountedPlanPriceCents(list, percent) : list;
   if (next === plan.installmentAmountCents && (percent > 0 ? plan.listAmountCents === list : plan.listAmountCents === null)) return null;
@@ -72,7 +92,7 @@ export async function setAccountDiscount(input: { userId: string; percent: numbe
       update: { percent, note, createdById: input.actor.id, expiresAt: null },
       create: { userId: user.id, percent, note, createdById: input.actor.id },
     });
-    return applyToRunningPlan(tx, user.id, percent);
+    return applyToRunningPlan(tx, user.id);
   });
 
   await logAudit({
@@ -99,7 +119,7 @@ export async function clearAccountDiscount(input: { userId: string; actor: { id:
   if (!user) throw new AccountDiscountError("That account does not exist.");
   const planChange = await prisma.$transaction(async (tx) => {
     await tx.accountDiscount.deleteMany({ where: { userId: user.id } });
-    return applyToRunningPlan(tx, user.id, 0);
+    return applyToRunningPlan(tx, user.id);
   });
   await logAudit({
     actorId: input.actor.id,

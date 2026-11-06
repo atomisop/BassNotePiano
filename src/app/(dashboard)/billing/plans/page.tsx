@@ -9,7 +9,7 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { getPricingConfig } from "@/lib/pricing";
-import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { getPersonalDiscount } from "@/lib/accountDiscounts";
 import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
 import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
 import { listInvitesForPerson } from "@/lib/familyInvites";
@@ -46,11 +46,11 @@ export default async function BillingPlansPage(
   const initialAudience = parseAudience(searchParams.who);
   const initialParentMode = parseParentMode(searchParams.who);
 
-  const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
+  const [activePlan, allPlans, pricing, personalDiscount] = await Promise.all([
     getActivePaymentPlan(session.user.id),
     getUserPaymentPlans(session.user.id),
     getPricingConfig(),
-    getDiscountPercent(session.user.id),
+    getPersonalDiscount(session.user.id),
   ]);
 
   // Ensures the current installment exists (idempotent) the moment an
@@ -161,7 +161,8 @@ export default async function BillingPlansPage(
           initialAudience={initialAudience}
           initialParentMode={initialParentMode}
           pricing={pricing}
-          personalDiscountPercent={personalDiscountPercent}
+          personalDiscountPercent={personalDiscount.percent}
+          scholarshipPercent={personalDiscount.scholarshipPercent}
           activePlan={
             activePlan
               ? {

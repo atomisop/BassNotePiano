@@ -15,6 +15,7 @@ import {
   OFFERED_PLAN_CADENCE,
   CLASS_MINUTES,
   discountedPlanPriceCents,
+  discountPercentForTerm,
 } from "@/lib/classCreditPricing";
 import { CheckIcon } from "@/components/ui/icons";
 import { NumberTicker } from "@/components/ui/number-ticker";
@@ -112,12 +113,15 @@ export interface TierGridSwitch {
 export function PaymentPlanTierGrid({
   pricing = DEFAULT_PRICING,
   personalDiscountPercent = 0,
+  scholarshipPercent = 0,
   switchTo,
   narrow = false,
   select,
 }: {
   pricing?: PricingConfig;
   personalDiscountPercent?: number;
+  /** Percent off from a claimed scholarship; it prices the 6 Month plan only. */
+  scholarshipPercent?: number;
   switchTo?: TierGridSwitch;
   /** For a column that is not the full page (Settings): dense cards, all three side by side whenever the column is wide enough, the swipe carousel only when it is not. */
   narrow?: boolean;
@@ -128,8 +132,11 @@ export function PaymentPlanTierGrid({
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [pickedAudience, setAudience] = useState<Audience>("solo");
   const audience = select ? select.audience : pickedAudience;
-  const solo = (cents: number) => (personalDiscountPercent > 0 ? discountedPlanPriceCents(cents, personalDiscountPercent) : cents);
-  const monthlyBaseline = solo(calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents);
+  const solo = (cents: number, term: PaymentPlanTerm) => {
+    const percent = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
+    return percent > 0 ? discountedPlanPriceCents(cents, percent) : cents;
+  };
+  const monthlyBaseline = solo(calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents, "MONTHLY");
   const isFamily = audience === "family" && !switchTo;
   const look = (term: PaymentPlanTerm) => (isFamily ? tierLook(term).family : tierLook(term).solo);
 
@@ -141,7 +148,7 @@ export function PaymentPlanTierGrid({
     const isMonthly = option.value === "MONTHLY";
     const featured = option.value === FEATURED_TERM;
 
-    const perStudentCents = isFamily ? family.perStudentMonthlyCents : solo(rate.installmentAmountCents);
+    const perStudentCents = isFamily ? family.perStudentMonthlyCents : solo(rate.installmentAmountCents, option.value);
     const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
     const percentOff = Math.round((1 - perStudentCents / monthlyBaseline) * 100);
 

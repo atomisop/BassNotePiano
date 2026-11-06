@@ -1,12 +1,12 @@
 import type { PaymentPlanTerm, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { addBillingCycles } from "@/lib/billingCycle";
-import { calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, discountPercentForTerm, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
 import { chunksForSchedule, computeScheduledAt, etWallTimeToUtc, getReservableSlots } from "@/lib/classSchedule";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanError, bookReservedWindowForPlan, recordPlanPaymentReceived } from "@/lib/paymentPlans";
 import { getPricingConfig } from "@/lib/pricing";
-import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { getDiscountPercent, getPersonalDiscount } from "@/lib/accountDiscounts";
 import { drawDownCredits } from "@/lib/creditLedger";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
@@ -79,13 +79,13 @@ export async function getPlanBuilderContext(userId: string): Promise<PlanBuilder
     prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true } }),
     prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } }),
     getPricingConfig(),
-    getDiscountPercent(userId),
+    getPersonalDiscount(userId),
     getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE]),
   ]);
   assertGroupPlanStarted(plan);
   const terms = (["MONTHLY", "TERM_3", "TERM_6"] as PaymentPlanTerm[]).filter(isPlanTermOffered).map((term) => {
     const rate = calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, term, pricing);
-    return { term, label: describePaymentPlan(OFFERED_PLAN_CADENCE, term), cycles: rate.termMonths, amountCents: discountedPlanPriceCents(rate.installmentAmountCents, discount) };
+    return { term, label: describePaymentPlan(OFFERED_PLAN_CADENCE, term), cycles: rate.termMonths, amountCents: discountedPlanPriceCents(rate.installmentAmountCents, discountPercentForTerm(discount, term)) };
   });
   const current = plan?.reservedScheduleId && plan.reservedChunkIndex !== null ? { scheduleId: plan.reservedScheduleId, chunkIndex: plan.reservedChunkIndex } : null;
   const choices = free.map((s) => ({ scheduleId: s.scheduleId, chunkIndex: s.chunkIndex, dayOfWeek: s.dayOfWeek, startTime: s.startTime, label: s.label ?? "Class" }));
@@ -222,7 +222,7 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
     } else {
       const pricing = await getPricingConfig();
       const rate = calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, r.term, pricing);
-      const amount = discountedPlanPriceCents(rate.installmentAmountCents, await getDiscountPercent(input.userId));
+      const amount = discountedPlanPriceCents(rate.installmentAmountCents, await getDiscountPercent(input.userId, r.term));
       const created = await tx.paymentPlan.create({
         data: {
           userId: input.userId,

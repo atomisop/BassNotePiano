@@ -217,9 +217,9 @@ function ScholarshipCard() {
   }
 
   return (
-    <SectionCard title="Claim a scholarship" hint="A scholarship code is made for one email address and works once.">
+    <SectionCard title="Claim a scholarship" hint="A scholarship code is made for one email address, works once, and discounts the 6 Month plan only.">
       <form onSubmit={claim} className="space-y-3">
-        <p className="text-small text-slate-400">Got a 16 digit scholarship code? Enter it to add your free classes. It only works while you are signed in with the email it was made for.</p>
+        <p className="text-small text-slate-400">Got a 16 digit scholarship code? Enter it to take a percent off your price. It applies to the 6 Month plan only, and only works while you are signed in with the email it was made for.</p>
         <label htmlFor="scholarship-code" className="sr-only">Scholarship code</label>
         <input
           id="scholarship-code"
