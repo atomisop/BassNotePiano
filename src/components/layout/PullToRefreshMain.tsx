@@ -63,6 +63,9 @@ export function PullToRefreshMain({ className, children }: { className: string; 
   function topBar(): HTMLElement | null {
     return document.querySelector<HTMLElement>("[data-topbar]");
   }
+  function topGlass(): HTMLElement | null {
+    return document.querySelector<HTMLElement>("[data-topglass]");
+  }
 
   // Moves the page and the spinner to `pull` px without touching React state.
   function paint(pull: number, animate: boolean) {
@@ -73,10 +76,10 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     content.style.transition = ease;
     content.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
     // The top card (logo, title, buttons) is pulled down together with the page, as one piece.
-    const bar = topBar();
-    if (bar) {
-      bar.style.transition = ease;
-      bar.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
+    for (const el of [topBar(), topGlass()]) {
+      if (!el) continue;
+      el.style.transition = ease;
+      el.style.transform = pull > 0 || animate ? `translate3d(0, ${pull}px, 0)` : "";
     }
     // The strip the card leaves behind is solid ground, so nothing from the page (a pinned card, a scrolled row) can show above the card
     // or behind the cat: whatever is scrolled stays under the one card.
@@ -100,10 +103,10 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     const clear = () => {
       content.style.transform = "";
       content.style.transition = "";
-      const bar = topBar();
-      if (bar) {
-        bar.style.transform = "";
-        bar.style.transition = "";
+      for (const el of [topBar(), topGlass()]) {
+        if (!el) continue;
+        el.style.transform = "";
+        el.style.transition = "";
       }
       content.removeEventListener("transitionend", clear);
     };
@@ -229,10 +232,10 @@ export function PullToRefreshMain({ className, children }: { className: string; 
         content.style.transform = "";
         content.style.transition = "";
       }
-      const bar = topBar();
-      if (bar) {
-        bar.style.transform = "";
-        bar.style.transition = "";
+      for (const el of [topBar(), topGlass()]) {
+        if (!el) continue;
+        el.style.transform = "";
+        el.style.transition = "";
       }
     };
   }, []);

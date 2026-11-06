@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { AdminBarSlot } from "@/components/admin/AdminBarSlot";
 import { AdminPhoneMenu, AdminSectionTabs, AdminSideRail } from "@/components/admin/AdminNav";
 import { getAdminNavBadges } from "@/lib/admin";
 import { WideLayout } from "@/components/layout/PageLayouts";
@@ -17,10 +18,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="min-w-0 flex-1">
         {/* The menu stays put on every admin screen and only the page under it scrolls (owner, 2026-10-31): the phone's section bar
             and the section's tabs pin together as one heading, then the page's content starts right under them, with no title. */}
-        <div data-deck-header data-bar-continues="" className="deck-header -mt-4 pt-4">
+        <AdminBarSlot>
           <AdminPhoneMenu badges={badges} />
           <AdminSectionTabs badges={badges} />
-        </div>
+        </AdminBarSlot>
         <div data-admin-page>{children}</div>
       </div>
     </WideLayout>

@@ -2712,19 +2712,10 @@ body {
   }
 }
 
-/* On phones the top card is one continuous strip: logo and buttons, the page title, and, in the admin, the section bar and its tabs
-   (`data-bar-continues`). That block takes the strip's own fill, runs flush under it to both screen edges, and never becomes a
-   separate floating card when it pins. */
-@media (max-width: 767.98px) {
-  .deck-header[data-bar-continues] {
-    background: rgb(var(--neu-base, 22 22 23) / 0.95);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border-image: conic-gradient(rgb(var(--neu-base, 22 22 23) / 0.95) 0 0) fill 0 / / 0 100vw;
-  }
-  .deck-header[data-bar-continues]::after {
-    display: none;
-  }
+/* Admin on phones: the section bar and its tabs are rendered inside the top card (AdminBarSlot.tsx). The bar is a card inside the card,
+   one step lighter. */
+[data-bar-slot] > div > button:first-child {
+  background: rgb(var(--neu-lift, 34 34 36));
 }
 
 /* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
@@ -3121,4 +3112,27 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .scholarship-pop, .scholarship-draw { animation: none; stroke-dashoffset: 0; }
+}
+
+
+/* The top card on phones (2026-11-06, owner: one card that holds everything on top, in the same color as the other cards). A plain solid
+   card floating under the status bar, as tall as the bar and whatever sits inside it (the admin menu on phones). The bar's buttons
+   and the admin menu sit on top of it; the page scrolls under it. Hidden from md up, where the buttons float on their own. */
+:root {
+  --card-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+.top-card {
+  position: fixed;
+  z-index: 39;
+  top: var(--card-top);
+  inset-inline: 10px;
+  height: calc(var(--bar-h, calc(var(--card-top) + 4rem)) - var(--card-top) - 0.5rem);
+  border-radius: 16px;
+  background: rgb(var(--neu-base, 22 22 23));
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .top-card {
+    display: none;
+  }
 }

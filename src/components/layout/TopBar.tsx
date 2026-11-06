@@ -76,11 +76,14 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header data-topbar="" className="pad-safe-x pointer-events-auto fixed inset-x-0 top-0 z-[45] bg-neu-base/95 px-2 pt-[max(0.375rem,env(safe-area-inset-top))] backdrop-blur-md md:pointer-events-none md:bg-transparent md:px-3 md:backdrop-blur-none">
+    <>
+    {/* The floating card behind the phone top bar (and, in the admin, behind the section bar and tabs too). */}
+    <div aria-hidden data-topglass="" className="top-card" />
+    <header data-topbar="" className="pad-safe-x pointer-events-auto fixed inset-x-0 top-0 z-[45] px-5 pt-[calc(var(--card-top)+0.375rem)] pb-4 md:pointer-events-none md:px-3 md:pt-[max(0.375rem,env(safe-area-inset-top))] md:pb-0">
       {/* Phones: the top is one flat, edge to edge strip in the page's own colour (no island, border or shadow), so the logo, buttons and
           page title read as part of the page and the whole strip moves together when you pull to refresh. From md up there is no bar at
           all: the logo and each button float on their own over the page, which scrolls under them. */}
-      <div data-glass="" className="pointer-events-auto relative flex min-h-12 w-full flex-wrap items-center justify-between gap-x-2 px-1.5 md:h-12 md:flex-nowrap md:rounded-full min-[360px]:gap-x-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
+      <div data-glass="" className="pointer-events-auto relative flex min-h-12 w-full flex-wrap items-center justify-between gap-x-2 px-4 md:h-12 md:flex-nowrap md:rounded-full min-[360px]:gap-x-3 min-[360px]:px-4 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
@@ -149,7 +152,10 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         </div>
       </div>
       <BarTitle />
+      {/* The admin's section bar and tabs are moved in here on phones (AdminBarSlot.tsx). */}
+      <div id="bar-admin-slot" data-bar-slot="" className="mt-2 basis-full empty:mt-0 md:hidden" />
       </div>
     </header>
+    </>
   );
 }
