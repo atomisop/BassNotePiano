@@ -280,6 +280,7 @@ enum CreditGrantSource {
   FAMILY_BUNDLE
   CLASS_CREDITS
   ADMIN_ADJUSTMENT
+  SCHOLARSHIP // class credits from a claimed scholarship code
   PRE_LEDGER_BALANCE // one-time migration backfill for balances that predate this table, see that migration's data backfill
 }
 
@@ -857,8 +858,8 @@ model User {
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
-  bannedAt     DateTime?
-  bannedReason String?
+  bannedAt        DateTime?
+  bannedReason    String?
   // Set on the day an unpaid renewal bill cancels their plan (payments.lapseAfterDays past due): they are signed out and cannot sign
   // in again, and see /account-locked instead. Only an admin lifts it ("Lift payment lock" on the student page). See paymentLock.ts.
   paymentLockedAt DateTime?
@@ -1027,6 +1028,8 @@ model User {
   updatedAt             DateTime          @updatedAt
   accountDiscount       AccountDiscount?
   accountDiscountsGiven AccountDiscount[] @relation("AccountDiscountGivenBy")
+  scholarshipsClaimed   ScholarshipCode[] @relation("ScholarshipClaimedBy")
+  scholarshipsCreated   ScholarshipCode[] @relation("ScholarshipCreatedBy")
 
   @@index([emailCanonical])
 }
@@ -1142,15 +1145,15 @@ model AdminBackupCode {
 // A browser and device an account has signed in from (a short code of the browser and system, never the address),
 // so a sign-in from a new one can be emailed to the owner of the account.
 model KnownDevice {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   deviceHash  String
   label       String
-  firstSeenAt DateTime @default(now())
-  lastSeenAt  DateTime @default(now())
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
   // The most recent sign-in on this device, and the rough place it came from (city, region, country; never the IP address).
-  signedInAt  DateTime @default(now())
+  signedInAt  DateTime  @default(now())
   city        String?
   region      String?
   country     String?
@@ -2114,6 +2117,27 @@ model CspViolation {
 
 // A percentage off ONE account's plan price, set by the owner on Admin > Pricing. One row per account; changing the percent updates the row and
 // the account's running solo plan (see src/lib/accountDiscounts.ts). Family plans keep the family rate.
+// A 16 digit scholarship code the owner made for ONE email address. It gives class credits and can be claimed once, only by the
+// signed in account whose email is `assignedEmail`. `credits` is STORED half-classes (see classCreditPricing).
+model ScholarshipCode {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  assignedEmail String
+  credits       Int
+  note          String?
+  // The last day it can be claimed; null never lapses.
+  expiresAt     DateTime?
+  claimedAt     DateTime?
+  claimedById   String?
+  claimedBy     User?     @relation("ScholarshipClaimedBy", fields: [claimedById], references: [id], onDelete: SetNull)
+  revokedAt     DateTime?
+  createdById   String?
+  createdBy     User?     @relation("ScholarshipCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+
+  @@index([assignedEmail])
+}
+
 model AccountDiscount {
   id          String    @id @default(cuid())
   userId      String    @unique
