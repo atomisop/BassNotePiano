@@ -2712,6 +2712,21 @@ body {
   }
 }
 
+/* On phones the top card is one continuous strip: logo and buttons, the page title, and, in the admin, the section bar and its tabs
+   (`data-bar-continues`). That block takes the strip's own fill, runs flush under it to both screen edges, and never becomes a
+   separate floating card when it pins. */
+@media (max-width: 767.98px) {
+  .deck-header[data-bar-continues] {
+    background: rgb(var(--neu-base, 22 22 23) / 0.95);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-image: conic-gradient(rgb(var(--neu-base, 22 22 23) / 0.95) 0 0) fill 0 / / 0 100vw;
+  }
+  .deck-header[data-bar-continues]::after {
+    display: none;
+  }
+}
+
 /* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
    slides up and stops under the top bar, the next card is drawn over it, and the earlier cards' top edges stay showing as a stack
    of tips. DeckStack.tsx sets each card's stopping place (--deck-top). A soft shadow above each card sells the layering. On a
