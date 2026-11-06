@@ -3,6 +3,7 @@
 import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getServerAuthSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import {
@@ -35,6 +36,8 @@ export async function getUserCreditHistoryAction(userId: string) {
 export async function adjustUserCreditsAction(targetUserId: string, amount: number, reasonNote: string, notify = true) {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
+    // Taking credits back is fine for staff; adding them is giving away value, which only the owner does.
+    if (amount > 0 && !isOwnerEmail(admin.email)) return { ok: false as const, error: "Only the owner can add credits." };
     try {
       const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
       await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });

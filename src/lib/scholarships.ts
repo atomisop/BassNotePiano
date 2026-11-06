@@ -107,13 +107,14 @@ export async function regenerateScholarshipCode(id: string, actor: { id: string;
  * 6 Month plan goes back to the price without it, and they are told.
  */
 export async function revokeScholarshipCode(id: string, actor: { id: string; email: string | null }): Promise<void> {
-  const row = await prisma.scholarshipCode.findUnique({ where: { id }, select: { claimedAt: true, claimedById: true, revokedAt: true } });
-  if (!row || row.revokedAt) throw new ScholarshipError("That code is already revoked.");
   let change: PlanPriceChange | null = null;
-  await prisma.$transaction(async (tx) => {
+  // Revoke and read in one step: a claim that lands between a separate read and this write would otherwise leave the running plan at its discounted price.
+  const row = await prisma.$transaction(async (tx) => {
     const res = await tx.scholarshipCode.updateMany({ where: { id, revokedAt: null }, data: { revokedAt: new Date() } });
     if (res.count === 0) throw new ScholarshipError("That code is already revoked.");
-    if (row.claimedAt && row.claimedById) change = await applyToRunningPlan(tx, row.claimedById);
+    const fresh = await tx.scholarshipCode.findUniqueOrThrow({ where: { id }, select: { claimedAt: true, claimedById: true } });
+    if (fresh.claimedAt && fresh.claimedById) change = await applyToRunningPlan(tx, fresh.claimedById);
+    return fresh;
   });
   await logAudit({ actorId: actor.id, actorEmail: actor.email, action: row.claimedAt ? "scholarship.end" : "scholarship.revoke", detail: id });
   if (row.claimedById) await tellPriceChange(row.claimedById, change);

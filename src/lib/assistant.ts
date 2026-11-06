@@ -321,6 +321,12 @@ export async function assertSuggestionRateLimit(identifier: string, signedIn: bo
     { identifier: bucket },
     { windowMinutes, max: max * 2, message: "Too many suggestions requested." },
   );
+  // And a daily ceiling, so a steady trickle of suggestion calls cannot run up the model bill unnoticed.
+  await assertRateLimit(
+    prisma.assistantRateLimit.count,
+    { identifier: bucket },
+    { windowMinutes: 24 * 60, max: signedIn ? 160 : 50, message: "Too many suggestions requested." },
+  );
   await prisma.assistantRateLimit.create({ data: { identifier: bucket } });
 }
 

@@ -45,6 +45,8 @@ export async function submitClassRegistrationAction(
     await submitClassRegistration({ ...fields, userId: session?.user?.id });
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Something went wrong. Try again." };
+    // Only our own plain validation messages go back to the visitor; a database error's text never does.
+    const own = err instanceof Error && err.constructor === Error;
+    return { ok: false, error: own ? (err as Error).message : "Something went wrong. Try again." };
   }
 }

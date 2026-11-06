@@ -32,6 +32,10 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
   const notes = input.notes?.trim();
 
   if (!fullName) throw new Error("Full name is required.");
+  // The form is public and its words are emailed to the typed address and to every admin: keep them short and plain.
+  if (fullName.length > 80 || /[\r\n<>]|https?:|www\./i.test(fullName)) throw new Error("Enter your name without links or special characters.");
+  if (notes && notes.length > 1000) throw new Error("Please keep your note under 1000 characters.");
+  if (!(input.instrument in INSTRUMENT_LABEL) || !(input.skillLevel in SKILL_LABEL)) throw new Error("Pick an instrument and a level from the list.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
   // Same check /api/auth/register runs, and for the same reason: this is
   // the only address the studio has to actually reach a registrant at to
@@ -41,6 +45,7 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
     throw new Error("That looks like a temporary or disposable email address. Please use one you can actually receive mail at.");
   }
   if (!phone) throw new Error("Phone number is required.");
+  if (!/^[0-9+()\-.\s]{7,30}$/.test(phone)) throw new Error("Enter a valid phone number.");
 
   const registration = await prisma.classRegistration.create({
     data: {

@@ -28,7 +28,9 @@ export async function recordBannerNotice(userId: string, kind: BannerKind, slotI
 
   const type = TYPE[kind];
   const slotStart = new Date(slotId);
-  const existing = await prisma.notification.findFirst({ where: { userId, type, createdAt: { gte: slotStart } }, select: { id: true } });
+  // The window is the real slot length counted back from now, never the caller's own slot string, so a forged slot cannot slide it.
+  const windowStart = new Date(Math.max(slotStart.getTime(), now.getTime() - 6 * 60 * 60 * 1000));
+  const existing = await prisma.notification.findFirst({ where: { userId, type, createdAt: { gte: windowStart } }, select: { id: true } });
   if (existing) return "already";
   await prisma.notification.create({ data: { userId, type, title: TEXT[kind].title, body: TEXT[kind].body } });
   return "recorded";

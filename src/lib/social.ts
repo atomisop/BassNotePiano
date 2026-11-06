@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { checkSocialBadges } from "@/lib/gamification";
-import { assertRateLimit } from "@/lib/rateLimit";
+import { assertRateLimit, consumeRateLimit } from "@/lib/rateLimit";
 
 export class SocialError extends Error {}
 
@@ -9,6 +9,13 @@ const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 export function normalizeUsername(raw: string): string {
   return raw.trim().toLowerCase().replace(/^@/, "");
+}
+
+/** Names that would let a student pass for the studio, the teacher or the assistant in friend lists, messages and the leaderboard. */
+const RESERVED_USERNAME_PARTS = ["admin", "owner", "teacher", "support", "staff", "moderator", "official", "bassnote", "bnp", "atom", "system", "root"];
+
+export function isReservedUsername(username: string): boolean {
+  return RESERVED_USERNAME_PARTS.some((part) => username.includes(part));
 }
 
 export function isValidUsername(username: string): boolean {
@@ -21,19 +28,29 @@ export async function setUsername(userId: string, rawUsername: string) {
     throw new SocialError("Usernames are 3-20 characters: lowercase letters, numbers, and underscores only.");
   }
 
+  if (isReservedUsername(username)) throw new SocialError("That username isn't available.");
+
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing && existing.id !== userId) {
     throw new SocialError("That username is already taken.");
   }
 
-  return prisma.user.update({ where: { id: userId }, data: { username } });
+  try {
+    return await prisma.user.update({ where: { id: userId }, data: { username } });
+  } catch (err) {
+    // Two people claiming the same name at the same moment: the unique index lets one win.
+    if ((err as { code?: string })?.code === "P2002") throw new SocialError("That username is already taken.");
+    throw err;
+  }
 }
 
 const publicProfileSelect = { id: true, username: true, name: true, image: true } as const;
 
 export async function searchUsersByUsername(query: string, currentUserId: string) {
   const normalized = normalizeUsername(query);
-  if (normalized.length < 2) return [];
+  if (normalized.length < 3) return [];
+  // Search is a way to list who has an account, so it is limited per person.
+  await consumeRateLimit(prisma, `friend-search:${currentUserId}`, { windowMinutes: 10, max: 30, message: "Too many searches. Please wait a few minutes." });
 
   const [blockedByMe, blockingMe] = await Promise.all([
     prisma.block.findMany({ where: { blockerId: currentUserId }, select: { blockedId: true } }),
@@ -42,7 +59,7 @@ export async function searchUsersByUsername(query: string, currentUserId: string
   const excludeIds = [currentUserId, ...blockedByMe.map((b) => b.blockedId), ...blockingMe.map((b) => b.blockerId)];
 
   return prisma.user.findMany({
-    where: { username: { contains: normalized, not: null }, id: { notIn: excludeIds } },
+    where: { username: { contains: normalized, not: null }, id: { notIn: excludeIds }, bannedAt: null, role: { not: "ADMIN" } },
     select: publicProfileSelect,
     take: 10,
   });
@@ -83,6 +100,8 @@ async function acceptFriendRequestById(requestId: string) {
 }
 
 export async function sendFriendRequest(senderId: string, receiverUsername: string) {
+  // Looking a name up answers "does this person exist", so the lookup itself is limited, before it happens.
+  await consumeRateLimit(prisma, `friend-lookup:${senderId}`, { windowMinutes: 60, max: 40, message: "You're sending friend requests too fast. Please wait a bit and try again." });
   const receiver = await prisma.user.findUnique({ where: { username: normalizeUsername(receiverUsername) } });
   if (!receiver) throw new SocialError("No user found with that username.");
   if (receiver.id === senderId) throw new SocialError("You can't add yourself.");

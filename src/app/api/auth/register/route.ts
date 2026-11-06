@@ -130,6 +130,14 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      // An account nobody has ever confirmed belongs to no one yet. Whoever really owns the inbox registering again takes it over
+      // (new password, old sessions ended), so a stranger cannot hold someone else's address with a password only they know.
+      const existing = await prisma.user.findFirst({ where: { email, emailVerified: null }, select: { id: true, email: true } });
+      if (existing) {
+        await prisma.user.update({ where: { id: existing.id }, data: { name, passwordHash, sessionVersion: { increment: 1 } } });
+        const resent = await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" });
+        return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok }, { status: 201 });
+      }
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }
     if (err instanceof RateLimitError) {

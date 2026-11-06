@@ -18,7 +18,8 @@ export async function runAttendanceAutoCharge(now = new Date()): Promise<{ charg
   if (hours <= 0) return { charged: 0, warned: 0 };
 
   const due = await prisma.classBooking.findMany({
-    where: { status: "SCHEDULED", scheduledAt: { lte: new Date(now.getTime() - hours * HOUR_MS) } },
+    // Only classes that have just passed the cutoff: one an admin corrected back to unmarked long after the class must not be charged again the next hour.
+    where: { status: "SCHEDULED", scheduledAt: { lte: new Date(now.getTime() - hours * HOUR_MS), gt: new Date(now.getTime() - (hours + 72) * HOUR_MS) } },
     select: { id: true },
     take: 200,
   });

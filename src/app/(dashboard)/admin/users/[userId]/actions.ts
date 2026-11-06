@@ -36,6 +36,9 @@ async function requireAdmin() {
  */
 export async function adminForceSignOutAction(targetUserId: string) {
   const admin = await requireAdmin();
+  // Signing another admin (or the owner) out is for the owner only; staff can do it for students.
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { role: true } });
+  if (target?.role === "ADMIN" && !isOwnerEmail(admin.email)) return;
   await prisma.user.update({ where: { id: targetUserId }, data: { sessionVersion: { increment: 1 } } });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.sign-out-everywhere", targetType: "User", targetId: targetUserId });
   await noticeAccountChange(targetUserId, { kind: "signed-out-everywhere", by: "admin" });

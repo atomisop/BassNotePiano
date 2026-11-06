@@ -4,12 +4,22 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const url = process.env.DATABASE_URL || "";
-if (!/@(127\.0\.0\.1|localhost)[:/]/.test(url)) {
+// Parse the address and look at the real host: a pattern match on the text can be fooled by "@localhost" appearing in a query string.
+let host = "";
+try {
+  host = new URL(url).hostname;
+} catch {
+  host = "";
+}
+if (!["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)) {
   console.error("Refusing: DATABASE_URL is not a local database.");
   process.exit(1);
 }
 export const TEST_EMAIL = "revamp-student@bnp.test";
-export const TEST_PASSWORD = "Revamp-test-7!";
+// A fresh random password every run, printed once below; there is no password stored in the repository.
+import { randomBytes } from "node:crypto";
+export const TEST_PASSWORD = `Rv-${randomBytes(9).toString("base64url")}!9`;
+console.log(`Test password for this run: ${TEST_PASSWORD}`);
 
 const prisma = new PrismaClient();
 const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);

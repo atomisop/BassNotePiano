@@ -6,6 +6,7 @@
 // needed here, since middleware doesn't handle raw form bodies the way
 // Server Actions do, it only sees the request/response at the routing layer).
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "@/lib/sentryScrub";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -18,4 +19,8 @@ Sentry.init({
   // Errors only. Performance traces (10% of every page load and navigation) were
   // most of the event volume and are not read anywhere.
   tracesSampleRate: 0,
+  sendDefaultPii: false,
+  beforeSend(event) {
+    return scrubEvent(event);
+  },
 });

@@ -6,6 +6,7 @@ import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { canonicalEmail } from "@/lib/canonicalEmail";
+import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
 import { leaveSessionProof } from "@/lib/sessionProofCookie";
 import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
@@ -178,6 +179,9 @@ async function accountDeletionBlocker(userId: string): Promise<string | null> {
     prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" }, select: { id: true } }),
     prisma.zellePayment.findFirst({ where: { userId, status: "PENDING_REVIEW" }, select: { id: true } }),
   ]);
+  // Someone who pays for other people's plans (a parent, or a family's payer) must hand those over first, or the plans would be left running at the group rate with no payer.
+  const payingForOthers = await prisma.familyPlanGroup.findFirst({ where: { payerId: userId, plans: { some: { status: "ACTIVE", userId: { not: userId } } } }, select: { id: true } });
+  if (payingForOthers) return "You pay for other people's plans. End or hand over those plans first, then delete your account.";
   if (livePlan) return "You still have an active payment plan. Cancel it under Manage Subscriptions first, then delete your account.";
   if (pendingPayment) return "A payment of yours is still being confirmed. Wait until it clears, then delete your account.";
   return null;
@@ -528,6 +532,7 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
 
 export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
   const { id } = await requireSession();
+  if (await hasParentControl(id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
   try {
     await changePaymentPlanTerm(id, newTerm);
     revalidatePath("/", "layout"); // the plan shows on billing, lessons, the dashboard and the top bar too
@@ -540,6 +545,7 @@ export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
 
 export async function pausePaymentPlanAction(weeks: number) {
   const { id } = await requireSession();
+  if (await hasParentControl(id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE, resumesOn: null };
   try {
     const { resumesOn } = await pausePaymentPlan(id, Number(weeks));
     revalidatePath("/", "layout");
@@ -552,6 +558,7 @@ export async function pausePaymentPlanAction(weeks: number) {
 
 export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReason, reasonNote: string | null) {
   const { id } = await requireSession();
+  if (await hasParentControl(id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
   try {
     await cancelPaymentPlanBySelf(id, reason, reasonNote);
     revalidatePath("/", "layout"); // the plan shows on billing, lessons, the dashboard and the top bar too

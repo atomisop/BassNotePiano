@@ -29,7 +29,7 @@ export async function sendPushToUser(userId: string, message: PushMessage): Prom
     if (!configure()) return 0;
     const subs = await prisma.pushSubscription.findMany({ where: { userId } });
     if (subs.length === 0) return 0;
-    const payload = JSON.stringify({ title: message.title.slice(0, 120), body: message.body.slice(0, 300), url: message.url?.startsWith("/") ? message.url : "/dashboard" });
+    const payload = JSON.stringify({ title: message.title.slice(0, 120), body: message.body.slice(0, 300), url: message.url && /^\/(?![\/\\])[^\u0000-\u001f\\]*$/.test(message.url) ? message.url : "/dashboard" });
     let delivered = 0;
     await Promise.all(
       subs.map(async (s) => {

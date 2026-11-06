@@ -17,6 +17,7 @@
 // ones that haven't configured a DSN yet, without an `if` around the whole
 // file.
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "@/lib/sentryScrub";
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -47,6 +48,7 @@ Sentry.init({
   // payment reference before it ever leaves the browser, as a backstop on
   // top of not passing those values into Sentry calls in the first place.
   beforeSend(event) {
+    scrubEvent(event);
     const scrub = (obj: Record<string, unknown> | undefined) => {
       if (!obj) return;
       for (const key of Object.keys(obj)) {

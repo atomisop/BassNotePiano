@@ -395,7 +395,7 @@ export function AttendeeEmailRow({
           <span className="text-red-400">Not verified</span>
         ) : status ? (
           <span className="flex items-center gap-1.5 text-red-400">
-            No account
+            Not your friend yet
             <InviteToRegisterButton email={value.trim()} />
           </span>
         ) : null}

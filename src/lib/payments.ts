@@ -420,7 +420,7 @@ export async function submitZellePaymentReference(
   const claimed = await prisma.zellePayment.updateMany({
     where: { id: paymentId, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } },
     data: {
-      senderName: input.senderName,
+      senderName: input.senderName.trim().slice(0, 120),
       // Explicit null, not just omitted: a REJECTED payment being
       // resubmitted could otherwise keep whatever referenceCode a legacy
       // submission (from before this field was retired) left behind,
@@ -428,7 +428,7 @@ export async function submitZellePaymentReference(
       // that never provided one.
       referenceCode: null,
       // A screenshot pre-check line (see receipt-actions.ts) stays on the payment, ahead of whatever the payer types.
-      note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n") || null,
+      note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n").slice(0, 500) || null,
       method: input.method === "VENMO" ? "VENMO" : "ZELLE",
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
@@ -511,7 +511,7 @@ async function maybeAutoApprovePayment(payment: { id: string; userId: string; pu
       }),
     ]);
     if (trusted < AUTO_APPROVE_MIN_VERIFIED || recentReject > 0 || unchecked > 0) return;
-    await approveZellePayment(payment.id, null, { auto: true });
+    await approveZellePayment(payment.id, null, { auto: true, requireNoUncheckedAuto: true });
     await notifyAutoApproved(payment.id);
   } catch (err) {
     console.error("Auto-approval skipped", err);
@@ -627,7 +627,7 @@ export async function getAdminPayments(
  * entitlement grant happen here so the two can never drift apart (a
  * VERIFIED payment that never actually unlocked anything).
  */
-export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean }) {
+export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean; requireNoUncheckedAuto?: boolean }) {
   // STEP 19: the status flip and the entitlement grant used to be two (or
   // three, counting the legacy-scale read) separate, un-transacted writes.
   // The docstring above already says the point is that they "can never
@@ -671,6 +671,12 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
         if (payment.status !== "PENDING_REVIEW") {
           throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
+        }
+        // The "only one unchecked auto-approval at a time" cap is checked HERE, inside the serializable transaction, so two bills
+        // submitted at the same moment cannot both pass a count each read before the other committed.
+        if (opts?.requireNoUncheckedAuto) {
+          const open = await tx.zellePayment.count({ where: { userId: payment.userId, status: "VERIFIED", autoApproved: true, checkedAt: null } });
+          if (open > 0) throw new Error("An earlier automatic approval has not been checked yet.");
         }
 
         await tx.zellePayment.update({

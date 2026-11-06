@@ -144,8 +144,12 @@ export async function expireDueCreditGrants(now: Date = new Date()): Promise<Exp
   const summaries: ExpiredGrantSummary[] = [];
   for (const { id } of due) {
     const summary = await prisma.$transaction(async (tx) => {
+      // Row locks: two overlapping runs (the scheduler and the catch-up job, or a double delivery) take turns, so a grant is expired
+      // once and the balance is never taken off twice. The reads below happen after the lock, so they see the other run's result.
+      await tx.$queryRaw`SELECT "id" FROM "CreditGrant" WHERE "id" = ${id} FOR UPDATE`;
       const grant = await tx.creditGrant.findUnique({ where: { id } });
       if (!grant || grant.expiredAt || grant.creditsRemaining <= 0) return null;
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${grant.userId} FOR UPDATE`;
 
       const user = await tx.user.findUniqueOrThrow({ where: { id: grant.userId }, select: { classCredits: true } });
       // Credits already promised to classes the student has booked but that

@@ -98,3 +98,43 @@ describe("names", () => {
     expect(cleanPersonName("  Jo   Ann  ")).toBe("Jo Ann");
   });
 });
+
+import { scrubEvent, scrubUrl } from "@/lib/sentryScrub";
+import { isTeacherTokenForVersionTest } from "./helpers/teacherToken";
+import { isReservedUsername } from "@/lib/social";
+import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
+
+describe("error reports carry no secrets", () => {
+  it("hides private link tokens in addresses and breadcrumbs, drops cookies, keeps harmless query parts", () => {
+    const event = scrubEvent({
+      request: { url: "https://x.test/api/calendar/me?u=abc&t=SECRET&x=1", query_string: "t=SECRET", cookies: { a: "b" }, headers: { cookie: "session=SECRET2", accept: "*/*" } },
+      breadcrumbs: [{ data: { url: "/reset-password?email=a@b.c", to: "/x?token=SECRET3" } }],
+    });
+    const text = JSON.stringify(event);
+    for (const secret of ["SECRET", "SECRET2", "SECRET3", "a@b.c"]) expect(text).not.toContain(secret);
+    expect(text).toContain("x=1");
+    expect(scrubUrl("/a?c=1&r=abc")).toBe("/a?c=[redacted]&r=[redacted]");
+  });
+});
+
+describe("teacher calendar link versions", () => {
+  it("version 0 is the original link and a new version gives a different one", () => {
+    expect(isTeacherTokenForVersionTest()).toBe(true);
+  });
+});
+
+describe("usernames", () => {
+  it("refuses names that pass for the studio", () => {
+    for (const name of ["admin", "support_team", "bassnotepiano", "the_teacher", "atom_bot"]) expect(isReservedUsername(name)).toBe(true);
+    expect(isReservedUsername("jordan_plays")).toBe(false);
+  });
+});
+
+describe("token fallback", () => {
+  it("does not carry an admin's old token through a database outage, but keeps a student's", () => {
+    const admin = { sub: "1", role: "ADMIN", onboarded: true } as never;
+    const student = { sub: "2", role: "STUDENT", onboarded: true } as never;
+    expect(tokenWhenEntitlementsUnknown(admin, undefined)).toBeNull();
+    expect(tokenWhenEntitlementsUnknown(student, undefined)).toBe(student);
+  });
+});

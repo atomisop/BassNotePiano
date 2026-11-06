@@ -975,6 +975,29 @@ export interface FamilyAttendeeCheck {
 }
 
 /**
+ * The accounts (out of `ids`) that have said yes to being booked with `callerId`: an accepted friend request in either direction,
+ * or an accepted parent link in either direction. Nobody is put into a class, or even looked up by email for one, without it.
+ */
+async function consentedAccountIds(callerId: string, ids: string[]): Promise<Set<string>> {
+  const others = ids.filter((id) => id !== callerId);
+  if (others.length === 0) return new Set();
+  const [friends, links] = await Promise.all([
+    prisma.friendRequest.findMany({
+      where: { status: "ACCEPTED", OR: [{ senderId: callerId, receiverId: { in: others } }, { receiverId: callerId, senderId: { in: others } }] },
+      select: { senderId: true, receiverId: true },
+    }),
+    prisma.parentLink.findMany({
+      where: { status: "ACCEPTED", OR: [{ parentId: callerId, childId: { in: others } }, { childId: callerId, parentId: { in: others } }] },
+      select: { parentId: true, childId: true },
+    }),
+  ]);
+  const ok = new Set<string>();
+  for (const f of friends) ok.add(f.senderId === callerId ? f.receiverId : f.senderId);
+  for (const l of links) ok.add(l.parentId === callerId ? l.childId : l.parentId);
+  return ok;
+}
+
+/**
  * Live, side-effect-free-beyond-its-own-rate-limit-ledger lookup used while
  * the booker is still filling in attendee emails, same shape and reasoning
  * as payments.ts's checkFamilyBundleRecipients (a typo should be caught and
@@ -1001,7 +1024,9 @@ export async function checkFamilyClassAttendees(callerId: string, emails: string
     where: { email: { in: normalized } },
     select: { id: true, email: true, name: true, emailVerified: true },
   });
-  const byEmail = new Map(users.map((u) => [u.email, u]));
+  const consented = await consentedAccountIds(callerId, users.map((u) => u.id));
+  // Someone who is not a friend (or linked parent/child) looks exactly like a missing account: no name, no confirmation they exist.
+  const byEmail = new Map(users.filter((u) => u.id === callerId || consented.has(u.id)).map((u) => [u.email, u]));
 
   return normalized.map((email) => {
     const user = byEmail.get(email);
@@ -1085,6 +1110,13 @@ export async function bookFamilyClass(
   const unresolved = normalizedEmails.filter((e) => !byEmail.get(e)?.emailVerified);
   if (unresolved.length > 0) {
     throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
+  }
+
+  // Consent: everyone other than the person booking must already be their accepted friend or linked parent/child.
+  const consented = await consentedAccountIds(initiatorId, attendees.map((u) => u.id));
+  const notConsented = attendees.filter((u) => u.id !== initiatorId && !consented.has(u.id));
+  if (notConsented.length > 0) {
+    throw new ClassBookingError("You can only book a family class with friends who have accepted your friend request, or with your linked parent or child.");
   }
 
   // A child whose schedule a parent controls cannot cancel on their own, so nobody else may put them into a class either.

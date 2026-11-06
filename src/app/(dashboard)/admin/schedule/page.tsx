@@ -4,7 +4,10 @@ import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
 import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
-import { teacherCalendarToken } from "@/lib/teacherCalendar";
+import { currentTeacherCalendarVersion, teacherCalendarToken } from "@/lib/teacherCalendar";
+import { rotateTeacherCalendarLinkAction } from "./actions";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { getServerAuthSession } from "@/lib/auth";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
@@ -104,8 +107,10 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   const schedules = await getAllClassSchedules();
   const upcomingCounts = await countUpcomingBookingsBySchedule(schedules.map((s) => s.id));
+  const viewer = await getServerAuthSession();
+  const viewerIsOwner = Boolean(viewer?.user && isOwnerEmail(viewer.user.email));
   const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
-  const calendarLink = calendarHost ? `webcal://${calendarHost}/api/calendar/teacher?t=${teacherCalendarToken()}` : null;
+  const calendarLink = calendarHost ? `webcal://${calendarHost}/api/calendar/teacher?t=${teacherCalendarToken(await currentTeacherCalendarVersion())}` : null;
 
   return (
     <div>
@@ -117,6 +122,13 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         <a href={calendarLink} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
           Add my classes to my calendar
         </a>
+      )}
+      {calendarLink && viewerIsOwner && (
+        <form action={rotateTeacherCalendarLinkAction} className="mt-2">
+          <button type="submit" className="text-small text-slate-50/70 underline">
+            Make a new calendar link (the old one stops working)
+          </button>
+        </form>
       )}
 
       <div className="mt-6">

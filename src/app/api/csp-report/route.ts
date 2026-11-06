@@ -33,14 +33,18 @@ export async function POST(req: Request) {
   const key = parseCspViolation(body);
   if (key) {
     try {
-      // A hard ceiling on distinct rows, so a flood of made-up reports cannot grow the table.
-      if ((await prisma.cspViolation.count()) < 500 || (await prisma.cspViolation.findUnique({ where: { directive_blocked_page: key }, select: { id: true } }))) {
-        await prisma.cspViolation.upsert({
-          where: { directive_blocked_page: key },
-          update: { count: { increment: 1 }, lastSeenAt: new Date() },
-          create: { ...key, count: 1 },
-        });
+      // A ceiling on distinct rows so a flood of made-up reports cannot grow the table. When it is full, the row not seen for the longest makes
+      // room, so real violations that keep happening stay and a flood can never freeze the table (and hide what the policy would block).
+      const known = await prisma.cspViolation.findUnique({ where: { directive_blocked_page: key }, select: { id: true } });
+      if (!known && (await prisma.cspViolation.count()) >= 500) {
+        const oldest = await prisma.cspViolation.findFirst({ orderBy: { lastSeenAt: "asc" }, select: { id: true } });
+        if (oldest) await prisma.cspViolation.delete({ where: { id: oldest.id } }).catch(() => undefined);
       }
+      await prisma.cspViolation.upsert({
+        where: { directive_blocked_page: key },
+        update: { count: { increment: 1 }, lastSeenAt: new Date() },
+        create: { ...key, count: 1 },
+      });
     } catch (err) {
       reportError(err, "CSP violation could not be counted");
     }

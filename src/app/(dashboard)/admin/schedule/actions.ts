@@ -20,6 +20,7 @@ import { logAudit } from "@/lib/audit";
 import { cancelUpcomingClasses, closeStudioDay, previewClosedDay, type ClosedDayPreview } from "@/lib/adminClassTools";
 import { sendReservationEmail } from "@/lib/email";
 import { reportError } from "@/lib/reportError";
+import { rotateTeacherCalendarVersion } from "@/lib/teacherCalendar";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -212,6 +213,15 @@ export async function adminBookClassAction(
       return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
     }
   });
+}
+
+/** Owner only: the old teacher calendar link stops working and a new one is shown (calendar apps need the new link added again). */
+export async function rotateTeacherCalendarLinkAction(): Promise<void> {
+  const session = await getServerAuthSession();
+  if (!session?.user || session.user.role !== "ADMIN" || !isOwnerEmail(session.user.email)) return;
+  await rotateTeacherCalendarVersion();
+  await logAudit({ actorId: session.user.id, actorEmail: session.user.email ?? null, action: "calendar.reset", targetType: "Calendar", detail: "Teacher calendar link replaced" });
+  revalidatePath("/admin/schedule");
 }
 
 /** Owner only: checks every step the Discord bot needs, and makes then removes a test channel. */
