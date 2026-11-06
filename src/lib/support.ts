@@ -63,6 +63,8 @@ export interface CreateAssistantEscalationInput {
   subject?: string;
   /** Replaces the default "Atom handoff" admin notification text. */
   notice?: { title: string; body: string };
+  /** True when the transcript came from the visitor's browser (the chat handoff), so the team is told it cannot be verified. */
+  transcriptFromBrowser?: boolean;
 }
 
 export async function createAssistantEscalation(input: CreateAssistantEscalationInput) {
@@ -84,11 +86,15 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
       identifier: m.role === "user" ? input.identifier : null,
     })),
     // The earlier turns arrive from the visitor's browser and cannot be checked, lines shown as Atom included.
-    {
-      sender: "INTERNAL",
-      body: "Everything above this note was sent from the visitor's browser when they asked for a person. It cannot be verified, including lines shown as Atom.",
-      identifier: null,
-    },
+    ...(input.transcriptFromBrowser
+      ? [
+          {
+            sender: "INTERNAL" as SupportMessageSender,
+            body: "Everything above this note was sent from the visitor's browser when they asked for a person. It cannot be verified, including lines shown as Atom.",
+            identifier: null,
+          },
+        ]
+      : []),
   ];
   const escalation = await prisma.assistantEscalation.create({
     data: {

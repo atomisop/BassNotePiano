@@ -16,6 +16,7 @@ vi.mock("@/lib/sms", () => ({
 
 import { confirmPhoneVerification, resendPhoneCode, startPhoneVerification } from "@/lib/phoneVerification";
 import { freshPhone, makeUser, newTag, prisma } from "./helpers";
+import { resetSetting, saveSetting } from "@/lib/siteSettings";
 
 const tag = newTag("pp");
 const fresh = freshPhone;
@@ -23,14 +24,19 @@ let user: { id: string; email: string };
 
 beforeAll(async () => {
   user = await makeUser(tag, "Plivo Pat");
+  // Texts only go out when the owner has text confirmation switched on.
+  await saveSetting("phone.verifyBySms", true);
 });
 beforeEach(async () => {
   state.sessions.length = 0;
   state.outage = false;
+  // The send and lookup limits are recorded per person and per number; every test starts with a clean count.
+  await prisma.rateLimitEvent.deleteMany({ where: { OR: [{ key: { startsWith: "sms:" } }, { key: { startsWith: "phonecheck:" } }] } });
   await prisma.verificationCode.deleteMany({ where: { userId: user.id } });
   await prisma.user.update({ where: { id: user.id }, data: { phone: null, phoneVerifiedAt: null, pendingPhone: null } });
 });
 afterAll(async () => {
+  await resetSetting("phone.verifyBySms");
   await prisma.verificationCode.deleteMany({ where: { userId: user.id } });
   await prisma.user.deleteMany({ where: { id: user.id } });
 });

@@ -230,7 +230,7 @@ export function nextOccurrenceDates(dayOfWeek: number, count: number): Date[] {
 /**
  * The occurrence date a booking is stored under, made from the browser's number: the UTC calendar day only (the same stand-in
  * for an ET day that nextOccurrenceDates hands out), so a number a millisecond off cannot make a second, different key for the
- * same class. It must fall on the schedule's weekday and, for a student, within the next 120 days. Every conflict check compares
+ * same class. For a student it must fall on the schedule's weekday and within the next 120 days; the studio's own moves are not limited that way. Every conflict check compares
  * this exact value, so it must never be taken from the browser as it came.
  */
 export function canonicalOccurrenceDate(dayOfWeek: number, occurrenceDateMs: number, options: { allowAnyDate?: boolean } = {}): Date {
@@ -238,8 +238,11 @@ export function canonicalOccurrenceDate(dayOfWeek: number, occurrenceDateMs: num
   const raw = new Date(occurrenceDateMs);
   if (Number.isNaN(raw.getTime())) throw new ClassBookingError("Pick a real date.");
   const day = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
-  if (day.getUTCDay() !== dayOfWeek) throw new ClassBookingError("That class isn't offered on that day.");
-  if (!options.allowAnyDate && day.getTime() > Date.now() + 120 * 86_400_000) throw new ClassBookingError("That date is too far ahead to book.");
+  // The studio may move a class to any day (a make-up on another weekday); a student's date must be one the schedule really offers.
+  if (!options.allowAnyDate) {
+    if (day.getUTCDay() !== dayOfWeek) throw new ClassBookingError("That class isn't offered on that day.");
+    if (day.getTime() > Date.now() + 120 * 86_400_000) throw new ClassBookingError("That date is too far ahead to book.");
+  }
   return day;
 }
 
