@@ -132,7 +132,7 @@ export function ClassRegistrationForm() {
     <form onSubmit={handleSubmit} className="glass-surface-elevated relative space-y-5 p-6 sm:p-8">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="cls-hp">Leave this empty</label>
-        <input id="cls-hp" name="hp_company" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        <input id="cls-hp" name="bn_trap_x7" type="text" tabIndex={-1} autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
       {/* Every label is tied to its field with htmlFor/id.
           These labels used to be plain siblings with no association, which
