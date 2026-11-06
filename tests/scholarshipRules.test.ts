@@ -38,3 +38,15 @@ describe("discountPercentForTerm", () => {
     expect(discountPercentForTerm({ percent: 20, scholarshipPercent: 30 }, "TERM_3")).toBe(20);
   });
 });
+
+import { discountedPlanPriceCents, MAX_PERSONAL_DISCOUNT_PERCENT, MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
+
+describe("the 100% scholarship", () => {
+  it("is free at 100, while the owner's general discount stays capped at 90", () => {
+    expect(MAX_SCHOLARSHIP_PERCENT).toBe(100);
+    expect(MAX_PERSONAL_DISCOUNT_PERCENT).toBe(90);
+    expect(discountedPlanPriceCents(21999, 100)).toBe(0);
+    expect(discountedPlanPriceCents(21999, 99)).toBeGreaterThan(0);
+    expect(discountedPlanPriceCents(21999, 95)).toBe(discountedPlanPriceCents(21999, 90));
+  });
+});

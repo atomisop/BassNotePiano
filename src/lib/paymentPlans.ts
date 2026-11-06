@@ -215,6 +215,15 @@ export async function createPaymentPlan(
       { isolationLevel: "Serializable" },
     );
 
+    // A free plan (100% scholarship): the first bill is $0, so it settles at once and the plan starts without a payment step.
+    if (installmentCents === 0) {
+      const { settleFreeBill } = await import("@/lib/freeBills");
+      await settleFreeBill(created.installmentPayments[0].id);
+      await prisma.user.update({ where: { id: userId }, data: { notifyEmailReminders: true } });
+      await noticePlanUpdated({ userId, title: "Your plan is set up", body: `${describePaymentPlan(cadence, term)} is set up and your scholarship covers it. Your classes are booked.` });
+      return prisma.paymentPlan.findUniqueOrThrow({ where: { id: created.id }, include: { installmentPayments: true } });
+    }
+
     // Practice and class reminders are on for everyone who subscribes (the owner's rule). They can turn them off in Settings;
     // this runs only when a plan is created, so it never overrides that later choice.
     await prisma.user.update({ where: { id: userId }, data: { notifyEmailReminders: true } });
@@ -333,7 +342,16 @@ async function getOrCreateMemberInstallmentPayment(
     where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
     orderBy: { createdAt: "desc" },
   });
-  if (existing) return { payment: existing, wasCreated: false };
+  if (existing) {
+    // A $0 bill (a 100% scholarship repriced it) has nothing to pay: it settles now.
+    if (existing.amountCents === 0 && existing.status === "AWAITING_TRANSFER") {
+      const { settleFreeBill } = await import("@/lib/freeBills");
+      await settleFreeBill(existing.id);
+      const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { nextDueDate: true } });
+      return { payment: null, wasCreated: false, nextDueDate: after.nextDueDate };
+    }
+    return { payment: existing, wasCreated: false };
+  }
 
   const opensAt = new Date(plan.nextDueDate.getTime() - (await getNumberSetting("payments.installmentLeadDays")) * 24 * 60 * 60 * 1000);
   if (now < opensAt) {
@@ -358,6 +376,12 @@ async function getOrCreateMemberInstallmentPayment(
       status: "AWAITING_TRANSFER",
     },
   });
+  if (payment.amountCents === 0) {
+    const { settleFreeBill } = await import("@/lib/freeBills");
+    await settleFreeBill(payment.id);
+    const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { nextDueDate: true } });
+    return { payment: null, wasCreated: false, nextDueDate: after.nextDueDate };
+  }
   return { payment, wasCreated: true };
 }
 

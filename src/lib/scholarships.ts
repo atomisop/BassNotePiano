@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { MAX_PERSONAL_DISCOUNT_PERCENT } from "@/lib/classCreditPricing";
+import { MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
+import { settleFreeBillsFor } from "@/lib/freeBills";
 import { applyToRunningPlan, type PlanPriceChange } from "@/lib/accountDiscounts";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { consumeRateLimit } from "@/lib/rateLimit";
@@ -34,8 +35,8 @@ export async function findScholarshipAccount(rawEmail: string) {
 }
 
 function checkPercent(percent: number) {
-  if (!Number.isInteger(percent) || percent < 1 || percent > MAX_PERSONAL_DISCOUNT_PERCENT) {
-    throw new ScholarshipError(`The discount must be a whole number from 1 to ${MAX_PERSONAL_DISCOUNT_PERCENT} percent.`);
+  if (!Number.isInteger(percent) || percent < 1 || percent > MAX_SCHOLARSHIP_PERCENT) {
+    throw new ScholarshipError(`The discount must be a whole number from 1 to ${MAX_SCHOLARSHIP_PERCENT} percent.`);
   }
 }
 
@@ -160,5 +161,7 @@ export async function claimScholarshipCode(userId: string, rawCode: unknown): Pr
   });
   await logAudit({ actorId: user.id, actorEmail: user.email, action: "scholarship.claim", detail: `${row.id}: ${row.percent}% off the 6 Month plan` });
   await tellPriceChange(user.id, planChange);
+  // A 100% scholarship on a running 6 Month plan leaves its open bill at $0: settle it now rather than wait for a job.
+  if (row.percent >= MAX_SCHOLARSHIP_PERCENT) await settleFreeBillsFor(user.id);
   return { percent: row.percent, planChange };
 }

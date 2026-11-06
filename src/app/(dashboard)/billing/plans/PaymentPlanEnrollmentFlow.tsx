@@ -333,6 +333,12 @@ export function PaymentPlanEnrollmentFlow({
       return { ok: false, error: result.error ?? "Something went wrong starting your plan." };
     }
     startKey.current = newIdempotencyKey();
+    if (result.amountCents === 0) {
+      // A free plan (100% scholarship): the first bill settled by itself, so there is nothing to pay. Show the started plan.
+      setEnrolled({ plan: { id: result.planId, cadence, term, installmentsPaid: 1, termMonths: termPayments }, installment: null });
+      router.refresh();
+      return { ok: true };
+    }
     setEnrolled({
       plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
       installment: { id: result.installmentPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },

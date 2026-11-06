@@ -49,7 +49,9 @@ describe("a personal discount", () => {
   it("changes nothing at zero, is capped, and never goes below 99 cents", () => {
     expect(discountedPlanPriceCents(21999, 0)).toBe(21999);
     expect(discountedPlanPriceCents(21999, -5)).toBe(21999);
-    expect(discountedPlanPriceCents(21999, 100)).toBe(discountedPlanPriceCents(21999, MAX_PERSONAL_DISCOUNT_PERCENT));
+    // Between the owner's 90 cap and a scholarship's 100 the price stays at the 90 level; exactly 100 is free (scholarships only).
+    expect(discountedPlanPriceCents(21999, 99)).toBe(discountedPlanPriceCents(21999, MAX_PERSONAL_DISCOUNT_PERCENT));
+    expect(discountedPlanPriceCents(21999, 100)).toBe(0);
     expect(discountedPlanPriceCents(100, 90)).toBeGreaterThanOrEqual(99);
   });
 });

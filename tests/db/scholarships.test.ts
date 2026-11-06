@@ -2,10 +2,12 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { claimScholarshipCode, createScholarshipCode, findScholarshipAccount, regenerateScholarshipCode, revokeScholarshipCode, ScholarshipError, updateScholarshipCode } from "@/lib/scholarships";
 import { getDiscountPercent, setAccountDiscount } from "@/lib/accountDiscounts";
+import { createPaymentPlan, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { OFFERED_PLAN_CADENCE, calculatePaymentPlanRate, discountedPlanPriceCents } from "@/lib/classCreditPricing";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("sch");
+const slotIds: string[] = [];
 const ids: string[] = [];
 
 async function plan(userId: string, term: "MONTHLY" | "TERM_3" | "TERM_6", cents = 21999, extra: Record<string, unknown> = {}) {
@@ -21,6 +23,10 @@ afterAll(async () => {
   await prisma.paymentPlan.deleteMany({ where: { userId: { in: ids } } });
   await prisma.accountDiscount.deleteMany({ where: { userId: { in: ids } } });
   await prisma.scholarshipCode.deleteMany({ where: { OR: [{ claimedById: { in: ids } }, { createdById: { in: ids } }] } });
+  await prisma.creditGrant.deleteMany({ where: { userId: { in: ids } } });
+  await prisma.classBooking.deleteMany({ where: { studentId: { in: ids } } });
+  await prisma.paymentPlan.deleteMany({ where: { userId: { in: ids } } });
+  await prisma.classSchedule.deleteMany({ where: { id: { in: slotIds } } });
   await prisma.user.deleteMany({ where: { id: { in: ids } } });
 });
 
@@ -111,7 +117,7 @@ describe("scholarship discount codes", () => {
 
     await expect(claimScholarshipCode(stu.id, "123")).rejects.toThrow(/16 digits/);
     await expect(claimScholarshipCode(stu.id, "0000000000000000")).rejects.toThrow(/isn't valid/);
-    for (const percent of [0, 91, 1.5]) await expect(createScholarshipCode({ email: stu.email, percent, actor })).rejects.toThrow(/1 to 90/);
+    for (const percent of [0, 101, 1.5]) await expect(createScholarshipCode({ email: stu.email, percent, actor })).rejects.toThrow(/1 to 100/);
     expect(await getDiscountPercent(stu.id, "TERM_6")).toBe(0);
   });
 
@@ -139,5 +145,36 @@ describe("scholarship discount codes", () => {
     expect((await claimScholarshipCode(stu.id, fresh)).percent).toBe(55);
     await expect(updateScholarshipCode(row.id, { percent: 10 }, actor)).rejects.toThrow(/unclaimed/);
     await expect(regenerateScholarshipCode(row.id, actor)).rejects.toThrow(/unclaimed/);
+  });
+
+  it("a 100% scholarship makes the 6 Month plan free: it starts with no payment, renewals settle by themselves, other lengths still cost money", async () => {
+    const admin = await makeUser(`${tag}a7`, "Owner Seven", { role: "ADMIN" });
+    const stu = await makeUser(`${tag}sf`, "Free Student", { emailVerified: new Date() });
+    ids.push(admin.id, stu.id);
+    const actor = { id: admin.id, email: admin.email };
+    expect(discountedPlanPriceCents(21999, 100)).toBe(0);
+    expect(discountedPlanPriceCents(21999, 90)).toBeGreaterThan(0);
+    await expect(createScholarshipCode({ email: stu.email, percent: 101, actor })).rejects.toThrow(/1 to 100/);
+    const row = await createScholarshipCode({ email: stu.email, percent: 100, actor });
+    await claimScholarshipCode(stu.id, row.code);
+    expect(discountedPlanPriceCents(21999, await getDiscountPercent(stu.id, "TERM_3"))).toBe(21999);
+
+    const slot = await prisma.classSchedule.create({ data: { dayOfWeek: 4, startTime: "11:00", durationMin: 45, creditCost: 2, label: `${tag} free slot` } });
+    slotIds.push(slot.id);
+    const created = await createPaymentPlan(stu.id, OFFERED_PLAN_CADENCE, "TERM_6", "pay@example.com", slot.id, 0, 0);
+    expect(created.installmentAmountCents).toBe(0);
+    const first = created.installmentPayments[0];
+    expect(first).toMatchObject({ amountCents: 0, status: "VERIFIED", autoApproved: true });
+    expect(created.installmentsPaid).toBe(1);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: stu.id } })).classCredits).toBeGreaterThan(0);
+
+    // The next 28-day bill, when it opens, is $0 and settles with no one paying.
+    await prisma.paymentPlan.update({ where: { id: created.id }, data: { nextDueDate: new Date(Date.now() + 86_400_000) } });
+    const next = await getOrCreateOpenInstallmentPayment(created.id, "pay@example.com");
+    expect(next.payment).toBeNull();
+    const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: created.id } });
+    expect(after.installmentsPaid).toBe(2);
+    expect(await prisma.zellePayment.count({ where: { paymentPlanId: created.id, amountCents: 0, status: "VERIFIED" } })).toBe(2);
+    expect(await prisma.zellePayment.count({ where: { paymentPlanId: created.id, status: "AWAITING_TRANSFER" } })).toBe(0);
   });
 });

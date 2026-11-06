@@ -3,8 +3,8 @@ import { randomInt } from "crypto";
 /** Pure rules for scholarship codes (no database), so they are tested on their own. */
 
 export const SCHOLARSHIP_CODE_LENGTH = 16;
-/** A scholarship takes 1 to this percent off the 6 Month plan (the same ceiling as the owner's personal discounts; free is complimentary access). */
-export { MAX_PERSONAL_DISCOUNT_PERCENT as MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
+/** A scholarship takes 1 to this percent off the 6 Month plan; 100 makes it free. */
+export { MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
 
 /** A random 16 digit code. Uses the system's secure random source, never Math.random. */
 export function makeScholarshipCode(): string {

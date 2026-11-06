@@ -154,8 +154,8 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
             </p>
           </div>
           <div>
-            <label className="block text-small text-slate-300" htmlFor="sch-percent">Discount on the 6 Month plan (1 to 90%)</label>
-            <input id="sch-percent" type="number" required min={1} max={90} step={1} value={percent} onChange={(e) => setPercent(e.target.value)} className={`${field} mt-1`} />
+            <label className="block text-small text-slate-300" htmlFor="sch-percent">Discount on the 6 Month plan (1 to 100%, 100 = free)</label>
+            <input id="sch-percent" type="number" required min={1} max={100} step={1} value={percent} onChange={(e) => setPercent(e.target.value)} className={`${field} mt-1`} />
           </div>
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-code">16 digit code</label>
@@ -240,7 +240,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                 {editing === r.id && r.status === "available" && (
                   <div className="mt-3 grid gap-3 rounded-xl bg-slate-50/5 p-4 md:grid-cols-3">
                     <label className="block text-small text-slate-300">Discount %
-                      <input type="number" min={1} max={90} step={1} value={edit.percent} onChange={(e) => setEdit({ ...edit, percent: e.target.value })} className={`${field} mt-1`} />
+                      <input type="number" min={1} max={100} step={1} value={edit.percent} onChange={(e) => setEdit({ ...edit, percent: e.target.value })} className={`${field} mt-1`} />
                     </label>
                     <label className="block text-small text-slate-300">Last day to claim
                       <input type="date" value={edit.expiresOn} onChange={(e) => setEdit({ ...edit, expiresOn: e.target.value })} className={`${field} mt-1`} />
