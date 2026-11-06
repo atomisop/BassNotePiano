@@ -3131,6 +3131,15 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
   background: rgb(var(--neu-base, 22 22 23));
   pointer-events: none;
 }
+/* The strip above the card (status bar and the gap over the card) is solid ground, so scrolled content never shows there. It travels with the card. */
+.top-card::before {
+  content: "";
+  position: absolute;
+  inset-inline: -10px;
+  bottom: 100%;
+  height: var(--card-top);
+  background: rgb(var(--ground));
+}
 @media (min-width: 768px) {
   .top-card {
     display: none;
