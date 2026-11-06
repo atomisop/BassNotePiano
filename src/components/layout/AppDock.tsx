@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
@@ -133,6 +133,18 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   // The tab just tapped lights up at once, before the new page has arrived.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
+  // The glass lens rises over the current tab while it moves (a tap, a press) and settles back to a quiet capsule a moment later.
+  const [lens, setLens] = useState(false);
+  const lensTimer = useRef<number | undefined>(undefined);
+  function showLens() {
+    setLens(true);
+    window.clearTimeout(lensTimer.current);
+    lensTimer.current = window.setTimeout(() => setLens(false), 750);
+  }
+  useEffect(() => () => window.clearTimeout(lensTimer.current), []);
+  useEffect(() => {
+    if (pendingHref) showLens();
+  }, [pendingHref]);
   // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
@@ -191,6 +203,8 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
           transformOrigin: "50% 100%",
           transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
+        data-lens={lens ? "" : undefined}
+        onPointerDown={showLens}
         className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
       >
         {items.map((item) => {
@@ -226,8 +240,10 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
                 <motion.span
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 24, mass: 0.9 }}
-                  className="ig-dock-active pointer-events-none absolute -inset-x-[6px] -inset-y-[7px] rounded-full"
-                />
+                  className="ig-dock-active pointer-events-none absolute -inset-x-[6px] inset-y-0 rounded-full"
+                >
+                  <span className="ig-lens absolute -inset-x-[4px] -inset-y-[7px] rounded-full" />
+                </motion.span>
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
