@@ -19,7 +19,12 @@ describe("admin menu", () => {
   it("keeps each hub short enough for its tabs to fit across a phone", () => {
     for (const hub of ADMIN_HUBS) expect(hub.pages.length).toBeLessThanOrEqual(5);
     // Five only fit across a 320px phone while the labels stay short: 36 characters in all (measured: Settings, Security, Activity, Roadmaps and Data).
-    for (const hub of ADMIN_HUBS) if (hub.pages.length === 5) expect(hub.pages.reduce((n, p) => n + p.label.length, 0)).toBeLessThanOrEqual(36);
+    // Pages under "More" are not tabs, so only the visible tabs plus the word More are measured.
+    for (const hub of ADMIN_HUBS) {
+      const { tabs, more } = splitHubPages(hub);
+      const shown = tabs.length + (more.length ? 1 : 0);
+      if (shown === 5) expect(tabs.reduce((n, p) => n + p.label.length, 0) + (more.length ? 4 : 0)).toBeLessThanOrEqual(36);
+    }
   });
 });
 

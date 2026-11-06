@@ -32,7 +32,6 @@ export const ADMIN_HUBS: AdminHub[] = [
       { href: "/admin/payment-plans", label: "Plans" },
       { href: "/admin/pricing", label: "Pricing", more: true },
       { href: "/admin/money-check", label: "Check", more: true },
-      { href: "/admin/scholarships", label: "Grants", more: true },
     ],
   },
   {
@@ -41,6 +40,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/users", label: "Accounts" },
       { href: "/admin/students", label: "Applicants" },
+      { href: "/admin/scholarships", label: "Scholarships" },
       { href: "/admin/contacts", label: "Contacts", more: true },
       { href: "/admin/employees", label: "Staff", more: true },
     ],

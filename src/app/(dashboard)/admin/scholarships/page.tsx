@@ -2,7 +2,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listScholarshipCodes } from "@/lib/scholarships";
 import { formatScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
-import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { creditsLabelFromStored, storedToCredits } from "@/lib/classCreditPricing";
 import { ScholarshipManager, type ScholarshipRow } from "@/components/admin/ScholarshipManager";
 
 export const metadata = { title: "Admin: Scholarships" };
@@ -22,7 +22,8 @@ export default async function AdminScholarshipsPage() {
     id: r.id,
     code: formatScholarshipCode(r.code),
     email: r.assignedEmail,
-    classes: creditsLabelFromStored(r.credits),
+    classes: storedToCredits(r.credits),
+    classesLabel: creditsLabelFromStored(r.credits),
     note: r.note,
     status: scholarshipStatus(r, now),
     expiresAt: r.expiresAt?.toISOString() ?? null,

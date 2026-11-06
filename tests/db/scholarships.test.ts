@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
-import { claimScholarshipCode, createScholarshipCode, revokeScholarshipCode, ScholarshipError } from "@/lib/scholarships";
+import { claimScholarshipCode, createScholarshipCode, regenerateScholarshipCode, revokeScholarshipCode, ScholarshipError, updateScholarshipCode } from "@/lib/scholarships";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("sch");
@@ -68,5 +68,30 @@ describe("scholarship codes", () => {
     await expect(createScholarshipCode({ email: "nope", classes: 1, actor })).rejects.toBeInstanceOf(ScholarshipError);
     await expect(createScholarshipCode({ email: stu.email, classes: 0, actor })).rejects.toBeInstanceOf(ScholarshipError);
     expect(await balance(stu.id)).toBe(0);
+  });
+
+  it("needs an existing student account, takes a custom code, and lets the owner edit or re-digit only unclaimed codes", async () => {
+    const admin = await makeUser(`${tag}a5`, "Owner Five", { role: "ADMIN" });
+    const stu = await makeUser(`${tag}s5`, "Student Five", { emailVerified: new Date() });
+    ids.push(admin.id, stu.id);
+    const actor = { id: admin.id, email: admin.email };
+    await expect(createScholarshipCode({ email: `nobody-${tag}@example.com`, classes: 2, actor })).rejects.toThrow(/No student account/);
+    await expect(createScholarshipCode({ email: admin.email, classes: 2, actor })).rejects.toThrow(/No student account/);
+    await expect(createScholarshipCode({ email: stu.email, classes: 2, code: "12ab", actor })).rejects.toThrow(/16 digits/);
+
+    const custom = `${String(Date.now()).padStart(13, "0")}555`.slice(-16);
+    const row = await createScholarshipCode({ email: stu.email, classes: 2, code: custom, actor });
+    expect(row.code).toBe(custom);
+    await expect(createScholarshipCode({ email: stu.email, classes: 2, code: custom, actor })).rejects.toThrow(/already exists/);
+
+    await updateScholarshipCode(row.id, { classes: 6, note: "bigger" }, actor);
+    expect((await prisma.scholarshipCode.findUniqueOrThrow({ where: { id: row.id } })).credits).toBe(12);
+    const fresh = await regenerateScholarshipCode(row.id, actor);
+    expect(fresh).not.toBe(custom);
+    await expect(claimScholarshipCode(stu.id, custom)).rejects.toThrow(/isn't valid/);
+    await claimScholarshipCode(stu.id, fresh);
+    expect(await balance(stu.id)).toBe(12);
+    await expect(updateScholarshipCode(row.id, { classes: 1 }, actor)).rejects.toThrow(/unclaimed/);
+    await expect(regenerateScholarshipCode(row.id, actor)).rejects.toThrow(/unclaimed/);
   });
 });
