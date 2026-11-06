@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -29,6 +29,86 @@ const DOCK_ICONS: Record<string, DockIcon> = {
   admin: { paths: [`M20 10.165${SHIELD_CHECK.slice(SHIELD_SPLIT + "m11-.835".length)}`, SHIELD_CHECK.slice(0, SHIELD_SPLIT)], fill: [0], cut: [1] },
   settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
 };
+
+
+const DOCK_H = 58;
+const DOCK_PAD = 10;
+const LENS_H = 65;
+// How far the lens bends what is under its edge, in px, per colour. Red, green and blue bend by slightly different amounts, which is what
+// splits the light into a thin colour fringe (dispersion) right where the bend is strongest.
+const BEND = { r: 34, g: 28, b: 22 };
+
+/**
+ * The glass bubble over the current tab. It holds its own copy of the dock's icons, enlarged a little, and bends that copy with a real
+ * displacement filter: the bend grows toward the bubble's edge and each colour bends by a different amount, so the icons near the edge
+ * warp and fringe the way they do through a lens. It rides one motion value, so the copy always lines up with the real icons beneath.
+ */
+function DockLens({ items, activeIndex, dockWidth, reduceMotion }: { items: readonly { href: string; icon: string }[]; activeIndex: number; dockWidth: number; reduceMotion: boolean | null }) {
+  const slot = (dockWidth - DOCK_PAD * 2) / items.length;
+  const lensW = Math.round(slot * 1.27);
+  const x = useMotionValue(0);
+  const inner = useTransform(x, (v) => -v);
+  const origin = useTransform(x, (v) => `${v + lensW / 2}px 50%`);
+  const placed = useRef(false);
+  const target = DOCK_PAD + activeIndex * slot + slot / 2 - lensW / 2;
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    if (!placed.current || reduceMotion) {
+      x.set(target);
+      placed.current = true;
+      return;
+    }
+    const controls = animate(x, target, { type: "spring", stiffness: 300, damping: 21, mass: 0.9 });
+    return () => controls.stop();
+  }, [target, activeIndex, reduceMotion, x]);
+  if (activeIndex < 0) return null;
+  return (
+    <>
+      <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
+        <defs>
+          <filter id="bnp-lens" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            {/* The bend map is made from the lens's own shape (no image, which Safari will not draw): blur the shape, then take how fast it
+                changes left to right (red) and top to bottom (green). Flat in the middle, strongest at the rim, pointing inward. */}
+            <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="bl" />
+            <feColorMatrix in="bl" type="matrix" values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 1" result="g" />
+            <feConvolveMatrix in="g" order="3" kernelMatrix="1 0 -1 2 0 -2 1 0 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dx" />
+            <feConvolveMatrix in="g" order="3" kernelMatrix="1 2 1 0 0 0 -1 -2 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dy" />
+            <feColorMatrix in="dx" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="mx" />
+            <feColorMatrix in="dy" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="my" />
+            <feBlend in="mx" in2="my" mode="screen" result="map" />
+            {(["r", "g", "b"] as const).map((c) => (
+              <Fragment key={c}>
+                <feDisplacementMap in="SourceGraphic" in2="map" scale={BEND[c]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
+                <feColorMatrix
+                  in={`d${c}`}
+                  type="matrix"
+                  values={c === "r" ? "1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" : c === "g" ? "0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" : "0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"}
+                  result={`c${c}`}
+                />
+              </Fragment>
+            ))}
+            <feBlend in="cr" in2="cg" mode="screen" result="rg" />
+            <feBlend in="rg" in2="cb" mode="screen" result="bent" />
+            {/* Keep the bubble's own capsule outline: the bend would otherwise fill its rounded ends. */}
+            <feComposite in="bent" in2="SourceAlpha" operator="in" />
+          </filter>
+        </defs>
+      </svg>
+      <motion.div aria-hidden style={{ x, width: lensW, height: LENS_H, top: (DOCK_H - LENS_H) / 2 }} className="ig-lens-live pointer-events-none absolute left-0 rounded-full">
+        <div className="ig-lens-clip absolute inset-0 overflow-hidden rounded-full" style={{ filter: "url(#bnp-lens)" }}>
+          <motion.div style={{ x: inner, width: dockWidth, height: DOCK_H, top: (LENS_H - DOCK_H) / 2, transformOrigin: origin, scale: 1.14 }} className="absolute left-0 grid grid-cols-5 items-center px-[10px]">
+            {items.map((item, i) => (
+              <span key={item.href} className={`ig-dock-icon flex items-center justify-center ${i === activeIndex ? "is-on" : ""}`}>
+                <DockGlyphIcon icon={DOCK_ICONS[item.icon]} active={i === activeIndex} />
+              </span>
+            ))}
+          </motion.div>
+        </div>
+        <div className="ig-lens-sheen pointer-events-none absolute inset-0 rounded-full" />
+      </motion.div>
+    </>
+  );
+}
 
 function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
   const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -135,9 +215,24 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   useEffect(() => setPendingHref(null), [pathname]);
   // The glass lens rises over the current tab while it moves (a tap, a press) and settles back to a quiet capsule a moment later.
   const [lens, setLens] = useState(false);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockWidth, setDockWidth] = useState(0);
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!el) return;
+    const read = () => setDockWidth(el.offsetWidth);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const lensTimer = useRef<number | undefined>(undefined);
-  function showLens() {
+  function showLens(hold = false) {
     setLens(true);
+    window.clearTimeout(lensTimer.current);
+    if (!hold) lensTimer.current = window.setTimeout(() => setLens(false), 750);
+  }
+  function releaseLens() {
     window.clearTimeout(lensTimer.current);
     lensTimer.current = window.setTimeout(() => setLens(false), 750);
   }
@@ -203,8 +298,11 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
           transformOrigin: "50% 100%",
           transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
+        ref={dockRef}
         data-lens={lens ? "" : undefined}
-        onPointerDown={showLens}
+        onPointerDown={() => showLens(true)}
+        onPointerUp={releaseLens}
+        onPointerCancel={releaseLens}
         className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
       >
         {items.map((item) => {
@@ -241,9 +339,7 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 24, mass: 0.9 }}
                   className="ig-dock-active pointer-events-none absolute -inset-x-[6px] inset-y-0 rounded-full"
-                >
-                  <span className="ig-lens absolute -inset-x-[4px] -inset-y-[7px] rounded-full" />
-                </motion.span>
+                />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
@@ -257,6 +353,17 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
             </Link>
           );
         })}
+        {dockWidth > 0 && (
+          <DockLens
+            items={items}
+            activeIndex={items.findIndex((item) => {
+              const at = pendingHref ?? pathname;
+              return at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
+            })}
+            dockWidth={dockWidth}
+            reduceMotion={reduceMotion}
+          />
+        )}
       </div>
     </div>
   );
