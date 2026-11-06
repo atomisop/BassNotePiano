@@ -31,7 +31,7 @@ import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
 import { getAdminNavBadges } from "@/lib/admin";
 import { getPricingConfig } from "@/lib/pricing";
-import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { getPersonalDiscount } from "@/lib/accountDiscounts";
 import { PricingProvider } from "@/components/billing/PricingContext";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
   // Everything the shell needs is asked for at once, not one after another (it ran on every page).
-  const [user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
+  const [user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscount] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true, notifyEmailReminders: true } }),
     getActiveAnnouncementForUser(session.user.id),
     phoneVerifyMode(),
@@ -47,7 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } }),
     getSidebarCards(session.user.id, session.user.role ?? "STUDENT", session.user.role === "ADMIN" && isOwnerEmail(session.user.email)).catch(() => []),
     getPricingConfig(),
-    getDiscountPercent(session.user.id),
+    getPersonalDiscount(session.user.id),
   ]);
 
   // Text confirmation is off by default. When the owner switches it on, an account made while it was on has to
@@ -85,7 +85,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
     <MeStatusProvider initial={meStatus}>
-    <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
+    <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscount.percent} scholarshipPercent={personalDiscount.scholarshipPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="pad-safe-x shell-lock fixed inset-0 flex bg-ground">
       {/* Plain ground, no photo or colored wallpaper behind the app (the owner's choice, 2026-10-29). */}

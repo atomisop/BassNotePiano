@@ -5,7 +5,7 @@ import { ArrowLeft } from "@/components/ui/appIcons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, discountedPlanPriceCents, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, discountedPlanPriceCents, discountPercentForTerm, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
@@ -109,7 +109,7 @@ const isOffered = isPlanTermOffered;
 export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
   const router = useRouter();
   // The owner's current prices and this account's own discount, from the signed-in layout.
-  const { pricing, personalDiscountPercent } = usePricing();
+  const { pricing, personalDiscountPercent, scholarshipPercent } = usePricing();
   // One plan on offer (45 minutes a week). A plan on a retired length keeps showing its own.
   const cadence: PaymentPlanCadence = activePlan?.cadence ?? OFFERED_PLAN_CADENCE;
   const [view, setView] = useState<"summary" | "switch">("summary");
@@ -191,7 +191,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
   const switchPreview = (() => {
     if (!activePlan || !confirmTerm) return null;
     const list = calculatePaymentPlanRate(cadence, confirmTerm, pricing);
-    const price = personalDiscountPercent > 0 ? discountedPlanPriceCents(list.installmentAmountCents, personalDiscountPercent) : list.installmentAmountCents;
+    const percent = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, confirmTerm);
+    const price = percent > 0 ? discountedPlanPriceCents(list.installmentAmountCents, percent) : list.installmentAmountCents;
     const left = list.termMonths - activePlan.installmentsPaid;
     return { price, total: list.termMonths, left, blocked: left <= 0, label: TERM_OPTIONS.find((t) => t.value === confirmTerm)?.label ?? "" };
   })();
@@ -201,7 +202,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       {!activePlan && (
         <div>
           <p className="mb-6 text-center text-small text-slate-400">No active plan yet. Pick one to start.</p>
-          <PaymentPlanTierGrid narrow pricing={pricing} personalDiscountPercent={personalDiscountPercent} />
+          <PaymentPlanTierGrid narrow pricing={pricing} personalDiscountPercent={personalDiscountPercent} scholarshipPercent={scholarshipPercent} />
         </div>
       )}
 
@@ -292,6 +293,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
             narrow
             pricing={pricing}
             personalDiscountPercent={personalDiscountPercent}
+            scholarshipPercent={scholarshipPercent}
             switchTo={{ currentTerm: TERM_OPTIONS.some((t) => t.value === activePlan.term && isOffered(t.value)) ? activePlan.term : null, pendingTerm, onSwitch: setConfirmTerm }}
           />
           {termError && <p className="mt-3 text-center text-small text-red-400">{termError}</p>}

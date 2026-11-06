@@ -16,10 +16,9 @@ export interface ScholarshipRow {
   id: string;
   code: string;
   email: string;
-  classes: number;
-  classesLabel: string;
+  percent: number;
   note: string | null;
-  status: "available" | "claimed" | "expired" | "revoked";
+  status: "available" | "claimed" | "ended" | "expired" | "revoked";
   expiresAt: string | null;
   claimedAt: string | null;
   claimedBy: string | null;
@@ -27,11 +26,12 @@ export interface ScholarshipRow {
 }
 
 type Filter = "all" | ScholarshipRow["status"];
-const STATUS_LABEL = { available: "Unclaimed", claimed: "Used", expired: "Expired", revoked: "Revoked" } as const;
+const STATUS_LABEL = { available: "Unclaimed", claimed: "Used", ended: "Ended", expired: "Expired", revoked: "Revoked" } as const;
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "available", label: "Unclaimed" },
   { id: "claimed", label: "Used" },
+  { id: "ended", label: "Ended" },
   { id: "expired", label: "Expired" },
   { id: "revoked", label: "Revoked" },
 ];
@@ -53,7 +53,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
   const [pending, start] = useTransition();
   const [email, setEmail] = useState("");
   const [lookup, setLookup] = useState<Lookup>({ state: "idle" });
-  const [classes, setClasses] = useState("4");
+  const [percent, setPercent] = useState("25");
   const [code, setCode] = useState("");
   const [note, setNote] = useState("");
   const [expiresOn, setExpiresOn] = useState("");
@@ -61,7 +61,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
   const [error, setError] = useState<string | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
-  const [edit, setEdit] = useState({ classes: "", note: "", expiresOn: "" });
+  const [edit, setEdit] = useState({ percent: "", note: "", expiresOn: "" });
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
@@ -87,7 +87,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
   }, [email]);
 
   const counts = useMemo(() => {
-    const c: Record<Filter, number> = { all: rows.length, available: 0, claimed: 0, expired: 0, revoked: 0 };
+    const c: Record<Filter, number> = { all: rows.length, available: 0, claimed: 0, ended: 0, expired: 0, revoked: 0 };
     for (const r of rows) c[r.status]++;
     return c;
   }, [rows]);
@@ -101,7 +101,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
     e.preventDefault();
     setError(null);
     start(async () => {
-      const res = await createScholarshipAction({ email, classes: Number(classes), code, note, expiresOn });
+      const res = await createScholarshipAction({ email, percent: Number(percent), code, note, expiresOn });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -127,27 +127,35 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
 
   function startEdit(r: ScholarshipRow) {
     setEditing(r.id);
-    setEdit({ classes: String(r.classes), note: r.note ?? "", expiresOn: dateInput(r.expiresAt) });
+    setEdit({ percent: String(r.percent), note: r.note ?? "", expiresOn: dateInput(r.expiresAt) });
   }
 
   return (
     <div className="space-y-6">
       <form onSubmit={create} className="glass-surface space-y-4 p-6">
         <h2 className="text-title font-semibold text-slate-50">New scholarship code</h2>
-        <p className="text-small text-slate-400">For a student who already has an account. The code adds free classes to that account, can be used once, and only works while they are signed in with that email.</p>
+        <p className="text-small text-slate-400">For a student who already has an account. The code takes a percent off that account\u2019s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</p>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-email">Student email</label>
             <input id="sch-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={`${field} mt-1`} autoComplete="off" />
             <p className="mt-1 min-h-5 text-small" aria-live="polite">
               {lookup.state === "checking" && <span className="text-slate-400">Checking…</span>}
-              {lookup.state === "found" && <span className="text-slate-50">Account found: {lookup.name ?? lookup.email}{lookup.verified ? "" : " (email not verified yet, they must verify before claiming)"}</span>}
+              {lookup.state === "found" && (
+                <span className="inline-flex items-center gap-2 text-slate-50">
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden className="shrink-0">
+                    <circle cx="12" cy="12" r="11" fill="#22c55e" className="scholarship-pop" />
+                    <path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" pathLength="1" className="scholarship-draw" />
+                  </svg>
+                  <span>Account found: {lookup.name ?? lookup.email}{lookup.verified ? "" : " (email not verified yet, they must verify before claiming)"}</span>
+                </span>
+              )}
               {lookup.state === "missing" && <span className="text-red-400">No student account has this email.</span>}
             </p>
           </div>
           <div>
-            <label className="block text-small text-slate-300" htmlFor="sch-classes">Free classes (1 to 48)</label>
-            <input id="sch-classes" type="number" required min={1} max={48} step={1} value={classes} onChange={(e) => setClasses(e.target.value)} className={`${field} mt-1`} />
+            <label className="block text-small text-slate-300" htmlFor="sch-percent">Discount on the 6 Month plan (1 to 90%)</label>
+            <input id="sch-percent" type="number" required min={1} max={90} step={1} value={percent} onChange={(e) => setPercent(e.target.value)} className={`${field} mt-1`} />
           </div>
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-code">16 digit code</label>
@@ -196,7 +204,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-mono text-body text-slate-50">{r.code}</p>
-                    <p className="truncate text-small text-slate-400">{r.email} · {r.classesLabel}{r.note ? ` · ${r.note}` : ""}</p>
+                    <p className="truncate text-small text-slate-400">{r.email} · {r.percent}% off the 6 Month plan{r.note ? ` · ${r.note}` : ""}</p>
                     <p className="text-caption text-slate-500">
                       {STATUS_LABEL[r.status]}
                       {r.status === "claimed" && r.claimedAt ? ` ${day(r.claimedAt)}${r.claimedBy ? ` by ${r.claimedBy}` : ""}` : ""}
@@ -204,6 +212,16 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                       {r.status !== "claimed" ? ` · made ${day(r.createdAt)}` : ""}
                     </p>
                   </div>
+                  {r.status === "claimed" && (
+                    confirmRevoke === r.id ? (
+                      <span className="flex gap-2">
+                        <button type="button" disabled={pending} onClick={() => run(() => revokeScholarshipAction(r.id), () => setConfirmRevoke(null))} className="tap rounded-full bg-red-500 px-3 py-1.5 text-small font-medium text-white">End discount</button>
+                        <button type="button" onClick={() => setConfirmRevoke(null)} className="tap px-3 py-1.5 text-small text-slate-300">Keep</button>
+                      </span>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmRevoke(r.id)} className="tap px-3 py-1.5 text-small text-red-400">End discount</button>
+                    )
+                  )}
                   {r.status === "available" && (
                     <span className="flex flex-wrap items-center gap-1">
                       <button type="button" onClick={() => (editing === r.id ? setEditing(null) : startEdit(r))} className="tap px-3 py-1.5 text-small text-slate-300">Edit</button>
@@ -221,8 +239,8 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                 </div>
                 {editing === r.id && r.status === "available" && (
                   <div className="mt-3 grid gap-3 rounded-xl bg-slate-50/5 p-4 md:grid-cols-3">
-                    <label className="block text-small text-slate-300">Free classes
-                      <input type="number" min={1} max={48} step={1} value={edit.classes} onChange={(e) => setEdit({ ...edit, classes: e.target.value })} className={`${field} mt-1`} />
+                    <label className="block text-small text-slate-300">Discount %
+                      <input type="number" min={1} max={90} step={1} value={edit.percent} onChange={(e) => setEdit({ ...edit, percent: e.target.value })} className={`${field} mt-1`} />
                     </label>
                     <label className="block text-small text-slate-300">Last day to claim
                       <input type="date" value={edit.expiresOn} onChange={(e) => setEdit({ ...edit, expiresOn: e.target.value })} className={`${field} mt-1`} />
@@ -231,7 +249,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                       <input type="text" maxLength={200} value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} className={`${field} mt-1`} />
                     </label>
                     <div className="flex gap-2 md:col-span-3">
-                      <button type="button" disabled={pending} onClick={() => run(() => updateScholarshipAction(r.id, { classes: Number(edit.classes), note: edit.note, expiresOn: edit.expiresOn }), () => setEditing(null))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Save</button>
+                      <button type="button" disabled={pending} onClick={() => run(() => updateScholarshipAction(r.id, { percent: Number(edit.percent), note: edit.note, expiresOn: edit.expiresOn }), () => setEditing(null))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Save</button>
                       <button type="button" onClick={() => setEditing(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>Cancel</button>
                     </div>
                   </div>

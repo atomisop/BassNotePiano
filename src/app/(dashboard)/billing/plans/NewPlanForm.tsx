@@ -4,7 +4,7 @@ import { SwitchLook } from "@/components/ui/switch";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
-import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, discountPercentForTerm, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
@@ -75,6 +75,7 @@ export interface ParentModeConfig {
 export function NewPlanForm({
   pricing,
   personalDiscountPercent = 0,
+  scholarshipPercent = 0,
   initialTerm,
   initialAudience = "SOLO",
   loadSlots,
@@ -87,6 +88,7 @@ export function NewPlanForm({
 }: {
   pricing: PricingConfig;
   personalDiscountPercent?: number;
+  scholarshipPercent?: number;
   initialTerm?: PaymentPlanTerm;
   initialAudience?: Audience;
   loadSlots: () => Promise<ReservableSlot[]>;
@@ -231,10 +233,12 @@ export function NewPlanForm({
   const isParent = isFamily && parentMode && Boolean(parent);
   const people = isParent ? parentHeadcount(memberRows, includeSelf) : headcount(memberRows);
   const parentTotals = isParent ? { includeSelf } : undefined;
+  // The discount the chosen length actually gets (a scholarship only counts on the 6 Month plan).
+  const termDiscount = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
   const totals = useMemo(
-    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }),
+    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, isParent, includeSelf],
+    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, isParent, includeSelf],
   );
   const rowStates = isFamily ? memberRows.map((_, i) => stateFor(i)) : [];
   const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
@@ -324,8 +328,8 @@ export function NewPlanForm({
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
-            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals });
-            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }).perPaymentCents) * 100);
+            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals });
+            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals }).perPaymentCents) * 100);
             const look = tierLook(option.value);
             const who = audience === "FAMILY" ? look.family : look.solo;
             return (
@@ -590,9 +594,9 @@ export function NewPlanForm({
               })
             : timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
           <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{usd(totals.perPaymentCents)}</Row>
-          {!isFamily && personalDiscountPercent > 0 && (
+          {!isFamily && termDiscount > 0 && (
             <Row label="Your discount">
-              {personalDiscountPercent}% off <span className="text-slate-500 line-through">{usd(totals.listPerPaymentCents)}</span>
+              {termDiscount}% off <span className="text-slate-500 line-through">{usd(totals.listPerPaymentCents)}</span>
             </Row>
           )}
           <Row label="Classes">

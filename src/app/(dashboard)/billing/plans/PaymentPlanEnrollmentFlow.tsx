@@ -92,6 +92,7 @@ interface PaymentPlanEnrollmentFlowProps {
   pricing: PricingConfig;
   /** This account's personal percent off a solo plan (set by the owner), 0 when none. */
   personalDiscountPercent?: number;
+  scholarshipPercent?: number;
   /** Opened from the Parent page (?who=parent): only the form for paying for linked children, even when this person has a plan of their own. */
   initialParentMode?: boolean;
 }
@@ -253,6 +254,7 @@ export function PaymentPlanEnrollmentFlow({
   initialAudience,
   pricing,
   personalDiscountPercent = 0,
+  scholarshipPercent = 0,
   initialParentMode = false,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
@@ -470,6 +472,7 @@ export function PaymentPlanEnrollmentFlow({
     <NewPlanForm
       pricing={pricing}
       personalDiscountPercent={personalDiscountPercent}
+      scholarshipPercent={scholarshipPercent}
       initialTerm={initialTerm}
       initialAudience={initialAudience}
       loadSlots={() => getReservableSlotsAction(cadence)}

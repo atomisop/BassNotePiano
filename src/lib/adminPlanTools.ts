@@ -39,7 +39,7 @@ export async function setPlanLength(adminId: string, planId: string, term: Payme
   const rate = calculatePaymentPlanRate(plan.cadence, term, await getPricingConfig());
   if (plan.installmentsPaid >= rate.termMonths) throw new PaymentPlanError(`${plan.installmentsPaid} bills are already paid, so that length would be over. Pick a longer one.`);
   await closeUnpaidBill(plan.id);
-  const discount = newPrice ? await getDiscountPercent(plan.userId) : 0;
+  const discount = newPrice ? await getDiscountPercent(plan.userId, term) : 0;
   const price = newPrice ? discountedPlanPriceCents(rate.installmentAmountCents, discount) : plan.installmentAmountCents;
   await prisma.paymentPlan.update({
     where: { id: plan.id },
@@ -56,7 +56,7 @@ export async function setPlanPrice(adminId: string, planId: string, cents: numbe
   const plan = await runningPlan(planId);
   if (!Number.isInteger(cents) || cents < 100 || cents > 100_000) throw new PaymentPlanError("Pick a price from $1 to $1,000.");
   if (cents === plan.installmentAmountCents) throw new PaymentPlanError("That is already the price.");
-  if ((await getDiscountPercent(plan.userId)) > 0) throw new PaymentPlanError("This account has a personal discount. Remove it on Billing > Pricing first, then set the price.");
+  if ((await getDiscountPercent(plan.userId, plan.term)) > 0) throw new PaymentPlanError("This account has a personal discount. Remove it on Billing > Pricing first, then set the price.");
   await closeUnpaidBill(plan.id);
   await prisma.paymentPlan.update({ where: { id: plan.id }, data: { installmentAmountCents: cents, listAmountCents: null } });
   await logAudit({ actorId: adminId, action: "plan.price", targetType: "PaymentPlan", targetId: plan.id, detail: `Price per bill ${usd(plan.installmentAmountCents)} to ${usd(cents)}` }).catch(() => undefined);

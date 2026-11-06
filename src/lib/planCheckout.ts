@@ -7,6 +7,7 @@ import {
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   discountedPlanPriceCents,
+  discountPercentForTerm,
   PLAN_CADENCE_CREDITS_PER_WEEK,
   type PricingConfig,
 } from "@/lib/classCreditPricing";
@@ -62,10 +63,13 @@ export function checkoutTotals(input: {
   audience: Audience;
   memberRows: string[];
   personalDiscountPercent?: number;
+  /** A scholarship's percent: it only counts when `term` is the 6 Month plan. */
+  scholarshipPercent?: number;
   /** Parent mode: the rows are children, the parent counts as a person only when they learn too, and one person pays the solo price. */
   parent?: { includeSelf: boolean };
 }): CheckoutTotals {
-  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0, parent } = input;
+  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0, scholarshipPercent = 0, parent } = input;
+  const discountPercent = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
   const list = calculatePaymentPlanRate(cadence, term, pricing);
   const monthly = calculatePaymentPlanRate(cadence, "MONTHLY", pricing);
   const people =
@@ -81,8 +85,8 @@ export function checkoutTotals(input: {
       ? calculateFamilyBundleTotal(cadence, term, people, pricing).perStudentMonthlyCents
       : audience === "FAMILY"
         ? list.installmentAmountCents
-        : personalDiscountPercent > 0
-          ? discountedPlanPriceCents(list.installmentAmountCents, personalDiscountPercent)
+        : discountPercent > 0
+          ? discountedPlanPriceCents(list.installmentAmountCents, discountPercent)
           : list.installmentAmountCents;
   return {
     people,

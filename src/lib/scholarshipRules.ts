@@ -3,7 +3,8 @@ import { randomInt } from "crypto";
 /** Pure rules for scholarship codes (no database), so they are tested on their own. */
 
 export const SCHOLARSHIP_CODE_LENGTH = 16;
-export const MAX_SCHOLARSHIP_CLASSES = 48;
+/** A scholarship takes 1 to this percent off the 6 Month plan (the same ceiling as the owner's personal discounts; free is complimentary access). */
+export { MAX_PERSONAL_DISCOUNT_PERCENT as MAX_SCHOLARSHIP_PERCENT } from "@/lib/classCreditPricing";
 
 /** A random 16 digit code. Uses the system's secure random source, never Math.random. */
 export function makeScholarshipCode(): string {
@@ -24,10 +25,10 @@ export function formatScholarshipCode(code: string): string {
   return code.replace(/(\d{4})(?=\d)/g, "$1 ");
 }
 
-export type ScholarshipStatus = "available" | "claimed" | "expired" | "revoked";
+export type ScholarshipStatus = "available" | "claimed" | "ended" | "expired" | "revoked";
 
 export function scholarshipStatus(row: { claimedAt: Date | null; revokedAt: Date | null; expiresAt: Date | null }, now: Date = new Date()): ScholarshipStatus {
-  if (row.claimedAt) return "claimed";
+  if (row.claimedAt) return row.revokedAt ? "ended" : "claimed";
   if (row.revokedAt) return "revoked";
   if (row.expiresAt && row.expiresAt <= now) return "expired";
   return "available";

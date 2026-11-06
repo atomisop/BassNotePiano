@@ -167,7 +167,7 @@ export async function createPaymentPlan(
   const rate = calculatePaymentPlanRate(cadence, term, pricing);
   // The owner's personal discount for this account (Admin > Pricing): the plan is created at the discounted price, and the price before
   // it is kept so the discount can be changed or removed later.
-  const discountPercent = await getDiscountPercent(userId);
+  const discountPercent = await getDiscountPercent(userId, term);
   const installmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   if (expectedFirstPaymentCents !== undefined && expectedFirstPaymentCents !== installmentCents) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
@@ -570,7 +570,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
   const rate = calculatePaymentPlanRate(plan.cadence, newTerm, await getPricingConfig());
   // The new term's price, then this account's personal discount on top (if the owner gave one).
-  const discountPercent = await getDiscountPercent(userId);
+  const discountPercent = await getDiscountPercent(userId, newTerm);
   const newInstallmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   if (plan.installmentsPaid >= rate.termMonths) {
     throw new PaymentPlanError(
