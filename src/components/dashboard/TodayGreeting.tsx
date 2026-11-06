@@ -35,9 +35,9 @@ export function TodayGreeting({ name, className }: { name: string | null; classN
 
   const fade = `transition-opacity duration-200 motion-reduce:transition-none ${greeting === null ? "opacity-0" : "opacity-100"}`;
   return (
-    <div className={className}>
+    <div data-bar-source="" className={className}>
       {/* Today's date over the greeting, by the student's own clock (so it is filled in the browser too; the line keeps its space). */}
-      <p className={`text-small font-medium text-slate-400 ${fade}`}>{date ?? "\u00a0"}</p>
+      <p data-bar-eyebrow="" className={`text-small font-medium text-slate-400 ${fade}`}>{date ?? "\u00a0"}</p>
       <Hero className={`mt-1.5 ${fade}`}>
         {greeting ?? "Welcome back"}
         {name ? <>, {name.split(" ")[0]}</> : null}.
