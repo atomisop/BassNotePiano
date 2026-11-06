@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="min-w-0 flex-1">
         {/* The menu stays put on every admin screen and only the page under it scrolls (owner, 2026-10-31): the phone's section bar
             and the section's tabs pin together as one heading, then the page's content starts right under them, with no title. */}
-        <div data-deck-header className="deck-header -mt-4 pt-4">
+        <div data-deck-header data-bar-continues="" className="deck-header -mt-4 pt-4">
           <AdminPhoneMenu badges={badges} />
           <AdminSectionTabs badges={badges} />
         </div>
