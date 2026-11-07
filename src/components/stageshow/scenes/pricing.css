@@ -1,0 +1,24 @@
+.pb .ss-stage { --gutter: 24px; overflow: hidden; background: var(--ss-well); border-radius: 16px; }
+.pb-tile { position: absolute; display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 16px; background: var(--ss-surface); }
+.pb-plan { left: var(--gutter); top: var(--gutter); width: 520px; height: 372px; justify-content: flex-start; }
+.pb-cycle { left: 568px; top: var(--gutter); width: 288px; height: 176px; }
+.pb-group { left: 568px; top: 220px; width: 288px; height: 176px; }
+.pb-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ss-text); }
+.pb-seg { align-self: flex-start; width: 100%; max-width: 340px; }
+.pb-price { display: flex; align-items: baseline; gap: 4px; margin-top: auto; color: var(--ss-text-strong); font-variant-numeric: tabular-nums; }
+.pb-dollar { font-size: 28px; font-weight: 600; color: var(--ss-text); }
+.pb-amount { font-size: 76px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.pb-per { margin-left: 10px; font-size: 16px; color: var(--ss-text); }
+.pb-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.pb-off { display: inline-block; }
+.pb-days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-top: 4px; }
+.pb-day { aspect-ratio: 1; border-radius: 50%; background: var(--ss-ink-4); }
+.pb-day[data-class] { background: var(--ss-accent); }
+.pb-cap { font-size: 14px; color: var(--ss-text-strong); font-weight: 500; line-height: 1.4; }
+.pb-rest { position: absolute; left: 470px; top: 330px; width: 1px; height: 1px; }
+.pb .ss-stage[data-layout='compact'] { --gutter: 16px; }
+.pb .ss-stage[data-layout='compact'] .pb-plan { width: 326px; height: 330px; padding: 20px; }
+.pb .ss-stage[data-layout='compact'] .pb-amount { font-size: 60px; }
+.pb .ss-stage[data-layout='compact'] .pb-per { font-size: 14px; margin-left: 6px; }
+.pb .ss-stage[data-layout='compact'] .pb-cycle { left: 16px; top: 362px; width: 326px; height: 176px; }
+.pb .ss-stage[data-layout='compact'] .pb-rest { left: 320px; top: 440px; }

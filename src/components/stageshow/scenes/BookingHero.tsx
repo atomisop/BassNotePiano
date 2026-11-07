@@ -1,6 +1,6 @@
 'use client'
 
-import { Bar, Button, Collapse, Icon, LockScreen, Notification, Phone, Roll, Row, Stage, Text, Toast, Window, WALLPAPER, type Act } from '../kit'
+import { Bar, Button, Collapse, Icon, LockScreen, Notification, Phone, Roll, Row, Stage, Text, Window, WALLPAPER, type Act } from '../kit'
 import '../bnp-look.css'
 import './booking.css'
 
@@ -8,9 +8,9 @@ import './booking.css'
 // from 4 to 3, the class lands under Coming up, and a phone gets the notification. The phone straddles the window's right
 // edge over margin, never over the slot list.
 
-type S = { booked: boolean; toast: boolean; notice: boolean }
-const initial: S = { booked: false, toast: false, notice: false }
-const POSTER: S = { booked: true, toast: false, notice: true }
+type S = { booked: boolean; notice: boolean }
+const initial: S = { booked: false, notice: false }
+const POSTER: S = { booked: true, notice: true }
 
 async function script(a: Act<S>) {
   await a.wait(900)
@@ -19,12 +19,10 @@ async function script(a: Act<S>) {
   await a.click()
   await a.set({ booked: true })
   await a.wait(500)
-  await a.set({ toast: true })
   await a.wait(500)
   await a.set({ notice: true })
   await a.move('rest')
   await a.wait(3200)
-  await a.set({ toast: false })
   await a.wait(600)
   await a.set({ ...initial })
   await a.wait(500)
@@ -41,17 +39,17 @@ export function BookingHero() {
     <Stage
       width={760}
       height={440}
-      compact={{ below: 600, width: 358, height: 420 }}
+      compact={{ below: 600, width: 358, height: 560 }}
       initial={initial}
       poster={POSTER}
       script={script}
       theme="dark"
-      cursor={{ at: { wide: { x: 410, y: 330 }, compact: { x: 200, y: 300 } }, style: 'arrow' }}
+      cursor={{ at: { wide: { x: 474, y: 404 }, compact: { x: 322, y: 330 } }, style: 'arrow' }}
       className="bnp-look bh"
     >
-      {(s) => (
+      {(s, _rect, layout) => (
         <>
-          <Window title="Lessons" sidebar={<Sidebar />} sidebarWidth={140} className="bh-window">
+          <Window title="Lessons" sidebar={layout === 'wide' ? <Sidebar /> : undefined} sidebarWidth={140} className="bh-window">
             <div className="bh-main">
               <div className="bh-head">
                 <Text className="bh-h">Book a class</Text>
@@ -109,7 +107,6 @@ export function BookingHero() {
                 ))}
               </div>
             </div>
-            <Toast show={s.toast} icon={<Icon name="check" size={14} />} className="bh-toast">Class booked</Toast>
           </Window>
 
           <Phone width={232} frame="pro" dark wallpaper={WALLPAPER} className="bh-phone">
