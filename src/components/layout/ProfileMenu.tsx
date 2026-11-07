@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, ClipboardCheck, NotebookPen, Shield, Users } from "@/components/ui/appIcons";
+import { Bell, ClipboardCheck, NotebookPen, Settings, Users } from "@/components/ui/appIcons";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import { SignOut } from "@/components/ui/appIcons";
 
@@ -87,16 +87,19 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
       <button
         ref={triggerRef}
         type="button"
-        aria-label={appExtras && phoneBadge > 0 ? `Your account, ${phoneBadge} new` : "Your account"}
+        aria-label={appExtras ? (phoneBadge > 0 ? `Settings and more, ${phoneBadge} new` : "Settings and more") : "Your account"}
         aria-expanded={open}
-        data-tour="nav-profile"
+        data-tour={appExtras ? "nav-settings" : "nav-profile"}
         onClick={() => setOpen((v) => !v)}
         className={`tap press relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] ${
           open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         } ${triggerClassName ?? ""}`}
       >
-        <span className="block h-full w-full overflow-hidden rounded-full bg-slate-50/10 shadow-pressed-low">
-          {image ? (
+        <span className={`block h-full w-full overflow-hidden rounded-full ${appExtras ? "flex items-center justify-center text-slate-50" : "bg-slate-50/10 shadow-pressed-low"}`}>
+          {appExtras ? (
+            // In the app the top-right button is Settings (the picture lives on the dock's Profile island).
+            <Settings className="h-5 w-5" strokeWidth={1.5} />
+          ) : image ? (
             // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -105,7 +108,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-slate-50 after:content-[attr(data-char)]" />
           )}
         </span>
-        {isOwner && <OwnerStarBadge />}
+        {isOwner && !appExtras && <OwnerStarBadge />}
         {appExtras && phoneBadge > 0 && (
           // Phones only: the bell and the attendance button are in this menu there, so their counts show on the picture.
           <span aria-hidden data-char={phoneBadge > 9 ? "9+" : String(phoneBadge)} className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 after:content-[attr(data-char)] md:hidden" />
@@ -160,9 +163,6 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           {appExtras && (
             <div className="md:hidden">
               <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Inbox" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
-              {appExtras.isAdmin && (
-                <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
-              )}
               {isOwner && (
                 <>
                   <MenuAction icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />} label="Class bookings and attendance" count={activeBookings} onClick={() => { setOpen(false); announce(OPEN_ATTENDANCE); }} />
@@ -183,22 +183,23 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
               Home
             </Link>
           )}
-          <Link
-            href="/profile"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-          >
-            Profile
-          </Link>
+          {/* In the app the dock's island is Profile; the menu opened by the top-right Settings button starts with Settings itself. */}
           {!appExtras && (
             <Link
-              href="/account"
+              href="/profile"
               onClick={() => setOpen(false)}
               className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
             >
-              Settings
+              Profile
             </Link>
           )}
+          <Link
+            href="/account"
+            onClick={() => setOpen(false)}
+            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+          >
+            Settings
+          </Link>
 
           <div className="my-1.5 border-t border-ink/10" />
 
