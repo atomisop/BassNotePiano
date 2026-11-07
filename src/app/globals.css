@@ -928,9 +928,9 @@
      `both`) so no transform is left on the page afterwards, which would
      otherwise become the containing block for fixed-position children. */
   .page-enter {
-    animation:
-      page-enter-opacity 200ms var(--ease-ios) backwards,
-      page-enter 200ms var(--ease-ios) backwards;
+    /* Rise only, never a fade from transparent (that flashed the empty background between screens). The signed-in app uses no arrival
+       animation at all now; this remains for the sign-in screens. */
+    animation: page-enter 200ms var(--ease-ios) backwards;
   }
   html[data-kb-motion="off"] .page-enter {
     animation: none;
@@ -1860,9 +1860,18 @@ input[type="radio"],
   animation: none;
   mix-blend-mode: normal;
 }
+/* The browser's own animation list for the new screen is a fade-in AND a plus-lighter blend; keeping only the duration left the blend
+   running, so the new screen was ADDED to the solid old one for a few frames (a bright flash). Our own single fade replaces both. */
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 ::view-transition-new(root) {
-  animation-duration: 160ms;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation: vt-fade-in 160ms cubic-bezier(0.32, 0.72, 0, 1) both;
   mix-blend-mode: normal;
 }
 .app-sidebar {
