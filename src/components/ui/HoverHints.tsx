@@ -83,7 +83,7 @@ export function HoverHints() {
   return (
     <div
       role="tooltip"
-      className="pointer-events-none fixed z-[95] max-w-[240px] -translate-x-1/2 rounded-lg border border-white/10 bg-black/90 px-2.5 py-1 text-caption font-medium text-white shadow-lg"
+      className="pointer-events-none fixed z-[95] w-max max-w-[240px] -translate-x-1/2 rounded-lg border border-white/10 bg-black/90 px-2.5 py-1 text-caption font-medium text-white shadow-lg"
       style={{ left: x, top: above ? undefined : hint.bottom + 8, bottom: above ? window.innerHeight - hint.top + 8 : undefined }}
     >
       {hint.text}
