@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { BrandLockup } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PageHitBeacon } from "@/components/marketing/PageHitBeacon";
@@ -74,15 +74,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}
       <header>
-        <Link href="/" className="relative mb-3 flex flex-col items-center text-center sm:mb-8">
-          <Image src="/logo-mark.png" alt="" width={64} height={64} className="mb-2 h-16 w-16" priority />
-          {/* Same wordmark treatment as MarketingNav's own (bold, lowercase).
-              This was still the pre-Pianote-pass title-case/split-color
-              version. Fully accent-colored at the time; neutral again now
-              under the "premium black and white" pass. */}
-          <p className="text-body font-bold lowercase tracking-tight text-slate-50">
-            Bass Note Piano
-          </p>
+        <Link href="/" aria-label="Bass Note Piano, home" className="relative mb-3 flex flex-col items-center text-center sm:mb-8">
+          <BrandLockup height={112} className="mb-1" priority />
           {/* Hidden below `sm` specifically, the one purely decorative line
               here, so it's the first thing to give way on the shortest
               phone screens where the reset-password card's own three

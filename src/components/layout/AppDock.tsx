@@ -1,10 +1,10 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { liquidGlass, type LiquidGlassOptions } from "@/lib/liquidGlass";
+import { motion, useReducedMotion } from "framer-motion";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -32,98 +32,8 @@ const DOCK_ICONS: Record<string, DockIcon> = {
 };
 
 
-const DOCK_H = 58;
-const LENS_H = 65;
-// How far the lens bends what is under its edge, in px, per colour. Red, green and blue bend by slightly different amounts, which is what
-// splits the light into a thin colour fringe (dispersion) right where the bend is strongest.
-/** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). */
+/** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). Real bend in Chrome, Edge and Android; frost elsewhere. */
 const GLASS: LiquidGlassOptions = { scale: -60, chroma: 4, border: 0.16, mapBlur: 3, blur: 2, saturate: 1.7, fallbackBlur: 16 };
-const BEND = { r: 34, g: 28, b: 22 };
-
-/**
- * The glass bubble over the current tab. It holds its own copy of the dock's icons, enlarged a little, and bends that copy with a real
- * displacement filter: the bend grows toward the bubble's edge and each colour bends by a different amount, so the icons near the edge
- * warp and fringe the way they do through a lens. It rides two motion values (its left edge and its width), so the copy always lines up
- * with the real icons beneath, in the main pill and in the Settings island alike.
- */
-type DockSlot = { cx: number; w: number };
-function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: readonly { href: string; icon: string }[]; activeIndex: number; slots: DockSlot[]; width: number; reduceMotion: boolean | null }) {
-  const slot = slots[activeIndex];
-  const lensW = slot ? Math.round(slot.w * 1.2) : 0;
-  const target = slot ? slot.cx - lensW / 2 : 0;
-  const x = useMotionValue(0);
-  const w = useMotionValue(lensW);
-  const inner = useTransform(x, (v) => -v);
-  const origin = useTransform([x, w], ([xv, wv]: number[]) => `${xv + wv / 2}px 50%`);
-  const placed = useRef(false);
-  useEffect(() => {
-    if (!slot) return;
-    if (!placed.current || reduceMotion) {
-      x.set(target);
-      w.set(lensW);
-      placed.current = true;
-      return;
-    }
-    const spring = { type: "spring" as const, stiffness: 300, damping: 21, mass: 0.9 };
-    const cx = animate(x, target, spring);
-    const cw = animate(w, lensW, spring);
-    return () => {
-      cx.stop();
-      cw.stop();
-    };
-  }, [target, lensW, slot, reduceMotion, x, w]);
-  if (!slot) return null;
-  return (
-    <>
-      <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
-        <defs>
-          <filter id="bnp-lens" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-            {/* The bend map is made from the lens's own shape (no image, which Safari will not draw): blur the shape, then take how fast it
-                changes left to right (red) and top to bottom (green). Flat in the middle, strongest at the rim, pointing inward. */}
-            <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="bl" />
-            <feColorMatrix in="bl" type="matrix" values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 1" result="g" />
-            <feConvolveMatrix in="g" order="3" kernelMatrix="1 0 -1 2 0 -2 1 0 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dx" />
-            <feConvolveMatrix in="g" order="3" kernelMatrix="1 2 1 0 0 0 -1 -2 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dy" />
-            <feColorMatrix in="dx" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="mx" />
-            <feColorMatrix in="dy" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="my" />
-            <feBlend in="mx" in2="my" mode="screen" result="map" />
-            {(["r", "g", "b"] as const).map((c) => (
-              <Fragment key={c}>
-                <feDisplacementMap in="SourceGraphic" in2="map" scale={BEND[c]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
-                <feColorMatrix
-                  in={`d${c}`}
-                  type="matrix"
-                  values={c === "r" ? "1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" : c === "g" ? "0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" : "0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"}
-                  result={`c${c}`}
-                />
-              </Fragment>
-            ))}
-            <feBlend in="cr" in2="cg" mode="screen" result="rg" />
-            <feBlend in="rg" in2="cb" mode="screen" result="bent" />
-            {/* Keep the bubble's own capsule outline: the bend would otherwise fill its rounded ends. */}
-            <feComposite in="bent" in2="SourceAlpha" operator="in" />
-          </filter>
-        </defs>
-      </svg>
-      <motion.div aria-hidden style={{ x, width: w, height: LENS_H, top: (DOCK_H - LENS_H) / 2 }} className="ig-lens-live pointer-events-none absolute left-0 rounded-full">
-        <div className="ig-lens-clip absolute inset-0 overflow-hidden rounded-full" style={{ filter: "url(#bnp-lens)" }}>
-          <motion.div style={{ x: inner, width, height: DOCK_H, top: (LENS_H - DOCK_H) / 2, transformOrigin: origin, scale: 1.14 }} className="absolute left-0">
-            {items.map((item, i) => (
-              <span
-                key={item.href}
-                style={{ left: (slots[i]?.cx ?? 0) - 13, top: (DOCK_H - 26) / 2 }}
-                className={`ig-dock-icon absolute flex h-[26px] w-[26px] items-center justify-center ${i === activeIndex ? "is-on" : ""}`}
-              >
-                <DockGlyphIcon icon={DOCK_ICONS[item.icon]} active={i === activeIndex} />
-              </span>
-            ))}
-          </motion.div>
-        </div>
-        <div className="ig-lens-sheen pointer-events-none absolute inset-0 rounded-full" />
-      </motion.div>
-    </>
-  );
-}
 
 function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
   const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -150,6 +60,8 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
+  /** The person's picture and menu, drawn in the round island at the right (see DockProfile). */
+  profileSlot?: React.ReactNode;
   /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
   isAdmin?: boolean;
 }
@@ -178,7 +90,6 @@ const NAV_ITEMS = [
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
-  { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
 const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
@@ -220,7 +131,7 @@ const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { hr
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ isAdmin = false }: AppDockProps) {
+export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
   const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
@@ -228,52 +139,12 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   // The tab just tapped lights up at once, before the new page has arrived.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
-  // The glass lens rises over the current tab while it moves (a tap, a press) and settles back to a quiet capsule a moment later.
-  const [lens, setLens] = useState(false);
-  const dockRef = useRef<HTMLDivElement>(null);
-  const [dockWidth, setDockWidth] = useState(0);
-  const [slots, setSlots] = useState<DockSlot[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
   const islandRef = useRef<HTMLDivElement>(null);
-  // The skill's liquid glass: what is behind each glass shape bends at its rim (Chrome, Edge, Android); Safari keeps the frost.
   useEffect(() => {
     const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
     return () => handles.forEach((h) => h.destroy());
   }, []);
-  const linkEls = useRef<(HTMLAnchorElement | null)[]>([]);
-  useEffect(() => {
-    const el = dockRef.current;
-    if (!el) return;
-    // Where each icon sits inside the dock (offsets ignore the shrink-on-scroll scale), so the lens can find any tab, in either pill.
-    const read = () => {
-      setDockWidth(el.offsetWidth);
-      setSlots(
-        linkEls.current.map((link) => {
-          if (!link) return { cx: 0, w: 0 };
-          const pill = link.offsetParent as HTMLElement | null;
-          return { cx: (pill?.offsetLeft ?? 0) + link.offsetLeft + link.offsetWidth / 2, w: link.offsetWidth };
-        }),
-      );
-    };
-    read();
-    const ro = new ResizeObserver(read);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [items.length]);
-  const lensTimer = useRef<number | undefined>(undefined);
-  function showLens(hold = false) {
-    setLens(true);
-    window.clearTimeout(lensTimer.current);
-    if (!hold) lensTimer.current = window.setTimeout(() => setLens(false), 750);
-  }
-  function releaseLens() {
-    window.clearTimeout(lensTimer.current);
-    lensTimer.current = window.setTimeout(() => setLens(false), 750);
-  }
-  useEffect(() => () => window.clearTimeout(lensTimer.current), []);
-  useEffect(() => {
-    if (pendingHref) showLens();
-  }, [pendingHref]);
   // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
@@ -327,9 +198,6 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
     return (
       <Link
         key={item.href}
-        ref={(el) => {
-          linkEls.current[index] = el;
-        }}
         href={item.href}
         data-prerender=""
         aria-label={item.label}
@@ -385,25 +253,19 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
           transformOrigin: "50% 100%",
           transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
-        ref={dockRef}
-        data-lens={lens ? "" : undefined}
-        onPointerDown={() => showLens(true)}
-        onPointerUp={releaseLens}
-        onPointerCancel={releaseLens}
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {/* Two separate glass shapes: the main pill holds every tab but Settings, and Settings sits alone in its own round island at the right. */}
+        {/* Two separate glass shapes: the main pill holds every tab, and the person's picture sits alone in its own round island at the right. */}
         <div
           ref={mainRef}
-          style={{ gridTemplateColumns: `repeat(${items.length - 1}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
           className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
-          {items.slice(0, -1).map((item, i) => renderTab(item, i, false))}
+          {items.map((item, i) => renderTab(item, i, false))}
         </div>
         <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
-          {renderTab(items[items.length - 1], items.length - 1, true)}
+          {profileSlot}
         </div>
-        {dockWidth > 0 && <DockLens items={items} activeIndex={items.findIndex(isActive)} slots={slots} width={dockWidth} reduceMotion={reduceMotion} />}
       </div>
     </div>
   );

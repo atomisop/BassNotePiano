@@ -2,6 +2,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lets a second dev server in the same folder keep its own build cache (NEXT_DIST_DIR=.next-alt); two servers sharing .next corrupt each other.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // resend declares @react-email/render as an *optional* peer dependency
   // (used only for rendering JSX email templates): this app never passes
   // resend a `react:` template, only plain html/text strings (see

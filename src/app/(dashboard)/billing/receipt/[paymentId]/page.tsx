@@ -25,7 +25,7 @@ export default async function ReceiptPage(props: { params: Promise<{ paymentId: 
       <article aria-labelledby="receipt-title" className="print-only-receipt rounded-card bg-neu-base p-6 sm:p-8">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Image src="/logo-mark.png" alt="" width={40} height={40} className="rounded-full" />
+            <Image src="/logo-mark.png" alt="" width={40} height={40} className="rounded-xl" />
             <p className="text-body font-semibold text-slate-50">Bass Note Piano</p>
           </div>
           <p className="text-small tabular-nums text-slate-400">{receipt.number}</p>

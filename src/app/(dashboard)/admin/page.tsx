@@ -64,8 +64,8 @@ export default async function AdminOverviewPage() {
       <h1 className="sr-only">Overview</h1>
 
       {/* Needs you: the jobs waiting right now, each one tap from where it is done. Empty is a good day. */}
-      <section aria-label="Needs you" className="mb-8">
-        <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Needs you</h2>
+      <section aria-label="Needs you" className={needsYou.length > 0 ? "mb-8" : "mb-5"}>
+        {needsYou.length > 0 && <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Needs you</h2>}
         {needsYou.length > 0 ? (
           <ul className={PANEL}>
             {needsYou.map((row) => (
@@ -78,7 +78,7 @@ export default async function AdminOverviewPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-body text-slate-50/80">Nothing needs you right now.</p>
+          <p className="text-small text-slate-400">Nothing needs you right now.</p>
         )}
       </section>
 
@@ -111,6 +111,8 @@ export default async function AdminOverviewPage() {
             }
           />
 
+          {/* With nothing booked, the hero already says so; the empty strip would repeat it. */}
+          {weekStudents > 0 && (
           <section aria-label="The next 7 days" className="min-w-0">
             <div className="flex items-baseline justify-between gap-3 px-1">
               <h2 className="text-title font-semibold text-slate-50">Next 7 days</h2>
@@ -143,6 +145,7 @@ export default async function AdminOverviewPage() {
               ))}
             </ul>
           </section>
+          )}
 
           {today.slots.length > 0 && (
             <section aria-label="Today's classes" className="min-w-0">

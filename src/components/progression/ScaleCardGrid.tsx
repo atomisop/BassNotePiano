@@ -74,9 +74,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
                   <Badge className="tint-peach shadow-none">You&apos;re here</Badge>
                 ) : isCompleted ? (
                   <Badge tone="success">{STATUS_LABEL[scale.status]}</Badge>
-                ) : locked ? (
-                  <Badge tone="locked">{STATUS_LABEL.LOCKED}</Badge>
-                ) : (
+                ) : locked ? null : (
                   <span className="text-small text-slate-400">{STATUS_LABEL[scale.status]}</span>
                 )}
               </div>

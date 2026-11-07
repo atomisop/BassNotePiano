@@ -73,7 +73,7 @@ export function BarTitle() {
   }, []);
 
   return (
-    <div ref={rowRef} className={`basis-full px-2 md:hidden ${title ? "pb-2.5 pt-1" : "hidden"}`}>
+    <div ref={rowRef} className={`basis-full px-2 md:hidden ${title ? "pb-3 pt-3" : "hidden"}`}>
       {eyebrow && <p className="truncate text-small font-medium text-slate-400">{eyebrow}</p>}
       <h1 className="truncate font-hero text-headline font-bold text-slate-50">{title}</h1>
     </div>

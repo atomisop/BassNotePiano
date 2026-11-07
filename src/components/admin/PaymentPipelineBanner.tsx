@@ -22,7 +22,7 @@ export function PaymentPipelineBanner({ health }: { health: PaymentPipelineHealt
   }
   return (
     <p className="mt-6 text-small text-slate-500">
-      Bank and Venmo emails: the last one arrived {describeAge(health.hoursSinceEmail)}.
+      {health.hoursSinceEmail === null ? "No bank or Venmo email has arrived yet." : `Bank and Venmo emails: the last one arrived ${describeAge(health.hoursSinceEmail)}.`}
     </p>
   );
 }

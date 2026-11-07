@@ -609,6 +609,10 @@ export function AssistantWidget() {
   }
 
   async function sendSupportMessage(trimmed: string) {
+    // Optimistic: the message appears in the thread at once; the server's own list replaces it when it answers, and it is taken
+    // back out (with the error line) if the send fails.
+    const pendingId = `pending-${Date.now()}`;
+    setThreadMessages((prev) => [...prev, { id: pendingId, sender: "VISITOR", body: trimmed }]);
     setLoading(true);
     try {
       const res = await fetch(`/api/assistant/support/${activeEscalationId}`, {
@@ -618,6 +622,7 @@ export function AssistantWidget() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
+        setThreadMessages((prev) => prev.filter((m) => m.id !== pendingId));
         setError(data?.error ?? "Something went wrong sending that. Try again in a moment.");
         return;
       }
@@ -625,6 +630,7 @@ export function AssistantWidget() {
       setThreadStatus(data.status);
       setSupportTyping(Boolean(data.supportTyping));
     } catch {
+      setThreadMessages((prev) => prev.filter((m) => m.id !== pendingId));
       setError("Couldn't send that. Check your connection and try again.");
     } finally {
       setLoading(false);

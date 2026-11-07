@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { DiscordIcon } from "@/components/ui/icons";
@@ -44,7 +44,7 @@ export function SiteFooter() {
                 nav's was updated. Fully accent-colored at the time; neutral
                 again now under the "premium black and white" pass. */}
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8" />
+              <BrandLogo height={22} className="text-slate-50" />
               <span className="font-serif text-small font-bold lowercase tracking-tight text-slate-50">
                 Bass Note Piano
               </span>

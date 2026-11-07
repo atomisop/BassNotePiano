@@ -125,7 +125,7 @@ export function IosBanner({
         <Tap href={href} onClick={() => close("tapped")}>
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded-sm object-cover" />
+            <img src="/logo-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded-md object-cover" />
             <span className="text-caption font-semibold uppercase tracking-wide text-slate-400">Bass Note Piano</span>
             <span className="ml-auto text-caption text-slate-500 [@media(hover:hover)]:mr-7">now</span>
           </div>

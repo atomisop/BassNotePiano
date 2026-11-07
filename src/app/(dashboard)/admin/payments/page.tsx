@@ -51,10 +51,12 @@ export default async function AdminPaymentsPage(
       <h1 className="sr-only">Payments</h1>
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
-      <p className="mt-2 text-small text-slate-500">
-        {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-        {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
-      </p>
+      {total > 0 && (
+        <p className="mt-2 text-small text-slate-500">
+          {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
+          {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
+        </p>
+      )}
 
       <div className="mt-6">
         <AdminFilterTabs
