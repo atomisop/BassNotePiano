@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -30,11 +30,143 @@ const DOCK_ICONS: Record<string, DockIcon> = {
   settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
 };
 
+
+const DOCK_H = 58;
+const LENS_H = 65;
+// How far the lens bends what is under its edge, in px, per colour. Red, green and blue bend by slightly different amounts, which is what
+// splits the light into a thin colour fringe (dispersion) right where the bend is strongest.
+const BEND = { r: 34, g: 28, b: 22 };
+
+/**
+ * The glass bubble over the current tab. It holds its own copy of the dock's icons, enlarged a little, and bends that copy with a real
+ * displacement filter: the bend grows toward the bubble's edge and each colour bends by a different amount, so the icons near the edge
+ * warp and fringe the way they do through a lens. It rides two motion values (its left edge and its width), so the copy always lines up
+ * with the real icons beneath, in the main pill and in the Settings island alike.
+ */
+type DockSlot = { cx: number; w: number };
+function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: readonly { href: string; icon: string }[]; activeIndex: number; slots: DockSlot[]; width: number; reduceMotion: boolean | null }) {
+  const slot = slots[activeIndex];
+  const lensW = slot ? Math.round(slot.w * 1.2) : 0;
+  const target = slot ? slot.cx - lensW / 2 : 0;
+  const x = useMotionValue(0);
+  const w = useMotionValue(lensW);
+  const inner = useTransform(x, (v) => -v);
+  const origin = useTransform([x, w], ([xv, wv]: number[]) => `${xv + wv / 2}px 50%`);
+  const placed = useRef(false);
+  useEffect(() => {
+    if (!slot) return;
+    if (!placed.current || reduceMotion) {
+      x.set(target);
+      w.set(lensW);
+      placed.current = true;
+      return;
+    }
+    const spring = { type: "spring" as const, stiffness: 300, damping: 21, mass: 0.9 };
+    const cx = animate(x, target, spring);
+    const cw = animate(w, lensW, spring);
+    return () => {
+      cx.stop();
+      cw.stop();
+    };
+  }, [target, lensW, slot, reduceMotion, x, w]);
+  if (!slot) return null;
+  return (
+    <>
+      <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
+        <defs>
+          <filter id="bnp-lens" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            {/* The bend map is made from the lens's own shape (no image, which Safari will not draw): blur the shape, then take how fast it
+                changes left to right (red) and top to bottom (green). Flat in the middle, strongest at the rim, pointing inward. */}
+            <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="bl" />
+            <feColorMatrix in="bl" type="matrix" values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 1" result="g" />
+            <feConvolveMatrix in="g" order="3" kernelMatrix="1 0 -1 2 0 -2 1 0 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dx" />
+            <feConvolveMatrix in="g" order="3" kernelMatrix="1 2 1 0 0 0 -1 -2 -1" divisor="0.3" bias="0.5" preserveAlpha="true" result="dy" />
+            <feColorMatrix in="dx" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="mx" />
+            <feColorMatrix in="dy" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="my" />
+            <feBlend in="mx" in2="my" mode="screen" result="map" />
+            {(["r", "g", "b"] as const).map((c) => (
+              <Fragment key={c}>
+                <feDisplacementMap in="SourceGraphic" in2="map" scale={BEND[c]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
+                <feColorMatrix
+                  in={`d${c}`}
+                  type="matrix"
+                  values={c === "r" ? "1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" : c === "g" ? "0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" : "0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"}
+                  result={`c${c}`}
+                />
+              </Fragment>
+            ))}
+            <feBlend in="cr" in2="cg" mode="screen" result="rg" />
+            <feBlend in="rg" in2="cb" mode="screen" result="bent" />
+            {/* Keep the bubble's own capsule outline: the bend would otherwise fill its rounded ends. */}
+            <feComposite in="bent" in2="SourceAlpha" operator="in" />
+          </filter>
+        </defs>
+      </svg>
+      <motion.div aria-hidden style={{ x, width: w, height: LENS_H, top: (DOCK_H - LENS_H) / 2 }} className="ig-lens-live pointer-events-none absolute left-0 rounded-full">
+        <div className="ig-lens-clip absolute inset-0 overflow-hidden rounded-full" style={{ filter: "url(#bnp-lens)" }}>
+          <motion.div style={{ x: inner, width, height: DOCK_H, top: (LENS_H - DOCK_H) / 2, transformOrigin: origin, scale: 1.14 }} className="absolute left-0">
+            {items.map((item, i) => (
+              <span
+                key={item.href}
+                style={{ left: (slots[i]?.cx ?? 0) - 13, top: (DOCK_H - 26) / 2 }}
+                className={`ig-dock-icon absolute flex h-[26px] w-[26px] items-center justify-center ${i === activeIndex ? "is-on" : ""}`}
+              >
+                <DockGlyphIcon icon={DOCK_ICONS[item.icon]} active={i === activeIndex} />
+              </span>
+            ))}
+          </motion.div>
+        </div>
+        <div className="ig-lens-sheen pointer-events-none absolute inset-0 rounded-full" />
+      </motion.div>
+    </>
+  );
+}
+
+/** A bend map for feDisplacementMap: neutral in the middle, pushing inward more toward every edge (red sideways, green up and down). */
+function glassMap(w: number, h: number): string {
+  const edge = (a: string, b: string) =>
+    `<stop offset="0" stop-color="${a}"/><stop offset=".3" stop-color="${b}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${a.replace("255", "0")}"/>`;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<defs><linearGradient id="x" x1="0" x2="1" y1="0" y2="0">${edge("rgb(255,0,0)", "rgb(128,0,0)")}</linearGradient>` +
+    `<linearGradient id="y" x1="0" x2="0" y1="0" y2="1">${edge("rgb(0,255,0)", "rgb(0,128,0)")}</linearGradient></defs>` +
+    `<rect width="${w}" height="${h}" fill="#000"/><rect width="${w}" height="${h}" fill="url(#x)"/>` +
+    `<rect width="${w}" height="${h}" fill="url(#y)" style="mix-blend-mode:screen"/></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * What is behind the dock bends where the glass is thick, at its edges, and splits into a faint colour fringe. This is a backdrop filter, so
+ * only browsers that allow an SVG filter on a backdrop (Chrome, Edge, Android) show the bend; Safari ignores it and keeps the plain frost.
+ */
+function DockGlassFilter({ id, w, h }: { id: string; w: number; h: number }) {
+  if (w <= 0) return null;
+  const map = glassMap(w, h);
+  return (
+    <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width={w} height={h} colorInterpolationFilters="sRGB">
+      <feImage href={map} x="0" y="0" width={w} height={h} preserveAspectRatio="none" result="map" />
+      {(["r", "g", "b"] as const).map((c, i) => (
+        <Fragment key={c}>
+          <feDisplacementMap in="SourceGraphic" in2="map" scale={[64, 54, 44][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
+          <feColorMatrix
+            in={`d${c}`}
+            type="matrix"
+            values={c === "r" ? "1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" : c === "g" ? "0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" : "0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"}
+            result={`c${c}`}
+          />
+        </Fragment>
+      ))}
+      <feBlend in="cr" in2="cg" mode="screen" result="rg" />
+      <feBlend in="rg" in2="cb" mode="screen" />
+    </filter>
+  );
+}
+
 function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
   const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   const filled = active && Boolean(icon.fill?.length);
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-[26px] w-[26px]">
+    <svg aria-hidden viewBox="0 0 24 24" className={`h-[26px] w-[26px] origin-center transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${active ? "scale-[1.14]" : ""}`}>
       {icon.paths.map((d, i) =>
         filled && icon.fill?.includes(i) ? (
           <path key={i} d={d} {...line} fill="currentColor" strokeWidth={2} />
@@ -133,6 +265,48 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   // The tab just tapped lights up at once, before the new page has arrived.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
+  // The glass lens rises over the current tab while it moves (a tap, a press) and settles back to a quiet capsule a moment later.
+  const [lens, setLens] = useState(false);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockWidth, setDockWidth] = useState(0);
+  const [slots, setSlots] = useState<DockSlot[]>([]);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [mainW, setMainW] = useState(0);
+  const linkEls = useRef<(HTMLAnchorElement | null)[]>([]);
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!el) return;
+    // Where each icon sits inside the dock (offsets ignore the shrink-on-scroll scale), so the lens can find any tab, in either pill.
+    const read = () => {
+      setDockWidth(el.offsetWidth);
+      setMainW(mainRef.current?.offsetWidth ?? 0);
+      setSlots(
+        linkEls.current.map((link) => {
+          if (!link) return { cx: 0, w: 0 };
+          const pill = link.offsetParent as HTMLElement | null;
+          return { cx: (pill?.offsetLeft ?? 0) + link.offsetLeft + link.offsetWidth / 2, w: link.offsetWidth };
+        }),
+      );
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [items.length]);
+  const lensTimer = useRef<number | undefined>(undefined);
+  function showLens(hold = false) {
+    setLens(true);
+    window.clearTimeout(lensTimer.current);
+    if (!hold) lensTimer.current = window.setTimeout(() => setLens(false), 750);
+  }
+  function releaseLens() {
+    window.clearTimeout(lensTimer.current);
+    lensTimer.current = window.setTimeout(() => setLens(false), 750);
+  }
+  useEffect(() => () => window.clearTimeout(lensTimer.current), []);
+  useEffect(() => {
+    if (pendingHref) showLens();
+  }, [pendingHref]);
   // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
@@ -174,6 +348,59 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
     };
   }, [pathname]);
 
+  function isActive(item: { href: string }) {
+    const at = pendingHref ?? pathname;
+    // A scale's page belongs to the Roadmap tab.
+    return at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
+  }
+  function renderTab(item: (typeof items)[number], index: number, island: boolean) {
+    const active = isActive(item);
+    const current = pathname === item.href;
+    const icon = DOCK_ICONS[item.icon];
+    return (
+      <Link
+        key={item.href}
+        ref={(el) => {
+          linkEls.current[index] = el;
+        }}
+        href={item.href}
+        data-prerender=""
+        aria-label={item.label}
+        aria-current={current ? "page" : undefined}
+        // The current tab again means "take me to the top" (it would only reload the same page).
+        onClick={
+          current
+            ? (e) => {
+                e.preventDefault();
+                window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
+              }
+            : () => {
+                setPendingHref(item.href);
+                window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
+              }
+        }
+        data-tour={"dataTour" in item ? item.dataTour : undefined}
+        className={`tap relative flex h-full select-none items-center justify-center rounded-full [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${island ? "w-full" : ""}`}
+        draggable={false}
+      >
+        {active && (
+          <motion.span
+            layoutId="dock-active-pill"
+            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 24, mass: 0.9 }}
+            className={`ig-dock-active pointer-events-none absolute inset-y-0 rounded-full ${island ? "inset-x-0" : "-inset-x-[6px]"}`}
+          />
+        )}
+        <motion.span
+          // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
+          whileTap={{ scale: 0.82 }}
+          transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
+          className={`ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center ${active ? "is-on" : ""}`}
+        >
+          <DockGlyphIcon icon={icon} active={active} />
+        </motion.span>
+      </Link>
+    );
+  }
 
   return (
     <div
@@ -185,62 +412,37 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
           screen edges, a dark smoky tint over a heavy frost with a bright glass rim, five icon slots 10pt in from the ends, and an
           82 by 50pt light capsule behind the current tab that slides to the next one. Colors in .ig-dock in globals.css, one set per theme. */}
       <div
-        // Scrolling down shrinks the whole pill (both ways, like Instagram's), anchored at the bottom so it stays above the home bar.
+        // Scrolling down shrinks the whole dock (both ways, like Instagram's), anchored at the bottom so it stays above the home bar.
         style={{
           transform: narrow ? "scale(0.84)" : "scale(1)",
           transformOrigin: "50% 100%",
           transition: reduceMotion ? undefined : "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
-        className="ig-dock pointer-events-auto relative grid h-[58px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full px-[10px] py-[4px]"
+        ref={dockRef}
+        data-lens={lens ? "" : undefined}
+        onPointerDown={() => showLens(true)}
+        onPointerUp={releaseLens}
+        onPointerCancel={releaseLens}
+        className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {items.map((item) => {
-          const at = pendingHref ?? pathname;
-          // A scale's page belongs to the Roadmap tab.
-          const active =
-            at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
-          const current = pathname === item.href;
-          const icon = DOCK_ICONS[item.icon];
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              data-prerender=""
-              aria-label={item.label}
-              aria-current={current ? "page" : undefined}
-              // The current tab again means "take me to the top" (it would only reload the same page).
-              onClick={
-                current
-                  ? (e) => {
-                      e.preventDefault();
-                      window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
-                    }
-                  : () => {
-                      setPendingHref(item.href);
-                      window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
-                    }
-              }
-              data-tour={"dataTour" in item ? item.dataTour : undefined}
-              className="tap relative flex h-full items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {active && (
-                <motion.span
-                  layoutId="dock-active-pill"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="ig-dock-active pointer-events-none absolute -inset-x-[4.5px] inset-y-0 rounded-full"
-                />
-              )}
-              <motion.span
-                // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
-                whileTap={{ scale: 0.82 }}
-                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className="ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center"
-              >
-                <DockGlyphIcon icon={icon} active={active} />
-              </motion.span>
-
-            </Link>
-          );
-        })}
+        {/* Two separate glass shapes: the main pill holds every tab but Settings, and Settings sits alone in its own round island at the right. */}
+        <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
+          <defs>
+            <DockGlassFilter id="bnp-glass-main" w={mainW} h={DOCK_H} />
+            <DockGlassFilter id="bnp-glass-island" w={DOCK_H} h={DOCK_H} />
+          </defs>
+        </svg>
+        <div
+          ref={mainRef}
+          style={{ gridTemplateColumns: `repeat(${items.length - 1}, minmax(0, 1fr))` }}
+          className="ig-dock ig-glass-main pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
+        >
+          {items.slice(0, -1).map((item, i) => renderTab(item, i, false))}
+        </div>
+        <div className="ig-dock ig-glass-island pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
+          {renderTab(items[items.length - 1], items.length - 1, true)}
+        </div>
+        {dockWidth > 0 && <DockLens items={items} activeIndex={items.findIndex(isActive)} slots={slots} width={dockWidth} reduceMotion={reduceMotion} />}
       </div>
     </div>
   );
