@@ -491,9 +491,10 @@ export function ClassBookingClient({
       {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
       {/* The page's own title ("Lessons") sits above this on the page; this names the section. */}
-      <h2 className="text-headline font-semibold text-balance text-slate-50">{extraMode ? "Book an extra class" : "Book a class"}</h2>
+      {/* The Book tab already says it; only the extra-class mode needs its own heading. */}
+      {extraMode && <h2 className="text-headline font-semibold text-balance text-slate-50">Book an extra class</h2>}
 
-      <div className="mt-(--space-group)">
+      <div className={extraMode ? "mt-(--space-group)" : ""}>
         <Tabs<TabId>
           label="Booking, upcoming and past classes"
           value={tab}
