@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, ClipboardCheck, NotebookPen, Settings, Users } from "@/components/ui/appIcons";
+import { Bell, ClipboardCheck, NotebookPen, Users } from "@/components/ui/appIcons";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import { SignOut } from "@/components/ui/appIcons";
 
@@ -32,6 +32,8 @@ export interface ProfileMenuProps {
    * Tablets and computers keep their buttons in the bar and never see these rows.
    */
   appExtras?: { isAdmin: boolean };
+  /** "dock": the picture fills the dock's round island and the menu opens upward, since it sits at the bottom of the screen. */
+  placement?: "down" | "up";
 }
 
 /**
@@ -45,7 +47,7 @@ export interface ProfileMenuProps {
  * TopBar's ProfileAvatarLink) since `image` is deliberately kept out of the
  * JWT/session.
  */
-export function ProfileMenu({ name, username, email, image, isOwner = false, triggerClassName, appExtras }: ProfileMenuProps) {
+export function ProfileMenu({ name, username, email, image, isOwner = false, triggerClassName, appExtras, placement = "down" }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   // Counts the hidden top bar buttons announce, shown here and on the picture (phones only).
   const [unread, setUnread] = useState(0);
@@ -83,32 +85,33 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
   const initial = (name ?? username ?? "?").charAt(0).toUpperCase();
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={placement === "up" ? "relative h-full w-full" : "relative"}>
       <button
         ref={triggerRef}
         type="button"
-        aria-label={appExtras ? (phoneBadge > 0 ? `Settings and more, ${phoneBadge} new` : "Settings and more") : "Your account"}
+        aria-label={appExtras && phoneBadge > 0 ? `Your account, ${phoneBadge} new` : "Your account"}
         aria-expanded={open}
-        data-tour={appExtras ? "nav-settings" : "nav-profile"}
+        data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`tap press relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] ${
-          open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-        } ${triggerClassName ?? ""}`}
+        className={
+          placement === "up"
+            ? `relative flex h-full w-full select-none items-center justify-center rounded-full p-[4px] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${triggerClassName ?? ""}`
+            : `tap press relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] ${
+                open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              } ${triggerClassName ?? ""}`
+        }
       >
-        <span className={`block h-full w-full overflow-hidden rounded-full ${appExtras ? "flex items-center justify-center text-slate-50" : "bg-slate-50/10 shadow-pressed-low"}`}>
-          {appExtras ? (
-            // In the app the top-right button is Settings (the picture lives on the dock's Profile island).
-            <Settings className="h-5 w-5" strokeWidth={1.5} />
-          ) : image ? (
+        <span className="block h-full w-full overflow-hidden rounded-full bg-slate-50/10 shadow-pressed-low">
+          {image ? (
             // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
             // The letter is drawn by CSS (not text in the page): the button already has a name ("Your account"), and a one-letter avatar
             // is decoration that would otherwise count as visible text the name must contain.
-            <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-slate-50 after:content-[attr(data-char)]" />
+            <span aria-hidden data-char={initial} className={`flex h-full w-full items-center justify-center text-slate-50 after:content-[attr(data-char)] ${placement === "up" ? "text-title" : "text-small"}`} />
           )}
         </span>
-        {isOwner && !appExtras && <OwnerStarBadge />}
+        {isOwner && <OwnerStarBadge />}
         {appExtras && phoneBadge > 0 && (
           // Phones only: the bell and the attendance button are in this menu there, so their counts show on the picture.
           <span aria-hidden data-char={phoneBadge > 9 ? "9+" : String(phoneBadge)} className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 after:content-[attr(data-char)] md:hidden" />
@@ -130,8 +133,8 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           initial="hidden"
           animate="visible"
           exit="exit"
-          style={{ transformOrigin: "top right" }}
-          className="glass-menu absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
+          style={{ transformOrigin: placement === "up" ? "bottom right" : "top right" }}
+          className={`glass-menu absolute right-0 z-50 w-64 overflow-hidden p-1.5 ${placement === "up" ? "bottom-[calc(100%+1.1rem)]" : "top-[calc(100%+0.5rem)]"}`}
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-50/30 bg-neu-base shadow-pressed-low">
@@ -183,23 +186,23 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
               Home
             </Link>
           )}
-          {/* In the app the dock's island is Profile; the menu opened by the top-right Settings button starts with Settings itself. */}
-          {!appExtras && (
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-            >
-              Profile
-            </Link>
-          )}
           <Link
-            href="/account"
+            href="/profile"
             onClick={() => setOpen(false)}
             className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
-            Settings
+            Profile
           </Link>
+          {/* Inside the app Settings is the gear in the top bar; the menu repeats it only on the public pages. */}
+          {!appExtras && (
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            >
+              Settings
+            </Link>
+          )}
 
           <div className="my-1.5 border-t border-ink/10" />
 

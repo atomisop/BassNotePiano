@@ -12,6 +12,7 @@ import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { NavPendingGate } from "@/components/layout/NavPendingGate";
 import { SwipeBack } from "@/components/layout/SwipeBack";
+import { DockProfile } from "@/components/layout/DockProfile";
 import { AppDock } from "@/components/layout/AppDock";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -130,7 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </Suspense>
       <DeckStack />
       <div className="lg:hidden">
-        <AppDock isAdmin={isAdmin} />
+        <AppDock isAdmin={isAdmin} profileSlot={<DockProfile isAdmin={isAdmin} />} />
       </div>
       <AppSidebar cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
       <CommandMenu isAdmin={isAdmin} />

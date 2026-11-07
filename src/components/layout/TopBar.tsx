@@ -1,13 +1,10 @@
-import { getServerAuthSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { StudentNotesPanel } from "@/components/admin/StudentNotesPanel";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
-import { ProfileMenu } from "./ProfileMenu";
+import { TopSettingsLink } from "./TopSettingsLink";
 import { AdminTopLink } from "./AdminTopLink";
 import { Breadcrumb } from "./Breadcrumb";
 import { FriendsTopLink } from "./FriendsTopLink";
-import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { TopBarTools } from "./TopBarTools";
 import { AdminAlertsButton } from "./AdminAlertsButton";
@@ -29,28 +26,6 @@ import { BarTitle } from "./BarTitle";
  * open/close state and outside-click handling can't live in a Server
  * Component.
  */
-async function ProfileAvatarLink({ isAdmin }: { isAdmin: boolean }) {
-  const session = await getServerAuthSession();
-  if (!session?.user) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, username: true, image: true },
-  });
-  if (!user) return null;
-
-  return (
-    <ProfileMenu
-      name={user.name}
-      username={user.username}
-      email={session.user.email ?? null}
-      image={user.image}
-      isOwner={isOwnerEmail(session.user.email)}
-      appExtras={{ isAdmin }}
-    />
-  );
-}
-
 export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean; isOwner: boolean; alertCards?: SidebarCard[] }) {
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
@@ -148,7 +123,7 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         {/* The admin's alerts (Discord, stopped jobs, what is waiting), right before the profile picture. */}
         {isAdmin && <AdminAlertsButton cards={alertCards} />}
         </div>
-        <ProfileAvatarLink isAdmin={isAdmin} />
+        <TopSettingsLink />
         </div>
       </div>
       <BarTitle />

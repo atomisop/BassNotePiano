@@ -29,8 +29,6 @@ const DOCK_ICONS: Record<string, DockIcon> = {
   friends: { paths: COOLICONS.friends.paths },
   admin: { paths: [`M20 10.165${SHIELD_CHECK.slice(SHIELD_SPLIT + "m11-.835".length)}`, SHIELD_CHECK.slice(0, SHIELD_SPLIT)], fill: [0], cut: [1] },
   settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
-  // coolicons "user-circle", unchanged. The ring is the outline; the head and shoulders fill under it when it is the current tab.
-  profile: { paths: COOLICONS.profile.paths },
 };
 
 
@@ -62,6 +60,8 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
+  /** The person's picture and menu, drawn in the round island at the right (see DockProfile). */
+  profileSlot?: React.ReactNode;
   /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
   isAdmin?: boolean;
 }
@@ -90,7 +90,6 @@ const NAV_ITEMS = [
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
-  { href: "/profile", label: "Profile", icon: "profile", dataTour: "nav-profile" },
 ] as const;
 const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
@@ -132,7 +131,7 @@ const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { hr
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ isAdmin = false }: AppDockProps) {
+export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
   const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
@@ -256,16 +255,16 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         }}
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {/* Two separate glass shapes: the main pill holds every tab but Profile, and Profile sits alone in its own round island at the right. */}
+        {/* Two separate glass shapes: the main pill holds every tab, and the person's picture sits alone in its own round island at the right. */}
         <div
           ref={mainRef}
-          style={{ gridTemplateColumns: `repeat(${items.length - 1}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
           className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
-          {items.slice(0, -1).map((item, i) => renderTab(item, i, false))}
+          {items.map((item, i) => renderTab(item, i, false))}
         </div>
         <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
-          {renderTab(items[items.length - 1], items.length - 1, true)}
+          {profileSlot}
         </div>
       </div>
     </div>
