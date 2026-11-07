@@ -3,8 +3,8 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { liquidGlass, type LiquidGlassOptions } from "@/lib/liquidGlass";
+import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform, useVelocity, type MotionValue } from "framer-motion";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -36,7 +36,7 @@ const DOCK_H = 58;
 const LENS_H = 65;
 // How far the lens bends what is under its edge, in px, per colour. Red, green and blue bend by slightly different amounts, which is what
 // splits the light into a thin colour fringe (dispersion) right where the bend is strongest.
-/** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). */
+/** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). Real bend in Chrome, Edge and Android; frost elsewhere. */
 const GLASS: LiquidGlassOptions = { scale: -60, chroma: 4, border: 0.16, mapBlur: 3, blur: 2, saturate: 1.7, fallbackBlur: 16 };
 const BEND = { r: 34, g: 28, b: 22 };
 
@@ -47,7 +47,7 @@ const BEND = { r: 34, g: 28, b: 22 };
  * with the real icons beneath, in the main pill and in the Settings island alike.
  */
 type DockSlot = { cx: number; w: number };
-function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: readonly { href: string; icon: string }[]; activeIndex: number; slots: DockSlot[]; width: number; reduceMotion: boolean | null }) {
+function DockLens({ items, activeIndex, slots, width, reduceMotion, dragCx, settleKey }: { items: readonly { href: string; icon: string }[]; activeIndex: number; slots: DockSlot[]; width: number; reduceMotion: boolean | null; dragCx: MotionValue<number>; settleKey: number }) {
   const slot = slots[activeIndex];
   const lensW = slot ? Math.round(slot.w * 1.2) : 0;
   const target = slot ? slot.cx - lensW / 2 : 0;
@@ -56,8 +56,15 @@ function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: r
   const inner = useTransform(x, (v) => -v);
   const origin = useTransform([x, w], ([xv, wv]: number[]) => `${xv + wv / 2}px 50%`);
   const placed = useRef(false);
+  // While a finger drags the bubble it follows the finger 1:1; it stretches along the direction it moves (a drop of liquid) and relaxes
+  // back to its shape as it slows.
+  useMotionValueEvent(dragCx, "change", (v) => {
+    if (!Number.isNaN(v)) x.set(v - w.get() / 2);
+  });
+  const stretch = useTransform(useVelocity(x), (v) => 1 + Math.min(Math.abs(v) / 3200, 0.3));
+  const squash = useTransform(stretch, (k) => 1 / Math.sqrt(k));
   useEffect(() => {
-    if (!slot) return;
+    if (!slot || !Number.isNaN(dragCx.get())) return;
     if (!placed.current || reduceMotion) {
       x.set(target);
       w.set(lensW);
@@ -71,7 +78,7 @@ function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: r
       cx.stop();
       cw.stop();
     };
-  }, [target, lensW, slot, reduceMotion, x, w]);
+  }, [target, lensW, slot, reduceMotion, x, w, settleKey, dragCx]);
   if (!slot) return null;
   return (
     <>
@@ -105,7 +112,7 @@ function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: r
           </filter>
         </defs>
       </svg>
-      <motion.div aria-hidden style={{ x, width: w, height: LENS_H, top: (DOCK_H - LENS_H) / 2 }} className="ig-lens-live pointer-events-none absolute left-0 rounded-full">
+      <motion.div aria-hidden style={{ x, width: w, height: LENS_H, top: (DOCK_H - LENS_H) / 2, scaleX: stretch, scaleY: squash }} className="ig-lens-live pointer-events-none absolute left-0 rounded-full">
         <div className="ig-lens-clip absolute inset-0 overflow-hidden rounded-full" style={{ filter: "url(#bnp-lens)" }}>
           <motion.div style={{ x: inner, width, height: DOCK_H, top: (LENS_H - DOCK_H) / 2, transformOrigin: origin, scale: 1.14 }} className="absolute left-0">
             {items.map((item, i) => (
@@ -233,9 +240,63 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   const dockRef = useRef<HTMLDivElement>(null);
   const [dockWidth, setDockWidth] = useState(0);
   const [slots, setSlots] = useState<DockSlot[]>([]);
+  // Press and drag across the bar: the glass bubble follows the finger, stretching like liquid, and lands on the nearest tab when let go.
+  const dragCx = useMotionValue(Number.NaN);
+  const [settleKey, setSettleKey] = useState(0);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const press = useRef<{ id: number; startX: number; dragging: boolean } | null>(null);
+  const dragged = useRef(false);
+  function nearestSlot(cx: number) {
+    let best = 0;
+    slots.forEach((sl, i) => {
+      if (sl.w && Math.abs(sl.cx - cx) < Math.abs((slots[best]?.cx ?? 1e9) - cx)) best = i;
+    });
+    return best;
+  }
+  function onDockDown(e: React.PointerEvent) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    press.current = { id: e.pointerId, startX: e.clientX, dragging: false };
+    dragged.current = false;
+    showLens(true);
+  }
+  function onDockMove(e: React.PointerEvent) {
+    const p = press.current;
+    const el = dockRef.current;
+    if (!p || !el || p.id !== e.pointerId) return;
+    if (!p.dragging) {
+      if (Math.abs(e.clientX - p.startX) < 8) return;
+      p.dragging = true;
+      dragged.current = true;
+      el.setPointerCapture(e.pointerId);
+    }
+    const rect = el.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) / (rect.width / el.offsetWidth);
+    const first = slots[0]?.cx ?? 0;
+    const last = slots[slots.length - 1]?.cx ?? cx;
+    dragCx.set(Math.min(last, Math.max(first, cx)));
+    const near = nearestSlot(cx);
+    setPreviewIndex((cur) => (cur === near ? cur : near));
+  }
+  function onDockUp(e: React.PointerEvent) {
+    const p = press.current;
+    press.current = null;
+    if (p?.dragging) {
+      const near = nearestSlot(dragCx.get());
+      dragCx.set(Number.NaN);
+      setPreviewIndex(null);
+      setSettleKey((k) => k + 1);
+      const item = items[near];
+      if (item && !isActive(item)) {
+        router.push(item.href);
+        setPendingHref(item.href);
+        window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
+      }
+      window.setTimeout(() => (dragged.current = false), 0);
+    }
+    releaseLens();
+  }
   const mainRef = useRef<HTMLDivElement>(null);
   const islandRef = useRef<HTMLDivElement>(null);
-  // The skill's liquid glass: what is behind each glass shape bends at its rim (Chrome, Edge, Android); Safari keeps the frost.
   useEffect(() => {
     const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
     return () => handles.forEach((h) => h.destroy());
@@ -334,9 +395,11 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         data-prerender=""
         aria-label={item.label}
         aria-current={current ? "page" : undefined}
-        // The current tab again means "take me to the top" (it would only reload the same page).
+        // The current tab again means "take me to the top" (it would only reload the same page). A drag that ended on a tab is not a tap.
         onClick={
-          current
+          dragged.current
+            ? (e) => e.preventDefault()
+            : current
             ? (e) => {
                 e.preventDefault();
                 window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
@@ -387,10 +450,11 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         }}
         ref={dockRef}
         data-lens={lens ? "" : undefined}
-        onPointerDown={() => showLens(true)}
-        onPointerUp={releaseLens}
-        onPointerCancel={releaseLens}
-        className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
+        onPointerDown={onDockDown}
+        onPointerMove={onDockMove}
+        onPointerUp={onDockUp}
+        onPointerCancel={onDockUp}
+        className="pointer-events-none relative flex w-full max-w-[26rem] touch-none items-center gap-2"
       >
         {/* Two separate glass shapes: the main pill holds every tab but Settings, and Settings sits alone in its own round island at the right. */}
         <div
@@ -403,7 +467,7 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
           {renderTab(items[items.length - 1], items.length - 1, true)}
         </div>
-        {dockWidth > 0 && <DockLens items={items} activeIndex={items.findIndex(isActive)} slots={slots} width={dockWidth} reduceMotion={reduceMotion} />}
+        {dockWidth > 0 && <DockLens items={items} activeIndex={previewIndex ?? items.findIndex(isActive)} slots={slots} width={dockWidth} reduceMotion={reduceMotion} dragCx={dragCx} settleKey={settleKey} />}
       </div>
     </div>
   );
