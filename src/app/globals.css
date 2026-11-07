@@ -1849,10 +1849,17 @@ input[type="radio"],
 }
 
 /* View transitions between screens: a quick crossfade of the page; the dock, the top bar and the sidebar are named so they stay put. */
-::view-transition-old(root),
+/* The old screen stays fully solid underneath and the new one fades in over it (a plain crossfade fades both, so the translucent dock glass,
+   which is part of the snapshot, dipped to see-through halfway and then came back blurry). Normal blending, since the default plus-lighter
+   would brighten the solid pair. */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
 ::view-transition-new(root) {
   animation-duration: 160ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  mix-blend-mode: normal;
 }
 .app-sidebar {
   view-transition-name: app-sidebar;
