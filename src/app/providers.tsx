@@ -6,6 +6,7 @@ import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
 import { OfflineNotice } from "@/components/ui/OfflineNotice";
+import { HoverHints } from "@/components/ui/HoverHints";
 import { ServiceWorkerSetup } from "@/components/pwa/ServiceWorkerSetup";
 import { LaunchSplash } from "@/components/pwa/LaunchSplash";
 import { NavigationOverlay } from "@/components/layout/NavigationOverlay";
@@ -42,6 +43,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               resolve against come from <html data-theme>, which this sets. */}
           <Toaster />
           <OfflineNotice />
+          <HoverHints />
           <ServiceWorkerSetup />
           <LaunchSplash />
           {/* Atom, the assistant widget, same "every page, one mount point"
