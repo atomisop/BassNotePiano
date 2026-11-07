@@ -23,10 +23,14 @@ export const SPRING = {
 /** Fades that go with a spring (opacity should not overshoot). */
 export const FADE: Transition = { duration: 0.2, ease: EASE_IOS };
 
-/** Expand/collapse: height and opacity together, with a soft fade. */
+/** A card opening: fast at first, slowing to rest. Ease-out over 350ms; closing is 80% of that (rule 15). */
+const EXPAND_EASE = [0.22, 1, 0.36, 1] as const;
+export const EXPAND_MS = 350;
+
+/** Expand/collapse: height and opacity together, ease-out in 350ms. */
 export const collapseVariants: Variants = {
-  open: { height: "auto", opacity: 1, transition: { height: SPRING.smooth, opacity: { ...FADE, delay: 0.04 } } },
-  closed: { height: 0, opacity: 0, transition: { height: SPRING.smooth, opacity: FADE } },
+  open: { height: "auto", opacity: 1, transition: { height: { duration: EXPAND_MS / 1000, ease: EXPAND_EASE }, opacity: { ...FADE, delay: 0.04 } } },
+  closed: { height: 0, opacity: 0, transition: { height: { duration: (EXPAND_MS * 0.8) / 1000, ease: EXPAND_EASE }, opacity: FADE } },
 };
 
 /** Revamp tokens, the TS side of the CSS ones in globals.css. */

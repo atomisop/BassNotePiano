@@ -21,6 +21,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { tierLook, tierVars } from "@/components/marketing/PaymentPlanTierGrid";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
+import { RollingNumber } from "@/components/ui/RollingNumber";
 import { cn } from "@/lib/utils";
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
@@ -593,7 +594,7 @@ export function NewPlanForm({
                 );
               })
             : timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
-          <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{usd(totals.perPaymentCents)}</Row>
+          <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}><RollingNumber text={usd(totals.perPaymentCents)} /></Row>
           {!isFamily && termDiscount > 0 && (
             <Row label="Your discount">
               {termDiscount}% off <span className="text-slate-500 line-through">{usd(totals.listPerPaymentCents)}</span>
@@ -604,10 +605,10 @@ export function NewPlanForm({
           </Row>
           <div className="flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
             <span>{isFamily ? `First payment, all ${totals.people}` : "Due now"}</span>
-            <span className="tabular-nums">{usd(totals.firstPaymentCents)}</span>
+            <RollingNumber text={usd(totals.firstPaymentCents)} />
           </div>
           {totals.payments > 1 && (
-            <Row label={isFamily ? "Whole plan, everyone" : "Whole plan"}>{usd(totals.allPeopleTermCents)}</Row>
+            <Row label={isFamily ? "Whole plan, everyone" : "Whole plan"}><RollingNumber text={usd(totals.allPeopleTermCents)} /></Row>
           )}
         </dl>
 

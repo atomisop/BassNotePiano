@@ -19,7 +19,9 @@ export function AnimatedCheck({ size = 28, className = "" }: { size?: number; cl
       transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
     >
       <svg aria-hidden xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
-        <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1], delay: 0.05 }} d="M5 13l4 4L19 7" />
+        {/* First the circle draws, then the tick, so watching it finish makes the moment feel done. */}
+        <motion.circle cx="12" cy="12" r="10" initial={{ pathLength: 0, opacity: 0.9 }} animate={{ pathLength: 1, opacity: 0.9 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} strokeWidth={1.8} />
+        <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1], delay: 0.38 }} d="M7.5 12.5l3 3 6-6.5" />
       </svg>
     </motion.span>
   );

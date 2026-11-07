@@ -7,9 +7,9 @@ import { PianoCat } from "./PianoCat";
 
 // Pull distance (px, after the rubber-band curve below) that counts as "refresh", where the page rests while it refreshes, and the
 // farthest it can ever travel.
-const THRESHOLD_PX = 76;
-const HOLD_PX = 76;
-const MAX_PX = 150;
+const THRESHOLD_PX = 56;
+const HOLD_PX = 56;
+const MAX_PX = 120;
 // The cover is a little taller than the longest pull and tucks 1px under the card, so no seam shows.
 const COVER_PX = MAX_PX + 1;
 // The spinner shows for at least this long, so a fast refresh does not look like a flash.
@@ -19,9 +19,12 @@ const MAX_SPIN_MS = 8000;
 
 type Phase = "idle" | "pulling" | "armed" | "refreshing";
 
-/** Rubber band: easy at first, firmer the farther you go, and it never passes MAX_PX. */
+/** How much of the finger's travel the list follows at the start: 35%, so the distance feels real. */
+const FOLLOW = 0.35;
+
+/** Rubber band: the list moves 35% of the finger at first, less the farther you go, and never passes MAX_PX. */
 function rubberBand(dy: number): number {
-  return (1 - 1 / ((dy * 1.2) / MAX_PX + 1)) * MAX_PX;
+  return (1 - Math.exp((-dy * FOLLOW) / MAX_PX)) * MAX_PX;
 }
 
 /**

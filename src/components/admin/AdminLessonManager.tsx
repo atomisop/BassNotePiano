@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Reorder, useDragControls } from "framer-motion";
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { toast } from "@/components/ui/Toaster";
@@ -117,6 +118,39 @@ function uploadWithProgress(url: string, file: File, contentType: string, onProg
   });
 }
 
+/**
+ * One lesson row you can drag by its number. It lifts and grows 5% under the finger with a deeper shadow while the
+ * other rows slide out of its way (framer-motion's Reorder does the sliding). Only the number is the handle, so the
+ * buttons on the row and page scrolling on a phone are never grabbed by accident.
+ */
+function DragRow({ lesson, index, onDrop, children }: { lesson: CourseLesson; index: number; onDrop: () => void; children: ReactNode }) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item
+      value={lesson}
+      as="div"
+      dragListener={false}
+      dragControls={controls}
+      onDragEnd={onDrop}
+      whileDrag={{ scale: 1.05, zIndex: 20, boxShadow: "0 18px 40px rgba(0,0,0,0.35)" }}
+      transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
+      className="relative flex items-center gap-3 rounded-card bg-transparent py-3.5"
+    >
+      <span
+        onPointerDown={(e) => controls.start(e)}
+        role="img"
+        aria-label={`Drag to move lesson ${index + 1}`}
+        title="Drag to reorder"
+        style={{ touchAction: "none" }}
+        className="w-5 shrink-0 cursor-grab select-none text-center text-small font-semibold text-slate-500 active:cursor-grabbing"
+      >
+        {index + 1}
+      </span>
+      {children}
+    </Reorder.Item>
+  );
+}
+
 export function AdminLessonManager({
   scaleGroupSlug,
   scaleGroupLabel,
@@ -142,6 +176,24 @@ export function AdminLessonManager({
   const [editing, setEditing] = useState<CourseLesson | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  // The order on screen while a row is being dragged; the server's order wins again whenever the page data changes.
+  const [items, setItems] = useState(lessons);
+  useEffect(() => setItems(lessons), [lessons]);
+
+  async function handleDrop() {
+    const same = items.length === lessons.length && items.every((l, i) => l.id === lessons[i]?.id);
+    if (same) return;
+    setBusy(true);
+    try {
+      await onReorder(scaleGroupSlug, items.map((l) => l.id));
+      router.refresh();
+    } catch {
+      setItems(lessons);
+      toast.warning("That did not save. The order is back as it was.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function resetForm() {
     setTitle("");
@@ -314,10 +366,9 @@ export function AdminLessonManager({
       {lessons.length === 0 ? (
         <EmptyState icon={<FileText />} title="No lessons for this scale yet" description="Upload a PDF or video and it appears in the scale's lesson list." />
       ) : (
-        <div className="glass-surface divide-y divide-slate-50/10 px-4">
-          {lessons.map((lesson, index) => (
-            <div key={lesson.id} className="flex items-center gap-3 py-3.5">
-              <span className="w-5 shrink-0 text-center text-small font-semibold text-slate-500">{index + 1}</span>
+        <Reorder.Group as="div" axis="y" values={items} onReorder={setItems} className="glass-surface divide-y divide-slate-50/10 px-4">
+          {items.map((lesson, index) => (
+            <DragRow key={lesson.id} lesson={lesson} index={index} onDrop={handleDrop}>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-title text-slate-50">{lesson.title}</h2>
                 <p className="truncate text-small text-slate-500">
@@ -385,9 +436,9 @@ export function AdminLessonManager({
                   </button>
                 </div>
               )}
-            </div>
+            </DragRow>
           ))}
-        </div>
+        </Reorder.Group>
       )}
 
       <Dialog open={editing !== null} onOpenChange={(next) => !busy && !next && setEditing(null)} title="Rename the lesson">
