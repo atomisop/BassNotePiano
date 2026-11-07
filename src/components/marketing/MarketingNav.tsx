@@ -3,6 +3,7 @@
 import { AskAiButton } from "@/components/layout/AskAiButton";
 import Link from "next/link";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { useSwr } from "@/lib/useSwr";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -92,23 +93,9 @@ export function MarketingNav() {
   // local state for the rest of this mount. Was hardcoded null before,
   // which is why the homepage's own profile icon always showed the
   // name-initial fallback even for an account with a real photo.
-  const [image, setImage] = useState<string | null>(null);
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    let cancelled = false;
-    fetch("/api/account/avatar")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data) setImage(data.image);
-      })
-      .catch(() => {
-        // Best-effort: the initial-letter fallback is a perfectly fine
-        // result if this fetch fails for any reason, not worth surfacing.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [status]);
+  // Cached for the tab (useSwr): the picture shows at once on every later visit to a public page and refreshes behind it.
+  const avatar = useSwr<{ image: string | null }>(status === "authenticated" ? "/api/account/avatar" : null, { staleMs: 60_000 });
+  const image = avatar.data?.image ?? null;
 
   // Passive read of the existing window scroll. Deliberately not a second
   // scroll *engine*, Lenis still drives the position, this only observes it.
