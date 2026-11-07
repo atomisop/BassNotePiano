@@ -222,7 +222,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;border-collapse:separate;">
         <tr>
           <td align="center" style="padding:0 0 18px;">
-            <img src="${getAppUrl("/logo-mark.png")}" width="44" height="44" alt="" style="display:inline-block;vertical-align:middle;width:44px;height:44px;border:0;border-radius:22px;" />
+            <img src="${getAppUrl("/logo-mark.png")}" width="44" height="44" alt="" style="display:inline-block;vertical-align:middle;width:44px;height:44px;border:0;border-radius:10px;" />
             <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:${MAIL.ink};font-weight:700;">Bass Note Piano</span>
           </td>
         </tr>

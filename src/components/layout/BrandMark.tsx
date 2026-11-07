@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EASE_IOS } from "@/lib/motionTokens";
@@ -37,7 +37,7 @@ export function BrandMark() {
       onMouseLeave={() => setHovered(false)}
       className="tap flex items-center gap-2.5"
     >
-      <Image src="/logo-mark.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0" priority />
+      <BrandLogo height={30} className="text-slate-50" />
 
       {/* Below md (phones): logo only. The link keeps its aria-label, so it
           still reads as "Bass Note Piano, home" to a screen reader. The

@@ -2859,7 +2859,7 @@ html[data-splash] .bnp-splash {
 .bnp-splash-mark {
   width: 112px;
   height: 112px;
-  border-radius: 9999px;
+  border-radius: 26px;
   background: url("/icon.png") center / cover no-repeat;
   /* Already there on the first frame; it only breathes slowly. */
   animation: bnp-splash-breathe 3200ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
@@ -3165,3 +3165,8 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
     display: none;
   }
 }
+
+/* The logo with its name comes in two colourings; the theme picks one (Paper is the default). */
+.brand-for-ink { display: none; }
+[data-theme="ink"] .brand-for-ink { display: block; }
+[data-theme="ink"] .brand-for-paper { display: none; }

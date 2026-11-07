@@ -2,7 +2,7 @@
 
 import { AskAiButton } from "@/components/layout/AskAiButton";
 import Link from "next/link";
-import Image from "next/image";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -182,13 +182,7 @@ export function MarketingNav() {
           ].join(" ")}
         >
           <Link href="/" className="flex items-center gap-3" aria-label="Bass Note Piano, home">
-            <Image
-              src="/logo-mark.png"
-              alt=""
-              width={40}
-              height={40}
-              className="h-10 w-10"
-            />
+            <BrandLogo height={30} className="text-slate-50" />
             {/* The wordmark is set in the display face (font-serif resolves
                 to --font-display, Baloo 2 as of this pass) so the brand and
                 the composition are visibly one system rather than a logo

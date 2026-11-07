@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { NarrowLayout } from "@/components/layout/PageLayouts";
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +9,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(160,78,30,0.07),_transparent_60%)]"
       />
       <header className="relative flex items-center gap-2.5 px-6 py-6">
-        <Image src="/logo-mark.png" alt="" width={36} height={36} className="h-9 w-9" priority />
+        <BrandLogo height={24} className="text-slate-50" />
         {/* Same wordmark treatment as MarketingNav's own (bold, lowercase).
             This was still the pre-Pianote-pass uppercase/split-color
             version. Fully accent-colored at the time; neutral again now

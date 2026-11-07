@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_NAME } from "@/lib/site";
-import { OG_MARK_DATA_URI } from "@/assets/ogMark";
+import { OG_MARK_DATA_URI, OG_MARK_RATIO } from "@/assets/ogMark";
 
 // A file-based OG image: Next serves this at /opengraph-image and wires the
 // correct absolute URL + dimensions into both the og: and twitter: tags, so
@@ -128,17 +128,17 @@ export default async function OpengraphImage() {
         <div
           style={{
             position: "absolute",
-            right: 56,
-            top: 108,
-            width: 414,
-            height: 414,
+            right: 40,
+            top: 80,
+            width: 470,
+            height: 470,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-          <img src={logoDataUri} width={414} height={414} style={{ width: 414, height: 414 }} />
+          <img src={logoDataUri} width={470} height={Math.round(470 / OG_MARK_RATIO)} style={{ width: 470, height: Math.round(470 / OG_MARK_RATIO) }} />
         </div>
 
         {/* Text column */}
