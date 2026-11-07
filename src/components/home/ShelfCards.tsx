@@ -16,7 +16,7 @@ export function ShelfCardInner({ icon, title, detail }: { icon: ReactNode; title
         {icon}
       </span>
       <span className="mt-auto block pt-4 text-body font-semibold leading-snug text-slate-50 line-clamp-2">{title}</span>
-      {detail && <span className="mt-1 block text-small text-slate-400 line-clamp-2">{detail}</span>}
+      {detail && <span className="mt-1 block min-h-[2.5rem] text-small text-slate-400 line-clamp-2">{detail}</span>}
     </>
   );
 }

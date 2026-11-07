@@ -142,7 +142,7 @@ function DragRow({ lesson, index, onDrop, children }: { lesson: CourseLesson; in
         aria-label={`Drag to move lesson ${index + 1}`}
         title="Drag to reorder"
         style={{ touchAction: "none" }}
-        className="w-5 shrink-0 cursor-grab select-none text-center text-small font-semibold text-slate-500 active:cursor-grabbing"
+        className="hit-slop flex w-5 shrink-0 cursor-grab select-none items-center justify-center self-stretch text-small font-semibold text-slate-500 active:cursor-grabbing"
       >
         {index + 1}
       </span>

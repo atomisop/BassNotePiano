@@ -157,7 +157,7 @@ export default async function HomePage() {
               },
               {
                 href: "/streak",
-                label: "This week",
+                label: "Week",
                 icon: <Clock />,
                 value: String(data.weekMinutes),
                 unit: "min",
@@ -197,14 +197,6 @@ export default async function HomePage() {
                 icon={<CalendarCheck />}
                 title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
                 detail={nextClass ? `Next class, ${untilLabel(nextClass.scheduledAt)}` : "Book your weekly class"}
-              />
-            </li>
-            <li>
-              <HomeRow
-                href="/roadmap"
-                icon={<Map />}
-                title={`${data.progress.completedScales} of ${data.progress.totalScales} scales`}
-                detail={`${data.progress.itemsDone} of ${data.progress.itemsTotal} steps · ${formatCredits(data.credits)} credits`}
               />
             </li>
           </HomeRows>
