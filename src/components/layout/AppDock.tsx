@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
+import { liquidGlass, type LiquidGlassOptions } from "@/lib/liquidGlass";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -35,6 +36,8 @@ const DOCK_H = 58;
 const LENS_H = 65;
 // How far the lens bends what is under its edge, in px, per colour. Red, green and blue bend by slightly different amounts, which is what
 // splits the light into a thin colour fringe (dispersion) right where the bend is strongest.
+/** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). */
+const GLASS: LiquidGlassOptions = { scale: -60, chroma: 4, border: 0.16, mapBlur: 3, blur: 2, saturate: 1.7, fallbackBlur: 16 };
 const BEND = { r: 34, g: 28, b: 22 };
 
 /**
@@ -119,46 +122,6 @@ function DockLens({ items, activeIndex, slots, width, reduceMotion }: { items: r
         <div className="ig-lens-sheen pointer-events-none absolute inset-0 rounded-full" />
       </motion.div>
     </>
-  );
-}
-
-/** A bend map for feDisplacementMap: neutral in the middle, pushing inward more toward every edge (red sideways, green up and down). */
-function glassMap(w: number, h: number): string {
-  const edge = (a: string, b: string) =>
-    `<stop offset="0" stop-color="${a}"/><stop offset=".3" stop-color="${b}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${a.replace("255", "0")}"/>`;
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<defs><linearGradient id="x" x1="0" x2="1" y1="0" y2="0">${edge("rgb(255,0,0)", "rgb(128,0,0)")}</linearGradient>` +
-    `<linearGradient id="y" x1="0" x2="0" y1="0" y2="1">${edge("rgb(0,255,0)", "rgb(0,128,0)")}</linearGradient></defs>` +
-    `<rect width="${w}" height="${h}" fill="#000"/><rect width="${w}" height="${h}" fill="url(#x)"/>` +
-    `<rect width="${w}" height="${h}" fill="url(#y)" style="mix-blend-mode:screen"/></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
-/**
- * What is behind the dock bends where the glass is thick, at its edges, and splits into a faint colour fringe. This is a backdrop filter, so
- * only browsers that allow an SVG filter on a backdrop (Chrome, Edge, Android) show the bend; Safari ignores it and keeps the plain frost.
- */
-function DockGlassFilter({ id, w, h }: { id: string; w: number; h: number }) {
-  if (w <= 0) return null;
-  const map = glassMap(w, h);
-  return (
-    <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width={w} height={h} colorInterpolationFilters="sRGB">
-      <feImage href={map} x="0" y="0" width={w} height={h} preserveAspectRatio="none" result="map" />
-      {(["r", "g", "b"] as const).map((c, i) => (
-        <Fragment key={c}>
-          <feDisplacementMap in="SourceGraphic" in2="map" scale={[64, 54, 44][i]} xChannelSelector="R" yChannelSelector="G" result={`d${c}`} />
-          <feColorMatrix
-            in={`d${c}`}
-            type="matrix"
-            values={c === "r" ? "1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" : c === "g" ? "0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" : "0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"}
-            result={`c${c}`}
-          />
-        </Fragment>
-      ))}
-      <feBlend in="cr" in2="cg" mode="screen" result="rg" />
-      <feBlend in="rg" in2="cb" mode="screen" />
-    </filter>
   );
 }
 
@@ -271,7 +234,12 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   const [dockWidth, setDockWidth] = useState(0);
   const [slots, setSlots] = useState<DockSlot[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
-  const [mainW, setMainW] = useState(0);
+  const islandRef = useRef<HTMLDivElement>(null);
+  // The skill's liquid glass: what is behind each glass shape bends at its rim (Chrome, Edge, Android); Safari keeps the frost.
+  useEffect(() => {
+    const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
+    return () => handles.forEach((h) => h.destroy());
+  }, []);
   const linkEls = useRef<(HTMLAnchorElement | null)[]>([]);
   useEffect(() => {
     const el = dockRef.current;
@@ -279,7 +247,6 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
     // Where each icon sits inside the dock (offsets ignore the shrink-on-scroll scale), so the lens can find any tab, in either pill.
     const read = () => {
       setDockWidth(el.offsetWidth);
-      setMainW(mainRef.current?.offsetWidth ?? 0);
       setSlots(
         linkEls.current.map((link) => {
           if (!link) return { cx: 0, w: 0 };
@@ -426,20 +393,14 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
         {/* Two separate glass shapes: the main pill holds every tab but Settings, and Settings sits alone in its own round island at the right. */}
-        <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
-          <defs>
-            <DockGlassFilter id="bnp-glass-main" w={mainW} h={DOCK_H} />
-            <DockGlassFilter id="bnp-glass-island" w={DOCK_H} h={DOCK_H} />
-          </defs>
-        </svg>
         <div
           ref={mainRef}
           style={{ gridTemplateColumns: `repeat(${items.length - 1}, minmax(0, 1fr))` }}
-          className="ig-dock ig-glass-main pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
+          className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
           {items.slice(0, -1).map((item, i) => renderTab(item, i, false))}
         </div>
-        <div className="ig-dock ig-glass-island pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
+        <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
           {renderTab(items[items.length - 1], items.length - 1, true)}
         </div>
         {dockWidth > 0 && <DockLens items={items} activeIndex={items.findIndex(isActive)} slots={slots} width={dockWidth} reduceMotion={reduceMotion} />}
