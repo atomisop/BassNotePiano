@@ -28,11 +28,11 @@ export function HomeHero({
   return (
     <section className="color-tile relative overflow-hidden rounded-sheet text-white" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 48%, ${a.to} 100%)` }}>
       <RoadmapKeys />
-      <div className="relative flex min-h-[19rem] flex-col p-6 md:min-h-[22rem] md:p-8">
+      <div className="relative flex min-h-[17rem] flex-col p-6 md:min-h-[22rem] md:p-8">
         <p className="text-small font-medium text-white/80">{eyebrow}</p>
         <h2 className="mt-2 max-w-xl text-headline font-bold leading-tight text-balance md:text-hero">{title}</h2>
-        {detail && <p className="mt-3 max-w-xl text-body text-white/85">{detail}</p>}
-        <div className="mt-5 flex flex-wrap items-center gap-3">{actions}</div>
+        {detail && <p className="mt-2 line-clamp-2 max-w-xl text-body text-white/80">{detail}</p>}
+        <div className="mt-5 flex flex-wrap items-center gap-3 pb-2">{actions}</div>
         {progress && (
           <Link
             href="/roadmap"

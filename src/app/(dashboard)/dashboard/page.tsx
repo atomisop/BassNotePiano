@@ -152,7 +152,7 @@ export default async function HomePage() {
                 icon: <Flame />,
                 value: String(practice.streak),
                 unit: practice.streak === 1 ? "day" : "days",
-                hint: practice.completedToday ? "Done today" : `${minutesLeft} min left today`,
+                hint: practice.completedToday ? "Done today" : `${minutesLeft} min left`,
                 meter: { value: Math.min(practice.todaySeconds, DAILY_GOAL_SECONDS), max: DAILY_GOAL_SECONDS, label: practice.completedToday ? "Today's practice is done" : `${minutesLeft} minutes of practice left today` },
               },
               {
@@ -170,7 +170,7 @@ export default async function HomePage() {
                 icon: <Ticket />,
                 value: formatCredits(data.credits),
                 unit: data.credits === 1 ? "class" : "classes",
-                hint: nextClass ? `Next ${untilLabel(nextClass.scheduledAt)}` : "No class booked",
+                hint: nextClass ? `Next ${untilLabel(nextClass.scheduledAt)}` : "None booked",
                 alert: data.credits === 0,
               },
             ]}
