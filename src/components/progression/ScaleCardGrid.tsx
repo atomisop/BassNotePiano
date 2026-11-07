@@ -63,6 +63,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
                 "group press-soft relative isolate flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isCurrent && "shadow-pressed-mid ring-1 ring-signal",
                 locked && "shadow-pressed-low",
+                artBase && "scale-art-card",
               )}
             >
               {artBase && <ScaleArt src={`${artBase}/${scale.scaleGroup.slug}.jpg`} locked={locked} />}
