@@ -1,0 +1,9 @@
+Commands run on rework/phase0-evidence-gate at 6be15446 (Node 26.9, dev server on :3102 against throwaway DB bnp_rework_verify)
+npm run typecheck
+exit status: 0
+npm run lint (warnings only)
+exit status: 0
+npm test (111 files, 640 tests, incl. tests/instrumentIntent.test.ts)
+exit status: 0
+npx playwright test e2e/rework/onboarding.spec.ts --project=desktop --project=mobile --project=narrow (6 scenarios x 3 viewports = 18 passed)
+exit status: 0
