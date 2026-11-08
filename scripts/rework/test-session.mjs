@@ -14,7 +14,7 @@ if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) || !/veri
 const email = process.argv.find((a) => a.includes("@")) ?? "rework.student@example.test";
 const onboarded = process.argv.includes("--onboarded");
 const prisma = new PrismaClient();
-const data = { name: "Rework Student", emailVerified: new Date(), role: "STUDENT", ...(onboarded ? { username: "rw_" + createHash("sha1").update(email).digest("hex").slice(0, 12), onboardedAt: new Date(), primaryInstrument: "PIANO_KEYBOARD" } : { onboardedAt: null, username: null }) };
+const data = { name: "Rework Student", emailVerified: new Date(), role: "STUDENT", ...(onboarded ? { username: "rw_" + createHash("sha1").update(email).digest("hex").slice(0, 12), onboardedAt: new Date(), onboardingTourSeenAt: new Date(), primaryInstrument: "PIANO_KEYBOARD" } : { onboardedAt: null, username: null }) };
 const user = await prisma.user.upsert({ where: { email }, update: data, create: { email, ...data } });
 const token = await encode({ token: { sub: user.id, email, name: user.name, role: "STUDENT", onboarded, hasCurriculumAccess: false, unlockedScaleSlugs: [], completedScaleSlugs: [] }, secret: process.env.NEXTAUTH_SECRET });
 await prisma.$disconnect();
