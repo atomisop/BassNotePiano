@@ -3,6 +3,7 @@
 // Usage: node --env-file=.env scripts/rework/test-session.mjs [email] [--onboarded]
 import { PrismaClient } from "@prisma/client";
 import { encode } from "next-auth/jwt";
+import { createHash } from "node:crypto";
 
 const url = new URL(process.env.DATABASE_URL ?? "postgresql://none");
 const db = url.pathname.slice(1);
@@ -13,8 +14,8 @@ if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) || !/veri
 const email = process.argv.find((a) => a.includes("@")) ?? "rework.student@example.test";
 const onboarded = process.argv.includes("--onboarded");
 const prisma = new PrismaClient();
-const data = { name: "Rework Student", emailVerified: new Date(), role: "STUDENT", ...(onboarded ? { username: "rework_student", onboardedAt: new Date(), primaryInstrument: "PIANO_KEYBOARD" } : { onboardedAt: null, username: null }) };
+const data = { name: "Rework Student", emailVerified: new Date(), role: "STUDENT", ...(onboarded ? { username: "rw_" + createHash("sha1").update(email).digest("hex").slice(0, 12), onboardedAt: new Date(), primaryInstrument: "PIANO_KEYBOARD" } : { onboardedAt: null, username: null }) };
 const user = await prisma.user.upsert({ where: { email }, update: data, create: { email, ...data } });
-const token = await encode({ token: { sub: user.id, email }, secret: process.env.NEXTAUTH_SECRET });
+const token = await encode({ token: { sub: user.id, email, name: user.name, role: "STUDENT", onboarded, hasCurriculumAccess: false, unlockedScaleSlugs: [], completedScaleSlugs: [] }, secret: process.env.NEXTAUTH_SECRET });
 await prisma.$disconnect();
 console.log(token);
