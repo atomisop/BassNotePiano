@@ -1,13 +1,16 @@
 # Glass revamp status
 
-Nothing is DONE yet. A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
+Done so far: GL-01-01 and GL-01-02. A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
 
 | Task | State | Evidence |
 |---|---|---|
 | GL-00-01 inventory and baseline | IN PROGRESS: 150 baseline shots (guest, student, admin; light and dark; 3 sizes; WebKit and Firefox on key pages), axe on 37 page runs, structural performance numbers. Skipped honestly: `/admin/settings` at 320px (did not load). Awaiting owner review of the baseline | INVENTORY.md, ROUTE-MATRIX.md, PERFORMANCE-BASELINE.md, evidence/GL-00-01/ |
 | GL-00-02 migration plan | WRITTEN: component migration table in INVENTORY.md, DESIGN-SYSTEM.md. Awaiting owner approval | INVENTORY.md, DESIGN-SYSTEM.md |
 | GL-00-03 accessibility and evidence gates | BUILT: `npm run glass:verify` (rejects DONE without real screenshots, tests, review, axe with no serious or critical), CI step added, skill `bnp-liquid-glass`. CI step not yet run on GitHub | scripts/glass-revamp/verify-evidence.mjs, .github/workflows/ci.yml |
-| Phase 1 to 6 | NOT STARTED | |
+| GL-01-01 Solid surfaces switch plus dashboard contrast, top-banner and sidebar-highlight fixes | DONE (commit 46bfb9f5; `npm run glass:verify` passes) | evidence/GL-01-01/ |
+| GL-01-02 explicit glass role on the shared Button (`data-glass-role`), selector reads it, unit test keeps it in step | DONE (commit ae31e436) | evidence/GL-01-02/ |
+| Phase 1 remaining (class-name consumers to roles, top bar, dock, popovers, toasts, skeletons) | NEXT: needs the owner's call on how far the look changes (see below) | |
+| Phases 2 to 6 | NOT STARTED | |
 
 ## Baseline defects to fix (from GL-00-01)
 
@@ -15,7 +18,8 @@ Nothing is DONE yet. A task is DONE only when `npm run glass:verify` passes for 
 - The "Add your phone number" banner covers the top bar's title and controls at 1440px.
 - On phones the dock's lensing distorts text of the card scrolling behind it.
 - At 390px `/login` shows a dim second logo behind the card.
-- No in-app Solid surfaces switch yet (only the OS reduced-transparency setting).
+- FIXED in GL-01-01: dashboard axe findings, banner over the top bar, no Solid switch, sidebar highlight placed at the top left.
+- Public pages (home, pricing, login, register, classes, terms) are locked to the dark theme by design, so they have no light look to restyle.
 
 ## Tooling and honesty notes
 

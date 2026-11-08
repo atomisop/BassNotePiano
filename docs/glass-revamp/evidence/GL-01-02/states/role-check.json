@@ -1,0 +1,30 @@
+[
+  {
+    "path": "/dashboard",
+    "roleButtons": 3,
+    "visible": 2,
+    "lensed": 2,
+    "anyLensed": 4
+  },
+  {
+    "path": "/lessons",
+    "roleButtons": 2,
+    "visible": 1,
+    "lensed": 0,
+    "anyLensed": 1
+  },
+  {
+    "path": "/account",
+    "roleButtons": 2,
+    "visible": 1,
+    "lensed": 0,
+    "anyLensed": 1
+  },
+  {
+    "path": "/billing/plans",
+    "roleButtons": 0,
+    "visible": 0,
+    "lensed": 0,
+    "anyLensed": 3
+  }
+]
