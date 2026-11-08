@@ -12,12 +12,18 @@ export type MidiStatus = "idle" | "requesting" | "connected" | "denied" | "unsup
 export function useMidiInput(handlers: { onNoteOn: (midi: number) => void; onNoteOff: (midi: number) => void }) {
   const [status, setStatus] = useState<MidiStatus>("idle");
   const [devices, setDevices] = useState<string[]>([]);
+  // Decided after mount, never during render: the server cannot know, and a different answer on the client breaks hydration.
+  const [supported, setSupported] = useState(false);
   const handlerRef = useRef(handlers);
   const accessRef = useRef<MIDIAccess | null>(null);
 
   useEffect(() => {
     handlerRef.current = handlers;
   });
+
+  useEffect(() => {
+    setSupported(typeof navigator.requestMIDIAccess === "function");
+  }, []);
 
   const attach = useCallback((access: MIDIAccess) => {
     const names: string[] = [];
@@ -60,6 +66,5 @@ export function useMidiInput(handlers: { onNoteOn: (midi: number) => void; onNot
     [],
   );
 
-  const supported = typeof navigator !== "undefined" && typeof navigator.requestMIDIAccess === "function";
   return { status, devices, enable, supported };
 }
