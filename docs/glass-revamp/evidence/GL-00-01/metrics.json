@@ -1,0 +1,96 @@
+{
+  "guest": {
+    "note": "dev server, shared machine, compare only on the same machine",
+    "rows": [
+      {
+        "path": "/",
+        "size": "1440x900",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 10720,
+        "cls": 0,
+        "backdropElements": 6,
+        "svgFilters": 10,
+        "domNodes": 993,
+        "at": "2026-11-08T20:48:39.533Z"
+      },
+      {
+        "path": "/",
+        "size": "390x844",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 19380,
+        "cls": 0,
+        "backdropElements": 19,
+        "svgFilters": 1,
+        "domNodes": 903,
+        "at": "2026-11-08T20:49:03.962Z"
+      },
+      {
+        "path": "/pricing",
+        "size": "1440x900",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 19108,
+        "cls": 0,
+        "backdropElements": 7,
+        "svgFilters": 3,
+        "domNodes": 2028,
+        "at": "2026-11-08T20:49:24.049Z"
+      },
+      {
+        "path": "/pricing",
+        "size": "390x844",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 71420,
+        "cls": 0,
+        "backdropElements": 8,
+        "svgFilters": 1,
+        "domNodes": 2008,
+        "at": "2026-11-08T20:50:37.064Z"
+      },
+      {
+        "path": "/login",
+        "size": "1440x900",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 42924,
+        "cls": 0.0104,
+        "backdropElements": 0,
+        "svgFilters": 1,
+        "domNodes": 482,
+        "at": "2026-11-08T20:51:23.628Z"
+      },
+      {
+        "path": "/login",
+        "size": "390x844",
+        "role": "guest",
+        "solid": false,
+        "lcpMs": 12252,
+        "cls": 0.0483,
+        "backdropElements": 0,
+        "svgFilters": 1,
+        "domNodes": 482,
+        "at": "2026-11-08T20:52:01.623Z"
+      }
+    ]
+  },
+  "student": {
+    "note": "dev server, shared machine, compare only on the same machine",
+    "rows": [
+      {
+        "path": "/dashboard",
+        "size": "1440x900",
+        "role": "student",
+        "solid": false,
+        "lcpMs": 85548,
+        "cls": 0.0166,
+        "backdropElements": 10,
+        "svgFilters": 5,
+        "domNodes": 1514,
+        "at": "2026-11-08T20:54:36.335Z"
+      }
+    ]
+  }
+}

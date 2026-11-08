@@ -1,0 +1,90 @@
+Note: tests/classesInWindow.test.ts has its own 60 s limit and times out when the machine is overloaded (load average 50+); it is run on its own below. tests/db needs a migrated Postgres and is not touched by this task.
+$ npm run typecheck
+
+> bass-note-piano@0.1.0 typecheck
+> tsc --noEmit
+
+exit status: 0
+$ npm run lint
+
+> bass-note-piano@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+[@sentry/nextjs] Importing `withSentryConfig` from `@sentry/nextjs` is deprecated and will stop working in v11. Import it from `@sentry/nextjs/config` instead:
+  import { withSentryConfig } from '@sentry/nextjs/config';
+
+./src/components/stageshow/kit/controls/Button.tsx
+47:6  Warning: React Hook useLayoutEffect has missing dependencies: 'icon' and 'open'. Either include them or remove the dependency array. If 'setLast' needs the current value of 'icon', you can also switch to useReducer instead of useState and read 'icon' in the reducer.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Follow.tsx
+121:79  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Roll.tsx
+158:6  Warning: React Hook useLayoutEffect has a missing dependency: 'variant'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+158:26  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/parts/Avatar.tsx
+43:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/BrandMark.tsx
+39:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/Pin.tsx
+36:55  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/AtomHandoff.tsx
+129:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/BookingHero.tsx
+116:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ParentPair.tsx
+99:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PhoneReminders.tsx
+71:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PracticeStreak.tsx
+95:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ScaleUnlock.tsx
+95:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+exit status: 0
+$ npx vitest run --testTimeout 120000 --exclude tests/classesInWindow.test.ts --exclude 'tests/db/**'
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /Users/yisehakberhanu/Desktop/Music App
+
+
+ Test Files  114 passed (114)
+      Tests  686 passed (686)
+   Start at  18:24:33
+   Duration  32.90s (import 51%, tests 37%, worker 7%, transform 5%)
+
+    Isolate  114 workers spawned · ~2.58s startup each (spawn + environment, per file)
+             at least ~17.01s faster with isolate: false — reuses workers across files instead of one per file
+
+exit status: 0
+$ npx vitest run tests/classesInWindow.test.ts --testTimeout 300000
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /Users/yisehakberhanu/Desktop/Music App
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  18:25:19
+   Duration  26.29s (tests 91%, import 6%, transform 2%)
+
+exit status: 0

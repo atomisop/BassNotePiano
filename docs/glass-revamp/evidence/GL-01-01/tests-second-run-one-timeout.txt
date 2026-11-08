@@ -1,0 +1,94 @@
+$ npm run typecheck
+
+> bass-note-piano@0.1.0 typecheck
+> tsc --noEmit
+
+exit status: 0
+$ npm run lint
+
+> bass-note-piano@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+[@sentry/nextjs] Importing `withSentryConfig` from `@sentry/nextjs` is deprecated and will stop working in v11. Import it from `@sentry/nextjs/config` instead:
+  import { withSentryConfig } from '@sentry/nextjs/config';
+
+./src/components/stageshow/kit/controls/Button.tsx
+47:6  Warning: React Hook useLayoutEffect has missing dependencies: 'icon' and 'open'. Either include them or remove the dependency array. If 'setLast' needs the current value of 'icon', you can also switch to useReducer instead of useState and read 'icon' in the reducer.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Follow.tsx
+121:79  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Roll.tsx
+158:6  Warning: React Hook useLayoutEffect has a missing dependency: 'variant'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+158:26  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/parts/Avatar.tsx
+43:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/BrandMark.tsx
+39:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/Pin.tsx
+36:55  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/AtomHandoff.tsx
+129:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/BookingHero.tsx
+116:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ParentPair.tsx
+99:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PhoneReminders.tsx
+71:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PracticeStreak.tsx
+95:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ScaleUnlock.tsx
+95:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+exit status: 0
+$ npx vitest run --testTimeout 120000
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /Users/yisehakberhanu/Desktop/Music App
+
+ ❯ tests/classesInWindow.test.ts (6 tests | 1 failed) 62744ms
+   ❯ how many classes a paid month holds (6)
+     × agrees with a plain day-by-day count for every start date in a year and every weekday 61941ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/classesInWindow.test.ts > how many classes a paid month holds > agrees with a plain day-by-day count for every start date in a year and every weekday
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/classesInWindow.test.ts:29:3
+     27|   });
+     28|
+     29|   it("agrees with a plain day-by-day count for every start date in a y…
+       |   ^
+     30|     const addMonth = (from: Date, n: number) => {
+     31|       const y = from.getUTCFullYear() + Math.floor((from.getUTCMonth()…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 114 passed (115)
+      Tests  1 failed | 687 passed (688)
+   Start at  17:08:41
+   Duration  110.50s (import 45%, tests 45%, worker 5%, transform 4%)
+
+    Isolate  115 workers spawned · ~7.13s startup each (spawn + environment, per file)
+             at least ~47.52s faster with isolate: false — reuses workers across files instead of one per file
+
+exit status: 1

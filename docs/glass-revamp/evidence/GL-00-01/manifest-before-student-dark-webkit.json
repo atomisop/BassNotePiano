@@ -1,0 +1,66 @@
+{
+  "task": "GL-00-01",
+  "shots": [
+    {
+      "file": "docs/glass-revamp/evidence/GL-00-01/before/dashboard-student-dark-webkit-1440x900.png",
+      "path": "/dashboard",
+      "role": "student",
+      "theme": "dark",
+      "browser": "webkit",
+      "size": "1440x900",
+      "solid": false,
+      "sha": "8ccce2be",
+      "at": "2026-11-08T20:44:03.799Z",
+      "finalUrl": "http://localhost:3101/dashboard",
+      "status": 200,
+      "horizontalOverflow": false,
+      "axe": null
+    },
+    {
+      "file": "docs/glass-revamp/evidence/GL-00-01/before/dashboard-student-dark-webkit-390x844.png",
+      "path": "/dashboard",
+      "role": "student",
+      "theme": "dark",
+      "browser": "webkit",
+      "size": "390x844",
+      "solid": false,
+      "sha": "8ccce2be",
+      "at": "2026-11-08T20:44:16.014Z",
+      "finalUrl": "http://localhost:3101/dashboard",
+      "status": 200,
+      "horizontalOverflow": false,
+      "axe": null
+    },
+    {
+      "file": "docs/glass-revamp/evidence/GL-00-01/before/lessons-student-dark-webkit-1440x900.png",
+      "path": "/lessons",
+      "role": "student",
+      "theme": "dark",
+      "browser": "webkit",
+      "size": "1440x900",
+      "solid": false,
+      "sha": "8ccce2be",
+      "at": "2026-11-08T20:44:47.400Z",
+      "finalUrl": "http://localhost:3101/lessons",
+      "status": 200,
+      "horizontalOverflow": false,
+      "axe": null
+    },
+    {
+      "file": "docs/glass-revamp/evidence/GL-00-01/before/lessons-student-dark-webkit-390x844.png",
+      "path": "/lessons",
+      "role": "student",
+      "theme": "dark",
+      "browser": "webkit",
+      "size": "390x844",
+      "solid": false,
+      "sha": "8ccce2be",
+      "at": "2026-11-08T20:44:57.828Z",
+      "finalUrl": "http://localhost:3101/lessons",
+      "status": 200,
+      "horizontalOverflow": false,
+      "axe": null
+    }
+  ],
+  "sha": "8ccce2be"
+}

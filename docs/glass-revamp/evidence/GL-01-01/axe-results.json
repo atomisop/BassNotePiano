@@ -1,0 +1,38 @@
+[
+  {
+    "path": "/account?tab=appearance",
+    "role": "student",
+    "theme": "dark",
+    "solid": false,
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "dark",
+    "solid": false,
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/account?tab=appearance",
+    "role": "student",
+    "theme": "light",
+    "solid": false,
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "light",
+    "solid": false,
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  }
+]
