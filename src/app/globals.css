@@ -2565,9 +2565,9 @@ body:has([data-surface="app"]) .glass-surface-modal {
 .ig-dock {
   isolation: isolate;
   corner-shape: round;
-  background: rgb(36 38 44 / 0.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.7);
-  backdrop-filter: blur(16px) saturate(1.7);
+  background: rgb(78 80 88 / 0.5);
+  -webkit-backdrop-filter: blur(10px) saturate(1.6);
+  backdrop-filter: blur(10px) saturate(1.6);
   box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
   --ig-icon: rgb(255 255 255);
   --dock-cut: rgb(78 78 81);
@@ -2606,7 +2606,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   background: rgb(255 48 64);
 }
 [data-mode="light"] .ig-dock {
-  background: rgb(250 250 252 / 0.6);
+  background: rgb(222 223 229 / 0.55);
   box-shadow: 0 10px 30px -10px rgb(30 30 60 / 0.28), 0 2px 6px rgb(30 30 60 / 0.08);
   --ig-icon: rgb(10 10 12);
   --dock-cut: rgb(226 226 230);

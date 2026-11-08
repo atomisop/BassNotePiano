@@ -33,7 +33,7 @@ const DOCK_ICONS: Record<string, DockIcon> = {
 
 
 /** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). Real bend in Chrome, Edge and Android; frost elsewhere. */
-const GLASS: LiquidGlassOptions = { scale: -60, chroma: 4, border: 0.16, mapBlur: 3, blur: 2, saturate: 1.7, fallbackBlur: 16 };
+const GLASS: LiquidGlassOptions = { scale: -90, chroma: 3, border: 0.3, blur: 4, saturate: 1.6, fallbackBlur: 10 };
 
 function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
   const line = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
