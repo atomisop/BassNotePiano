@@ -69,10 +69,12 @@ test.describe("two-step onboarding (P1-ONB-01, P1-A11Y-01, P1-ONB-03)", () => {
     await signInAs(context, base, uniqueEmail("axe"));
     await page.goto("/onboarding?instrument=piano");
     await page.getByRole("heading", { name: "Who are you?" }).waitFor();
+    await page.waitForTimeout(800); // let the step's fade-in finish: axe reads mid-animation opacity as low contrast
     const one = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();
     await page.getByRole("textbox", { name: "Username" }).fill(`ax_${Date.now().toString(36)}`);
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.getByRole("heading", { name: "How much do you play?" }).waitFor();
+    await page.waitForTimeout(800);
     const two = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();
     const bad = [...one.violations, ...two.violations].filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(bad.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
