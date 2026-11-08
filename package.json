@@ -23,7 +23,9 @@
     "seed:staging": "node scripts/seed-staging.mjs",
     "rework:verify": "node scripts/rework/verify-evidence.mjs",
     "rework:capture": "node scripts/rework/capture.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "glass:verify": "node scripts/glass-revamp/verify-evidence.mjs",
+    "glass:capture": "node scripts/glass-revamp/capture.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

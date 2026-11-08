@@ -30,7 +30,7 @@ import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
 import { getAdminNavBadges } from "@/lib/admin";
-import { getPricingConfig } from "@/lib/pricing";
+import { getDisplayPricingConfig } from "@/lib/pricing";
 import { getPersonalDiscount } from "@/lib/accountDiscounts";
 import { PricingProvider } from "@/components/billing/PricingContext";
 
@@ -46,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getMeStatus(session.user.id),
     prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } }),
     getSidebarCards(session.user.id, session.user.role ?? "STUDENT", session.user.role === "ADMIN" && isOwnerEmail(session.user.email)).catch(() => []),
-    getPricingConfig(),
+    getDisplayPricingConfig(),
     getPersonalDiscount(session.user.id),
   ]);
 

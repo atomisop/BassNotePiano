@@ -23,7 +23,7 @@ import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
-import { getPricingConfig } from "@/lib/pricing";
+import { getDisplayPricingConfig } from "@/lib/pricing";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 
@@ -60,7 +60,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getUpcomingOccurrences(session.user.id),
     getUserClassBookings(session.user.id),
     hasLivePaymentPlan(session.user.id),
-    getPricingConfig(),
+    getDisplayPricingConfig(),
   ]);
 
   // A Monthly subscriber whose billing month holds a fifth class day can add it for a set price.
