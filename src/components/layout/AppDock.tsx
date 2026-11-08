@@ -60,8 +60,6 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
-  /** The person's picture and menu, drawn in the round island at the right (see DockProfile). */
-  profileSlot?: React.ReactNode;
   /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
   isAdmin?: boolean;
 }
@@ -90,6 +88,7 @@ const NAV_ITEMS = [
   { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
+  { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
 const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
 
@@ -131,7 +130,7 @@ const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { hr
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
+export function AppDock({ isAdmin = false }: AppDockProps) {
   const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
@@ -140,9 +139,8 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
   const mainRef = useRef<HTMLDivElement>(null);
-  const islandRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
+    const handles = [mainRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
     return () => handles.forEach((h) => h.destroy());
   }, []);
   // Every tab is fetched ahead of the tap, so the move is instant.
@@ -255,16 +253,13 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
         }}
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {/* Two separate glass shapes: the main pill holds every tab, and the person's picture sits alone in its own round island at the right. */}
+        {/* One glass pill holds every tab, Settings last. */}
         <div
           ref={mainRef}
           style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
           className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
           {items.map((item, i) => renderTab(item, i, false))}
-        </div>
-        <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
-          {profileSlot}
         </div>
       </div>
     </div>
