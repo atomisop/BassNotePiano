@@ -142,6 +142,7 @@ export const THEME_BOOT_SCRIPT = `
 (function(){
   try {
     var d = document.documentElement;
+    if (localStorage.getItem('bnp-solid-surfaces') === 'on') d.setAttribute('data-solid-surfaces', 'on');
     var loggedOutPaths = ${JSON.stringify(LOGGED_OUT_PATHS)};
     if (loggedOutPaths.indexOf(window.location.pathname) !== -1) {
       d.setAttribute('data-theme', '${LOGGED_OUT_THEME}');

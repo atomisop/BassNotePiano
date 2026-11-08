@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
+import { solidSurfacesOn } from "@/lib/solidSurfaces";
 
 /**
  * Real Liquid Glass for every button in the app, from one place. It finds each glass control (the shared Button, tabs, the admin menu,
@@ -64,7 +65,7 @@ export function glassFilter(id: string, maps: GlassMaps, w: number, h: number, b
 
 export function GlassButtons() {
   useEffect(() => {
-    if (!refractionSupported() || window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
+    if (!refractionSupported() || solidSurfacesOn() || window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
     const root = document.documentElement;
     const num = (name: string, fallback: number) => {
       const v = parseFloat(getComputedStyle(root).getPropertyValue(name));

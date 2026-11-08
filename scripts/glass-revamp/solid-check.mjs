@@ -1,0 +1,40 @@
+// State proof for the Solid surfaces switch: click it, check the attribute, reload, check it is set before first paint, then turn it off.
+// Usage: node scripts/glass-revamp/solid-check.mjs <outdir>. Local only, student session from .auth/student.json.
+import { chromium } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const out = process.argv[2]; mkdirSync(out, { recursive: true });
+const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
+if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });
+const page = await ctx.newPage();
+const results = [];
+const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(ok ? "PASS" : "FAIL", name, detail); };
+const attr = () => page.evaluate(() => document.documentElement.getAttribute("data-solid-surfaces"));
+await page.goto(base + "/account?tab=appearance", { waitUntil: "domcontentloaded", timeout: 150000 });
+await page.waitForLoadState("load", { timeout: 60000 }).catch(() => {});
+await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
+const sw = page.getByRole("switch", { name: "Solid surfaces" });
+await sw.waitFor({ timeout: 60000 });
+check("starts off", (await attr()) === null && (await sw.getAttribute("aria-checked")) === "false");
+await sw.click();
+await page.waitForTimeout(500);
+check("click turns the attribute on", (await attr()) === "on");
+check("backdrop-filter is gone from glass surfaces", await page.evaluate(() => [...document.querySelectorAll(".glass-surface, .glass-surface-elevated, .chrome, .ig-dock, .glass-menu")].every((e) => getComputedStyle(e).backdropFilter === "none")));
+await page.screenshot({ path: join(out, "switch-on-1440x900.png") });
+await page.keyboard.press("Tab");
+await page.reload({ waitUntil: "domcontentloaded", timeout: 150000 });
+check("attribute set before first paint after reload", (await attr()) === "on");
+await page.waitForLoadState("load", { timeout: 60000 }).catch(() => {});
+// The switch reads the stored value after the page hydrates, so wait for it rather than reading at the load event.
+const readsOn = await sw.waitFor({ timeout: 60000 }).then(() => page.waitForFunction(() => document.querySelector('[role="switch"]')?.getAttribute("aria-checked") === "true", null, { timeout: 30000 })).then(() => true, () => false);
+check("switch still reads on after reload", readsOn);
+await sw.focus();
+await page.keyboard.press("Space");
+await page.waitForTimeout(400);
+check("keyboard (Space) turns it off", (await attr()) === null && (await page.evaluate(() => localStorage.getItem("bnp-solid-surfaces"))) === null);
+await page.screenshot({ path: join(out, "switch-off-1440x900.png") });
+await browser.close();
+writeFileSync(join(out, "state-check.json"), JSON.stringify(results, null, 2));
+process.exit(results.every((r) => r.ok) ? 0 : 1);

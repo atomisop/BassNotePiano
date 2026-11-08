@@ -3293,3 +3293,62 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
   color: rgb(var(--c-s-50));
   background: rgb(var(--c-s-50) / 0.06) !important;
 }
+
+/* ==========================================================================
+   Solid surfaces (glass revamp). One switch turns every glass surface into a plain opaque one: no backdrop blur, no lens, no rim glow.
+   Set before first paint by THEME_BOOT_SCRIPT from localStorage["bnp-solid-surfaces"] (Settings > Appearance). The same look is used for
+   forced-colors. Kept at the end of the file and unlayered so it wins over every glass utility.
+   ========================================================================== */
+html[data-solid-surfaces="on"] :is(
+    .glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .app-dock, .ig-dock, .cmd-scrim,
+    .liquid, .liquid-signal, .neu-btn, .lg-glass, .animate-fade-in, [data-glass],
+    button[class*="shadow-raised-low"], a[class*="shadow-raised-low"]
+  ) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-solid-surfaces="on"] :is(.glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .app-dock, .ig-dock) {
+  background: rgb(var(--c-surface-solid)) !important;
+  box-shadow: none;
+}
+html[data-solid-surfaces="on"] .cmd-scrim {
+  background: rgb(0 0 0 / 0.45);
+}
+html[data-solid-surfaces="on"] :is(.liquid, .neu-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"]):not(.liquid-signal):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]) {
+  background: rgb(var(--neu-base));
+}
+html[data-solid-surfaces="on"] .lg-glass::after {
+  display: none !important;
+}
+/* A GlassLens IS the surface of menus, sheets and the sidebar (the parent has no background of its own), so in Solid it becomes an opaque panel
+   with a hairline edge instead of vanishing. Its lens layers (backdrop, specular rim) are hidden. */
+html[data-solid-surfaces="on"] [data-glass-lens="surface"] {
+  background: rgb(var(--c-surface-solid));
+  box-shadow: inset 0 0 0 1px rgb(var(--c-s-50) / 0.12);
+}
+html[data-solid-surfaces="on"] [data-glass-lens="highlight"] {
+  background: rgb(var(--c-s-50) / 0.12);
+}
+html[data-solid-surfaces="on"] [data-glass-lens] > * {
+  display: none !important;
+}
+@media (forced-colors: active) {
+  :is(.glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .app-dock, .ig-dock, .liquid, .lg-glass) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .lg-glass::after {
+    display: none !important;
+  }
+  [data-glass-lens="surface"] {
+    background: Canvas;
+    box-shadow: inset 0 0 0 1px CanvasText;
+  }
+  [data-glass-lens="highlight"] {
+    background: Highlight;
+    opacity: 0.25;
+  }
+  [data-glass-lens] > * {
+    display: none !important;
+  }
+}

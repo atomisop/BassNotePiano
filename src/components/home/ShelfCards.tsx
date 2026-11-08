@@ -43,7 +43,6 @@ export function PathCard({ step, code, title, done, open, current, slug }: { ste
         SHELF_CARD_CLASS,
         "min-h-36",
         current && "bg-signal/10 ring-2 ring-signal/50 hover:bg-signal/14",
-        !open && "opacity-60",
       )}
     >
       <span
@@ -55,8 +54,8 @@ export function PathCard({ step, code, title, done, open, current, slug }: { ste
       >
         {done ? <Check className="h-5 w-5" /> : open ? step : <Lock className="h-4 w-4" />}
       </span>
-      <span className="mt-auto block pt-4 text-caption font-medium text-slate-400">{current ? "You're here" : code}</span>
-      <span className="mt-0.5 block text-small font-semibold leading-snug text-slate-50 line-clamp-2">{title}</span>
+      <span className={cn("mt-auto block pt-4 text-caption font-medium", open ? "text-slate-400" : "text-slate-300")}>{current ? "You're here" : code}</span>
+      <span className={cn("mt-0.5 block text-small font-semibold leading-snug line-clamp-2", open ? "text-slate-50" : "text-slate-200")}>{title}</span>
     </Link>
   );
 }

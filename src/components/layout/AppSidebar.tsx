@@ -88,7 +88,11 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
     const measure = () => {
       frame = 0;
       const el = nav.querySelector<HTMLElement>('a[aria-current="page"]');
-      setSel(el ? { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight } : null);
+      // Measured against the nav itself (offsetTop is relative to whichever ancestor is positioned, which is not always the nav).
+      if (!el) return setSel(null);
+      const n = nav.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      setSel({ top: r.top - n.top + nav.scrollTop, left: r.left - n.left + nav.scrollLeft, width: el.offsetWidth, height: el.offsetHeight });
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);

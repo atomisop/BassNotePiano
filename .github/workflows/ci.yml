@@ -72,6 +72,7 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run rework:verify
+      - run: npm run glass:verify
 
       # NOTE, honestly: this step has not been verified against a real
       # GitHub Actions run, doing that would mean pushing to trigger CI,

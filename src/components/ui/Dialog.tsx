@@ -76,7 +76,7 @@ export function Dialog({
             className,
           )}
         >
-          <GlassLens radius={28} bezel={22} strength={14} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
+          <GlassLens surface radius={28} bezel={22} strength={14} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           <div onPointerDown={grab} aria-hidden className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 touch-none rounded-full bg-neu-base shadow-pressed-low md:hidden before:absolute before:inset-x-0 before:top-0 before:h-8 before:content-['']" />
           <div onPointerDown={grab} className="flex items-start justify-between gap-4 px-6 pt-5 max-md:touch-none">
             <div>

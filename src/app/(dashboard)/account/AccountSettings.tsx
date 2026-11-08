@@ -7,6 +7,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { AppearanceTiles } from "@/components/theme/AppearanceTiles";
+import { SolidSurfacesSwitch } from "@/components/theme/SolidSurfacesSwitch";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
 import { PausePlanCard } from "@/components/account/PausePlanCard";
@@ -479,6 +480,9 @@ function AppearanceSection() {
       <h2 className="text-title text-slate-50 font-semibold">Appearance</h2>
       <div className="mt-6 max-w-md">
         <AppearanceTiles />
+        <div className="mt-6">
+          <SolidSurfacesSwitch />
+        </div>
       </div>
     </section>
   );

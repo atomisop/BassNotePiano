@@ -58,7 +58,7 @@ function CommandDialog({
           className="cmd-window fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 rounded-[1.25rem] p-0 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)]"
           aria-label="Command menu"
         >
-          <GlassLens radius={20} bezel={18} strength={12} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
+          <GlassLens surface radius={20} bezel={18} strength={12} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           {/* Radix requires a title for screen readers; it's visually hidden
               because the search field already labels the dialog on screen. */}
           <DialogPrimitive.Title className="sr-only">Search and jump to</DialogPrimitive.Title>

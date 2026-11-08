@@ -33,6 +33,8 @@ for (const path of paths) {
       ...(w < 500 ? { hasTouch: true } : {}),
     });
     const page = await ctx.newPage();
+    // The app takes its theme from localStorage, not from the browser's color scheme (colorScheme alone only affects "System").
+    await page.addInitScript((t) => { try { localStorage.setItem("bnp-theme", t); } catch {} }, theme === "light" ? "paper" : "ink");
     let res = null;
     for (let attempt = 1; attempt <= 3 && !res; attempt++) {
       res = await page.goto(base + path, { waitUntil: "domcontentloaded", timeout: 150000 }).catch((e) => { console.error(`${path} attempt ${attempt}: ${e.message.split("\n")[0]}`); return null; });
