@@ -735,7 +735,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : "Taken"}</span>
+                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : row.heldByPlan ? "Reserved" : "Taken"}</span>
                         </>,
                         undefined,
                         "opacity-60",

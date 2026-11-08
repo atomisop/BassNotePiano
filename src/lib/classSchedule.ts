@@ -197,6 +197,8 @@ export interface ClassOccurrence {
   reservedForYou?: boolean;
   /** Admin view only: whose weekly plan keeps this time while nobody has a class in it (a paused plan, or a week its class was canceled). */
   heldByPlan?: string;
+  /** Student view: a live payment plan (not the viewer's) keeps this time, so it is shown as Reserved instead of Taken. */
+  reservedByPlan?: boolean;
 }
 
 /**
@@ -479,6 +481,7 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
         reservedByOwner: blocking.length > 0,
         reservedForYou: covering.length > 0 && blocking.length === 0,
         heldByPlan: options.forAdmin ? holder : undefined,
+        reservedByPlan: !options.forAdmin && holder !== undefined && !bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) && blocking.length === 0,
         isBooked:
           bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) ||
           blocking.length > 0 ||
