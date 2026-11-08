@@ -3,6 +3,9 @@
 import { useMemo } from "react";
 import { buildKeys, countWhiteKeys } from "@/lib/piano/notes";
 
+// A black key is 70% of a white key wide (a real one is nearer 58%): at 320px that is still 24px or more, the WCAG 2.2 minimum touch target.
+const BLACK_RATIO = 0.7;
+
 /**
  * An on-screen piano that is really playable: pointer down plays (no waiting for a click), pointer up releases, and every key is a
  * real button with its note name as its accessible name, so it also works with Tab and Space/Enter and a screen reader.
@@ -97,7 +100,7 @@ export function PianoKeyboard({
               onKeyUp={(e) => {
                 if (e.key === " " || e.key === "Enter") onNoteOff(k.midi);
               }}
-              style={{ left: `${k.whiteIndex * whiteWidth - whiteWidth * 0.3}%`, width: `${whiteWidth * 0.6}%` }}
+              style={{ left: `${k.whiteIndex * whiteWidth - whiteWidth * BLACK_RATIO / 2}%`, width: `${whiteWidth * BLACK_RATIO}%` }}
               className={`absolute top-0 z-10 h-[62%] rounded-b-md border border-black text-caption font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-signal ${
                 down ? "bg-slate-600" : "bg-black"
               } ${isTarget ? "ring-4 ring-signal" : ""}`}
