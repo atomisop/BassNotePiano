@@ -43,6 +43,18 @@ const STATUS_TONE: Record<string, "success" | "neutral"> = {
   CANCELED: "neutral",
 };
 
+/**
+ * A plan is "Active" the moment it is set up (its weekly time is held), but nothing has been paid until the first
+ * installment is approved. Say that plainly instead of showing a green Active dot on an unpaid plan.
+ */
+function planBadge(plan: AdminPaymentPlan): { label: string; tone: "success" | "neutral" | "warning" } {
+  if (plan.status === "ACTIVE" && plan.installmentsPaid === 0) {
+    const first = plan.installmentPayments.find((p) => p.status === "PENDING_REVIEW" || p.status === "AWAITING_TRANSFER" || p.status === "REJECTED");
+    return { label: first?.status === "PENDING_REVIEW" ? "First payment to review" : "Waiting for first payment", tone: "warning" };
+  }
+  return { label: STATUS_LABEL[plan.status], tone: STATUS_TONE[plan.status] ?? "neutral" };
+}
+
 function receivedCents(plan: AdminPaymentPlan): number {
   return plan.installmentPayments.filter((p) => p.status === "VERIFIED").reduce((sum, p) => sum + p.amountCents, 0);
 }
@@ -158,7 +170,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">
               {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) ? null : (
-                <StatusDot tone={STATUS_TONE[plan.status] ?? "neutral"}>{STATUS_LABEL[plan.status]}</StatusDot>
+                <StatusDot tone={planBadge(plan).tone}>{planBadge(plan).label}</StatusDot>
               )}
               {plan.status === "ACTIVE" && (
                 <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-slate-50 underline underline-offset-4">

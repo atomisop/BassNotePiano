@@ -371,6 +371,24 @@ export function PaymentPlanEnrollmentFlow({
     const planLabel = describePaymentPlan(plan.cadence, plan.term);
     const progressPercent = Math.min(100, (plan.installmentsPaid / plan.termMonths) * 100);
 
+    // A plan exists the moment it is set up (its weekly time is held), but it only starts once the first payment
+    // arrives. Say which of those two states this is, in plain words, at the top of the card.
+    const waitingForFirstPayment = plan.installmentsPaid === 0;
+    const firstAmount = installment ? (installment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" }) : null;
+    const planState = !waitingForFirstPayment
+      ? { label: "Active", tone: "bg-emerald-400/15 text-emerald-300", note: null }
+      : memberView
+        ? { label: "Waiting for the first payment", tone: "bg-amber-400/15 text-amber-300", note: null }
+        : installment?.status === "PENDING_REVIEW"
+          ? { label: "Payment sent, we are checking it", tone: "bg-amber-400/15 text-amber-300", note: "Thanks. Your plan starts as soon as we confirm it." }
+          : installment?.status === "REJECTED"
+            ? { label: "Payment problem", tone: "bg-red-400/15 text-red-300", note: "We could not match your payment. See below to try again." }
+            : {
+                label: "Waiting for your first payment",
+                tone: "bg-amber-400/15 text-amber-300",
+                note: `Your weekly time is held for you. Your plan, credits and classes start when your first payment${firstAmount ? ` of ${firstAmount}` : ""} arrives. Send it below.`,
+              };
+
     return (
       <div className="mx-auto max-w-2xl">
         {pendingSwitch && (
@@ -393,7 +411,11 @@ export function PaymentPlanEnrollmentFlow({
           </div>
         )}
         <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
-          <p className="text-small text-slate-100">{planLabel}</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-small text-slate-100">{planLabel}</p>
+            <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${planState.tone}`}>{planState.label}</span>
+          </div>
+          {planState.note && !memberView && <p className="mt-2 text-small text-slate-300">{planState.note}</p>}
           <p className="mt-1 text-small text-slate-500">
             {plan.installmentsPaid} of {plan.termMonths} installments paid
           </p>
@@ -431,8 +453,9 @@ export function PaymentPlanEnrollmentFlow({
           // comment. This is the normal, expected state for most of every
           // month, not an error.
           <div className="rounded-xl p-4 text-center bg-neu-base shadow-raised-low">
-            <p className="text-small text-slate-100">You&apos;re all paid up for now.</p>
-            {nextInstallmentDueDate && (
+            <p className="text-small text-slate-100">{waitingForFirstPayment ? "Nothing to pay right now." : "You\u2019re all paid up for now."}</p>
+            {waitingForFirstPayment && <p className="mt-1 text-small text-slate-500">Your plan starts when the first payment arrives.</p>}
+            {!waitingForFirstPayment && nextInstallmentDueDate && (
               <p className="mt-1 text-small text-slate-500">
                 {`Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
                   month: "long",
