@@ -187,12 +187,9 @@ export function PianoLesson() {
         {feedback}
       </p>
 
-      <div className="mt-4">
-        <PianoKeyboard startMidi={START} endMidi={END} pressed={pressed} target={target} showLabels={labels} onNoteOn={noteOn} onNoteOff={noteOff} />
-      </div>
-
+      {/* Above the keyboard, so on a small phone the result is on screen the moment the exercise ends. */}
       {scoring?.finished && (
-        <section aria-label="Your result" className="mt-6 rounded-2xl glass-surface-subtle p-5">
+        <section aria-label="Your result" className="mt-4 rounded-2xl glass-surface-subtle p-5">
           <h2 className="text-title font-semibold text-slate-50">Your result</h2>
           <dl className="mt-3 grid grid-cols-3 gap-3 text-center">
             <div>
@@ -217,6 +214,10 @@ export function PianoLesson() {
                 Try it from memory
               </button>
             )}
+      <div className="mt-4">
+        <PianoKeyboard startMidi={START} endMidi={END} pressed={pressed} target={target} showLabels={labels} onNoteOn={noteOn} onNoteOff={noteOff} />
+      </div>
+
           </div>
         </section>
       )}
