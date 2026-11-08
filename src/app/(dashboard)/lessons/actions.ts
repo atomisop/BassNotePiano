@@ -22,6 +22,7 @@ import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { prisma } from "@/lib/prisma";
 import { openBookingSupportCase, openSubjectSupportCase, AssistantEscalationError } from "@/lib/support";
+import { BookingRequestError, cancelBookingRequest, createBookingRequests, type RequestSelection } from "@/lib/bookingRequests";
 
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, creditsToBook?: number) {
   const session = await getServerAuthSession();
@@ -51,6 +52,33 @@ export async function bookClassBundleAction(selections: BundleBookingSelection[]
   const results = await bookClassBundle(session.user.id, selections);
   revalidatePath("/", "layout");
   return { ok: true as const, results };
+}
+
+/** Request mode: sends the picked times to the teacher instead of booking them. Each time is answered on its own. */
+export async function requestClassTimesAction(selections: RequestSelection[]) {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  try {
+    const results = await createBookingRequests(session.user.id, selections);
+    revalidatePath("/", "layout");
+    return { ok: true as const, results };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError || err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function cancelBookingRequestAction(requestId: string) {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  try {
+    await cancelBookingRequest(requestId, session.user.id);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError ? err.message : "Something went wrong." };
+  }
 }
 
 /** Live check while the booker is still typing attendee emails, see checkFamilyClassAttendees's own comment. */

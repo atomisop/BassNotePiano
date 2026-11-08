@@ -46,6 +46,8 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   TRIAL_ENDING: "/billing/plans",
   PAYMENT_PLAN_UPDATED: "/billing/plans",
   SLOT_WAITLIST_OPENED: "/billing/plans",
+  BOOKING_REQUEST_RECEIVED: "/lessons?tab=upcoming",
+  BOOKING_REQUEST_DECLINED: "/lessons",
   PARENT_LINK_REQUEST: "/account?tab=account#parent-mode",
   PARENT_LINK_ACCEPTED: "/parent",
   BANNER_PHONE: "/account?tab=account#phone",

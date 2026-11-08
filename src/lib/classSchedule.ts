@@ -88,8 +88,12 @@ function getEtOffsetMinutes(utcInstant: Date): number {
  * The admin's booking switches (Settings → Booking), checked for a student making
  * their own booking. An admin booking on a student's behalf skips these.
  */
-async function assertBookingAllowed(scheduledAt: Date, opts: { family?: boolean } = {}): Promise<void> {
+async function assertBookingAllowed(scheduledAt: Date, opts: { family?: boolean; forRequest?: boolean } = {}): Promise<void> {
   if (await getBoolSetting("booking.paused")) throw new ClassBookingError(await getTextSetting("booking.pausedMessage"));
+  // In request mode a student asks for a time instead of booking it; only the studio books (adminBookClass skips this check).
+  if (!opts.forRequest && (await getBoolSetting("booking.requestMode"))) {
+    throw new ClassBookingError("Booking is by request right now. Pick your times and send a request, and you will be told when it is confirmed.");
+  }
   if (opts.family && !(await getBoolSetting("booking.allowFamily"))) throw new ClassBookingError("Family bookings are not available right now.");
   const minNoticeHours = await getNumberSetting("booking.minNoticeHours");
   if (minNoticeHours > 0 && scheduledAt.getTime() - Date.now() < minNoticeHours * 3_600_000) {
@@ -98,6 +102,28 @@ async function assertBookingAllowed(scheduledAt: Date, opts: { family?: boolean 
   if (!(await getBoolSetting("booking.allowSameDay")) && scheduledAt.getTime() < todayBoundsEt().end.getTime()) {
     throw new ClassBookingError("Same-day booking is turned off. Please pick a class on a later day.");
   }
+}
+
+/**
+ * One hour a student wants to request, checked the way booking checks it: a real hour of an active weekly time, on the
+ * right weekday, inside the booking horizon, still in the future, and passing the booking switches (paused, minimum
+ * notice, same day). Only the request-mode refusal itself is left out, since this IS the request.
+ */
+export async function resolveRequestedHour(scheduleId: string, occurrenceDateMs: number, chunkIndex: number) {
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: scheduleId } });
+  if (!schedule || !schedule.active) throw new ClassBookingError("That class time is no longer offered.");
+  const chunk = chunksForSchedule(schedule)[chunkIndex];
+  if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
+  const occurrenceDate = new Date(occurrenceDateMs);
+  if (Number.isNaN(occurrenceDate.getTime()) || occurrenceDate.getUTCDay() !== schedule.dayOfWeek || occurrenceDate.getTime() % 86_400_000 !== 0) {
+    throw new ClassBookingError("That is not a date this class meets.");
+  }
+  const horizonWeeks = await getNumberSetting("booking.horizonWeeks");
+  if (occurrenceDate.getTime() > Date.now() + (horizonWeeks * 7 + 1) * 86_400_000) throw new ClassBookingError("That date is too far ahead to request yet.");
+  const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
+  if (scheduledAt.getTime() <= Date.now()) throw new ClassBookingError("That class has already started or passed.");
+  await assertBookingAllowed(scheduledAt, { forRequest: true });
+  return { schedule, chunk, occurrenceDate, scheduledAt, credits: chunk.creditCost };
 }
 
 /** Converts an ET wall-clock date+time to the UTC instant it represents. */

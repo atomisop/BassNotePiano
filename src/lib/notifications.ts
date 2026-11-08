@@ -93,6 +93,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   TRIAL_ENDING: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
   PAYMENT_PLAN_UPDATED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
   SLOT_WAITLIST_OPENED: { label: "Pick your time", url: getAppUrl("/billing/plans"), kind: "default" },
+  BOOKING_REQUEST_RECEIVED: { label: "See your request", url: getAppUrl("/lessons?tab=upcoming"), kind: "default" },
+  BOOKING_REQUEST_DECLINED: { label: "Pick another time", url: getAppUrl("/lessons"), kind: "default" },
 };
 
 /** The in-app path of a full link, or null if it can't be read (a notice must never fail over its link). */
