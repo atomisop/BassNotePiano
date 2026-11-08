@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { signInAs, uniqueEmail } from "../fixtures";
+import { db, signInAs, uniqueEmail } from "../fixtures";
 
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
@@ -107,6 +107,42 @@ test.describe("playable piano lesson (P1-MUS-02..05)", () => {
     await key(page, "C4").focus();
     await page.keyboard.press("Space");
     await expect(page.getByRole("progressbar", { name: "Progress" })).toHaveAttribute("aria-valuenow", "17");
+  });
+
+
+  test("a finished run is saved, shown as the best, and survives a reload (P1-MUS-06)", async ({ page, context }) => {
+    const email = uniqueEmail("persist");
+    await signInAs(context, base, email, { onboarded: true });
+    await page.goto("/practice/piano");
+    await expect(page.getByText("Finish a run and your result is saved.")).toBeVisible();
+    await key(page, "E4").click(); // one wrong note first
+    for (const n of PHRASE) {
+      await key(page, n).click();
+      await page.waitForTimeout(90);
+    }
+    await expect(page.getByRole("status").filter({ hasText: /Saved\. Your best is 86% over 1 run\./ })).toBeVisible();
+
+    const prisma = db();
+    const rows = await prisma.pianoPracticeAttempt.findMany({ where: { user: { email } } });
+    await prisma.$disconnect();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ exerciseId: "pentatonic-warm-up", mode: "guided", attempts: 7, correct: 6 });
+
+    await page.reload();
+    await expect(page.getByText("Your best so far: 86% over 1 run.")).toBeVisible();
+  });
+
+  test("an unfinished run is never saved", async ({ page, context }) => {
+    const email = uniqueEmail("unfinished");
+    await signInAs(context, base, email, { onboarded: true });
+    await page.goto("/practice/piano");
+    await key(page, "C4").click();
+    await key(page, "D4").click();
+    await page.waitForTimeout(500);
+    const prisma = db();
+    const count = await prisma.pianoPracticeAttempt.count({ where: { user: { email } } });
+    await prisma.$disconnect();
+    expect(count).toBe(0);
   });
 
   test("axe finds no serious or critical issues", async ({ page, context }) => {

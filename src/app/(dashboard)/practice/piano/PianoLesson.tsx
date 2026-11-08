@@ -12,14 +12,13 @@ import {
   hardestNote,
   progressPercent,
   targetNote,
-  type Exercise,
   type PracticeMode,
 } from "@/lib/piano/practiceScoring";
 import { buttonVariants } from "@/components/ui/button";
+import { WARM_UP } from "@/lib/piano/exercises";
+import type { PianoBest } from "@/lib/piano/attempts";
+import { savePianoAttemptAction } from "./actions";
 
-// A plain five-note scale to warm the hands up. It is a teaching exercise, NOT a transcription of any Ethiopian qenet
-// (Tizita, Bati, Ambassel, Anchihoye): those come from the teacher, once the content is reviewed (see Rework.md, P1-MUS-01).
-const WARM_UP: Exercise = { id: "pentatonic-warm-up", title: "Five-note warm-up", notes: [60, 62, 64, 67, 69, 72] };
 const START = 60;
 const END = 72;
 
@@ -30,7 +29,7 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "memory", label: "From memory", hint: "No outline. Play the phrase from what you heard." },
 ];
 
-export function PianoLesson() {
+export function PianoLesson({ initialBest }: { initialBest: PianoBest }) {
   const audio = usePianoAudio();
   const [tab, setTab] = useState<Tab>("guided");
   const [labels, setLabels] = useState(true);
@@ -39,6 +38,12 @@ export function PianoLesson() {
   const [demoNote, setDemoNote] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const timers = useRef<number[]>([]);
+  const [best, setBest] = useState<PianoBest>(initialBest);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // One key per run, so a retry or a double tap saves the run once. A new run (restart, new mode) gets a new key.
+  const runKey = useRef<string>("");
+  const savedFor = useRef<string>("");
 
   const scoring = tab === "listen" ? null : session;
 
@@ -86,6 +91,44 @@ export function PianoLesson() {
   }, [noteOn, noteOff]);
 
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  // Save a finished run once. The screen keeps the result either way; a failed save says so and can be retried.
+  const finished = scoring?.finished === true;
+  const finishedAttempts = scoring?.attempts ?? 0;
+  const finishedCorrect = scoring?.correct ?? 0;
+  const finishedMode = tab === "memory" ? "memory" : "guided";
+  useEffect(() => {
+    if (!finished) {
+      runKey.current = "";
+      setSaveState("idle");
+      setSaveError(null);
+      return;
+    }
+    if (!runKey.current) runKey.current = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    if (savedFor.current === runKey.current) return;
+    savedFor.current = runKey.current;
+    void saveRun(runKey.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished]);
+
+  async function saveRun(key: string) {
+    setSaveState("saving");
+    setSaveError(null);
+    try {
+      const result = await savePianoAttemptAction({ exerciseId: WARM_UP.id, mode: finishedMode, attempts: finishedAttempts, correct: finishedCorrect, clientKey: key });
+      if (result.ok) {
+        setBest(result.best);
+        setSaveState("saved");
+      } else {
+        setSaveError(result.error);
+        setSaveState("failed");
+      }
+    } catch {
+      setSaveError("Could not save this run. Your result is still on screen.");
+      setSaveState("failed");
+    }
+  }
+
 
   function chooseTab(next: Tab) {
     stopDemo();
@@ -205,6 +248,18 @@ export function PianoLesson() {
               <dd className="text-headline font-bold text-slate-50">{hardest === null ? "None" : midiToName(hardest)}</dd>
             </div>
           </dl>
+          <p role="status" className="mt-3 text-small text-slate-400">
+            {saveState === "saving" && "Saving your result…"}
+            {saveState === "saved" && `Saved.${best.bestAccuracy !== null ? ` Your best is ${best.bestAccuracy}% over ${best.runs} ${best.runs === 1 ? "run" : "runs"}.` : ""}`}
+            {saveState === "failed" && (
+              <>
+                {saveError}{" "}
+                <button type="button" onClick={() => void saveRun(runKey.current)} className="underline underline-offset-4">
+                  Try saving again
+                </button>
+              </>
+            )}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={restart} className={buttonVariants({ variant: "primary", size: "sm" })}>
               Try again
@@ -282,7 +337,7 @@ export function PianoLesson() {
             <p>A physical MIDI keyboard needs a browser that supports Web MIDI, such as Chrome or Edge on a computer. The on-screen keys work everywhere.</p>
           )}
         </div>
-        <p className="mt-3">Results on this screen are not saved yet.</p>
+        <p className="mt-3">{best.bestAccuracy === null ? "Finish a run and your result is saved." : `Your best so far: ${best.bestAccuracy}% over ${best.runs} ${best.runs === 1 ? "run" : "runs"}.`}</p>
       </div>
     </div>
   );
