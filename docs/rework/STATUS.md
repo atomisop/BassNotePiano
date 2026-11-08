@@ -7,10 +7,10 @@ Source plan: Rework.md (owner's copy). Update after every task; a task is DONE o
 | P0-OPS-01 evidence gate | IN PROGRESS (verifier, capture, typecheck, lint, unit tests done; e2e specs pending) | rework/phase0-evidence-gate | | docs/rework/evidence/P0-OPS-01 |
 | P0-OPS-02 route atlas | NOT STARTED | | | |
 | P0-OPS-03 baseline gates | NOT STARTED | | | |
-| P0-SEC-01 payment email | NOT STARTED | | | |
-| P0-SEC-02 booking and credits | NOT STARTED | | | |
-| P0-SEC-03 role boundaries | NOT STARTED | | | |
-| P0-BIZ-01 pricing fallback | NOT STARTED | | | |
+| P0-SEC-01 payment email | IN PROGRESS: reviewed, replay race closed, no vulnerability found | rework/phase0-evidence-gate | 8d4b6f6e | docs/rework/evidence/P0-SEC-01 |
+| P0-SEC-02 booking and credits | IN PROGRESS: contention verified, no defect; DST/refund cases not done | rework/phase0-evidence-gate | 8d4b6f6e | docs/rework/evidence/P0-SEC-02 |
+| P0-SEC-03 role boundaries | IN PROGRESS: admin guards verified and locked by a test; student IDOR checks not done | rework/phase0-evidence-gate | 8d4b6f6e | docs/rework/evidence/P0-SEC-03 |
+| P0-BIZ-01 pricing fallback | IN PROGRESS: money paths now strict, stale notice added; no screenshot yet | rework/phase0-evidence-gate | 8d4b6f6e | docs/rework/evidence/P0-BIZ-01 |
 | P1-ONB-01 two-step onboarding | DONE (pending owner approval) | rework/phase0-evidence-gate | 6be15446 | docs/rework/evidence/P1-ONB-01 |
 | P1-ONB-03 instrument carry-through | DONE (same evidence) | rework/phase0-evidence-gate | 6be15446 | docs/rework/evidence/P1-ONB-01 |
 | P1-A11Y-01 onboarding semantics | IN PROGRESS (automated done, screen reader pass pending) | rework/phase0-evidence-gate | 6be15446 | docs/rework/evidence/P1-ONB-01 |
