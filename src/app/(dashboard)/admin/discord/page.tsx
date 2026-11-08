@@ -6,6 +6,7 @@ import { DiscordMembersList } from "@/components/admin/DiscordMembersList";
 import { createVisibleTestChannelAction, testDiscordBotAction } from "../schedule/actions";
 import { disconnectDiscordForUserAction, notifyDiscordAction } from "./actions";
 import { discordLinkState } from "@/lib/discordLinkState";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Discord" };
 
@@ -19,10 +20,7 @@ export default async function AdminDiscordPage() {
 
   return (
     <div>
-      <h1 className="sr-only">Discord</h1>
-      <p className="mt-2 max-w-[70ch] text-small text-slate-500">
-        Class calls are made in Discord, so each student connects their account once. Joining the server by the invite link does not connect them: they must press Connect Discord on their Lessons page. Here you can see who has and who has not, tell them how, and disconnect anyone.
-      </p>
+      <h1 className="sr-only">Discord<Hint className="ml-1.5">Class calls are made in Discord, so each student connects their account once. Joining the server by the invite link does not connect them: they must press Connect Discord on their Lessons page. Here you can see who has and who has not, tell them how, and disconnect anyone.</Hint></h1>
 
       {isOwner && <DiscordBotTest onRun={testDiscordBotAction} onVisible={createVisibleTestChannelAction} />}
 

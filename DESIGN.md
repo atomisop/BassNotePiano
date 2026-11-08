@@ -59,6 +59,13 @@ Marketing pages may use larger display sizes for their hero only.
 | sheet | 24px | `rounded-3xl`, `rounded-sheet` |
 | pill | full | `rounded-full`: buttons, chips, avatars, the dock |
 
+## Quiet cards (2026-11-07, owner: whole app)
+
+A card says one thing loudly. The name and the one figure that matters (money, a date, a count) are `text-title` / `text-headline` in `text-slate-50`;
+everything else is one gray line (`text-small text-slate-500`, joined with " · ") or left out. Colour only for what needs action: red for late or
+failed, amber for "check this", orange for the one button. Healthy states get no badge. No label-over-value grids (`dt`/`dd`) for facts a
+sentence can carry; labels like "Email", "Started" and "Submitted" are dropped. Toggles and empty states use two or three words.
+
 ## Spacing
 
 4-point grid. Inside a card 16 (phone) / 20 (computer); between cards 12 / 16; between page sections 32 / 48.

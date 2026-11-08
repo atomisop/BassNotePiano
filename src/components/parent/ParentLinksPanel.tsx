@@ -167,7 +167,7 @@ export function ParentLinksPanel() {
 
           {state.requests.length > 0 && (
             <div>
-              <p className="text-small font-medium text-slate-300">Asking to link to your account</p>
+              <p className="text-small font-medium text-slate-300"><Hint>Asking to link to your account</Hint></p>
               <ul className="mt-2 space-y-2">
                 {state.requests.map((r) => (
                   <li key={r.linkId} className="flex items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-3">
@@ -189,7 +189,7 @@ export function ParentLinksPanel() {
 
           {state.parents.length > 0 && (
             <div>
-              <p className="text-small font-medium text-slate-300">Parent accounts linked to you</p>
+              <p className="text-small font-medium text-slate-300"><Hint>Parent accounts linked to you</Hint></p>
               <ul className="mt-2 divide-y divide-slate-50/10">
                 {state.parents.map((p) => (
                   <li key={p.parentId} className="flex items-center justify-between gap-3 py-2.5">

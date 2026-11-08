@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import { AtomHandoff } from "@/components/stageshow/scenes/AtomHandoff";
 import { BookingHero } from "@/components/stageshow/scenes/BookingHero";
+import { ParentPair } from "@/components/stageshow/scenes/ParentPair";
+import { PhoneReminders } from "@/components/stageshow/scenes/PhoneReminders";
+import { PracticeStreak } from "@/components/stageshow/scenes/PracticeStreak";
 import { PricingBento } from "@/components/stageshow/scenes/PricingBento";
 import { ScaleUnlock } from "@/components/stageshow/scenes/ScaleUnlock";
 
@@ -17,6 +21,18 @@ export default function Page() {
       </section>
       <section id="scale" style={{ width: "min(760px, 100%)" }}>
         <ScaleUnlock />
+      </section>
+      <section id="atom" style={{ width: "min(760px, 100%)" }}>
+        <AtomHandoff />
+      </section>
+      <section id="parent" style={{ width: "min(760px, 100%)" }}>
+        <ParentPair />
+      </section>
+      <section id="streak" style={{ width: "min(760px, 100%)" }}>
+        <PracticeStreak />
+      </section>
+      <section id="reminders" style={{ width: "min(760px, 100%)" }}>
+        <PhoneReminders />
       </section>
     </main>
   );

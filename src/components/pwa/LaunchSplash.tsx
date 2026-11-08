@@ -12,8 +12,11 @@ export function LaunchSplash() {
     const root = document.documentElement;
     const layer = document.getElementById("bnp-splash");
     if (!layer || !root.hasAttribute("data-splash")) return;
-    // performance.now() counts from the start of the page load, so a slow start does not wait any longer than it already did.
-    const wait = Math.max(0, SPLASH_MIN_MS - performance.now());
+    // The animation's own clock says how much of it has played (a slow start or a slow preview never cuts it short).
+    const slow = Number(getComputedStyle(root).getPropertyValue("--bnp-slow")) || 1;
+    const first = layer.getAnimations ? layer.getAnimations({ subtree: true })[0] : undefined;
+    const played = first && typeof first.currentTime === "number" ? first.currentTime : performance.now();
+    const wait = Math.max(0, SPLASH_MIN_MS * slow - played);
     let removeTimer: number | undefined;
     const leaveTimer = window.setTimeout(() => {
       layer.classList.add("is-leaving");

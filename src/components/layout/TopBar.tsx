@@ -1,7 +1,7 @@
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { StudentNotesPanel } from "@/components/admin/StudentNotesPanel";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
-import { TopSettingsLink } from "./TopSettingsLink";
+import { DockProfile } from "./DockProfile";
 import { AdminTopLink } from "./AdminTopLink";
 import { Breadcrumb } from "./Breadcrumb";
 import { FriendsTopLink } from "./FriendsTopLink";
@@ -123,7 +123,7 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         {/* The admin's alerts (Discord, stopped jobs, what is waiting), right before the profile picture. */}
         {isAdmin && <AdminAlertsButton cards={alertCards} />}
         </div>
-        <TopSettingsLink />
+        <DockProfile isAdmin={isAdmin} placement="down" />
         </div>
       </div>
       <BarTitle />

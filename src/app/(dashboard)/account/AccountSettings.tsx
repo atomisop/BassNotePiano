@@ -24,6 +24,7 @@ import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, Sh
 import { SectionCard } from "./SectionCard";
 import { EmailChange } from "./EmailChange";
 import { PasswordSection, DangerZoneSection, TutorialsSection, NotificationSettingsSection } from "./AccountSections";
+import { Hint } from "@/components/ui/Hint";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
   name: string | null;
@@ -412,7 +413,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
       <AccountGroup id="privacy" title="Privacy & data">
         <SectionCard title="Studio leaderboard">
           {account.leaderboardLinkedChild ? (
-            <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+            <p className="text-small text-slate-400"><Hint>Hidden while linked to a parent.</Hint></p>
           ) : (
             <LeaderboardPrivacySwitch initialHidden={account.leaderboardHidden} />
           )}

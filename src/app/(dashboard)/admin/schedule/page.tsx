@@ -21,6 +21,7 @@ import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { AdminReservations } from "@/components/admin/AdminReservations";
 import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
+import { Hint } from "@/components/ui/Hint";
 
 type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
 
@@ -66,7 +67,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         {viewSwitcher}
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-small text-slate-400">A holiday or a sick day: close it and every class that day is canceled.</p>
+          <p className="text-small text-slate-400"><Hint>A holiday or a sick day: close it and every class that day is canceled.</Hint></p>
           <AdminCloseDay />
         </div>
 
@@ -126,7 +127,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       {calendarLink && viewerIsOwner && (
         <form action={rotateTeacherCalendarLinkAction} className="mt-2">
           <button type="submit" className="text-small text-slate-50/70 underline">
-            Make a new calendar link (the old one stops working)
+            New calendar link
           </button>
         </form>
       )}

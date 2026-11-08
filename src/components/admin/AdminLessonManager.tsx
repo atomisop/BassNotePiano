@@ -14,6 +14,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FileText } from "@/components/ui/appIcons";
+import { Hint } from "@/components/ui/Hint";
 
 const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -443,7 +444,7 @@ export function AdminLessonManager({
 
       <Dialog open={editing !== null} onOpenChange={(next) => !busy && !next && setEditing(null)} title="Rename the lesson">
         <div className="grid gap-4">
-          <p className="text-small text-slate-400">The file, its place in the list and everyone&apos;s progress stay as they are.</p>
+          <p className="text-small text-slate-400"><Hint>The file, its place in the list and everyone&apos;s progress stay as they are.</Hint></p>
           <label className="grid gap-1.5">
             <span className="text-small font-medium text-slate-200">Title</span>
             <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} maxLength={120} className={editField} />

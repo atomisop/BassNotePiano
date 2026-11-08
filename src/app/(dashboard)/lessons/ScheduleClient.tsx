@@ -19,6 +19,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
+import { Hint } from "@/components/ui/Hint";
 
 interface UpcomingBooking {
   id: string;
@@ -236,7 +237,7 @@ export function ScheduleClient({
                   {canChange ? (
                     confirming && (
                       <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
-                        <p className="text-small text-slate-300">Skip this class? It stays on your account.</p>
+                        <p className="text-small text-slate-300"><Hint>Skip this class? It stays on your account.</Hint></p>
                         <div className="mt-2 flex gap-2">
                           <button
                             type="button"
@@ -291,7 +292,7 @@ export function ScheduleClient({
         {changingTime ? (
           <div className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
+              <p className="text-small font-medium text-slate-300"><Hint>Pick a new weekly time</Hint></p>
               <button
                 type="button"
                 onClick={() => setChangingTime(false)}

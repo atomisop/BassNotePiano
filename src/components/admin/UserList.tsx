@@ -86,7 +86,7 @@ export function UserList({
   return (
     <div>
       <AdminListSearch value={query} onChange={handleSearchChange} placeholder="Search a name or email" shown={rows.length} total={rows.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify students when I open their next scale" className="mt-3" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify students" className="mt-3" />
 
       {error && <p className="mb-3 text-small text-red-400">{error}</p>}
 
@@ -135,10 +135,10 @@ export function UserList({
                 {/* Name first with the room it needs; the facts about the account sit on their own line under it, so a badge never
                     squeezes the name on a phone (Law of Proximity: each fact sits next to the person it is about). */}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body text-slate-50">{row.name ?? row.email}</p>
+                  <p className="truncate text-body font-semibold text-slate-50">{row.name ?? row.email}</p>
                   {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
                   {(row.roleLabel || row.complimentary || row.practiceDays !== null || row.progress) && (
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-slate-400">
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-slate-500">
                       {row.roleLabel && <span>{row.roleLabel}</span>}
                       {row.complimentary && <span className="rounded-full bg-signal/12 px-2 py-0.5 font-medium text-signal-fg">Complimentary</span>}
                       {row.practiceDays !== null && (

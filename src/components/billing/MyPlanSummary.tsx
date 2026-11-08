@@ -21,32 +21,34 @@ export async function MyPlanSummary({ userId }: { userId: string }) {
 
   return (
     <section className="glass-surface mb-4 p-4" aria-label="My plan">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div>
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">My plan</p>
-          <p className="mt-1 text-body font-semibold text-slate-50">{describePaymentPlan(plan.cadence, plan.term)}</p>
-        </div>
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-small">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           {paused ? (
-            <div>
-              <dt className="text-slate-500">Plan</dt>
-              <dd className="font-semibold text-amber-300">{pausedText}</dd>
-            </div>
+            <p className="text-title font-semibold text-amber-300">Paused</p>
           ) : (
-          <div>
-            <dt className="text-slate-500">{overdue ? "Bill was due" : "Next bill"}</dt>
-            <dd className={`font-semibold ${overdue ? "text-red-300" : "text-slate-50"}`}>
-              {usd(plan.installmentAmountCents)} · {dateOnly(due)}
-              <span className="ml-1.5 font-normal text-slate-400">{overdue ? "pay now to keep your classes" : daysToDue === 0 ? "today" : daysToDue === 1 ? "tomorrow" : `in ${daysToDue} days`}</span>
-            </dd>
-          </div>
+            <p className={`text-headline font-semibold tabular-nums ${overdue ? "text-red-300" : "text-slate-50"}`}>{usd(plan.installmentAmountCents)}</p>
           )}
-          <div>
-            <dt className="text-slate-500">Classes left this cycle</dt>
-            <dd className="font-semibold text-slate-50">{left}</dd>
-          </div>
-        </dl>
+          <p className={`text-small ${overdue ? "font-medium text-red-300" : "text-slate-400"}`}>
+            {paused
+              ? pausedText.replace("Paused until the studio resumes it", "Until the studio resumes it").replace("Paused until ", "Until ")
+              : overdue
+                ? `Was due ${dateOnly(due)}`
+                : `${dateOnly(due)} · ${daysToDue === 0 ? "today" : daysToDue === 1 ? "tomorrow" : `in ${daysToDue} days`}`}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-headline font-semibold tabular-nums text-slate-50">{left}</p>
+          <p className="text-small text-slate-500">{left === 1 ? "class left" : "classes left"}</p>
+        </div>
       </div>
+      <div aria-hidden className="mt-4 flex gap-1">
+        {Array.from({ length: Math.min(plan.termMonths, 12) }, (_, i) => (
+          <span key={i} className={`h-1 flex-1 rounded-full ${i < plan.installmentsPaid ? "bg-signal" : "bg-slate-50/10"}`} />
+        ))}
+      </div>
+      <p className="mt-2 text-caption text-slate-500">
+        {describePaymentPlan(plan.cadence, plan.term)} · {plan.installmentsPaid}/{plan.termMonths} paid
+      </p>
     </section>
   );
 }

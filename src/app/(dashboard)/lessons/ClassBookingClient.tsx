@@ -530,10 +530,10 @@ export function ClassBookingClient({
               <div className="glass-surface mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <p className="text-body font-semibold text-slate-50">
-                    A fifth class this cycle: {formatOccurrenceDay(fifthClassOffer.scheduledAt)}, {formatOccurrenceTime(fifthClassOffer.scheduledAt)}
+                    Fifth class: {formatOccurrenceDay(fifthClassOffer.scheduledAt)}, {formatOccurrenceTime(fifthClassOffer.scheduledAt)}
                   </p>
                   <p className="text-small text-slate-500">
-                    Your billing cycle holds five of your class day and your plan covers four. Add the last one for ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}, or skip it, nothing changes.
+                    Optional, outside your plan.
                   </p>
                 </div>
                 <button type="button" onClick={startFifthClassPayment} disabled={payBusyKey !== null} className={actionClass}>
@@ -571,7 +571,7 @@ export function ClassBookingClient({
               <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
                 <p className="text-small font-medium text-slate-100">
                   Moving {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
-                  {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only, your weekly time stays)</span>}
+                  {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only)</span>}
                 </p>
                 <button type="button" onClick={() => setReschedulingBooking(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
                   Never mind
@@ -587,7 +587,7 @@ export function ClassBookingClient({
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
               </div>
             ) : (
-              <p className="text-small text-slate-500">No classes scheduled.</p>
+              <p className="text-small text-slate-500">Nothing open</p>
             )}
             {rows.length > 0 && (
               <p className="hidden items-center gap-4 px-1 text-small text-slate-400 lg:flex">
@@ -626,7 +626,7 @@ export function ClassBookingClient({
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">
-                  Extra time for {extraPayment.when}. Credits are for your weekly class, so this one is paid on its own.
+                  Extra class · {extraPayment.when}
                 </p>
                 <ZelleUnlockGate
                   status={extraPayment.status}
@@ -692,7 +692,7 @@ export function ClassBookingClient({
                 </p>
               )}
               {!selectedDateKey ? null : displayRows.length === 0 ? (
-                <p className="text-small text-slate-500">No open times on that day.</p>
+                <p className="text-small text-slate-500">No times</p>
               ) : (
                 <div className={`grid gap-2 sm:gap-3 ${mode === "SOLO" && !reschedulingBooking && !weeklyLimited ? "grid-cols-2" : "grid-cols-1"}`}>
                   {occurrenceGroups.flatMap((group) => group.rows).map((row) => {
@@ -792,7 +792,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-right text-small text-slate-500">One class a week</span>
+                          <span className="shrink-0 text-right text-small text-slate-500">Weekly limit</span>
                         </>,
                         undefined,
                         "opacity-60",
@@ -803,8 +803,7 @@ export function ClassBookingClient({
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                          {!isSelected && <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>}
-                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
+                                                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>
                         </span>
@@ -832,8 +831,8 @@ export function ClassBookingClient({
                   </p>
                   <p className={`mt-0.5 text-small ${missingCredits > 0 ? "text-red-400" : "text-slate-500"}`}>
                     {missingCredits > 0
-                      ? `You have ${creditsLabel(credits)}, so you need ${creditsLabel(missingCredits)} more.`
-                      : `You have ${creditsLabel(credits)}. ${creditsLabel(credits - selectedCreditTotal)} left after this.`}
+                      ? `Need ${creditsLabel(missingCredits)} more`
+                      : `${creditsLabel(credits - selectedCreditTotal)} left after`}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -864,7 +863,7 @@ export function ClassBookingClient({
         {tab === "upcoming" && (
           <div className="tab-in max-w-3xl">
             {upcoming.length === 0 ? (
-              <p className="text-small text-slate-500">No upcoming classes. Pick a time under Book.</p>
+              <p className="text-small text-slate-500">Nothing booked</p>
             ) : (
               <div className="space-y-3">
                 {upcoming.map((b) => (
@@ -888,7 +887,7 @@ export function ClassBookingClient({
         {tab === "past" && (
           <div className="tab-in max-w-3xl">
             {historyGroups.length === 0 ? (
-              <p className="text-small text-slate-500">No past classes yet.</p>
+              <p className="text-small text-slate-500">None yet</p>
             ) : (
               <div className="space-y-2">
                 {historyGroups.map((group, i) => (

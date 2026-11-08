@@ -18,6 +18,7 @@ import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, requestLoginCodeAction } from "@/app/(auth)/login/actions";
 import { startNavigation } from "@/lib/navigationState";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
+import { Hint } from "@/components/ui/Hint";
 
 /**
  * The email-and-password login form, shared by the /login page and the Log in
@@ -363,7 +364,7 @@ export function LoginForm({
                 setError(null);
               }}
             />
-            <p className="mt-1 text-small text-slate-500">Open your authenticator app. Lost your phone? Type one of your backup codes instead.</p>
+            <p className="mt-1 text-small text-slate-500"><Hint>Open your authenticator app. Lost your phone? Type one of your backup codes instead.</Hint></p>
           </div>
         )}
 

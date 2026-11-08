@@ -31,6 +31,7 @@ import { NewPlanForm, type StartPlanInput, type StartPlanResult } from "./NewPla
 import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } from "../../parent/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
+import { Hint } from "@/components/ui/Hint";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -218,7 +219,7 @@ function SwitchToFamilyPanel({
         </>
       ) : (
         <>
-          <p className="text-small text-slate-400">Enter the 6-digit code we emailed you.</p>
+          <p className="text-small text-slate-400"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={CHUNKED_CODE_LENGTH} value={chunkCode(code)} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123 456" aria-label="Code" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
@@ -392,13 +393,6 @@ export function PaymentPlanEnrollmentFlow({
             />
           </div>
         )}
-        <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
-          <p className="text-small text-slate-100">{planLabel}</p>
-          <p className="mt-1 text-small text-slate-500">
-            {plan.installmentsPaid} of {plan.termMonths} installments paid
-          </p>
-          <ProgressBar className="mt-2" value={progressPercent} label="Installments paid" />
-        </div>
         {fam && (
           <p className="mb-4 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
             {memberView

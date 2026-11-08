@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/Tabs";
 import { METRONOME_MAX_BPM, METRONOME_MIN_BPM, type Metronome } from "@/components/scales/useMetronome";
+import { Hint } from "@/components/ui/Hint";
 
 /* ========================================================================
    Metronome
@@ -25,7 +26,7 @@ export function MetronomePanel({ metronome }: { metronome: Metronome }) {
   const { supported, running, bpm, beatsPerBar, beat, setBpm, setBeatsPerBar, start, stop } = metronome;
 
   if (!supported) {
-    return <p className="text-small text-slate-400">This browser can&apos;t play audio, so the metronome isn&apos;t available here.</p>;
+    return <p className="text-small text-slate-400"><Hint>This browser can&apos;t play audio, so the metronome isn&apos;t available here.</Hint></p>;
   }
 
   return (
@@ -170,7 +171,7 @@ export function FilesPanel({ lessons }: { lessons: CourseLessonWithProgress[] })
   const unlocked = lessons.filter((l, i) => i === 0 || lessons[i - 1].completed);
 
   if (unlocked.length === 0) {
-    return <p className="text-small text-slate-400">No files for this scale yet.</p>;
+    return <p className="text-small text-slate-400"><Hint>No files for this scale yet.</Hint></p>;
   }
 
   return (

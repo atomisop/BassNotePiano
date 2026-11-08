@@ -1,5 +1,6 @@
 "use client";
 
+import { Hint } from "@/components/ui/Hint";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
@@ -133,7 +134,7 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
         ) : (
           <>
             <p>Off. Turn it on to also ask for an authenticator code when you sign in. Students are never asked.</p>
-            <p className="text-slate-500">Before you rely on it, keep the backup codes it gives you. Without your phone and without those codes you cannot sign in.</p>
+            <p className="text-slate-500"><Hint>Before you rely on it, keep the backup codes it gives you. Without your phone and without those codes you cannot sign in.</Hint></p>
             <button
               type="button"
               disabled={busy}

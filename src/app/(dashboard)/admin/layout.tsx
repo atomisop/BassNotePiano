@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { AdminQuietButtons } from "@/components/admin/AdminQuietButtons";
 import { AdminBarSlot } from "@/components/admin/AdminBarSlot";
 import { AdminPhoneMenu, AdminSectionTabs, AdminSideRail } from "@/components/admin/AdminNav";
 import { getAdminNavBadges } from "@/lib/admin";
@@ -23,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminSectionTabs badges={badges} />
         </AdminBarSlot>
         <div data-admin-page>{children}</div>
+        <AdminQuietButtons />
       </div>
     </WideLayout>
   );

@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Providers } from "./providers";
 import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
 import { LAUNCH_SPLASH_SCRIPT } from "@/lib/launchSplash";
+import { LaunchLogo } from "@/components/pwa/LaunchLogo";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -192,10 +193,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* The opening animation of the installed phone app. Hidden unless the script above marked this visit; see globals.css. */}
         <div id="bnp-splash" className="bnp-splash" aria-hidden>
           <div className="bnp-splash-stage">
-            <span className="bnp-splash-ring" />
-            <span className="bnp-splash-mark" />
+            <LaunchLogo />
           </div>
-          <p className="bnp-splash-word">Bass Note Piano</p>
         </div>
         {/* No flat ambient wash here by design, each area (marketing sections,
             auth shell, app shell) sets its own ground. See

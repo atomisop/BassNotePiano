@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { maskEmail, recipientTag, RECIPIENT_HINT_PARAM, RECIPIENT_PARAM } from "@/lib/recipientTag";
 import { isEmailCategory, UNSUBSCRIBE_CATEGORY_LABEL, UNSUBSCRIBE_CATEGORY_NOTE, verifyUnsubscribeToken } from "@/lib/unsubscribe";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Unsubscribe", robots: { index: false, follow: false } };
 
@@ -33,9 +34,7 @@ export default async function UnsubscribePage(props: { searchParams: Promise<{ u
       <Card className="mx-auto max-w-md">
         <h1 className="text-title font-semibold text-slate-50">You are unsubscribed</h1>
         <p className="mt-2 text-small text-slate-300">You will no longer get emails about {UNSUBSCRIBE_CATEGORY_LABEL[done]}.</p>
-        <p className="mt-2 text-small text-slate-400">
-          Changed your mind? You can turn any email back on under Settings, Notification settings. Sign-in codes and security alerts are always sent.
-        </p>
+        <p className="mt-2 text-small text-slate-400"><Hint>Changed your mind? You can turn any email back on under Settings, Notification settings. Sign-in codes and security alerts are always sent.</Hint></p>
         <Link href={settingsHref} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
           Open notification settings
         </Link>
@@ -46,8 +45,7 @@ export default async function UnsubscribePage(props: { searchParams: Promise<{ u
   if (bad || !verifyUnsubscribeToken(u, c, t)) {
     return (
       <Card className="mx-auto max-w-md">
-        <h1 className="text-title font-semibold text-slate-50">This link is not valid</h1>
-        <p className="mt-2 text-small text-slate-300">It may have been cut short when it was copied. You can switch any email off yourself under Settings, Notification settings.</p>
+        <h1 className="text-title font-semibold text-slate-50">This link is not valid<Hint className="ml-1.5">It may have been cut short when it was copied. You can switch any email off yourself under Settings, Notification settings.</Hint></h1>
         <Link href="/account?tab=notifications" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
           Open notification settings
         </Link>

@@ -6,6 +6,7 @@ import { usePoll } from "@/hooks/usePoll";
 import { announceChange } from "@/lib/liveEvents";
 import type { SupportChat } from "@/lib/messagesSupport";
 import { getSupportChatAction, markSupportChatReadAction, sendSupportChatMessageAction } from "@/app/(dashboard)/support/actions";
+import { Hint } from "@/components/ui/Hint";
 
 const POLL_MS = 3_000;
 
@@ -72,7 +73,7 @@ export function SupportThread({ active }: { active: boolean }) {
         {chat && chat.messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
             <p className="text-body font-semibold text-slate-200">Ask the studio anything</p>
-            <p className="text-small text-slate-500">Questions about classes, payments or your account. The team&apos;s replies show up here.</p>
+            <p className="text-small text-slate-500"><Hint>Questions about classes, payments or your account. The team&apos;s replies show up here.</Hint></p>
           </div>
         )}
         {chat?.messages.map((m) => (

@@ -52,9 +52,6 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
               <div className="min-w-0">
                 <h2 className="truncate text-title font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
                 <p className="mt-1 truncate text-small text-slate-500">{employee.email}</p>
-                <p className="mt-1 text-small text-slate-500">
-                  Joined {new Date(employee.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </p>
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 {employee.isOwner && (
@@ -101,7 +98,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                     onClick={() => setConfirmingId(employee.id)}
                     className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
                   >
-                    Revoke admin
+                    Revoke
                   </button>
                 </div>
               ))}

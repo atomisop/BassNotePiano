@@ -10,6 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { moveWeeklyTimeAction, weeklyTimeChoicesAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 import type { WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
+import { Hint } from "@/components/ui/Hint";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -80,7 +81,7 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
               Finding free times
             </div>
           ) : choices.length === 0 ? (
-            <p className="text-small text-slate-300">No other weekly time is free. Add one on Classes &gt; Schedule first.</p>
+            <p className="text-small text-slate-300"><Hint>No other weekly time is free. Add one on Classes &gt; Schedule first.</Hint></p>
           ) : (
             <label className="grid gap-1.5">
               <span className="text-small font-medium text-slate-200">New weekly time</span>

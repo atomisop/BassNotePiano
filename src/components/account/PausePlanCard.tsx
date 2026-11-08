@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
 import { PAUSE_COOLDOWN_DAYS, PAUSE_MAX_WEEKS } from "@/lib/planPause";
+import { Hint } from "@/components/ui/Hint";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
 
@@ -29,9 +30,7 @@ export function PausePlanCard({
 
   if (indefinite) {
     return (
-      <p className="text-small text-slate-300" role="status">
-        Your plan is paused until the studio resumes it, and your weekly time is still yours.
-      </p>
+      <p className="text-small text-slate-300" role="status"><Hint>Your plan is paused until the studio resumes it, and your weekly time is still yours.</Hint></p>
     );
   }
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { liquidGlass, type LiquidGlassOptions } from "@/lib/liquidGlass";
-import { motion, useReducedMotion } from "framer-motion";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
@@ -31,6 +31,11 @@ const DOCK_ICONS: Record<string, DockIcon> = {
   settings: { paths: COOLICONS.settings.paths, fill: [0], cut: [1] },
 };
 
+
+/** A scale's page belongs to the Roadmap tab, an admin page to Admin. */
+function isActiveHref(href: string, at: string) {
+  return at === href || (href === "/roadmap" && at.startsWith("/scales/")) || (href === "/admin" && at.startsWith("/admin/")) || (href === "/account" && at.startsWith("/account/"));
+}
 
 /** Liquid glass settings for the dock's two glass shapes (58px tall, so a tight rim). Real bend in Chrome, Edge and Android; frost elsewhere. */
 const GLASS: LiquidGlassOptions = { scale: -60, chroma: 4, border: 0.16, mapBlur: 3, blur: 2, saturate: 1.7, fallbackBlur: 16 };
@@ -60,8 +65,6 @@ function DockGlyphIcon({ icon, active }: { icon: DockIcon; active: boolean }) {
 // zone and causes a flicker-hide mid-interaction.
 
 export interface AppDockProps {
-  /** The person's picture and menu, drawn in the round island at the right (see DockProfile). */
-  profileSlot?: React.ReactNode;
   /** An admin's dock: Admin takes Friends' place. Friends stays in the top bar and the profile menu for them. */
   isAdmin?: boolean;
 }
@@ -92,6 +95,11 @@ const NAV_ITEMS = [
   { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
 ] as const;
 const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { href: "/admin", label: "Admin", icon: "admin" } : item));
+
+// Settings is the last slot of the same pill (the person's picture lives in the top bar).
+const SETTINGS_ITEM = { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" } as const;
+const DOCK_ITEMS = [...NAV_ITEMS, SETTINGS_ITEM];
+const ADMIN_DOCK_ITEMS = [...ADMIN_NAV_ITEMS, SETTINGS_ITEM];
 
 /**
  * The app's only bottom navigation now, at every breakpoint, a floating
@@ -131,8 +139,8 @@ const ADMIN_NAV_ITEMS = NAV_ITEMS.map((item) => (item.href === "/friends" ? { hr
  * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
  * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
-export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
-  const items = isAdmin ? ADMIN_NAV_ITEMS : NAV_ITEMS;
+export function AppDock({ isAdmin = false }: AppDockProps) {
+  const items = isAdmin ? ADMIN_DOCK_ITEMS : DOCK_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -140,11 +148,66 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
   const mainRef = useRef<HTMLDivElement>(null);
-  const islandRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
+    const handles = [mainRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
     return () => handles.forEach((h) => h.destroy());
   }, []);
+  // The sliding bubble behind the current tab. ONE element that never remounts, its two edges are springs: the edge it moves toward
+  // leaps ahead and the far edge trails, so it stretches as it travels and snaps back round with a little overshoot (a gooey,
+  // squash-and-stretch bubble). Because the position lives in motion values, not in React state, the page-swap crossfade snapshots the
+  // pill almost where it was, so no second ghost outline appears while it moves.
+  const pillLeft = useMotionValue(0);
+  const pillRight = useMotionValue(0);
+  const pillTop = useMotionValue(0);
+  const pillHeight = useMotionValue(50);
+  const pillOpacity = useMotionValue(0);
+  const pillWidth = useTransform([pillLeft, pillRight], ([l, r]) => Math.max(0, (r as number) - (l as number)));
+  const restWidth = useMotionValue(0);
+  // Taller-than-wide stretch reads as a bubble: while it is wider than at rest it squashes a little in height, and grows a touch on the way.
+  const pillScaleY = useTransform([pillWidth, restWidth], ([w, rest]) => {
+    const r = (rest as number) || 1;
+    const extra = Math.max(0, Math.min(0.6, ((w as number) - r) / r));
+    return 1 - extra * 0.22;
+  });
+  const activeIndex = items.findIndex((item) => isActiveHref(item.href, pendingHref ?? pathname));
+  const placedRef = useRef(false);
+  const lastIndexRef = useRef(-1);
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const place = (jump: boolean) => {
+      const link = activeIndex >= 0 ? (main.querySelectorAll<HTMLElement>("[data-dock-tab]")[activeIndex] ?? null) : null;
+      if (!link) {
+        animate(pillOpacity, 0, { duration: reduceMotion ? 0 : 0.15 });
+        return;
+      }
+      const left = link.offsetLeft - 6;
+      const right = link.offsetLeft + link.offsetWidth + 6;
+      pillTop.set(link.offsetTop);
+      pillHeight.set(link.offsetHeight);
+      restWidth.set(right - left);
+      if (jump || !placedRef.current || reduceMotion) {
+        pillLeft.set(left);
+        pillRight.set(right);
+        pillOpacity.set(1);
+        placedRef.current = true;
+        return;
+      }
+      animate(pillOpacity, 1, { duration: 0.12 });
+      const forward = activeIndex >= lastIndexRef.current;
+      // Leading edge: quick and lively. Trailing edge: softer and later, so the bubble stretches between them.
+      const lead = { type: "spring" as const, stiffness: 520, damping: 17, mass: 0.7 };
+      const trail = { type: "spring" as const, stiffness: 260, damping: 20, mass: 0.9 };
+      animate(pillRight, right, forward ? lead : trail);
+      animate(pillLeft, left, forward ? trail : lead);
+    };
+    place(false);
+    lastIndexRef.current = activeIndex;
+    const ro = new ResizeObserver(() => place(true));
+    ro.observe(main);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, items.length, reduceMotion]);
   // Every tab is fetched ahead of the tap, so the move is instant.
   useEffect(() => {
     for (const item of items) router.prefetch(item.href);
@@ -187,9 +250,7 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
   }, [pathname]);
 
   function isActive(item: { href: string }) {
-    const at = pendingHref ?? pathname;
-    // A scale's page belongs to the Roadmap tab.
-    return at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/")) || (item.href === "/admin" && at.startsWith("/admin/"));
+    return isActiveHref(item.href, pendingHref ?? pathname);
   }
   function renderTab(item: (typeof items)[number], index: number, island: boolean) {
     const active = isActive(item);
@@ -200,6 +261,7 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
         key={item.href}
         href={item.href}
         data-prerender=""
+        data-dock-tab=""
         aria-label={item.label}
         aria-current={current ? "page" : undefined}
         // The current tab again means "take me to the top" (it would only reload the same page).
@@ -218,17 +280,10 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
         className={`tap relative flex h-full select-none items-center justify-center rounded-full [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${island ? "w-full" : ""}`}
         draggable={false}
       >
-        {active && (
-          <motion.span
-            layoutId="dock-active-pill"
-            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 24, mass: 0.9 }}
-            className={`ig-dock-active pointer-events-none absolute inset-y-0 rounded-full ${island ? "inset-x-0" : "-inset-x-[6px]"}`}
-          />
-        )}
         <motion.span
           // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
-          whileTap={{ scale: 0.82 }}
-          transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
+          whileTap={{ scale: 0.8 }}
+          transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 15, mass: 0.7 }}
           className={`ig-dock-icon relative flex h-[26px] w-[26px] items-center justify-center ${active ? "is-on" : ""}`}
         >
           <DockGlyphIcon icon={icon} active={active} />
@@ -255,16 +310,18 @@ export function AppDock({ isAdmin = false, profileSlot }: AppDockProps) {
         }}
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {/* Two separate glass shapes: the main pill holds every tab, and the person's picture sits alone in its own round island at the right. */}
+        {/* One glass pill holds every tab, Settings last. */}
         <div
           ref={mainRef}
           style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
           className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
+          <motion.span
+            aria-hidden
+            style={{ left: 0, x: pillLeft, width: pillWidth, top: pillTop, height: pillHeight, scaleY: pillScaleY, opacity: pillOpacity }}
+            className="ig-dock-active pointer-events-none absolute rounded-full"
+          />
           {items.map((item, i) => renderTab(item, i, false))}
-        </div>
-        <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
-          {profileSlot}
         </div>
       </div>
     </div>

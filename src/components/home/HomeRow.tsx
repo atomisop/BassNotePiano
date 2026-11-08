@@ -20,7 +20,7 @@ export function HomeRowInner({ icon, title, detail, trailing }: { icon: ReactNod
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-body font-semibold text-slate-50">{title}</span>
-        {detail && <span className="block truncate text-small text-slate-400">{detail}</span>}
+        {detail && <span className="block truncate text-small text-slate-500">{detail}</span>}
       </span>
       {trailing && <span className="shrink-0">{trailing}</span>}
       <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-slate-300" />

@@ -8,6 +8,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction } from "@/app/(dashboard)/admin/schedule/actions";
 import type { ReservableHour, ReservationGroup } from "@/lib/ownerReservationsAdmin";
+import { Hint } from "@/components/ui/Hint";
 
 const field =
   "h-11 w-full min-w-0 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -110,7 +111,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
         {date && (
           <div>
             {dayHours.length === 0 ? (
-              <p className="text-small text-slate-500">There are no classes that day.</p>
+              <p className="text-small text-slate-500"><Hint>There are no classes that day.</Hint></p>
             ) : (
               <>
                 <div className="flex gap-2" role="group" aria-label="What to keep">

@@ -8,6 +8,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { setPlanProgressAction } from "@/app/(dashboard)/admin/payment-plans/actions";
+import { Hint } from "@/components/ui/Hint";
 
 /**
  * Owner only, next to the bill date: sets how many bills are paid and the next bill date with no limits (any date, a past one too),
@@ -52,7 +53,7 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
         }
       >
         <div className="space-y-4">
-          <p className="text-small text-slate-400">Set what is true. Any date works, a past one too. Unpaid bills are closed and the next one is made fresh. Credits and booked classes are not changed.</p>
+          <p className="text-small text-slate-400"><Hint>Set what is true. Any date works, a past one too. Unpaid bills are closed and the next one is made fresh. Credits and booked classes are not changed.</Hint></p>
           <label className="block">
             <span className="mb-1 block text-small font-medium text-slate-200">Bills paid (0 to {termMonths})</span>
             <input type="number" min={0} max={termMonths} value={paid} onChange={(e) => setPaid(Number(e.target.value))} className="min-h-11 w-full rounded-xl bg-neu-base px-3.5 py-2 text-body text-slate-100 shadow-pressed-low" />

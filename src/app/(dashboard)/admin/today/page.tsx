@@ -35,8 +35,6 @@ export default async function AdminTodayPage() {
           icon={<CalendarCheck />}
           title="No classes today"
           description="Enjoy the quiet. Your coming classes are on the weekly schedule."
-          actionLabel="Weekly schedule"
-          actionHref="/admin/schedule"
         />
       ) : (
         <div className="mt-6 space-y-6">

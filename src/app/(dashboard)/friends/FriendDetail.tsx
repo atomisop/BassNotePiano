@@ -5,6 +5,7 @@ import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
 import type { FriendProfile } from "@/lib/friendProfile";
 import { getFriendProfileAction } from "./actions";
+import { Hint } from "@/components/ui/Hint";
 
 /** The panel under a friend's row: their practice this week and badges. Loaded when the row is opened, so the list itself stays light. */
 export function FriendDetail({ username }: { username: string }) {
@@ -21,7 +22,7 @@ export function FriendDetail({ username }: { username: string }) {
   }, [username]);
 
   if (profile === undefined) return <div className="h-24 animate-pulse rounded-lg bg-slate-50/5" aria-label="Loading" />;
-  if (profile === null) return <p className="text-small text-slate-400">Couldn&apos;t load this profile. Try again in a moment.</p>;
+  if (profile === null) return <p className="text-small text-slate-400"><Hint>Couldn&apos;t load this profile. Try again in a moment.</Hint></p>;
 
   return (
     <div className="space-y-3">

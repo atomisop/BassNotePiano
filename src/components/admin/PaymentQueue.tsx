@@ -19,6 +19,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { Hint } from "@/components/ui/Hint";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -300,7 +301,7 @@ export function PaymentQueue({
   return (
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student (result and receipt) when I approve, reject or refund" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {shown.filter(canTick).length > 1 && (
         <label className="tap flex items-center gap-2 text-small text-slate-400">
@@ -340,60 +341,43 @@ export function PaymentQueue({
           key={payment.id}
           exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-          className="glass-surface p-5"
+          className="glass-surface p-4"
         >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-2">
+          {/* Who and how much: bold. How it arrived: one gray line. */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-2">
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
-              <div>
-              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
-              <h2 className="mt-1 text-title text-slate-50 font-semibold">{title}</h2>
-              <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
-              {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
-                <p className="mt-1 text-small text-slate-500">
-                  Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
-                </p>
-              )}
+              <div className="min-w-0">
+                <h2 className="truncate text-title font-semibold text-slate-50">{payment.user.name ?? payment.user.email}</h2>
+                <p className="mt-0.5 truncate text-small text-slate-500">{title === (payment.user.name ?? payment.user.email) ? eyebrow : `${eyebrow} · ${title}`}</p>
+                {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
+                  <p className="mt-0.5 text-caption text-slate-500">To: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}</p>
+                )}
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-body text-slate-50 font-semibold">{formatUsd(payment.amountCents)}</p>
-              <span
-                className={`mt-1 inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
-              >
+            <div className="shrink-0 text-right">
+              <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(payment.amountCents)}</p>
+              <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-caption font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}>
                 {STATUS_LABEL[payment.status]}
               </span>
             </div>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
-            <div>
-              <dt className="text-small text-slate-500">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
-              <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
-            </div>
-            {payment.matchedVia && (
-              <div className="col-span-2">
-                <dt className="text-small text-slate-500">Cleared by the bank email through</dt>
-                <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "text-amber-300" : "text-slate-300"}>
-                  {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-small text-slate-500">Paying from phone</dt>
-              <dd className="text-slate-300">{payment.senderPhone ? formatPhone(payment.senderPhone) : "None given"}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Paid with</dt>
-              <dd className="text-slate-300">{payment.method === "VENMO" ? "Venmo" : "Zelle"}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Submitted</dt>
-              <dd className="text-slate-300">
-                {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "None"}
-              </dd>
-            </div>
-          </dl>
+          <p className="mt-3 text-small tabular-nums text-slate-500">
+            {[
+              payment.method === "VENMO" ? "Venmo" : "Zelle",
+              payment.senderName,
+              payment.senderPhone ? formatPhone(payment.senderPhone) : null,
+              payment.submittedAt ? new Date(payment.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {payment.matchedVia && (
+            <p className={`mt-1 text-small ${payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "font-medium text-amber-300" : "text-slate-500"}`}>
+              Matched by {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
+            </p>
+          )}
 
           {payment.autoApproved && (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-neu-base p-3 shadow-pressed-low">
@@ -422,9 +406,9 @@ export function PaymentQueue({
             </div>
           )}
 
-          {payment.note && <p className="mt-3 text-small text-slate-500">Note: {payment.note}</p>}
+          {payment.note && <p className="mt-2 text-small text-slate-500">&ldquo;{payment.note}&rdquo;</p>}
           {payment.status === "REJECTED" && payment.rejectionReason && (
-            <p className="mt-2 text-small text-red-400">Rejected: {payment.rejectionReason}</p>
+            <p className="mt-2 text-small text-red-400">{payment.rejectionReason}</p>
           )}
 
           {payment.status !== "PENDING_REVIEW" ? null : rejectingId === payment.id ? (
@@ -605,7 +589,7 @@ export function PaymentQueue({
             <div className="mt-4 border-t border-slate-50/10 pt-3">
               {cancelingId === payment.id ? (
                 <div className="space-y-2">
-                  <p className="text-small text-slate-400">Close this unpaid bill? The record stays as expired. The plan is not changed.</p>
+                  <p className="text-small text-slate-400"><Hint>Close this unpaid bill? The record stays as expired. The plan is not changed.</Hint></p>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setCancelingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep</button>
                     <button type="button" onClick={() => handleCancelBill(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
@@ -622,9 +606,7 @@ export function PaymentQueue({
           {onDelete &&
             (deletingId === payment.id ? (
               <div className="mt-4 space-y-2 border-t border-slate-50/10 pt-3">
-                <p className="text-small text-slate-400">
-                  Delete this record for good? It does not undo any plan, credits or classes it already gave.
-                </p>
+                <p className="text-small text-slate-400"><Hint>Delete this record for good? It does not undo any plan, credits or classes it already gave.</Hint></p>
                 <div className="flex gap-2">
                   <button
                     type="button"

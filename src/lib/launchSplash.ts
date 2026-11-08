@@ -1,5 +1,3 @@
-import { SPLASH_MARK_DATA_URI } from "@/lib/launchSplashMark";
-
 /**
  * The opening animation of the installed app (Add to Home Screen) on a phone.
  *
@@ -10,8 +8,8 @@ import { SPLASH_MARK_DATA_URI } from "@/lib/launchSplashMark";
  * `?splash=1` forces it for a preview in any browser.
  */
 
-/** The splash stays at least this long (from the start of the page load), so the animation reads as a whole even on a fast phone. */
-export const SPLASH_MIN_MS = 3200;
+/** The splash stays at least this long (on the logo animation's own clock), so the animation reads as a whole even on a fast phone. */
+export const SPLASH_MIN_MS = 4400;
 /** How long the way out takes. Keep in step with `bnp-splash-out` in globals.css. */
 export const SPLASH_EXIT_MS = 320;
 
@@ -31,9 +29,12 @@ export const LAUNCH_SPLASH_SCRIPT = `
     }
     try { window.sessionStorage.setItem('${SPLASH_STORAGE_KEY}', '1'); } catch (e) {}
     document.documentElement.setAttribute('data-splash', '1');
-    // Painted before the stylesheet arrives: black behind and the logo in place, so the phone's launch image never gives way to white.
+    // A preview can slow the whole animation down (?splash=1&slow=4) to look at it frame by frame.
+    var slow = /[?&]slow=(\\d+)(&|$)/.exec(window.location.search);
+    if (forced && slow) document.documentElement.style.setProperty('--bnp-slow', slow[1]);
+    // Painted before the stylesheet arrives: black behind, so the phone's launch image never gives way to white.
     var st = document.createElement('style');
-    st.textContent = 'html[data-splash]{background:#000}html[data-splash] .bnp-splash-mark{background-image:url(${SPLASH_MARK_DATA_URI})}';
+    st.textContent = 'html[data-splash]{background:#000}';
     document.head.appendChild(st);
   } catch (e) {}
 })();

@@ -21,6 +21,7 @@ import { SectionCard } from "./SectionCard";
 import { toast } from "@/components/ui/Toaster";
 import { claimScholarshipAction } from "./scholarship-actions";
 import { normalizeScholarshipCode } from "@/lib/scholarshipRules";
+import { Hint } from "@/components/ui/Hint";
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
 
@@ -134,9 +135,7 @@ export function PasswordSection() {
 
           {awaitingCode && (
             <div className="space-y-2">
-              <p className="text-small text-slate-500">
-                Enter the 6-digit code we emailed you.
-              </p>
+              <p className="text-small text-slate-500"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -219,7 +218,7 @@ function ScholarshipCard() {
   return (
     <SectionCard title="Claim a scholarship" hint="A scholarship code is made for one email address, works once, and discounts the 6 Month plan only.">
       <form onSubmit={claim} className="space-y-3">
-        <p className="text-small text-slate-400">Got a 16 digit scholarship code? Enter it to take a percent off your price. It applies to the 6 Month plan only, and only works while you are signed in with the email it was made for.</p>
+        <p className="text-small text-slate-400">16 digit code · 6 Month plan only</p>
         <label htmlFor="scholarship-code" className="sr-only">Scholarship code</label>
         <input
           id="scholarship-code"
@@ -384,12 +383,10 @@ function PushCard() {
   return (
     <SectionCard advanced title="Reminders on your phone">
       {state === "needs-home-screen" && (
-        <p className="mt-3 text-small text-slate-300">
-          On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.
-        </p>
+        <p className="mt-3 text-small text-slate-300"><Hint>On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.</Hint></p>
       )}
-      {state === "unsupported" && <p className="mt-3 text-small text-slate-500">This browser can&apos;t show push notifications. Email reminders still work.</p>}
-      {state === "blocked" && <p className="mt-3 text-small text-slate-300">Notifications are blocked for this site. Allow them in your browser or phone settings, then come back.</p>}
+      {state === "unsupported" && <p className="mt-3 text-small text-slate-500"><Hint>Not supported here. Email still works.</Hint></p>}
+      {state === "blocked" && <p className="mt-3 text-small text-slate-300"><Hint>Blocked. Allow them in your browser settings.</Hint></p>}
       {state === "off" && (
         <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}`}>
           {busy ? "Working…" : "Turn on reminders here"}
@@ -454,7 +451,7 @@ function CalendarFeedCard() {
       {links === undefined ? (
         <p className="mt-3 text-small text-slate-500">Loading…</p>
       ) : links === null ? (
-        <p className="mt-3 text-small text-slate-500">Couldn&apos;t load your link. Refresh the page.</p>
+        <p className="mt-3 text-small text-slate-500"><Hint>Couldn&apos;t load your link. Refresh the page.</Hint></p>
       ) : (
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -467,7 +464,7 @@ function CalendarFeedCard() {
             <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
           ) : (
             <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
-              <p className="text-small text-slate-200">The old link stops working. Calendars that use it will need the new one.</p>
+              <p className="text-small text-slate-200">The old link stops working.</p>
               <div className="mt-3 flex gap-2">
                 <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
                 <button type="button" disabled={busy} onClick={() => setConfirmReset(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep it</button>
@@ -689,9 +686,7 @@ export function DangerZoneSection() {
 
         {stage === "code" && (
           <form onSubmit={handleDelete} className="mt-4 space-y-3">
-            <p className="text-small text-slate-500">
-              Enter the 6-digit code we emailed you.
-            </p>
+            <p className="text-small text-slate-500"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
             <input
               type="text"
               inputMode="numeric"

@@ -7,6 +7,7 @@ import { ChildClasses } from "@/components/parent/ChildClasses";
 import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
 import { formatDateTime } from "@/lib/classScheduleLabels";
+import { Hint } from "@/components/ui/Hint";
 
 type TabId = "progress" | "practice" | "classes" | "plan";
 
@@ -151,7 +152,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
               {!view.hasWeeklyTime && (
                 <div className="mt-4 rounded-xl bg-neu-base p-3 shadow-pressed-low">
                   <p className="text-small font-semibold text-amber-300">No weekly time yet</p>
-                  <p className="mt-0.5 text-small text-slate-400">Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</p>
+                  <p className="mt-0.5 text-small text-slate-400"><Hint>Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</Hint></p>
                 </div>
               )}
               <div className="mt-5 flex flex-wrap gap-2">
@@ -160,7 +161,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
               </div>
             </div>
           ) : (
-            <p className="rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No plan right now. Start one from the Parent mode page.</p>
+            <p className="rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No plan right now. Start one from the Parent mode page.</Hint></p>
           )}
         </section>
       )}
