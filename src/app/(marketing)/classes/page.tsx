@@ -3,6 +3,7 @@ import { pageMetadata } from "@/lib/site";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { ClassRegistrationForm } from "./ClassRegistrationForm";
+import { SeeItWork } from "@/components/marketing/SeeItWork";
 
 export const metadata: Metadata = pageMetadata({
   title: "Register for a class",
@@ -31,6 +32,8 @@ export default function ClassesPage() {
             <ClassRegistrationForm />
           </div>
         </section>
+
+        <SeeItWork />
       </main>
 
       <SiteFooter />
