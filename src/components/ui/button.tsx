@@ -64,6 +64,21 @@ const buttonVariants = cva(
   },
 )
 
+/**
+ * The variants that get a glass lens. This is the explicit version of what GlassButtons used to infer from the `liquid` class names:
+ * the shared Button now says so itself with data-glass-role="button". `ghost` only turns glass on hover and `paper` and `link` are solid or
+ * text, so they are left out. tests/glassButtonRoles.test.ts keeps this list in step with the classes above.
+ */
+export const GLASS_BUTTON_VARIANTS: ReadonlyArray<NonNullable<VariantProps<typeof buttonVariants>["variant"]>> = [
+  "default",
+  "primary",
+  "secondary",
+  "outline",
+  "destructive",
+  "danger",
+  "glass",
+]
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
@@ -80,6 +95,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={asChild ? disabled : disabled || loading}
         aria-busy={loading || undefined}
+        data-glass-role={GLASS_BUTTON_VARIANTS.includes(variant ?? "default") ? "button" : undefined}
         {...props}
       >
         {!asChild && loading ? (

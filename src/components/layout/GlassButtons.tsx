@@ -17,6 +17,8 @@ import { solidSurfacesOn } from "@/lib/solidSurfaces";
 const SOLID_FILL = ':not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"])';
 
 export const GLASS_SELECTOR = [
+  // The explicit role (set by the shared Button). The class-name entries below stay until every consumer says its role itself.
+  '[data-glass-role="button"]',
   ".liquid",
   ".liquid-signal",
   ".neu-btn",
