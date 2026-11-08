@@ -5,6 +5,9 @@ npm run lint (warnings only)
 exit status: 0
 npm test (110 files, 637 tests)
 exit status: 0
-npm run test:db: NOT RUN (needs a local migrated database)
-npm run build: NOT RUN
+npm run test:db (85 files, 411 tests, throwaway DB bnp_rework_verify on local :5433, zero prisma drift)
+exit status: 0
+npm run build in a CLEAN worktree of this branch (Node 26.9; the pinned Node 24 could not be installed here)
+exit status: 0
+note: next build in the main checkout failed twice with a webpack-runtime prerender error; the same commit builds cleanly in a clean worktree, so it is local state, not code. Not root-caused.
 playwright e2e: no specs yet
