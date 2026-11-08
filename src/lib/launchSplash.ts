@@ -29,6 +29,9 @@ export const LAUNCH_SPLASH_SCRIPT = `
     }
     try { window.sessionStorage.setItem('${SPLASH_STORAGE_KEY}', '1'); } catch (e) {}
     document.documentElement.setAttribute('data-splash', '1');
+    // A preview can slow the whole animation down (?splash=1&slow=4) to look at it frame by frame.
+    var slow = /[?&]slow=(\\d+)(&|$)/.exec(window.location.search);
+    if (forced && slow) document.documentElement.style.setProperty('--bnp-slow', slow[1]);
     // Painted before the stylesheet arrives: black behind, so the phone's launch image never gives way to white.
     var st = document.createElement('style');
     st.textContent = 'html[data-splash]{background:#000}';

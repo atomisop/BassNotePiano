@@ -12,10 +12,11 @@ export function LaunchSplash() {
     const root = document.documentElement;
     const layer = document.getElementById("bnp-splash");
     if (!layer || !root.hasAttribute("data-splash")) return;
-    // The logo's own clock (SMIL) says how much of the animation has played, so a slow start never cuts it short.
-    const svg = layer.querySelector("svg") as SVGSVGElement | null;
-    const played = svg && typeof svg.getCurrentTime === "function" ? svg.getCurrentTime() * 1000 : performance.now();
-    const wait = Math.max(0, SPLASH_MIN_MS - played);
+    // The animation's own clock says how much of it has played (a slow start or a slow preview never cuts it short).
+    const slow = Number(getComputedStyle(root).getPropertyValue("--bnp-slow")) || 1;
+    const first = layer.getAnimations ? layer.getAnimations({ subtree: true })[0] : undefined;
+    const played = first && typeof first.currentTime === "number" ? first.currentTime : performance.now();
+    const wait = Math.max(0, SPLASH_MIN_MS * slow - played);
     let removeTimer: number | undefined;
     const leaveTimer = window.setTimeout(() => {
       layer.classList.add("is-leaving");
