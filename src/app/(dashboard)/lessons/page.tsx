@@ -91,6 +91,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         scheduledAt: o.scheduledAt.toISOString(),
         isBooked: o.isBooked,
         reservedForYou: o.reservedForYou,
+        heldByPlan: o.reservedByPlan === true,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,

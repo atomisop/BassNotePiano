@@ -24,6 +24,8 @@ export interface PaymentPlanListProps {
   onRecordPayment?: (planId: string, notify?: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Sends the open bill to the student again. */
   onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
+  /** Days a plan's weekly time stays held while its first payment is missing (Settings > Payments). */
+  firstPaymentHoldDays?: number;
   emptyMessage?: string;
 }
 
@@ -81,7 +83,7 @@ function formatTimeLabel(hhmm: string): string {
  * payment happens entirely through the existing /admin/payments queue,
  * unchanged, this list is read-mostly by design.
  */
-export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, firstPaymentHoldDays, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
   const [notify, setNotify] = useNotifyStudent("student-changes");
   const shown = plans.filter((item) => matchesQuery(item, query));
