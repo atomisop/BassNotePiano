@@ -22,6 +22,7 @@ for (const [w, h] of sizes) {
   const page = await ctx.newPage();
   const res = await page.goto(base + path, { waitUntil: "networkidle" });
   if (!res || res.status() >= 400) { console.error(`${w}x${h}: HTTP ${res?.status()}`); bad = true; }
+  await page.waitForTimeout(3500);
   const file = join(out, `${name}-${theme}-${w}x${h}.png`);
   await page.screenshot({ path: file, fullPage: false });
   console.log("saved", file);

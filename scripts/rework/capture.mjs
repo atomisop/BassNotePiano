@@ -20,7 +20,8 @@ let bad = false;
 for (const [w, h] of sizes) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: theme, reducedMotion: "reduce" });
   const page = await ctx.newPage();
-  const res = await page.goto(base + path, { waitUntil: "networkidle" });
+  const res = await page.goto(base + path, { waitUntil: "load", timeout: 60000 });
+  await page.waitForTimeout(2500);
   if (!res || res.status() >= 400) { console.error(`${w}x${h}: HTTP ${res?.status()}`); bad = true; }
   const file = join(out, `${name}-${theme}-${w}x${h}.png`);
   await page.screenshot({ path: file, fullPage: false });

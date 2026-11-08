@@ -1,0 +1,10 @@
+Commands run on rework/phase0-evidence-gate at a4f9609d
+npm run typecheck
+exit status: 0
+npm run lint (warnings only)
+exit status: 0
+npm test (110 files, 637 tests)
+exit status: 0
+npm run test:db: NOT RUN (needs a local migrated database)
+npm run build: NOT RUN
+playwright e2e: no specs yet
