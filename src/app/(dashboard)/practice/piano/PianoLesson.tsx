@@ -214,13 +214,13 @@ export function PianoLesson() {
                 Try it from memory
               </button>
             )}
-      <div className="mt-4">
-        <PianoKeyboard startMidi={START} endMidi={END} pressed={pressed} target={target} showLabels={labels} onNoteOn={noteOn} onNoteOff={noteOff} />
-      </div>
-
           </div>
         </section>
       )}
+
+      <div className="mt-4">
+        <PianoKeyboard startMidi={START} endMidi={END} pressed={pressed} target={target} showLabels={labels} onNoteOn={noteOn} onNoteOff={noteOff} />
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {tab === "listen" && (
