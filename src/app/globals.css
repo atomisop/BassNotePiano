@@ -2857,7 +2857,7 @@ html[data-offline] [data-top-banner] {
      phone's own launch screen to this layer shows no change at all. */
   background: #000;
   pointer-events: auto;
-  animation: bnp-splash-failsafe 6s linear forwards;
+  animation: bnp-splash-failsafe 9s linear forwards;
 }
 html[data-splash] .bnp-splash {
   display: flex;
@@ -2866,16 +2866,27 @@ html[data-splash] .bnp-splash {
   position: relative;
   display: grid;
   place-items: center;
-  width: 112px;
-  height: 112px;
+  /* The logo lockup (mark, name, rule) at the same size and place as in the phone's launch images (public/splash). */
+  width: min(59vw, 280px);
+  aspect-ratio: 901 / 645;
 }
-.bnp-splash-mark {
-  width: 112px;
-  height: 112px;
-  border-radius: 26px;
-  background: url("/icon.png") center / cover no-repeat;
-  /* Already there on the first frame; it only breathes slowly. */
-  animation: bnp-splash-breathe 3200ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
+/* The logo drawing itself (LaunchLogo.tsx): every part is SMIL on one clock, so this is only the box and the still version. */
+.bnp-logo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.bnp-logo-still { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bnp-logo-anim { display: none; }
+  .bnp-logo-still { display: block; }
+}
+.bnp-splash-ring,
+.bnp-splash-word {
+  display: none;
 }
 .bnp-splash-ring {
   position: absolute;
@@ -2909,8 +2920,8 @@ html[data-splash] .bnp-splash {
 }
 @keyframes bnp-splash-breathe {
   0% { transform: scale(1); }
-  55% { transform: scale(1.07); }
-  100% { transform: scale(1.03); }
+  55% { transform: scale(1.04); }
+  100% { transform: scale(1.02); }
 }
 @keyframes bnp-splash-ring {
   0% { opacity: 0.55; transform: scale(1); }
@@ -2929,8 +2940,6 @@ html[data-splash] .bnp-splash {
   100% { opacity: 0; visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bnp-splash-mark { animation: none; }
-  .bnp-splash-word { animation: bnp-splash-fade 400ms ease 300ms forwards; }
   .bnp-splash-ring { display: none; }
   .bnp-splash.is-leaving .bnp-splash-stage { transform: none; transition: none; }
   .bnp-splash.is-leaving { animation-duration: 200ms; }
