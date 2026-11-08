@@ -21,8 +21,8 @@ if (!task || !paths.length) { console.error("usage: see header"); process.exit(2
 const out = join("docs/glass-revamp/evidence", task, phase);
 mkdirSync(out, { recursive: true });
 const sha = execSync("git rev-parse --short HEAD").toString().trim();
-const manifestFile = join("docs/glass-revamp/evidence", task, "evidence.json");
-const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, "utf8")) : { task, shots: [] };
+const manifestFile = join("docs/glass-revamp/evidence", task, `manifest-${phase}-${role}-${theme}-${bname}${solid ? "-solid" : ""}${tag ? "-" + tag : ""}.json`);
+const manifest = { task, shots: [] };
 const browser = await { chromium, webkit, firefox }[bname].launch();
 let bad = false;
 for (const path of paths) {
@@ -49,6 +49,7 @@ for (const path of paths) {
     }
     manifest.shots.push({ file, path, role, theme, browser: bname, size: `${w}x${h}`, solid, sha, at: new Date().toISOString(), finalUrl: page.url(), status: res?.status(), horizontalOverflow: overflow, axe: violations });
     console.log("saved", file, overflow ? "OVERFLOW" : "", violations ? `axe:${violations.length}` : "");
+    writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
     await ctx.close();
   }
 }

@@ -8,9 +8,9 @@ const small = (url: string) => url.replace("w=2400&q=80", "w=900&q=70");
 
 // Piano, guitar and bass are all real photos of those instruments.
 const ITEMS = [
-  { id: "piano", title: "Piano", src: small(BACKDROPS.curriculum), alt: "A grand piano in a quiet room", href: "/register", position: "center" },
-  { id: "guitar", title: "Guitar", src: small(BACKDROPS.guitar), alt: "An acoustic guitar in golden light", href: "/register", position: "center" },
-  { id: "bass", title: "Bass", src: "/marketing/bass-guitar.jpg", alt: "An electric bass guitar in low light", href: "/register", position: "center" },
+  { id: "piano", title: "Piano", src: small(BACKDROPS.curriculum), alt: "A grand piano in a quiet room", href: "/register?instrument=piano", position: "center" },
+  { id: "guitar", title: "Guitar", src: small(BACKDROPS.guitar), alt: "An acoustic guitar in golden light", href: "/register?instrument=guitar", position: "center" },
+  { id: "bass", title: "Bass", src: "/marketing/bass-guitar.jpg", alt: "An electric bass guitar in low light", href: "/register?instrument=bass", position: "center" },
 ];
 
 export function InstrumentPicker() {

@@ -20,6 +20,7 @@ import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { UserPlus } from "@/components/ui/appIcons";
 import { Hint } from "@/components/ui/Hint";
+import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -49,6 +50,17 @@ function RegisterForm() {
       cancelled = true;
     };
   }, [status, session, router]);
+
+  // Remember which instrument the visitor picked on the home page so setup can start with it chosen.
+  // Only a validated value is stored; anything else clears an old one.
+  useEffect(() => {
+    try {
+      const slug = searchParams.get("instrument");
+      if (parseInstrumentIntent(slug)) window.sessionStorage.setItem(INSTRUMENT_INTENT_KEY, String(slug).trim().toLowerCase());
+    } catch {
+      /* storage can be blocked; setup then simply starts with nothing chosen */
+    }
+  }, [searchParams]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");

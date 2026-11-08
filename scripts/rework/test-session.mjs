@@ -1,0 +1,20 @@
+// Makes (or reuses) a FAKE student in a throwaway local database and prints a signed session cookie for it.
+// Refuses to run unless DATABASE_URL is a local host AND the database name contains "verify" or "test".
+// Usage: node --env-file=.env scripts/rework/test-session.mjs [email] [--onboarded]
+import { PrismaClient } from "@prisma/client";
+import { encode } from "next-auth/jwt";
+
+const url = new URL(process.env.DATABASE_URL ?? "postgresql://none");
+const db = url.pathname.slice(1);
+if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) || !/verify|test/i.test(db)) {
+  console.error(`Refusing: DATABASE_URL must be local and name a verify/test database (got ${url.hostname}/${db}).`);
+  process.exit(2);
+}
+const email = process.argv.find((a) => a.includes("@")) ?? "rework.student@example.test";
+const onboarded = process.argv.includes("--onboarded");
+const prisma = new PrismaClient();
+const data = { name: "Rework Student", emailVerified: new Date(), role: "STUDENT", ...(onboarded ? { username: "rework_student", onboardedAt: new Date(), primaryInstrument: "PIANO_KEYBOARD" } : { onboardedAt: null, username: null }) };
+const user = await prisma.user.upsert({ where: { email }, update: data, create: { email, ...data } });
+const token = await encode({ token: { sub: user.id, email }, secret: process.env.NEXTAUTH_SECRET });
+await prisma.$disconnect();
+console.log(token);
