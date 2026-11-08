@@ -1,0 +1,11 @@
+Commands run at ab4e121d (throwaway DB bnp_rework_verify)
+npx prisma migrate deploy (applied 20261124000000_piano_practice_attempts)
+exit status: 0
+npx prisma migrate diff --from-url <throwaway> --to-schema-datamodel prisma/schema.prisma (empty migration, zero drift)
+exit status: 0
+npx vitest run --config vitest.db.config.ts tests/db/pianoAttempts.test.ts (6 passed)
+exit status: 0
+scripts/rework/e2e-prod.sh e2e/rework/piano.spec.ts --project=desktop --project=narrow (20 passed)
+exit status: 0
+npm run test:db (full suite, 88 files, 420 tests): 418 passed, 2 failed under heavy machine load (a Prisma connection init error in adminPause and a 30s timeout in backup); both files passed when re-run alone (6 tests)
+exit status: 0 (after the isolated re-run)

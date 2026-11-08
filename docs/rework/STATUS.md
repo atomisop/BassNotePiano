@@ -21,7 +21,8 @@ Source plan: Rework.md (owner's copy). Update after every task; a task is DONE o
 | P1-MUS-03 playable audio | IN PROGRESS: measured in automation, nobody has listened yet | rework/phase0-evidence-gate | ef5c6143 | docs/rework/evidence/P1-MUS-02 |
 | P1-MUS-04 MIDI keyboard | IN PROGRESS: mocked tests pass, real hardware BLOCKED | rework/phase0-evidence-gate | ef5c6143 | docs/rework/evidence/P1-MUS-02 |
 | P1-MUS-05 scoring and feedback | DONE in code and tests (pending owner approval) | rework/phase0-evidence-gate | ef5c6143 | docs/rework/evidence/P1-MUS-02 |
-| P1-MUS-06..10, P0-OPS-02/03, P0-SEC-01..03, P0-BIZ-01, Phases 3-7 | NOT STARTED | | | |
+| P1-MUS-06 save progress | IN PROGRESS: finished runs saved and tested; resume-after-reload and streak links not done. Migration is not on production until merged | rework/phase0-evidence-gate | ab4e121d | docs/rework/evidence/P1-MUS-06 |
+| P1-MUS-07..10, P0-OPS-02/03, P0-SEC-01..03, P0-BIZ-01, Phases 3-7 | NOT STARTED | | | |
 
 ## How to run
 - Evidence check: npm run rework:verify
@@ -29,3 +30,6 @@ Source plan: Rework.md (owner's copy). Update after every task; a task is DONE o
 - End-to-end on a clean production build of the committed HEAD: scripts/rework/e2e-prod.sh e2e/rework/<spec> --project=desktop --project=mobile --project=narrow
 - Fake signed-in student for local testing (throwaway DB only, refuses anything else): scripts/rework/test-session.mjs
 - Why a clean checkout: the project sits in the iCloud-synced Desktop folder. A dev server there is very slow and Finder creates "name 2" duplicates that break tsc, so tests run against a production build kept in /private/tmp.
+
+Note: P2-MKT-03 (relabel the See-it-work scenes) no longer applies: that component was removed in the homepage redesign since the spec snapshot.
+Note: under heavy machine load (load average 100+, seen several times) some existing tests time out (classesInWindow, adminPause, backup). Each passed when re-run alone.

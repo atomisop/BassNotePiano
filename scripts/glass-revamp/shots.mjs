@@ -33,8 +33,13 @@ for (const path of paths) {
       ...(w < 500 ? { hasTouch: true } : {}),
     });
     const page = await ctx.newPage();
-    const res = await page.goto(base + path, { waitUntil: "load", timeout: 90000 }).catch((e) => { console.error(e.message); return null; });
-    if (!res || res.status() >= 400) { console.error(`${path} ${w}x${h}: HTTP ${res?.status()}`); bad = true; }
+    let res = null;
+    for (let attempt = 1; attempt <= 3 && !res; attempt++) {
+      res = await page.goto(base + path, { waitUntil: "domcontentloaded", timeout: 150000 }).catch((e) => { console.error(`${path} attempt ${attempt}: ${e.message.split("\n")[0]}`); return null; });
+    }
+    // Never save a picture of a page that did not load: that would be fake evidence.
+    if (!res || res.status() >= 400) { console.error(`SKIPPED ${path} ${w}x${h}: HTTP ${res?.status()}`); bad = true; await ctx.close(); continue; }
+    await page.waitForLoadState("load", { timeout: 60000 }).catch(() => {});
     await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
     if (solid) await page.evaluate(() => document.documentElement.setAttribute("data-solid-surfaces", "on"));
     await page.waitForTimeout(3500);
