@@ -1,0 +1,7 @@
+Commands run at 1fa98ef4 (dev server :3102)
+npm run typecheck
+exit status: 0
+npx eslint src/components/marketing/PaymentPlanTierGrid.tsx
+exit status: 0
+no test references the old badge text (grep of tests/ e2e/ scripts/)
+exit status: 0
