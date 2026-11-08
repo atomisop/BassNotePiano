@@ -2857,7 +2857,7 @@ html[data-offline] [data-top-banner] {
      phone's own launch screen to this layer shows no change at all. */
   background: #000;
   pointer-events: auto;
-  animation: bnp-splash-failsafe 9s linear forwards;
+  animation: bnp-splash-failsafe calc(9s * var(--bnp-slow, 1)) linear forwards;
 }
 html[data-splash] .bnp-splash {
   display: flex;
@@ -2870,7 +2870,8 @@ html[data-splash] .bnp-splash {
   width: min(59vw, 280px);
   aspect-ratio: 901 / 645;
 }
-/* The logo drawing itself (LaunchLogo.tsx): every part is SMIL on one clock, so this is only the box and the still version. */
+/* The logo drawing itself (LaunchLogo.tsx): plain CSS on plain paths so it runs the same in Safari's engine (the installed iPhone app).
+   `--bnp-slow` stretches every time (1 normally). */
 .bnp-logo {
   position: absolute;
   inset: 0;
@@ -2880,6 +2881,49 @@ html[data-splash] .bnp-splash {
   pointer-events: none;
 }
 .bnp-logo-still { display: none; }
+.bnp-logo-band,
+.bnp-logo-key,
+.bnp-logo-letter,
+.bnp-logo-rule,
+.bnp-logo-diamond {
+  opacity: 0;
+  transform-box: fill-box;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* A slice of the line: it appears orange, then settles into cream, so the tip of the line glows as it is drawn. */
+.bnp-logo-band {
+  animation-name: bnp-logo-band;
+  animation-duration: calc(420ms * var(--bnp-slow, 1));
+  animation-timing-function: linear;
+}
+.bnp-logo-key { animation-name: bnp-logo-key; animation-duration: calc(520ms * var(--bnp-slow, 1)); }
+.bnp-logo-letter { animation-name: bnp-logo-letter; animation-duration: calc(640ms * var(--bnp-slow, 1)); transform-origin: 50% 100%; }
+.bnp-logo-rule { animation-name: bnp-logo-rule; animation-duration: calc(560ms * var(--bnp-slow, 1)); }
+.bnp-logo-rule-l { transform-origin: 100% 50%; }
+.bnp-logo-rule-r { transform-origin: 0% 50%; }
+.bnp-logo-diamond { animation-name: bnp-logo-diamond; animation-duration: calc(520ms * var(--bnp-slow, 1)); transform-origin: 50% 50%; }
+@keyframes bnp-logo-band {
+  0% { opacity: 0; fill: #FF8A4C; }
+  20% { opacity: 1; fill: #FF8A4C; }
+  100% { opacity: 1; fill: #FBF1E6; }
+}
+@keyframes bnp-logo-key {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bnp-logo-letter {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bnp-logo-rule {
+  from { opacity: 1; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@keyframes bnp-logo-diamond {
+  from { opacity: 0; transform: scale(0.2) rotate(-90deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
 @media (prefers-reduced-motion: reduce) {
   .bnp-logo-anim { display: none; }
   .bnp-logo-still { display: block; }
