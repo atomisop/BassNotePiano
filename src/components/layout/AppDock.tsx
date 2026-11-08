@@ -139,9 +139,8 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [pathname]);
   const mainRef = useRef<HTMLDivElement>(null);
-  const islandRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const handles = [mainRef.current, islandRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
+    const handles = [mainRef.current].flatMap((el) => (el ? [liquidGlass(el, GLASS)] : []));
     return () => handles.forEach((h) => h.destroy());
   }, []);
   // Every tab is fetched ahead of the tap, so the move is instant.
@@ -254,16 +253,13 @@ export function AppDock({ isAdmin = false }: AppDockProps) {
         }}
         className="pointer-events-none relative flex w-full max-w-[26rem] items-center gap-2"
       >
-        {/* Two separate glass shapes: the main pill holds every tab but Settings, and Settings sits alone in its own round island at the right. */}
+        {/* One glass pill holds every tab, Settings last. */}
         <div
           ref={mainRef}
-          style={{ gridTemplateColumns: `repeat(${items.length - 1}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
           className="ig-dock pointer-events-auto relative grid h-[58px] min-w-0 flex-1 items-center rounded-full px-[10px] py-[4px]"
         >
-          {items.slice(0, -1).map((item, i) => renderTab(item, i, false))}
-        </div>
-        <div ref={islandRef} className="ig-dock pointer-events-auto relative flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full p-[4px]">
-          {renderTab(items[items.length - 1], items.length - 1, true)}
+          {items.map((item, i) => renderTab(item, i, false))}
         </div>
       </div>
     </div>
