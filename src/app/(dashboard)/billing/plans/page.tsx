@@ -15,12 +15,16 @@ import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
 import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
 import { listInvitesForPerson } from "@/lib/familyInvites";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
+import { hasParentControl, isParentOf } from "@/lib/parentLinks";
+import { parseSlotKey, pauseNeedsPayment, slotKey } from "@/lib/inPlaceLinks";
+import { pauseBlockedReason, isIndefinitePause } from "@/lib/planPause";
+import { PlanControls } from "./PlanControls";
 
 export const metadata = { title: "Payment plans" };
 
 export default async function BillingPlansPage(
   props: {
-    searchParams: Promise<{ cadence?: string; term?: string; who?: string }>;
+    searchParams: Promise<{ cadence?: string; term?: string; who?: string; slot?: string; child?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -30,6 +34,8 @@ export default async function BillingPlansPage(
     const keep = new URLSearchParams();
     if (searchParams.term) keep.set("term", searchParams.term);
     if (searchParams.who) keep.set("who", searchParams.who);
+    if (parseSlotKey(searchParams.slot)) keep.set("slot", searchParams.slot!);
+    if (typeof searchParams.child === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(searchParams.child)) keep.set("child", searchParams.child);
     const back = keep.size > 0 ? `/billing/plans?${keep}` : "/billing/plans";
     redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
   }
@@ -47,6 +53,15 @@ export default async function BillingPlansPage(
   // "?who=family" from the pricing page's family toggle opens the plan page already on "Me and my family".
   const initialAudience = parseAudience(searchParams.who);
   const initialParentMode = parseParentMode(searchParams.who);
+  // ?slot=<scheduleId>:<chunkIndex>: a weekly time picked somewhere else (Lessons, a "time opened" notice) is already chosen here.
+  const pickedSlot = parseSlotKey(searchParams.slot);
+  const initialSlotKey = pickedSlot ? slotKey(pickedSlot.scheduleId, pickedSlot.chunkIndex) : null;
+  // ?who=parent&child=<userId> (from Parent mode): that child is already on the form. Only a child linked to this parent, so the
+  // email is never shown for anyone else's id.
+  const initialChildEmail =
+    initialParentMode && typeof searchParams.child === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(searchParams.child) && (await isParentOf(session.user.id, searchParams.child))
+      ? ((await prisma.user.findUnique({ where: { id: searchParams.child }, select: { email: true } }))?.email.toLowerCase() ?? null)
+      : null;
 
   const [activePlan, allPlans, pricing, personalDiscount] = await Promise.all([
     getActivePaymentPlan(session.user.id),
@@ -128,6 +143,33 @@ export default async function BillingPlansPage(
   }
   const shownInstallment = startPayment ?? openInstallmentResult?.payment ?? null;
 
+  // Pause, change length and cancel, right under the plan (the same controls as Settings). A pause the server would refuse is
+  // said up front, and when it is waiting on a payment, the Pay button opens that bill's payment sheet in place.
+  const now = new Date();
+  const pausedNow = Boolean(activePlan?.pauseUntil && activePlan.pauseUntil > now);
+  // A child whose parent controls their schedule changes nothing here (the server refuses it), so they get no dead-end rows.
+  const controls = activePlan && !(await hasParentControl(session.user.id))
+    ? {
+        plan: {
+          cadence: activePlan.cadence,
+          term: activePlan.term,
+          installmentsPaid: activePlan.installmentsPaid,
+          termMonths: activePlan.termMonths,
+          installmentAmountCents: activePlan.installmentAmountCents,
+          nextDueDate: isIndefinitePause(activePlan) && pausedNow ? null : activePlan.nextDueDate.toISOString(),
+          pausedIndefinitely: isIndefinitePause(activePlan) && pausedNow,
+          family: activePlan.familyGroupId ? await getFamilyDetails(session.user.id, activePlan) : null,
+          pausedAt: activePlan.pausedAt?.toISOString() ?? null,
+          pausedUntil: pausedNow && !isIndefinitePause(activePlan) ? activePlan.pauseUntil!.toISOString() : null,
+        },
+        pauseBlocked:
+          shownInstallment?.status === "PENDING_REVIEW"
+            ? "Your last payment is still being confirmed. You can pause once it clears."
+            : pauseBlockedReason(activePlan, 1, now),
+      }
+    : null;
+  const payable = shownInstallment && (shownInstallment.status === "AWAITING_TRANSFER" || shownInstallment.status === "REJECTED") && !family ? shownInstallment : null;
+
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
   // Phones: one column. Tablets and computers: the page is wide, so the plan form can sit in two columns (see NewPlanForm).
@@ -155,6 +197,25 @@ export default async function BillingPlansPage(
         <div className="mx-auto max-w-2xl md:max-w-none">
           <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
           {activePlan && <MyPlanSummary userId={session.user.id} />}
+          {controls && !initialParentMode && (
+            <PlanControls
+              plan={controls.plan}
+              canPause={!activePlan?.familyGroupId}
+              pauseBlocked={controls.pauseBlocked}
+              pauseNeedsPay={pauseNeedsPayment(controls.pauseBlocked) && payable !== null}
+              bill={
+                payable
+                  ? {
+                      id: payable.id,
+                      amountCents: payable.amountCents,
+                      title: `Installment ${payable.installmentNumber ?? (activePlan?.installmentsPaid ?? 0) + 1} of ${activePlan?.termMonths ?? 1}`,
+                      eyebrow: activePlan ? describePaymentPlan(activePlan.cadence, activePlan.term) : "Payment plan",
+                    }
+                  : null
+              }
+              zelleHandle={zelleHandle}
+            />
+          )}
         </div>
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
@@ -162,6 +223,8 @@ export default async function BillingPlansPage(
           initialTerm={initialTerm}
           initialAudience={initialAudience}
           initialParentMode={initialParentMode}
+          initialSlotKey={initialSlotKey}
+          initialChildEmail={initialChildEmail}
           pricing={pricing}
           personalDiscountPercent={personalDiscount.percent}
           scholarshipPercent={personalDiscount.scholarshipPercent}

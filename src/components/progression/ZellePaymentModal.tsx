@@ -11,7 +11,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { normalizePhone, PHONE_HELP } from "@/lib/phone";
-import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
+import { checkPaymentPhoneAction, getPaymentPhoneStateAction, saveNumberToAccountAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
@@ -175,6 +175,22 @@ export function ZellePaymentModal({
     };
   }, [isOpen, step, paymentId]);
 
+  /** The typed number is not the account's: put it on the account right here (same checks as Settings), then carry on paying. */
+  async function handleUseNewNumber() {
+    if (!paymentId) return;
+    setPhoneError(null);
+    setPhoneSaving(true);
+    const result = await saveNumberToAccountAction(paymentId, phoneInput).catch(() => null);
+    setPhoneSaving(false);
+    if (!result || !result.ok) {
+      setPhoneError(result?.error ?? "Something went wrong. Please try again.");
+      return;
+    }
+    toast.success("Number saved to your account");
+    setAccountLast4(result.phone.slice(-4));
+    setStep("instructions");
+  }
+
   async function handlePhoneContinue() {
     if (!paymentId) return setStep("instructions");
     if (!phoneOk) return;
@@ -194,7 +210,7 @@ export function ZellePaymentModal({
       ? phoneCheck.status === "invalid"
         ? phoneCheck.error
         : phoneCheck.status === "mismatch"
-          ? "That isn't the phone number on your account. Type the number saved on your account, or change it in Settings, then Account."
+          ? `That isn't the phone number on your account${accountLast4 ? ` (it ends in ${accountLast4})` : ""}. Type that one, or use this new number on your account.`
           : phoneCheck.status === "taken"
             ? "That number is already on another account. If it is yours, message us and we will sort it out."
             : null
@@ -388,7 +404,20 @@ export function ZellePaymentModal({
                           )}
                         </div>
                         {checkMessage ? (
-                          <p role="status" className="mt-1.5 text-small text-red-400">{checkMessage}</p>
+                          <>
+                            <p role="status" className="mt-1.5 text-small text-red-400">{checkMessage}</p>
+                            {phoneCheck !== "checking" && phoneCheck?.status === "mismatch" && (
+                              <button
+                                type="button"
+                                onClick={handleUseNewNumber}
+                                disabled={phoneSaving}
+                                className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2" })}
+                              >
+                                {phoneSaving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                                Use this number on my account
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <p className="mt-1.5 text-small text-slate-500">
                             {hasAccountPhone

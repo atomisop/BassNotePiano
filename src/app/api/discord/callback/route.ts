@@ -5,14 +5,16 @@ import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { addToGuild } from "@/lib/discordApi";
-import { checkState, DISCORD_STATE_COOKIE, fetchDiscordIdentity } from "@/lib/discordLink";
+import { DISCORD_STATE_COOKIE, fetchDiscordIdentity, readState } from "@/lib/discordLink";
+import { withDiscordFlag } from "@/lib/inPlaceLinks";
 
-// Where Discord sends the student back after they connect.
+// Where Discord sends the student back after they connect: the page they connected from (signed into the state), else Lessons.
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const base = process.env.NEXTAUTH_URL ?? url.origin;
+  let returnTo = "/lessons";
   const back = (flag: string) => {
-    const res = NextResponse.redirect(new URL(`/lessons?discord=${flag}`, base));
+    const res = NextResponse.redirect(new URL(withDiscordFlag(returnTo, flag), base));
     res.cookies.set(DISCORD_STATE_COOKIE, "", { maxAge: 0, path: "/api/discord" });
     return res;
   };
@@ -21,7 +23,10 @@ export async function GET(req: Request) {
   if (!session?.user?.id) return NextResponse.redirect(new URL("/login?callbackUrl=/lessons", base));
 
   const cookieNonce = req.headers.get("cookie")?.match(new RegExp(`${DISCORD_STATE_COOKIE}=([^;]+)`))?.[1];
-  if (!checkState(url.searchParams.get("state"), cookieNonce, session.user.id)) return back("error");
+  const checked = readState(url.searchParams.get("state"), cookieNonce, session.user.id);
+  if (!checked.ok) return back("error");
+  // Signed with the state, and checked again here: only ever a plain in-app path.
+  if (checked.returnTo) returnTo = checked.returnTo;
 
   // A link is good once: the state's nonce is spent here, so replaying the same callback address does nothing the second time.
   try {

@@ -12,26 +12,49 @@ function secret(): string {
   return value;
 }
 
-function sign(nonce: string, userId: string): string {
-  return createHmac("sha256", secret()).update(`discord-link:${nonce}:${userId}`).digest("hex").slice(0, 40);
+function sign(nonce: string, userId: string, returnTo = ""): string {
+  // The page to come back to is signed with the rest, so nobody can swap in a different one on the way back.
+  const message = returnTo ? `discord-link-back:${nonce}:${userId}:${returnTo}` : `discord-link:${nonce}:${userId}`;
+  return createHmac("sha256", secret()).update(message).digest("hex").slice(0, 40);
 }
 
 export const DISCORD_STATE_COOKIE = STATE_COOKIE;
 
-/** A fresh state value for one sign-in attempt, tied to the signed-in user and to a cookie. */
-export function makeState(userId: string): { nonce: string; state: string } {
+const encode = (text: string) => Buffer.from(text, "utf8").toString("base64url");
+const decode = (text: string) => Buffer.from(text, "base64url").toString("utf8");
+
+/**
+ * A fresh state value for one sign-in attempt, tied to the signed-in user and to a cookie. `returnTo` (an in-app path the
+ * caller already checked) rides along inside it, so the student comes back to the page they connected from.
+ */
+export function makeState(userId: string, returnTo?: string | null): { nonce: string; state: string } {
   const nonce = randomBytes(16).toString("hex");
-  return { nonce, state: `${nonce}.${sign(nonce, userId)}` };
+  const back = returnTo ?? "";
+  return { nonce, state: back ? `${nonce}.${sign(nonce, userId, back)}.${encode(back)}` : `${nonce}.${sign(nonce, userId)}` };
+}
+
+/** Whether the state came from this user and this browser, and the page it asks to return to (null when none was set). */
+export function readState(state: string | null, cookieNonce: string | undefined, userId: string): { ok: boolean; returnTo: string | null } {
+  const refused = { ok: false, returnTo: null };
+  if (!state || !cookieNonce) return refused;
+  const [nonce, signature, packed, extra] = state.split(".");
+  if (!nonce || !signature || nonce !== cookieNonce || extra !== undefined) return refused;
+  let returnTo = "";
+  try {
+    returnTo = packed ? decode(packed) : "";
+  } catch {
+    return refused;
+  }
+  if (packed !== undefined && !returnTo) return refused;
+  const expected = Buffer.from(sign(nonce, userId, returnTo));
+  const given = Buffer.from(signature);
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return refused;
+  return { ok: true, returnTo: returnTo || null };
 }
 
 /** True only if the state came from this user, and matches the cookie set on the same browser. */
 export function checkState(state: string | null, cookieNonce: string | undefined, userId: string): boolean {
-  if (!state || !cookieNonce) return false;
-  const [nonce, signature] = state.split(".");
-  if (!nonce || !signature || nonce !== cookieNonce) return false;
-  const expected = Buffer.from(sign(nonce, userId));
-  const given = Buffer.from(signature);
-  return given.length === expected.length && timingSafeEqual(given, expected);
+  return readState(state, cookieNonce, userId).ok;
 }
 
 export function redirectUri(): string {

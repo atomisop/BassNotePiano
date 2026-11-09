@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { buttonVariants } from "@/components/ui/button";
-import { DiscordLink } from "@/components/ui/DiscordLink";
+import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { CelebrationCard } from "@/components/home/CelebrationCard";
 import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -123,14 +123,11 @@ export default async function HomePage() {
             detail={data.nextStep.detail}
             actions={
               joinNow && nextClass ? (
-                <DiscordLink
+                <JoinClassButton
                   href={nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  label="Join your class"
                   className={buttonVariants({ size: "lg" })}
-                >
-                  Join your class
-                </DiscordLink>
+                />
               ) : (
                 <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
                   {data.nextStep.cta}

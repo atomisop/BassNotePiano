@@ -26,6 +26,7 @@ import { announceChange } from "@/lib/liveEvents";
 import { NETWORK_ERROR, type OccurrenceRow, type BookingRow, type BookingMode, type TabId, formatOccurrenceDay, creditsLabel, weekStartMs, formatOccurrenceTime, groupOccurrencesByWeek, groupByMonth, BookingCard, MonthGroup, AttendeeEmailRow } from "./BookingParts";
 import { MaskReveal } from "@/components/ui/MaskReveal";
 import { SuccessPulse } from "@/components/ui/SuccessPulse";
+import { slotKey, startPlanWithTimePath } from "@/lib/inPlaceLinks";
 
 /** A request the student sent (request mode), as the booking screen shows it. */
 export interface MyRequestRow {
@@ -59,10 +60,16 @@ export function ClassBookingClient({
   initialBookings,
   zelleHandle,
   extraMode = false,
+  heading = "Book an extra class",
+  startPlanWithTime = false,
   weeklyLimited = false,
   fifthClassOffer = null,
   extraClassCents = EXTRA_CLASS_PRICE_CENTS,
 }: {
+  /** The section's heading in extra mode ("Book a class" for a group member who books every class themselves). */
+  heading?: string;
+  /** No plan yet: short on credits offers starting a plan with the time just picked, instead of a bare plans page. */
+  startPlanWithTime?: boolean;
   /** Settings > Booking > "Students request times": picking times sends a request the teacher confirms. */
   requestMode?: boolean;
   myRequests?: MyRequestRow[];
@@ -556,7 +563,7 @@ export function ClassBookingClient({
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
       {/* The page's own title ("Lessons") sits above this on the page; this names the section. */}
       {/* The Book tab already says it; only the extra-class mode needs its own heading. */}
-      {extraMode && <h2 className="text-headline font-semibold text-balance text-slate-50">Book an extra class</h2>}
+      {extraMode && <h2 className="text-headline font-semibold text-balance text-slate-50">{heading}</h2>}
 
       <div className={extraMode ? "mt-(--space-group)" : ""}>
         <Tabs<TabId>
@@ -921,9 +928,19 @@ export function ClassBookingClient({
                     Clear
                   </button>
                   {missingCredits > 0 ? (
-                    <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}>
-                      Get more credits
-                    </Link>
+                    startPlanWithTime && selectedRows[0] ? (
+                      // No plan yet: start one with the time just picked as the weekly time, instead of picking it again.
+                      <Link
+                        href={startPlanWithTimePath(slotKey(selectedRows[0].scheduleId, selectedRows[0].chunkIndex))}
+                        className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
+                      >
+                        Start a plan with this time
+                      </Link>
+                    ) : (
+                      <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}>
+                        Get more credits
+                      </Link>
+                    )
                   ) : (
                     <button
                       type="button"

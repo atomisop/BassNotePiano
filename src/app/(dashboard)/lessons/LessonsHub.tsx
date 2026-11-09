@@ -8,16 +8,22 @@ type HubTab = "weekly" | "extra";
 /**
  * What a student on a payment plan sees at /lessons: their locked-in weekly
  * class on one tab, and extra sessions (booked with credits bought at $40 each)
- * on the other. Same sliding tabs as the rest of the app.
+ * on the other. Same sliding tabs as the rest of the app. A group plan member
+ * with no weekly time of their own books every class themselves, so for them
+ * the tabs read "My classes" and "Book a class".
  */
 export function LessonsHub({
   weekly,
   extras,
   initialTab = "weekly",
+  weeklyLabel = "My weekly class",
+  extraLabel = "Extra sessions",
 }: {
   weekly: ReactNode;
   extras: ReactNode;
   initialTab?: HubTab;
+  weeklyLabel?: string;
+  extraLabel?: string;
 }) {
   const [tab, setTab] = useState<HubTab>(initialTab);
   return (
@@ -28,8 +34,8 @@ export function LessonsHub({
           value={tab}
           onChange={setTab}
           items={[
-            { id: "weekly", label: "My weekly class" },
-            { id: "extra", label: "Extra sessions" },
+            { id: "weekly", label: weeklyLabel },
+            { id: "extra", label: extraLabel },
           ]}
         />
       </div>

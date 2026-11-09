@@ -3,6 +3,7 @@
 import { PAYMENT_LOCKED_CODE, PAYMENT_LOCKED_PATH } from "@/lib/paymentLockCodes";
 import { useEffect, useState, type FormEvent } from "react";
 import { safeCallbackPath } from "@/lib/safeRedirect";
+import { registerHref } from "@/lib/inPlaceLinks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -213,7 +214,7 @@ export function LoginForm({
               <p className="text-small text-slate-400">
                 If <span className="text-slate-200">{email.trim()}</span> has an account, a code is on its way. Nothing
                 after a minute? Check spam, or{" "}
-                <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+                <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
                   create an account
                 </Link>
                 .
@@ -287,7 +288,7 @@ export function LoginForm({
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+          <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
             Create an account
           </Link>
         </p>
@@ -391,7 +392,7 @@ export function LoginForm({
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+        <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Create an account
         </Link>
       </p>

@@ -11,7 +11,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
-import { DiscordLink } from "@/components/ui/DiscordLink";
+import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { ChevronDown } from "@/components/ui/appIcons";
 
 export const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
@@ -225,14 +225,7 @@ export function BookingCard({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {b.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
           {hoursUntil <= 0.5 && !b.inPerson && (
-            <DiscordLink
-              href={b.discordUrl ?? DISCORD_INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonVariants({ variant: "primary", size: "sm" })}
-            >
-              Join on Discord
-            </DiscordLink>
+            <JoinClassButton href={b.discordUrl ?? DISCORD_INVITE_URL} bookingId={b.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
           )}
           {rescheduleEligible && (
             <button

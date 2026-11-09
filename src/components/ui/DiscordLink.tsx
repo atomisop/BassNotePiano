@@ -69,7 +69,7 @@ export function DiscordConnectLink({
     if (!onTouchDevice()) return;
     e.preventDefault();
     try {
-      const res = await fetch(`${href}?format=json`, { credentials: "same-origin" });
+      const res = await fetch(`${href}${href.includes("?") ? "&" : "?"}format=json`, { credentials: "same-origin" });
       const data = (await res.json()) as { url?: string };
       if (!res.ok || !data.url) throw new Error("no url");
       openInDiscord(data.url);
