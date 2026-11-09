@@ -1,0 +1,3 @@
+No source file changed in this task (captures plus applying the branch's own pending migration to the local throwaway database bnp_revamp). Last code checks: GL-01-05/tests.txt at commit 31dc4f06.
+$ git diff --quiet 31dc4f06 -- src
+exit status: 0

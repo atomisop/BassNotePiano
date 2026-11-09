@@ -1,0 +1,45 @@
+{
+  "taskId": "GL-02-01",
+  "status": "DONE",
+  "commit": "6d3da876",
+  "title": "Solid surfaces on public pages, piano lesson and admin at phone width",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x700"
+  ],
+  "before": [
+    "before/admin_data-admin-dark-chromium-390x844.png",
+    "before/admin_payments-admin-dark-chromium-390x844.png",
+    "before/home-guest-dark-chromium-390x844.png",
+    "before/login-guest-dark-chromium-390x844.png",
+    "before/practice_piano-student-dark-chromium-1440x900.png",
+    "before/practice_piano-student-dark-chromium-320x700.png",
+    "before/practice_piano-student-dark-chromium-390x844.png",
+    "before/pricing-guest-dark-chromium-390x844.png"
+  ],
+  "after": [
+    "keep/admin_data-admin-dark-solid-chromium-390x844.png",
+    "keep/admin_payments-admin-dark-solid-chromium-390x844.png",
+    "keep/classes-guest-dark-solid-chromium-390x844.png",
+    "keep/home-guest-dark-solid-chromium-390x844.png",
+    "keep/login-guest-dark-solid-chromium-390x844.png",
+    "keep/login-guest-dark-solid-firefox-390x844.png",
+    "keep/login-guest-dark-solid-webkit-390x844.png",
+    "keep/practice_piano-student-dark-solid-chromium-1440x900.png",
+    "keep/practice_piano-student-dark-solid-chromium-320x700.png",
+    "keep/practice_piano-student-dark-solid-chromium-390x844.png",
+    "keep/pricing-guest-dark-solid-chromium-390x844.png",
+    "keep/privacy-guest-dark-solid-chromium-390x844.png",
+    "keep/register-guest-dark-solid-chromium-390x844.png",
+    "keep/shop-guest-dark-solid-chromium-390x844.png",
+    "keep/terms-guest-dark-solid-chromium-390x844.png"
+  ],
+  "stateProof": [
+    "keep/practice_piano-student-dark-solid-chromium-320x700.png"
+  ],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "accessibilityResults": "axe-results.json",
+  "blockingIssues": []
+}

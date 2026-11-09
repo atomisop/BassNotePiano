@@ -1,6 +1,6 @@
 # Glass revamp status
 
-Done so far: GL-01-01 to GL-01-05 (owner chose the subtle direction: keep the look and the approved dock; make glass consistent, accessible and reliable). A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
+Done so far: GL-01-01 to GL-01-05 and GL-02-01 (owner chose the subtle direction: keep the look and the approved dock; make glass consistent, accessible and reliable). A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
 
 | Task | State | Evidence |
 |---|---|---|
@@ -12,6 +12,7 @@ Done so far: GL-01-01 to GL-01-05 (owner chose the subtle direction: keep the lo
 | GL-01-03 floating surfaces in Solid, reduced transparency and forced colors, keyboard checks, admin data legend fix | DONE (commit 606ce43d) | evidence/GL-01-03/ |
 | GL-01-04 accessibility sweep, 51 axe runs over student and admin routes | DONE: zero violations, no overflow | evidence/GL-01-04/ |
 | GL-01-05 Tailwind backdrop-blur panels (top banner, scrims, marketing nav) honor Solid and reduced transparency | DONE | evidence/GL-01-05/ |
+| GL-02-01 Solid surfaces on public pages, piano lesson, admin at phone width, WebKit and Firefox: 0 overflow, 0 axe findings | DONE | evidence/GL-02-01/ |
 | Phone backdrop budget | CHECKED, no change needed: the 19 on phone home were 3 on screen (PERFORMANCE-BASELINE.md correction) | PERFORMANCE-BASELINE.md |
 | Phase 1 remaining (move class-name glass consumers to roles, toasts, skeletons) | NEXT | |
 | Phases 2 to 6 | NOT STARTED | |
@@ -31,4 +32,5 @@ Done so far: GL-01-01 to GL-01-05 (owner chose the subtle direction: keep the lo
 - Local app: `revamp-dev` (port 3101, local Postgres 5433, db `bnp_revamp`), test accounts from `scripts/seed-revamp-test.mjs`.
 - Captures run one at a time: `scripts/glass-revamp/baseline.sh <TASK> <before|after>`; single pages with `shots.mjs`. Parallel lanes starve the dev server.
 - The machine was heavily loaded (load average 50 to 150), so LCP is not usable; only structural counts are (see PERFORMANCE-BASELINE.md).
+- The local database `bnp_revamp` needs `prisma migrate deploy` after pulling new migrations (the piano page failed until `PianoPracticeAttempt` existed). Local only.
 - `Rework.md` was never provided; the spec text pasted in chat is the source.
