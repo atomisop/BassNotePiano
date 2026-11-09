@@ -347,7 +347,7 @@ export function PracticeClient({
             {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
           </button>
           {status.completedToday && (
-            <a href={nextHref ?? "/dashboard"} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
+            <a href={nextHref ?? "/roadmap"} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
               {nextHref ? "Continue to your lesson" : "Go to scales"}
             </a>
           )}

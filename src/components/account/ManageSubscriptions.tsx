@@ -81,6 +81,8 @@ export interface ManageSubscriptionsProps {
   activePlan: ActivePlanInfo | null;
   onChangeTerm: (newTerm: PaymentPlanTerm) => Promise<{ ok: boolean; error: string | null }>;
   onCancel: (reason: PlanCancellationReason, reasonNote: string | null) => Promise<{ ok: boolean; error: string | null }>;
+  /** Opened from a "Change length" or "Cancel plan" row (Billing > Plans): start on that step instead of the summary. */
+  startOn?: "summary" | "switch" | "cancel";
 }
 
 type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
@@ -106,17 +108,19 @@ type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
  */
 const isOffered = isPlanTermOffered;
 
-export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
+export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startOn = "summary" }: ManageSubscriptionsProps) {
   const router = useRouter();
   // The owner's current prices and this account's own discount, from the signed-in layout.
   const { pricing, personalDiscountPercent, scholarshipPercent } = usePricing();
   // One plan on offer (45 minutes a week). A plan on a retired length keeps showing its own.
   const cadence: PaymentPlanCadence = activePlan?.cadence ?? OFFERED_PLAN_CADENCE;
-  const [view, setView] = useState<"summary" | "switch">("summary");
+  const [view, setView] = useState<"summary" | "switch">(startOn === "switch" && activePlan && !activePlan.family ? "switch" : "summary");
   const [confirmTerm, setConfirmTerm] = useState<PaymentPlanTerm | null>(null);
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
   const [termError, setTermError] = useState<string | null>(null);
-  const [cancelStage, setCancelStage] = useState<CancelStage>("idle");
+  const [cancelStage, setCancelStage] = useState<CancelStage>(
+    startOn === "cancel" && activePlan ? (activePlan.term === "TERM_6" || activePlan.term === "TERM_12" ? "downgrade-offer" : "reason") : "idle",
+  );
   const [reason, setReason] = useState<PlanCancellationReason | null>(null);
   const [reasonNote, setReasonNote] = useState("");
   const [cancelError, setCancelError] = useState<string | null>(null);

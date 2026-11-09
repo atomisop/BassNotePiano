@@ -5,7 +5,7 @@ import type { ReservableSlot } from "@/lib/classSchedule";
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { BookingCalendar } from "./BookingCalendar";
+import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
 
@@ -42,15 +42,21 @@ export function WeeklyTimePicker({
   slots,
   busyKey,
   onConfirm,
+  initialKey = null,
 }: {
   slots: ReservableSlot[];
   /** `${scheduleId}:${chunkIndex}` of the slot being saved, or null. */
   busyKey: string | null;
   onConfirm: (slot: ReservableSlot) => void;
+  /** `${scheduleId}:${chunkIndex}` to have chosen on arrival (a notice said this time opened), when it is still open. */
+  initialKey?: string | null;
 }) {
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const initial = initialKey ? slots.find((s) => `${s.scheduleId}:${s.chunkIndex}` === initialKey) ?? null : null;
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(() =>
+    initial ? dayKey(upcomingDatesFor(initial.dayOfWeek, 1)[0]) : null,
+  );
   const [timesOpen, setTimesOpen] = useState(false);
-  const [selected, setSelected] = useState<ReservableSlot | null>(null);
+  const [selected, setSelected] = useState<ReservableSlot | null>(initial);
 
   const calendarRows = useMemo(
     () => slots.flatMap((slot) => upcomingDatesFor(slot.dayOfWeek, 6).map((ms) => ({ occurrenceDateMs: ms, isBooked: false, slot }))),

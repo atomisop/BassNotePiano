@@ -10,6 +10,9 @@ import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { PageBack } from "@/components/ui/BackLink";
 import { ChevronRight } from "@/components/ui/appIcons";
+import { prisma } from "@/lib/prisma";
+import { payAgainPath } from "@/lib/inPlaceLinks";
+import { HistoryPayButton } from "./HistoryPayButton";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -75,11 +78,26 @@ function describePayment(payment: {
 
 export const metadata = { title: "Billing history" };
 
-export default async function BillingHistoryPage() {
+export default async function BillingHistoryPage(props: { searchParams: Promise<{ pay?: string }> }) {
+  const { pay } = await props.searchParams;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/history");
+  if (!session?.user) redirect(`/login?callbackUrl=${encodeURIComponent(pay ? payAgainPath(pay) : "/billing/history")}`);
 
   const payments = await getUserPaymentHistory(session.user.id);
+  const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+  // Unpaid and rejected bills can be paid right here, except a group member's own bill: the group's payer pays that one
+  // (the server refuses it from anyone else too).
+  const openIds = payments.filter((p) => p.status === "AWAITING_TRANSFER" || p.status === "REJECTED").map((p) => p.id);
+  const paidBySomeoneElse = new Set(
+    openIds.length === 0
+      ? []
+      : (
+          await prisma.zellePayment.findMany({
+            where: { id: { in: openIds }, paymentPlan: { familyGroup: { payerId: { not: session.user.id } } } },
+            select: { id: true },
+          })
+        ).map((p) => p.id),
+  );
 
   return (
     <div>
@@ -141,6 +159,20 @@ export default async function BillingHistoryPage() {
               {payment.status === "REJECTED" && payment.rejectionReason && (
                 <p className="mt-2 text-small text-red-400">Reason: {payment.rejectionReason}</p>
               )}
+              {(payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED") &&
+                (paidBySomeoneElse.has(payment.id) ? (
+                  <p className="mt-2 text-small text-slate-500">The person who pays for your plan sends this one.</p>
+                ) : (
+                  <HistoryPayButton
+                    paymentId={payment.id}
+                    rejected={payment.status === "REJECTED"}
+                    amountCents={payment.amountCents}
+                    title={title}
+                    eyebrow={eyebrow}
+                    zelleHandle={zelleHandle}
+                    autoOpen={pay === payment.id}
+                  />
+                ))}
             </div>
             );
           })}

@@ -126,6 +126,8 @@ export async function notifyOpenedSlots(now: Date = new Date()): Promise<{ notif
       title: "Your weekly time is open",
       body: `${day} ${next.schedule.label ? `(${next.schedule.label}) ` : ""}just opened up. Times go to whoever picks them first, so start your plan soon if you want it.`,
       emailCategory: "classes",
+      // Opens the weekly-time picker with this time chosen (or the plan form with it, for someone with no plan yet).
+      cta: { label: "Pick your time", path: `/lessons?changeTime=${encodeURIComponent(slotKey(next.scheduleId, next.chunkIndex))}` },
     }).catch((err) => console.error("Waitlist notice failed (non-blocking):", err));
     notified += 1;
   }

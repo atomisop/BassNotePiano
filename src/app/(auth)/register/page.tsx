@@ -21,6 +21,7 @@ import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { UserPlus } from "@/components/ui/appIcons";
 import { Hint } from "@/components/ui/Hint";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
+import { loginHref } from "@/lib/inPlaceLinks";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -253,7 +254,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+        <Link href={loginHref(callbackUrl)} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
           Log in
         </Link>
       </p>

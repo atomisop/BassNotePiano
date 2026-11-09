@@ -29,6 +29,7 @@ import {
 } from "./actions";
 import { NewPlanForm, type StartPlanInput, type StartPlanResult } from "./NewPlanForm";
 import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } from "../../parent/actions";
+import { claimScholarshipAction } from "../../account/scholarship-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { Hint } from "@/components/ui/Hint";
@@ -98,6 +99,10 @@ interface PaymentPlanEnrollmentFlowProps {
   scholarshipPercent?: number;
   /** Opened from the Parent page (?who=parent): only the form for paying for linked children, even when this person has a plan of their own. */
   initialParentMode?: boolean;
+  /** ?slot=: the weekly time already picked ("scheduleId:chunkIndex"). */
+  initialSlotKey?: string | null;
+  /** ?who=parent&child=: that linked child's email, already on the form. */
+  initialChildEmail?: string | null;
 }
 
 /**
@@ -259,6 +264,8 @@ export function PaymentPlanEnrollmentFlow({
   personalDiscountPercent = 0,
   scholarshipPercent = 0,
   initialParentMode = false,
+  initialSlotKey = null,
+  initialChildEmail = null,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
@@ -356,6 +363,8 @@ export function PaymentPlanEnrollmentFlow({
         personalDiscountPercent={0}
         initialTerm={initialTerm}
         initialAudience="FAMILY"
+        initialSlotKey={initialSlotKey}
+        initialMembers={initialChildEmail ? [initialChildEmail] : undefined}
         loadSlots={() => getReservableSlotsAction(cadence)}
         onStart={startPlan}
         checkMember={checkFamilyMemberAction}
@@ -507,6 +516,8 @@ export function PaymentPlanEnrollmentFlow({
       scholarshipPercent={scholarshipPercent}
       initialTerm={initialTerm}
       initialAudience={initialAudience}
+      initialSlotKey={initialSlotKey}
+      onClaimScholarship={claimScholarshipAction}
       loadSlots={() => getReservableSlotsAction(cadence)}
       onStart={startPlan}
       checkMember={checkFamilyMemberAction}

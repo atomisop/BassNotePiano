@@ -22,6 +22,7 @@ import { addBillingCycles } from "@/lib/billingCycle";
 import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { sendPaymentReceipt } from "@/lib/paymentReceipt";
+import { payAgainPath, receiptPath } from "@/lib/inPlaceLinks";
 import { reportError } from "@/lib/reportError";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -921,7 +922,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     type: "PAYMENT_APPROVED",
     title: "Payment approved",
     body: notificationBody,
-    ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
+    // The button opens this payment's own receipt, not the whole history list.
+    cta: fifthClass?.offerPath ? { label: "Add the fifth class", path: fifthClass.offerPath } : { label: "View your receipt", path: receiptPath(payment.id) },
   });
   if (!opts?.skipReceipt) await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
 
@@ -1250,9 +1252,11 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     userId: payment.userId,
     type: "PAYMENT_REJECTED",
     title: "Payment rejected",
-    body: `Your payment couldn't be verified: ${reason}. You can resubmit it from your billing page.`,
+    body: `Your payment couldn't be verified: ${reason}. Tap Resubmit to send it again.`,
     emailCategory: "payments",
     alwaysEmail: true,
+    // Opens Payment history with this payment's pay sheet already open.
+    cta: { label: "Resubmit", path: payAgainPath(paymentId) },
   });
 }
 

@@ -20,6 +20,9 @@ import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { SectionCard } from "./SectionCard";
 import { toast } from "@/components/ui/Toaster";
 import { claimScholarshipAction } from "./scholarship-actions";
+import { changePaymentPlanTermAction } from "./actions";
+import Link from "next/link";
+import { announceChange } from "@/lib/liveEvents";
 import { normalizeScholarshipCode } from "@/lib/scholarshipRules";
 import { Hint } from "@/components/ui/Hint";
 
@@ -197,6 +200,9 @@ function ScholarshipCard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  // What is left after claiming: start the 6 Month plan, or switch a running plan of another length to it, right here.
+  const [next, setNext] = useState<"start" | "switch" | null>(null);
+  const [switching, setSwitching] = useState<"ask" | "busy" | null>(null);
   const digits = raw.replace(/\D/g, "").slice(0, 16);
   const shown = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 
@@ -206,12 +212,28 @@ function ScholarshipCard() {
     setBusy(true);
     setError(null);
     setDone(null);
+    setNext(null);
     const res = await claimScholarshipAction(digits);
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setDone(res.message);
+    setNext(res.next);
     setRaw("");
     toast.success("Scholarship claimed");
+    router.refresh();
+  }
+
+  /** The existing plan-length change (same server rules as Membership), to the 6 Month plan the scholarship prices. */
+  async function switchToSix() {
+    setSwitching("busy");
+    setError(null);
+    const res = await changePaymentPlanTermAction("TERM_6").catch(() => ({ ok: false as const, error: "Something went wrong. Please try again." }));
+    setSwitching(null);
+    if (!res.ok) return setError(res.error ?? "Something went wrong. Please try again.");
+    setNext(null);
+    setDone("Your plan is now the 6 Month plan, with your scholarship.");
+    toast.success("Switched to 6 Months");
+    announceChange("status", "page");
     router.refresh();
   }
 
@@ -232,10 +254,36 @@ function ScholarshipCard() {
         />
         {error && <p role="alert" className="text-small text-red-400">{error}</p>}
         {done && <p role="status" className="text-small text-slate-50">{done}</p>}
-        <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
-          {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-          {busy ? "Checking…" : "Claim scholarship"}
-        </button>
+        {next === "start" && (
+          <Link href="/billing/plans?term=TERM_6" className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+            Start your 6 Month plan
+          </Link>
+        )}
+        {next === "switch" &&
+          (switching === null ? (
+            <button type="button" onClick={() => setSwitching("ask")} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+              Switch to 6 Months
+            </button>
+          ) : (
+            <div className="rounded-xl bg-neu-base p-3 shadow-pressed-low">
+              <p className="text-small text-slate-200">Switch your plan to 6 Months now? Your next bill uses the scholarship price.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" disabled={switching === "busy"} onClick={switchToSix} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                  {switching === "busy" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                  {switching === "busy" ? "Switching…" : "Yes, switch"}
+                </button>
+                <button type="button" disabled={switching === "busy"} onClick={() => setSwitching(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  Not now
+                </button>
+              </div>
+            </div>
+          ))}
+        {!next && (
+          <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+            {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+            {busy ? "Checking…" : "Claim scholarship"}
+          </button>
+        )}
       </form>
     </SectionCard>
   );

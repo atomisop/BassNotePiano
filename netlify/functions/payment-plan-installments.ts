@@ -11,6 +11,7 @@ import {
 } from "../../src/lib/paymentPlans";
 import { getNumberSetting } from "../../src/lib/siteSettings";
 import { describePaymentPlan } from "../../src/lib/classCreditPricing";
+import { groupBillPath } from "../../src/lib/inPlaceLinks";
 
 // A reminder every day once a payment is overdue, then the plan is canceled
 // at LAPSE_AFTER_DAYS (see lapsePlanForNonPayment). The cap is the lapse
@@ -95,7 +96,8 @@ async function notifyGroupBill(plan: PaymentPlan, payment: ZellePayment, type: "
       ? `Your group's 28-day bill of ${amount} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Classes are on hold and the plans are canceled in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"} unless it is paid.`
       : `Your group's 28-day bill of ${amount}${people > 1 ? ` for ${people} people` : ""} is ready. One payment covers everyone, and you get one receipt.`,
     emailCategory: "payments",
-    cta: { label: "Pay the bill", path: "/billing/plans" },
+    // Where this bill is paid, the same place the bill bar sends them: a parent pays on the Parent page.
+    cta: { label: "Pay the bill", path: groupBillPath(group.kind) },
   }).catch((err) => console.error(`Group bill notice failed for payer ${group.payerId} (non-blocking):`, err));
   if (group.kind === "PARENT") return;
   for (const member of group.plans) {
