@@ -11,7 +11,11 @@ import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
-import { adminBookClass, rescheduleClassBooking, getUpcomingOccurrences, ClassBookingError, PlanHoldError } from "@/lib/classSchedule";
+import { adminBookClass, rescheduleClassBooking, getUpcomingOccurrences, ClassBookingError, NoFreeCreditError, PlanHoldError } from "@/lib/classSchedule";
+import { adminBookForStudent, bookReservedHour, creditShortResult, topUpForOneClass, type AdminBookResult } from "@/lib/adminBooking";
+import { runOnce } from "@/lib/idempotency";
+import { getActiveHolds } from "@/lib/contacts";
+import { holdAppliesTo } from "@/lib/slotHolds";
 import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
@@ -114,11 +118,14 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
 /**
  * What the Move and Book calendars show: the open weekly times, and every class already booked over the next year
  * (so a custom time can be chosen around them). Fetched when a picker opens so the student page itself loads faster.
+ * With `studentId` the times are read as that student sees them: a time the owner kept for them is open (`reservedForThem`),
+ * and their own plan's time is theirs. A contact's soft hold is named on its time (`heldFor`) so the studio is asked first.
  */
-export async function getOpenSlotsAction() {
+export async function getOpenSlotsAction(studentId?: string) {
   await requireAdmin();
-  const [upcoming, booked, windows] = await Promise.all([
-    getUpcomingOccurrences(undefined, { forAdmin: true }),
+  const viewerId = typeof studentId === "string" && studentId ? studentId : undefined;
+  const [upcoming, booked, windows, holds, student] = await Promise.all([
+    getUpcomingOccurrences(viewerId, { forAdmin: true }),
     prisma.classBooking.findMany({
       // From 180 days back (a class can be rescheduled into the past, and past classes may be marked already) to a year ahead.
       where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: new Date(Date.now() - 180 * 86_400_000), lte: new Date(Date.now() + 400 * 86_400_000) } },
@@ -127,19 +134,81 @@ export async function getOpenSlotsAction() {
       take: 3000,
     }),
     prisma.classSchedule.findMany({ where: { active: true }, select: { dayOfWeek: true } }),
+    getActiveHolds(),
+    viewerId ? prisma.user.findUnique({ where: { id: viewerId }, select: { email: true } }) : null,
   ]);
+  // A hold kept for this very person (their contact has the account's email) is theirs: no question.
+  const holdContacts = holds.length > 0 && student ? await prisma.contact.findMany({ where: { id: { in: holds.map((h) => h.contactId) } }, select: { id: true, email: true } }) : [];
+  const ownContacts = new Set(holdContacts.filter((c) => c.email && student && c.email.toLowerCase() === student.email.toLowerCase()).map((c) => c.id));
+  const heldFor = (o: { scheduleId: string; chunkIndex: number; occurrenceDate: Date }) =>
+    holds.find(
+      (h) =>
+        !ownContacts.has(h.contactId) &&
+        h.scheduleId === o.scheduleId &&
+        h.chunkIndex === o.chunkIndex &&
+        holdAppliesTo({ until: h.untilMs === null ? null : new Date(h.untilMs), releasedAt: null }, o.occurrenceDate),
+    )?.contactName;
+  const slot = (o: (typeof upcoming)[number]) => ({
+    scheduleId: o.scheduleId,
+    occurrenceDateMs: o.occurrenceDate.getTime(),
+    chunkIndex: o.chunkIndex,
+    label: o.label,
+    scheduledAt: o.scheduledAt.toISOString(),
+    creditCost: o.creditCost,
+    ...(o.reservedForYou ? { reservedForThem: true } : {}),
+    ...(heldFor(o) ? { heldFor: heldFor(o) } : {}),
+  });
   return {
-    /** The weekdays the studio teaches (an active weekly window exists), so the calendar lights only those days. */
+    /** The weekdays the studio teaches (an active weekly window exists), so the calendar marks the others as days off. */
     weekdays: Array.from(new Set(windows.map((w) => w.dayOfWeek))),
-    open: upcoming
-      .filter((o) => !o.isBooked && !o.heldByPlan)
-      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost })),
-    /** Free of classes but kept by another student's weekly plan (a paused plan, a canceled week). Reschedule offers them with a confirmation. */
-    held: upcoming
-      .filter((o) => !o.isBooked && o.heldByPlan)
-      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost, heldBy: o.heldByPlan as string })),
+    open: upcoming.filter((o) => !o.isBooked && !o.heldByPlan).map(slot),
+    /** Free of classes but kept by another student's weekly plan (a paused plan, a canceled week). Offered with a confirmation. */
+    held: upcoming.filter((o) => !o.isBooked && o.heldByPlan).map((o) => ({ ...slot(o), heldBy: o.heldByPlan as string })),
     booked: booked.map((b) => ({ id: b.id, scheduledAt: b.scheduledAt.toISOString(), name: b.student.name ?? b.student.email })),
   };
+}
+
+type BookOpts = { overridePlanHold?: boolean; addCredit?: boolean; key?: string };
+const BUSY: AdminBookResult = { ok: false, error: "Already working on it." };
+
+/** Runs one studio booking once per tap (a double tap gets the first answer), then refreshes every screen. */
+async function bookOnce(scope: string, key: string | undefined, work: (admin: { id: string; email: string | null }) => Promise<AdminBookResult>): Promise<AdminBookResult> {
+  const admin = await requireAdmin();
+  const actor = { id: admin.id, email: admin.email ?? null };
+  const result = await runOnce(actor.id, scope, key, () => work(actor), { isSuccess: (r) => r.ok, whileRunning: BUSY });
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
+}
+
+/**
+ * Book a class on a student's page: one weekly time. `overridePlanHold` books over another plan's weekly time (asked first);
+ * `addCredit` (owner only) adds the credit they are short, then books, as one step.
+ */
+export async function adminBookAtSlotAction(studentId: string, slot: { scheduleId: string; occurrenceDateMs: number; chunkIndex: number }, opts: BookOpts = {}, notify = true): Promise<AdminBookResult> {
+  return withStudentNotice(notify, () =>
+    bookOnce(`admin-book:${studentId}`, opts.key, (actor) =>
+      adminBookForStudent(actor, String(studentId), { scheduleId: String(slot.scheduleId), occurrenceDateMs: Number(slot.occurrenceDateMs), chunkIndex: Number(slot.chunkIndex) }, { overridePlanHold: Boolean(opts.overridePlanHold), addCredit: Boolean(opts.addCredit) }),
+    ),
+  );
+}
+
+/**
+ * Book a class at any date and start time (ET) the studio types, made on the spot like Reschedule's typed time. A time already
+ * past records a class already taught: it is booked and marked Present in one step.
+ */
+export async function adminBookClassAtTimeAction(studentId: string, date: string, time: string, opts: BookOpts = {}, notify = true): Promise<AdminBookResult> {
+  return withStudentNotice(notify, () =>
+    bookOnce(`admin-book:${studentId}`, opts.key, (actor) =>
+      adminBookForStudent(actor, String(studentId), { date: String(date), time: String(time) }, { overridePlanHold: Boolean(opts.overridePlanHold), addCredit: Boolean(opts.addCredit) }),
+    ),
+  );
+}
+
+/** "Book it" on Schedule > Reserved: books the customer's account into one hour kept for them, and releases the reservation. */
+export async function bookReservationAction(groupId: string, scheduleId: string, chunkIndex: number, opts: Pick<BookOpts, "addCredit" | "key"> = {}, notify = true): Promise<AdminBookResult> {
+  return withStudentNotice(notify, () =>
+    bookOnce(`reservation-book:${groupId}`, opts.key, (actor) => bookReservedHour(actor, String(groupId), String(scheduleId), Number(chunkIndex), { addCredit: Boolean(opts.addCredit) })),
+  );
 }
 
 /**
@@ -205,12 +274,14 @@ export async function adminBookClassAction(
   notify = true,
 ) {
   return withStudentNotice(notify, async () => {
-    await requireAdmin();
+    const admin = await requireAdmin();
     try {
       await adminBookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
       revalidatePath("/", "layout");
       return { ok: true as const };
     } catch (err) {
+      // Worded for the studio ("Sam has no free credit"), not for the student.
+      if (err instanceof NoFreeCreditError) return creditShortResult({ id: admin.id, email: admin.email ?? null }, studentId, err);
       return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
     }
   });
@@ -225,16 +296,36 @@ export async function rotateTeacherCalendarLinkAction(): Promise<void> {
   revalidatePath("/admin/schedule");
 }
 
-/** Request mode: books the requested time for the student and answers the others who asked for it. */
-export async function confirmBookingRequestAction(requestId: string) {
+/**
+ * Request mode: books the requested time for the student and answers the others who asked for it. When the student has no free
+ * credit the answer names them, and the owner can send `addCredit` to add the credit and confirm in one step.
+ */
+export async function confirmBookingRequestAction(
+  requestId: string,
+  opts: { addCredit?: boolean; key?: string } = {},
+): Promise<{ ok: true } | { ok: false; error: string; shortBy?: number; canAddCredit?: boolean }> {
   const admin = await requireAdmin();
-  try {
-    await confirmBookingRequest(requestId, admin.id);
-    revalidatePath("/", "layout");
-    return { ok: true as const };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof BookingRequestError || err instanceof ClassBookingError ? err.message : "Something went wrong." };
-  }
+  const actor = { id: admin.id, email: admin.email ?? null };
+  type Answer = { ok: true } | { ok: false; error: string; shortBy?: number; canAddCredit?: boolean };
+  const result = await runOnce<Answer>(
+    actor.id,
+    `confirm-request:${requestId}`,
+    opts.key,
+    async () => {
+      const request = await prisma.bookingRequest.findUnique({ where: { id: String(requestId) }, select: { studentId: true, status: true } });
+      try {
+        if (opts.addCredit && request?.status === "PENDING") await topUpForOneClass(actor, request.studentId);
+        await confirmBookingRequest(String(requestId), admin.id);
+        return { ok: true };
+      } catch (err) {
+        if (err instanceof NoFreeCreditError && request) return creditShortResult(actor, request.studentId, err);
+        return { ok: false, error: err instanceof BookingRequestError || err instanceof ClassBookingError ? err.message : "Something went wrong." };
+      }
+    },
+    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } },
+  );
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
 }
 
 export async function declineBookingRequestAction(requestId: string, reason?: string) {
@@ -293,11 +384,20 @@ export async function reserveForCustomerAction(input: {
   email: string;
   phone: string;
   note?: string;
+  /** "HH:mm": one class at this start on a day with no weekly times (the owner said yes to using it). */
+  time?: string;
 }): Promise<{ ok: true; emailed: boolean } | { ok: false; error: string }> {
   const admin = await requireAdmin();
   try {
-    const result = await createOwnerReservation(admin.id, input);
-    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "reservation.create", targetType: "OwnerReservation", targetId: result.groupId, detail: `${input.date} for ${input.name.trim()}` });
+    const result = await createOwnerReservation(admin.id, { ...input, time: input.time ? String(input.time) : undefined });
+    await logAudit({
+      actorId: admin.id,
+      actorEmail: admin.email,
+      action: "reservation.create",
+      targetType: "OwnerReservation",
+      targetId: result.groupId,
+      detail: `${input.date}${input.time ? ` at ${input.time} (not a usual teaching day)` : ""} for ${input.name.trim()}`,
+    });
     revalidatePath("/", "layout");
     // Tell the customer. A failed email never undoes the reservation: the owner is told so they can reach out themselves.
     let emailed = true;
