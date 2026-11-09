@@ -13,6 +13,8 @@ import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { planBuilderApplyAction, planBuilderContextAction, planBuilderPreviewAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 import type { PlanBuilderContext, PlanBuilderPreview } from "@/lib/planBuilder";
 import type { TimelineClassState } from "@/lib/planTimeline";
+import type { PlanFix } from "@/lib/planFixes";
+import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -56,14 +58,21 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(() => newIdempotencyKey());
+  // The group has not started (its combined first payment is waiting): show that payment here instead of closing.
+  const [fix, setFix] = useState<PlanFix | null>(null);
 
   async function openBox() {
     setOpen(true);
     setCtx(null);
     setPreview(null);
     setError(null);
-    const result = await planBuilderContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load." }));
+    setFix(null);
+    const result = await planBuilderContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load.", fix: null }));
     if (!result.ok) {
+      if (result.fix) {
+        setError(result.error);
+        return setFix(result.fix);
+      }
       toast.warning(result.error);
       return setOpen(false);
     }
@@ -161,7 +170,12 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
           </div>
         }
       >
-        {!ctx ? (
+        {!ctx && fix ? (
+          <div className="space-y-2">
+            {error && <p role="alert" className="text-small text-red-400">{error}</p>}
+            <PlanFixPanel fix={fix} notify={notify} onDone={() => void openBox()} />
+          </div>
+        ) : !ctx ? (
           <p className="text-small text-slate-500">Loading…</p>
         ) : (
           <div className="space-y-4">

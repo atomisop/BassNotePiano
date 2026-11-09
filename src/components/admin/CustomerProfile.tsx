@@ -36,6 +36,8 @@ export interface CustomerProfileProps {
   creditTools?: React.ReactNode;
   /** The owner can correct an approved payment's amount or day. */
   canEditPayments?: boolean;
+  /** The Money section's payment list with the same actions as Billing > Payments (approve, mark paid, refund...), built by the page. */
+  paymentsPanel?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -173,6 +175,7 @@ export function CustomerProfile({
   accountTools,
   creditTools,
   canEditPayments = false,
+  paymentsPanel,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -846,7 +849,19 @@ export function CustomerProfile({
 
         <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
         <div hidden={!isOpen("money")} className="space-y-5">
-          {/* Payments */}
+          {/* Payments: acted on right here when the page passes the full list (approve, mark paid, refund, cancel bill, fix). */}
+          {paymentsPanel ? (
+            <SectionCard
+              title="Payments"
+              action={
+                <Link href={`/admin/payments?user=${user.id}`} className="tap inline-flex items-center text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">
+                  In Billing
+                </Link>
+              }
+            >
+              {paymentsPanel}
+            </SectionCard>
+          ) : (
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             <div className="space-y-2">
@@ -884,6 +899,7 @@ export function CustomerProfile({
               </ViewMore>
             </div>
           </SectionCard>
+          )}
 
           {/* Other names their payments arrive under */}
           <SectionCard title="Other payer names">

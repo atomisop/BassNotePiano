@@ -7,6 +7,9 @@ import { logAudit } from "@/lib/audit";
 import { unmatchedReceiptWhere } from "@/lib/paymentPipelineStatus";
 import { namesMatch, phoneAgrees } from "@/lib/paymentEmail";
 import { rankPayments, type Confidence } from "@/lib/paymentScoring";
+import { getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
+import { describePaymentPlan } from "@/lib/classCreditPricing";
+import type { PaymentPlan, ZellePayment } from "@prisma/client";
 
 // Bank and Venmo emails that matched no payment, and what an admin can do
 // about them: attach one to a payment, or dismiss it. Every function here
@@ -106,6 +109,8 @@ export async function matchReceiptToPayment(input: {
   receiptId: string;
   paymentId: string;
   admin: { id: string; email: string | null };
+  /** Added to the activity log line (how the bill was found). */
+  note?: string;
 }): Promise<void> {
   const { receiptId, paymentId, admin } = input;
   const receipt = await prisma.processedPaymentEmail.findUnique({ where: { id: receiptId } });
@@ -118,7 +123,7 @@ export async function matchReceiptToPayment(input: {
     throw new ReceiptError("That payment is no longer open.");
   }
   if (payment.amountCents !== receipt.amountCents) {
-    throw new ReceiptError("The amounts are different, so this email cannot be attached to that payment.");
+    throw new ReceiptError(amountMismatch(payment.amountCents, receipt.amountCents));
   }
 
   // Claim the email first so it can never settle two payments.
@@ -151,8 +156,106 @@ export async function matchReceiptToPayment(input: {
     action: "payment.match_email",
     targetType: "ZellePayment",
     targetId: paymentId,
-    detail: `Attached a ${receipt.method} email from ${receipt.senderName} (${(receipt.amountCents / 100).toFixed(2)}) to the payment and approved it${learned ? `; will accept payments from "${receipt.senderName}" for this student from now on` : ""}`,
+    detail: `Attached a ${receipt.method} email from ${receipt.senderName} (${(receipt.amountCents / 100).toFixed(2)}) to the payment and approved it${input.note ? ` (${input.note})` : ""}${learned ? `; will accept payments from "${receipt.senderName}" for this student from now on` : ""}`,
   });
+}
+
+const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+/** The refusal when an email and a bill differ: both amounts, so the owner sees why at once. */
+export function amountMismatch(billCents: number, emailCents: number): string {
+  return `Their bill is ${usd(billCents)} and this email is ${usd(emailCents)}, so it cannot be attached. The amounts must be the same.`;
+}
+
+const OPEN_STATUSES = ["AWAITING_TRANSFER", "PENDING_REVIEW"] as const;
+const isOpen = (status: string) => (OPEN_STATUSES as readonly string[]).includes(status);
+
+/** The plan an email from this person would pay: their own running plan, or a group or parent plan they pay for without one of their own. */
+async function planPaidBy(userId: string): Promise<PaymentPlan | null> {
+  const own = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } });
+  if (own) return own;
+  return prisma.paymentPlan.findFirst({ where: { status: "ACTIVE", familyGroup: { payerId: userId } }, orderBy: { nextDueDate: "asc" } });
+}
+
+/** The bill that is open for this plan right now, as the payer sees it (a group's combined bill, or its combined first payment). Never makes one. */
+async function openBillOf(plan: PaymentPlan): Promise<ZellePayment | null> {
+  if (plan.familyGroupId && plan.installmentsPaid === 0) {
+    return prisma.zellePayment.findFirst({ where: { familyGroupId: plan.familyGroupId, purpose: "FAMILY_PLAN_START", status: { in: [...OPEN_STATUSES] } }, orderBy: { createdAt: "desc" } });
+  }
+  const own = await prisma.zellePayment.findFirst({ where: { paymentPlanId: plan.id, status: { in: [...OPEN_STATUSES] } }, orderBy: { createdAt: "desc" } });
+  if (own?.bundleId) {
+    const combined = await prisma.zellePayment.findUnique({ where: { id: own.bundleId } });
+    if (combined && isOpen(combined.status)) return combined;
+  }
+  return own;
+}
+
+async function openReceipt(receiptId: string) {
+  const receipt = await prisma.processedPaymentEmail.findUnique({ where: { id: receiptId } });
+  if (!receipt || receipt.paymentId || receipt.dismissedAt) throw new ReceiptError("That email has already been handled.");
+  return receipt;
+}
+
+export interface ReceiptStudentTarget {
+  userId: string;
+  studentName: string;
+  /** What the email would pay, e.g. "6 Months, bill 3 of 6". */
+  billLabel: string;
+  /** The bill's amount; null for a group whose next combined bill is not open yet (its total is known once it opens). */
+  amountCents: number | null;
+  /** They paid before the bill opened: attaching opens it now. */
+  opensEarly: boolean;
+}
+
+/**
+ * "Find the student" on an unmatched email: what attaching it to this person would pay, without changing anything. Refuses (naming
+ * the bill's amount) when the amounts differ, and when the person has no running plan to pay.
+ */
+export async function previewReceiptForStudent(receiptId: string, userId: string): Promise<ReceiptStudentTarget> {
+  const receipt = await openReceipt(receiptId);
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } });
+  if (!user) throw new ReceiptError("That account no longer exists.");
+  const studentName = user.name ?? user.email;
+  const plan = await planPaidBy(user.id);
+  if (!plan) throw new ReceiptError(`${studentName} has no running plan, so there is no bill for this email. Attach it to an open payment instead.`);
+  const planLabel = describePaymentPlan(plan.cadence, plan.term);
+  const open = await openBillOf(plan);
+  let target: ReceiptStudentTarget;
+  if (open) {
+    const billLabel =
+      open.purpose === "FAMILY_PLAN_START" ? "Combined first payment for the group" : open.purpose === "FAMILY_PLAN_INSTALLMENT" ? "Combined 28-day group bill" : `${planLabel}, bill ${open.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`;
+    target = { userId: user.id, studentName, billLabel, amountCents: open.amountCents, opensEarly: false };
+  } else if (plan.familyGroupId) {
+    target = { userId: user.id, studentName, billLabel: "Next combined 28-day group bill", amountCents: null, opensEarly: true };
+  } else {
+    target = { userId: user.id, studentName, billLabel: `${planLabel}, bill ${plan.installmentsPaid + 1} of ${plan.termMonths}`, amountCents: plan.installmentAmountCents, opensEarly: true };
+  }
+  if (target.amountCents === 0) throw new ReceiptError(`${studentName}'s plan has nothing to pay right now.`);
+  if (target.amountCents !== null && target.amountCents !== receipt.amountCents) throw new ReceiptError(amountMismatch(target.amountCents, receipt.amountCents));
+  return target;
+}
+
+/**
+ * Attaches an unmatched email to this person's bill and approves it. When they paid before the bill opened (the common case: a few
+ * days early), the next bill is opened now at the plan's price, as the daily job would on its day, and then paid by the email. The
+ * amounts must still be the same; the same checks as attaching to an open payment then apply (matchReceiptToPayment).
+ */
+export async function attachReceiptToStudent(input: { receiptId: string; userId: string; admin: { id: string; email: string | null } }): Promise<{ paymentId: string; openedEarly: boolean }> {
+  const target = await previewReceiptForStudent(input.receiptId, input.userId);
+  const plan = await planPaidBy(input.userId);
+  if (!plan) throw new ReceiptError("Their plan just changed. Refresh and try again.");
+  let bill = await openBillOf(plan);
+  let openedEarly = false;
+  if (!bill) {
+    const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+    // Asked as of the due date, which is always inside the window a bill opens in: one bill, for the next installment, never two.
+    const asOf = new Date(Math.max(Date.now(), plan.nextDueDate.getTime()));
+    bill = (await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle, asOf)).payment;
+    openedEarly = true;
+  }
+  if (!bill || !isOpen(bill.status)) throw new ReceiptError(`${target.studentName}'s plan has nothing to pay right now.`);
+  await matchReceiptToPayment({ receiptId: input.receiptId, paymentId: bill.id, admin: input.admin, note: openedEarly ? "they paid before the bill opened, so it was opened now" : "found by student" });
+  return { paymentId: bill.id, openedEarly };
 }
 
 /** Marks an email as having nothing to do with a payment, so it stops being counted. */

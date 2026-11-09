@@ -7,6 +7,7 @@ import { MAX_LINKED_CHILDREN } from "@/lib/parentLinks";
 import { createNotification } from "@/lib/notifications";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
+import { PlanFixError, groupNotStartedError, refuseWhileInReview } from "@/lib/planFixes";
 
 /**
  * The studio's tools for group and parent plans, beyond what each person's own plan already allows: see who is on a group and who pays,
@@ -74,13 +75,12 @@ export async function separateFromGroup(adminId: string, planId: string): Promis
   const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { id: true, userId: true, status: true, cadence: true, term: true, installmentsPaid: true, familyGroupId: true, familyGroup: { select: { kind: true, payerId: true } } } });
   if (!plan || plan.status !== "ACTIVE") throw new PaymentPlanError("Only a running plan can be moved.");
   if (!plan.familyGroupId || !plan.familyGroup) throw new PaymentPlanError("This plan is not part of a group.");
-  if (plan.installmentsPaid < 1) throw new PaymentPlanError("This group has not started yet. Approve its combined first payment on Billing > Payments first.");
+  if (plan.installmentsPaid < 1) throw groupNotStartedError(plan.familyGroupId);
   if (plan.familyGroup.kind === "FAMILY" && plan.familyGroup.payerId === plan.userId) {
     const others = await prisma.paymentPlan.count({ where: { familyGroupId: plan.familyGroupId, status: "ACTIVE", id: { not: plan.id } } });
     if (others > 0) throw new PaymentPlanError("This person pays for the group. Make someone else the payer first, then give them their own plan.");
   }
-  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: plan.id, status: "PENDING_REVIEW" }, select: { id: true } });
-  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it on Billing > Payments first.");
+  await refuseWhileInReview(plan.id);
 
   const rate = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig());
   const discount = await getDiscountPercent(plan.userId, plan.term);
@@ -107,7 +107,7 @@ export async function changeGroupPayer(adminId: string, groupId: string, newPaye
   const choice = view.payerChoices.find((c) => c.id === newPayerId);
   if (!choice) throw new PaymentPlanError(view.kind === "FAMILY" ? "The payer has to be someone on the group with a running plan." : "The payer has to be a linked parent of every child on the plan.");
   const inReview = await prisma.zellePayment.findFirst({ where: { status: "PENDING_REVIEW", paymentPlan: { familyGroupId: groupId } }, select: { id: true } });
-  if (inReview) throw new PaymentPlanError("A payment for this group is being reviewed. Settle it on Billing > Payments first.");
+  if (inReview) throw new PlanFixError("A payment for this group is waiting for review. Approve or reject it below, then try again.", { kind: "payment", paymentId: inReview.id });
   await prisma.familyPlanGroup.update({ where: { id: groupId }, data: { payerId: newPayerId } });
   const body = `${choice.name} now pays for the group plan. Only their bank account settles its bills from now on; the plans, weekly times and credits stay the same.`;
   for (const userId of new Set([view.payer.id, newPayerId])) {

@@ -4,9 +4,10 @@ import { withStudentNotice } from "@/lib/notifyScope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, cancelOpenBill, deleteZellePayment, markAllPaymentsChecked, markPaymentChecked, refundZellePayment, rejectZellePayment, undoRefundZellePayment } from "@/lib/payments";
+import { approveZellePayment, cancelOpenBill, deleteZellePayment, getPaymentSummary, markAllPaymentsChecked, markBillPaid, markPaymentChecked, refundZellePayment, rejectZellePayment, undoRefundZellePayment, type PaymentSummary } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { dismissReceipt, ignoreSenderFromReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
+import { attachReceiptToStudent, dismissReceipt, ignoreSenderFromReceipt, matchReceiptToPayment, previewReceiptForStudent, ReceiptError, type ReceiptStudentTarget } from "@/lib/paymentReceipts";
+import { runOnce } from "@/lib/idempotency";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -71,12 +72,13 @@ export async function refundPaymentAction(
   removeCredits: boolean,
   cancelPlan: boolean,
   notify = true,
+  cancelClasses = false,
 ): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
     if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can refund a payment." };
     try {
-      const { warnings } = await refundZellePayment(paymentId, { id: admin.id, email: admin.email ?? null }, { note, removeCredits, cancelPlan });
+      const { warnings } = await refundZellePayment(paymentId, { id: admin.id, email: admin.email ?? null }, { note, removeCredits, cancelPlan, cancelClasses: cancelClasses === true });
       revalidatePath("/", "layout");
       return { ok: true, error: null, warning: warnings.length ? warnings.join(" ") : null };
     } catch (err) {
@@ -150,4 +152,74 @@ export async function ignoreSenderAction(receiptId: string): Promise<{ ok: boole
   } catch (err) {
     return { ok: false, error: err instanceof ReceiptError ? err.message : "Something went wrong. Nothing was changed." };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Finishing a payment where the owner already is (the person's page, a plan dialog, an unmatched email)
+// ---------------------------------------------------------------------------
+
+type Done = { ok: boolean; error: string | null };
+
+/** Owner only: money for an unpaid bill arrived another way (cash, an email that never came). Records it and approves it. */
+export async function markBillPaidAction(paymentId: string, notify = true, key?: string): Promise<Done> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can mark a bill paid." };
+    const result = await runOnce<Done>(
+      admin.id,
+      `mark-paid:${String(paymentId)}`,
+      key,
+      async () => {
+        try {
+          await markBillPaid(String(paymentId), { id: admin.id, email: admin.email ?? null });
+          return { ok: true, error: null };
+        } catch (err) {
+          return { ok: false, error: err instanceof Error ? err.message : "Could not mark the bill paid." };
+        }
+      },
+      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } },
+    );
+    if (result.ok) revalidatePath("/", "layout");
+    return result;
+  });
+}
+
+/** One payment in a line (who, what, how much, its status), for a dialog that is waiting on it. */
+export async function paymentSummaryAction(paymentId: string): Promise<PaymentSummary | null> {
+  await requireAdmin();
+  return getPaymentSummary(String(paymentId));
+}
+
+/** Owner only: what attaching an unmatched email to this person would pay. Changes nothing. */
+export async function previewReceiptForStudentAction(receiptId: string, userId: string): Promise<{ ok: true; target: ReceiptStudentTarget } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can attach a payment email." };
+  try {
+    return { ok: true, target: await previewReceiptForStudent(String(receiptId), String(userId)) };
+  } catch (err) {
+    return { ok: false, error: err instanceof ReceiptError ? err.message : "Something went wrong. Nothing was changed." };
+  }
+}
+
+/** Owner only: attaches the email to this person's bill (opening it when they paid early) and approves it. */
+export async function attachReceiptToStudentAction(receiptId: string, userId: string, notify = true, key?: string): Promise<Done> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireOwnerAdmin();
+    const result = await runOnce<Done>(
+      admin.id,
+      `attach-email:${String(receiptId)}`,
+      key,
+      async () => {
+        try {
+          await attachReceiptToStudent({ receiptId: String(receiptId), userId: String(userId), admin: { id: admin.id, email: admin.email ?? null } });
+          return { ok: true, error: null };
+        } catch (err) {
+          return { ok: false, error: err instanceof ReceiptError ? err.message : "Something went wrong. Nothing was changed." };
+        }
+      },
+      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } },
+    );
+    if (result.ok) revalidatePath("/", "layout");
+    return result;
+  });
 }
