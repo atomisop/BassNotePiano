@@ -287,7 +287,8 @@ export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"
         phone: app.phone,
         detail: app.instrument,
         status: app.status,
-        href: "/admin/students",
+        // Opens the tab they are on (Applicants opens on Pending, where an approved one is not listed), searched to them.
+        href: `/admin/students?status=${app.status}&q=${encodeURIComponent(app.email)}`,
         classesTaken: 0,
         lastClass: null,
         nextClass: null,

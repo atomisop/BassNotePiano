@@ -102,7 +102,7 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
 }
 
 export async function getAdminClassRegistrations(status?: ClassRegistrationStatus) {
-  return prisma.classRegistration.findMany({
+  const rows = await prisma.classRegistration.findMany({
     where: status ? { status } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
@@ -110,9 +110,139 @@ export async function getAdminClassRegistrations(status?: ClassRegistrationStatu
       reviewedBy: { select: { name: true } },
     },
   });
+  return withApplicantAccounts(rows);
 }
 
 export type AdminClassRegistration = Awaited<ReturnType<typeof getAdminClassRegistrations>>[number];
+
+// ---------------------------------------------------------------------------
+// Admin side: from applicant to student without leaving Applicants
+// ---------------------------------------------------------------------------
+
+const APPLICANT_ACCOUNT_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  username: true,
+  image: true,
+  role: true,
+  bannedAt: true,
+  _count: { select: { paymentPlans: { where: { status: "ACTIVE" as const } } } },
+} as const;
+
+/** The account an application belongs to, as the Applicants card shows it. */
+export interface ApplicantAccount {
+  id: string;
+  name: string | null;
+  username: string | null;
+  image: string | null;
+  banned: boolean;
+  /** A running plan already. */
+  onPlan: boolean;
+}
+
+/**
+ * Each application with the account it belongs to: the account with the application's email first (the address they typed), then the
+ * account that was signed in when they applied (never an admin's, who is most often the owner testing the form). With no account yet,
+ * when the studio (or anyone) last sent that address a sign-up link.
+ */
+async function withApplicantAccounts<T extends { email: string; user: { id: string } | null }>(
+  rows: T[],
+): Promise<(T & { account: ApplicantAccount | null; signUpLinkSentAt: Date | null })[]> {
+  const { registerInvitesSentAt } = await import("@/lib/registerInvite");
+  const emails = [...new Set(rows.map((r) => r.email.trim().toLowerCase()))];
+  const linkedIds = [...new Set(rows.flatMap((r) => (r.user ? [r.user.id] : [])))];
+  const [byEmailRows, linkedRows, invited] = await Promise.all([
+    prisma.user.findMany({ where: { email: { in: emails, mode: "insensitive" } }, select: APPLICANT_ACCOUNT_SELECT }),
+    prisma.user.findMany({ where: { id: { in: linkedIds } }, select: APPLICANT_ACCOUNT_SELECT }),
+    registerInvitesSentAt(emails),
+  ]);
+  const byEmail = new Map(byEmailRows.map((u) => [u.email.toLowerCase(), u]));
+  const byId = new Map(linkedRows.map((u) => [u.id, u]));
+  return rows.map((r) => {
+    const email = r.email.trim().toLowerCase();
+    const linked = r.user ? byId.get(r.user.id) : undefined;
+    const found = byEmail.get(email) ?? (linked && linked.role !== "ADMIN" ? linked : undefined);
+    const account: ApplicantAccount | null = found
+      ? { id: found.id, name: found.name, username: found.username, image: found.image, banned: found.bannedAt !== null, onPlan: found._count.paymentPlans > 0 }
+      : null;
+    return { ...r, account, signUpLinkSentAt: account ? null : (invited.get(email) ?? null) };
+  });
+}
+
+/** The account to set up after approving an application, or null when they have not made one yet. */
+export async function findApplicantAccountId(registrationId: string): Promise<string | null> {
+  const reg = await prisma.classRegistration.findUnique({ where: { id: registrationId }, select: { email: true, user: { select: { id: true } } } });
+  if (!reg) return null;
+  const [withAccount] = await withApplicantAccounts([reg]);
+  return withAccount.account && !withAccount.account.banned ? withAccount.account.id : null;
+}
+
+export type ApplicantSignUpLinkResult = "sent" | "recent" | "exists" | "invalid" | "failed" | "gone" | "rejected";
+
+/**
+ * "Send sign-up link" on an applicant with no account: the studio's own sign-up email to the address on the application
+ * (sendRegisterInvite in studio mode: no referral, their email filled in, at most once a day per address).
+ */
+export async function sendApplicantSignUpLink(registrationId: string, adminId: string): Promise<ApplicantSignUpLinkResult> {
+  const { sendRegisterInvite } = await import("@/lib/registerInvite");
+  const reg = await prisma.classRegistration.findUnique({ where: { id: registrationId }, select: { email: true, status: true } });
+  if (!reg) return "gone";
+  if (reg.status === "REJECTED") return "rejected";
+  return sendRegisterInvite(adminId, reg.email, { fromStudio: true });
+}
+
+/** What the studio sees after "Send sign-up link". */
+export function applicantSignUpLinkMessage(result: ApplicantSignUpLinkResult, email: string): { ok: boolean; message: string } {
+  switch (result) {
+    case "sent":
+      return { ok: true, message: `Sign-up link sent to ${email}.` };
+    case "recent":
+      return { ok: true, message: "A sign-up link already went to them today." };
+    case "exists":
+      return { ok: false, message: "They have an account now. Refresh to set it up." };
+    case "invalid":
+      return { ok: false, message: "The email on this application does not look right." };
+    case "failed":
+      return { ok: false, message: "Could not send. Check the address." };
+    case "gone":
+      return { ok: false, message: "That application is gone." };
+    case "rejected":
+      return { ok: false, message: "This application was turned down, so nothing was sent." };
+  }
+}
+
+/**
+ * Tells the studio when someone it approved before they had an account verifies their new one, with a link straight to setting up
+ * their plan. Called once, when the email is verified (proof the address is theirs), so the application is also linked to the account.
+ * Best-effort: never throws.
+ */
+export async function noticeApprovedApplicantJoined(user: { id: string; email: string; name: string | null }): Promise<void> {
+  try {
+    const reg = await prisma.classRegistration.findFirst({
+      where: { email: { equals: user.email.trim(), mode: "insensitive" }, status: "APPROVED" },
+      orderBy: { reviewedAt: "desc" },
+      select: { id: true, fullName: true, instrument: true },
+    });
+    if (!reg) return;
+    await prisma.classRegistration.updateMany({ where: { email: { equals: user.email.trim(), mode: "insensitive" }, userId: null }, data: { userId: user.id } });
+    const admins = await getAdminRecipients("NEW_REGISTRATION");
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "ADMIN_ALERT",
+          title: "An approved applicant made their account",
+          body: `${reg.fullName} (${user.email}), approved for ${INSTRUMENT_LABEL[reg.instrument]} lessons, now has an account. Set up their plan next.`,
+          emailCategory: "social",
+          cta: { label: "Set up plan", path: `/admin/users/${user.id}?do=setup` },
+        }).catch((err) => console.error("Applicant joined notice failed (non-blocking):", err)),
+      ),
+    );
+  } catch (err) {
+    console.error("Applicant joined notice failed (non-blocking):", err);
+  }
+}
 
 async function notifyRegistrant(
   registration: { userId: string | null; email: string; instrument: PrimaryInstrument },

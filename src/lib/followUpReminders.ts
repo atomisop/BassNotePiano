@@ -2,18 +2,26 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { claimNoticeMarker } from "@/lib/studentNotices";
 import { etDayKey } from "@/lib/fingerPractice";
+import { getFollowUpPeople } from "@/lib/adminFollowUps";
+import { planBillTarget, type PlanBillTarget } from "@/lib/planBillPayer";
 
 /**
- * The one-click reminder behind the Overview's "People to follow up with". Each kind has fixed, kind wording (the teacher does
- * not type anything), goes out as an in-app notice plus the email their own switches allow, and is only sent when the reason
- * still holds right now. Never twice to the same person for the same reason on the same day.
+ * The one-click reminder behind People > Accounts' "Follow up". Each kind has fixed, kind wording (the teacher does not type
+ * anything), goes out as an in-app notice plus the email their own switches allow, and is only sent when the reason still holds
+ * right now. Never twice to the same person for the same reason on the same day. An overdue bill on a group or parent plan is the
+ * payer's to pay, so that reminder goes to the payer, for the group's combined bill when there is one.
  */
 export type ReminderKind = "overdue" | "atRisk" | "trial" | "credits" | "discord";
 export const REMINDER_KINDS: ReminderKind[] = ["overdue", "atRisk", "trial", "credits", "discord"];
 
 const DAY = 86_400_000;
+/** "Remind all" goes through at most this many people in one tap. */
+const BULK_CAP = 200;
 
-export type ReminderResult = { ok: true } | { ok: false; error: string };
+export type ReminderResult = { ok: true; sentTo: string } | { ok: false; error: string };
+
+const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const PAID_ALREADY = "If you already paid, reply to this message or tell your teacher and we will check.";
 
 /** Does this reason still apply to this person? Mirrors the lists in adminFollowUps.ts, one person at a time. */
 async function stillApplies(kind: ReminderKind, userId: string, now: Date): Promise<boolean> {
@@ -35,24 +43,73 @@ async function stillApplies(kind: ReminderKind, userId: string, now: Date): Prom
   }
 }
 
+/** Who pays the person's overdue bill and which bill it is (the oldest overdue plan), or null when nothing is overdue. */
+async function overdueBill(userId: string, now: Date): Promise<PlanBillTarget | null> {
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now } }, orderBy: { nextDueDate: "asc" }, select: { id: true } });
+  return plan ? planBillTarget(plan.id) : null;
+}
+
+/** The overdue notice, worded for whoever pays: the person themselves, a payer paying one member's bill, or the group's combined bill. */
+function overdueNotice(target: PlanBillTarget | null): { title: string; body: string; path: string } {
+  const bill = target?.bill;
+  const amount = bill ? ` of ${money(bill.amountCents)}` : "";
+  const path = target?.payPath ?? "/billing/plans";
+  if (bill?.combined) {
+    return {
+      title: "Your combined bill is overdue",
+      body: `The one 28-day bill${amount} for ${bill.people} people is past its due date. Please pay it to keep everyone's weekly class. ${PAID_ALREADY}`,
+      path,
+    };
+  }
+  if (target?.paysForSomeoneElse) {
+    const who = target.member.name;
+    return {
+      title: `${who}'s bill is overdue`,
+      body: `The 28-day bill${amount} for ${who}'s classes is past its due date. You pay it for them. Please pay it to keep their weekly class. ${PAID_ALREADY}`,
+      path,
+    };
+  }
+  return {
+    title: "Your next payment is overdue",
+    body: `Your class plan payment is past its due date. Please pay it to keep your weekly class. ${PAID_ALREADY}`,
+    path,
+  };
+}
+
 export async function sendFollowUpReminder(kind: ReminderKind, userId: string, now = new Date()): Promise<ReminderResult> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, bannedAt: true } });
   if (!user || user.role === "ADMIN") return { ok: false, error: "That account can't get a reminder." };
   if (user.bannedAt) return { ok: false, error: "This account is banned, so it is sent nothing." };
   if (!(await stillApplies(kind, userId, now))) return { ok: false, error: "That no longer applies to this person. Refresh the page." };
-  if (!(await claimNoticeMarker(`followup-reminder:${kind}:${userId}:${etDayKey(now)}`))) return { ok: false, error: "A reminder like this already went to them today." };
+
+  // A bill on a group or parent plan is the payer's to pay: the reminder goes to them.
+  let recipientId = userId;
+  let bill: PlanBillTarget | null = null;
+  if (kind === "overdue") {
+    bill = await overdueBill(userId, now);
+    if (bill?.paysForSomeoneElse) {
+      if (bill.payer.role === "ADMIN") return { ok: false, error: "An admin pays this bill, so no reminder was sent." };
+      if (bill.payer.bannedAt) return { ok: false, error: "The person who pays this bill is banned, so they are sent nothing." };
+      recipientId = bill.payer.id;
+    }
+  }
+  if (!(await claimNoticeMarker(`followup-reminder:${kind}:${recipientId}:${etDayKey(now)}`))) {
+    return { ok: false, error: recipientId === userId ? "A reminder like this already went to them today." : `A reminder like this already went to ${bill?.payer.name ?? "the person who pays"} today.` };
+  }
 
   switch (kind) {
-    case "overdue":
+    case "overdue": {
+      const notice = overdueNotice(bill);
       await createNotification({
-        userId,
+        userId: recipientId,
         type: "PAYMENT_PLAN_UPDATED",
-        title: "Your next payment is overdue",
-        body: "Your class plan payment is past its due date. Please pay it to keep your weekly class. If you already paid, reply to this message or tell your teacher and we will check.",
+        title: notice.title,
+        body: notice.body,
         emailCategory: "payments",
-        cta: { label: "Pay now", path: "/billing/plans" },
+        cta: { label: "Pay now", path: notice.path },
       });
       break;
+    }
     case "atRisk":
       await createNotification({
         userId,
@@ -94,5 +151,28 @@ export async function sendFollowUpReminder(kind: ReminderKind, userId: string, n
       });
       break;
   }
-  return { ok: true };
+  return { ok: true, sentTo: recipientId };
+}
+
+export interface BulkReminderResult {
+  /** One entry per reminder that went out: whose follow-up it was, and who it went to (the payer, for a group's bill). */
+  sent: { userId: string; sentTo: string }[];
+  /** Already reminded today, no longer due, an admin, or banned. */
+  skipped: number;
+}
+
+/**
+ * "Remind all": the same fixed reminder to everyone the reason applies to right now (worked out here, never taken from the screen).
+ * Each person goes through `sendFollowUpReminder`, so its once-a-day guard and its checks hold: two children on one group plan
+ * remind their payer once.
+ */
+export async function sendFollowUpRemindersToAll(kind: ReminderKind, now = new Date()): Promise<BulkReminderResult> {
+  const people = (await getFollowUpPeople(kind, now)).slice(0, BULK_CAP);
+  const result: BulkReminderResult = { sent: [], skipped: 0 };
+  for (const p of people) {
+    const r = await sendFollowUpReminder(kind, p.id, now).catch(() => ({ ok: false as const, error: "failed" }));
+    if (r.ok) result.sent.push({ userId: p.id, sentTo: r.sentTo });
+    else result.skipped++;
+  }
+  return result;
 }

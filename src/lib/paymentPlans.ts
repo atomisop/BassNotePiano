@@ -1512,31 +1512,33 @@ export async function recordPlanPaymentReceived(planId: string, adminId: string)
 /**
  * Sends the bill for a plan's open installment again, e.g. when a student says
  * they never got it. Needs a bill to already be open (they open a few days
- * before the due date).
+ * before the due date). On a group or parent plan it goes to the person who
+ * pays (planBillTarget), for the group's combined bill when the member's bill
+ * is held in one, never to a member who cannot pay it.
  */
 export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted-out"> {
   const { sendPaymentPlanInvoiceEmail, getAppUrl } = await import("@/lib/email");
-  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, include: { user: { select: { email: true, notifyEmailPayments: true } } } });
+  const { planBillTarget } = await import("@/lib/planBillPayer");
+  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
   if (plan.status !== "ACTIVE") throw new Error("Only an active plan has a bill to send.");
-  const payment = await prisma.zellePayment.findFirst({
-    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!payment) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
-  if (!plan.user.notifyEmailPayments) return "opted-out";
+  const target = await planBillTarget(planId);
+  const bill = target.bill;
+  if (!bill) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
+  if (!target.payer.notifyEmailPayments) return "opted-out";
 
   const now = Date.now();
   const overdueDays = plan.nextDueDate.getTime() < now ? Math.max(1, Math.floor((now - plan.nextDueDate.getTime()) / 86_400_000)) : undefined;
-  await sendPaymentPlanInvoiceEmail(plan.user.email, {
-    planLabel: describePaymentPlan(plan.cadence, plan.term),
-    installmentLabel: `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
-    amountCents: payment.amountCents,
+  const planName = describePaymentPlan(plan.cadence, plan.term);
+  await sendPaymentPlanInvoiceEmail(target.payer.email, {
+    planLabel: bill.combined ? `Combined bill for ${bill.people} people` : target.paysForSomeoneElse ? `${planName} for ${target.member.name}` : planName,
+    installmentLabel: bill.combined ? "One payment covers everyone" : `Installment ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
+    amountCents: bill.amountCents,
     dueDate: plan.nextDueDate,
     cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),
-    zelleHandle: payment.zelleHandle,
-    cta: { label: "Pay bill", url: getAppUrl("/billing/plans") },
+    zelleHandle: bill.zelleHandle,
+    cta: { label: "Pay bill", url: getAppUrl(target.payPath) },
     overdueDays,
-    unsubscribe: { userId: plan.userId, category: "payments" },
+    unsubscribe: { userId: target.payer.id, category: "payments" },
   });
   return "sent";
 }

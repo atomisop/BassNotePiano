@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { FollowUp } from "@/lib/adminFollowUps";
 import { REMINDER_KINDS } from "@/lib/followUpReminders";
-import { RemindButton } from "@/components/admin/RemindButton";
+import { FollowUpPeople } from "@/components/admin/FollowUpPeople";
 import { Hint } from "@/components/ui/Hint";
 import { HomeRows } from "@/components/home/HomeRow";
 
 /**
  * People who need a nudge (overdue bills, not practicing, trial ending, credits expiring, stale applications), each with a one-tap
- * reminder. Lives on People > Accounts (moved off the Overview 2026-10-30: it is about people, not about how the studio is doing).
+ * reminder, "Remind all" per reason, and the whole list opening in place. Each heading opens the list it is about, already filtered.
+ * Lives on People > Accounts (moved off the Overview 2026-10-30: it is about people, not about how the studio is doing).
  */
 export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; className?: string }) {
   if (followUps.length === 0) return null;
@@ -26,17 +27,10 @@ export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; 
             <span className="text-small tabular-nums text-slate-400">{f.total}</span>
           </div>
           {f.people.length > 0 && (
-            <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-small">
-              {f.people.map((p) => (
-                <span key={p.id} className="inline-flex flex-wrap items-center gap-2">
-                  <Link href={`/admin/users/${p.id}`} className="tap inline-flex items-center text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-slate-50">
-                    {p.name}
-                  </Link>
-                  {(REMINDER_KINDS as string[]).includes(f.key) && <RemindButton kind={f.key} userId={p.id} name={p.name} />}
-                </span>
-              ))}
-              {f.total > f.people.length && <span className="text-slate-500">and {f.total - f.people.length} more</span>}
-            </p>
+            <FollowUpPeople
+              followUp={{ key: f.key, title: f.title, total: f.total, people: f.people, more: f.more }}
+              remindable={(REMINDER_KINDS as string[]).includes(f.key)}
+            />
           )}
         </li>
       ))}

@@ -7,8 +7,17 @@ import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { buttonVariants } from "@/components/ui/button";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
-import { getFollowUps } from "@/lib/adminFollowUps";
+import { ACCOUNT_FOLLOW_UP_FILTERS, getFollowUpPeople, getFollowUps, type AccountFollowUpFilter } from "@/lib/adminFollowUps";
 import { FollowUpList } from "@/components/admin/FollowUpList";
+import { sendAllFollowUpRemindersAction } from "../followup-actions";
+import { bulkReminderQuestion } from "@/lib/followUpRules";
+
+/** The follow-up filters: one reason's people, with the same Remind all as the Follow up list. */
+const FOLLOW_UP_TABS: Record<AccountFollowUpFilter, { label: string; title: string }> = {
+  trial: { label: "Trial ending", title: "Trial ends within a day" },
+  credits: { label: "Credits expiring", title: "Credits expire this week" },
+  discord: { label: "No Discord", title: "Discord not connected" },
+};
 
 export const metadata = { title: "Admin: Accounts" };
 
@@ -20,9 +29,11 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const needsApproval = searchParams.filter === "approval";
   const notPracticing = searchParams.filter === "idle";
   const complimentary = searchParams.filter === "comped";
-  const showFollowUps = !query.trim() && !needsApproval && !notPracticing && !complimentary;
+  const followUpFilter = (ACCOUNT_FOLLOW_UP_FILTERS as readonly string[]).includes(searchParams.filter ?? "") ? (searchParams.filter as AccountFollowUpFilter) : null;
+  const followUpIds = followUpFilter ? (await getFollowUpPeople(followUpFilter)).map((p) => p.id) : undefined;
+  const showFollowUps = !query.trim() && !needsApproval && !notPracticing && !complimentary && !followUpFilter;
   const [users, progress, followUps] = await Promise.all([
-    searchUsers(query, { complimentaryOnly: complimentary }),
+    searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds }),
     getAdminProgressOverview(query),
     showFollowUps ? getFollowUps() : Promise.resolve([]),
   ]);
@@ -65,9 +76,10 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         <AdminFilterTabs
           label="Show"
           items={[
-            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing && !complimentary },
+            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing && !complimentary && !followUpFilter },
             { label: "Needs approval", href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", href: `/admin/users?filter=idle${q}`, active: notPracticing },
+            ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
             { label: "Complimentary", href: `/admin/users?filter=comped${q}`, active: complimentary },
           ]}
         />
@@ -77,6 +89,17 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
           Export CSV
         </a>
+      )}
+
+      {followUpFilter && followUpIds && followUpIds.length > 0 && (
+        <div className="mt-6">
+          <BulkConfirmButton
+            label={followUpIds.length === 1 ? "Remind them" : `Remind all ${followUpIds.length}`}
+            question={bulkReminderQuestion(followUpFilter, followUpIds.length, FOLLOW_UP_TABS[followUpFilter].title)}
+            confirmLabel="Yes, remind them"
+            onConfirm={sendAllFollowUpRemindersAction.bind(null, followUpFilter)}
+          />
+        </div>
       )}
 
       {needsApproval && rows.length > 1 && (
