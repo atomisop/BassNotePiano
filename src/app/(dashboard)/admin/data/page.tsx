@@ -206,7 +206,10 @@ function Cell({ state, label }: { state: CellState; label: string }) {
     open: "border border-slate-500",
     locked: "bg-neu-lift",
   };
-  return <span role="img" aria-label={label} title={label} className={`inline-block h-5 w-5 rounded-sm align-middle ${look[state]}`} />;
+  const box = `inline-block h-5 w-5 rounded-sm align-middle ${look[state]}`;
+  // The legend draws the same boxes next to their words, so there they are decoration, not pictures that need a label.
+  if (!label) return <span aria-hidden className={box} />;
+  return <span role="img" aria-label={label} title={label} className={box} />;
 }
 
 function Legend() {

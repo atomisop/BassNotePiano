@@ -3352,3 +3352,35 @@ html[data-solid-surfaces="on"] [data-glass-lens] > * {
     display: none !important;
   }
 }
+
+/* "Reduce transparency" in the operating system gets the same opaque look as the Solid surfaces switch. The older rule near the top of this file
+   only named some surfaces; this one covers every glass class, the dock, menus, the command menu and the lens panels. */
+@media (prefers-reduced-transparency: reduce) {
+  :is(
+      .glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .app-dock, .ig-dock, .cmd-scrim,
+      .liquid, .liquid-signal, .neu-btn, .lg-glass, .animate-fade-in, [data-glass],
+      button[class*="shadow-raised-low"], a[class*="shadow-raised-low"]
+    ) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  :is(.glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .app-dock, .ig-dock) {
+    background: rgb(var(--c-surface-solid)) !important;
+  }
+  .cmd-scrim {
+    background: rgb(0 0 0 / 0.45);
+  }
+  .lg-glass::after {
+    display: none !important;
+  }
+  [data-glass-lens="surface"] {
+    background: rgb(var(--c-surface-solid));
+    box-shadow: inset 0 0 0 1px rgb(var(--c-s-50) / 0.12);
+  }
+  [data-glass-lens="highlight"] {
+    background: rgb(var(--c-s-50) / 0.12);
+  }
+  [data-glass-lens] > * {
+    display: none !important;
+  }
+}

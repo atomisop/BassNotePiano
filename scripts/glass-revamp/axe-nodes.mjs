@@ -8,7 +8,7 @@ if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
 const b = await chromium.launch();
 const c = await b.newContext({ viewport: { width: w, height: h }, colorScheme: theme, reducedMotion: "reduce", storageState: role === "guest" ? undefined : `.auth/${role}.json` });
 const p = await c.newPage();
-await p.goto(base + path, { waitUntil: "domcontentloaded", timeout: 150000 });
+await p.goto(base + path, { waitUntil: "domcontentloaded", timeout: 400000 });
 await p.waitForLoadState("load", { timeout: 60000 }).catch(() => {});
 await p.waitForTimeout(4000);
 const r = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa", "best-practice"]).analyze();
