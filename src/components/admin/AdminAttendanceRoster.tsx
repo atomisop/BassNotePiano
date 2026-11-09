@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatEtShort, formatEtEndTime } from "@/lib/classScheduleLabels";
 import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
-import { CalendarCog } from "@/components/ui/appIcons";
+import { ClassMoveCancelButtons } from "@/components/admin/ClassRowActions";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardCheck } from "@/components/ui/appIcons";
 import { NotifyPlaceToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
@@ -119,16 +118,11 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                   onUndo={(id) => onUndoAttendance(id, notify)}
                   onSetInPerson={onSetInPerson ? (id, v) => onSetInPerson(id, v, notify) : undefined}
                 />
-                {entry.status === "SCHEDULED" && (
-                  <Link
-                    href={`/admin/users/${entry.studentId}#scheduler`}
-                    aria-label={`Open ${name}'s account to move or cancel`}
-                    title="Move or cancel in the account"
-                    className="tap inline-flex h-8 w-8 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
-                  >
-                    <CalendarCog aria-hidden className="h-4 w-4" />
-                  </Link>
-                )}
+                {/* Reschedule and Cancel right here, the same boxes as the student's Scheduler. */}
+                <ClassMoveCancelButtons
+                  notifyPlace="attendance"
+                  row={{ bookingId: entry.bookingId, studentId: entry.studentId, name, scheduledAt: occ.scheduledAt, active: entry.status === "SCHEDULED" }}
+                />
               </div>
             </div>
           );
@@ -151,7 +145,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAtt
 
   return (
     <div className="space-y-6">
-      <NotifyPlaceToggle place="attendance" label="Notify students when I mark, undo or switch in person" />
+      <NotifyPlaceToggle place="attendance" label="Notify students when I mark or change a class" />
       {SECTIONS.filter((s) => buckets[s.id].length > 0).map((s) => (
         <section key={s.id}>
           <h2 className="mb-2 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-slate-400">

@@ -23,6 +23,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { toast } from "@/components/ui/Toaster";
+import { ArrowRight } from "@/components/ui/appIcons";
+import { SupportAccountPanel } from "@/components/admin/SupportAccountPanel";
+import { nextOpenSupportThreadAction } from "@/app/(dashboard)/admin/inplace-actions";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -87,6 +90,8 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
   const [resolving, setResolving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // undefined until a reply or Mark resolved; then the next open chat, or null when there is none.
+  const [next, setNext] = useState<{ id: string; name: string } | null | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
   const { thread } = detail;
@@ -154,8 +159,14 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
       if (result.transferredTo) setNotice(`Transferred to ${result.transferredTo}. Nothing was sent to the customer.`);
       const updated = await getSupportThreadAction(thread.id);
       if (updated) setDetail(updated);
+      if (!result.transferredTo) void offerNext();
     }
     setSending(false);
+  }
+
+  /** After answering or resolving: the next open chat in the same inbox, one tap away. */
+  async function offerNext() {
+    setNext(await nextOpenSupportThreadAction(thread.id).catch(() => null));
   }
 
   async function handleResolve() {
@@ -165,6 +176,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
     const updated = await getSupportThreadAction(thread.id);
     if (updated) setDetail(updated);
     setResolving(false);
+    void offerNext();
   }
 
   async function handleDelete() {
@@ -188,6 +200,8 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
     <div className="flex flex-col gap-3">
       <PageBack href={backHref} />
 
+      {/* The chat, and beside it (below it on a phone) the account it belongs to, so its problem is fixed without leaving. */}
+      <div className={thread.user ? "grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start" : "min-w-0"}>
       {/* Tall enough to use the screen, short enough that the reply box ends above the floating dock. */}
       <div className="glass-surface flex h-[calc(100dvh-21rem)] min-h-[360px] min-w-0 flex-col overflow-hidden lg:h-[calc(100dvh-19rem)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
@@ -291,6 +305,21 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
             {notice}
           </p>
         )}
+        {next !== undefined && (
+          <div role="status" className="flex items-center justify-between gap-3 border-t border-ink/10 bg-slate-50/8 px-4 py-2 text-small text-slate-200">
+            {next ? (
+              <>
+                <span className="min-w-0 truncate">Next: {next.name}</span>
+                <Link href={`/admin/support/${next.id}`} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                  Next open chat
+                  <ArrowRight aria-hidden className="h-4 w-4" />
+                </Link>
+              </>
+            ) : (
+              <span>No other open {isEmail ? "emails" : "chats"}.</span>
+            )}
+          </div>
+        )}
 
         {options.length > 0 && (
           <ul role="listbox" aria-label="Transfer this case to" className="max-h-48 divide-y divide-ink/10 overflow-y-auto border-t border-ink/10 bg-slate-900/60">
@@ -367,6 +396,8 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
             {sending ? "Sending…" : slashQuery !== null || reply.startsWith("/") ? "Transfer" : isEmail ? "Send email" : "Send"}
           </button>
         </form>
+      </div>
+      {thread.user && <SupportAccountPanel userId={thread.user.id} />}
       </div>
     </div>
   );

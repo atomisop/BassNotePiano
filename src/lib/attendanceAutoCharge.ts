@@ -51,7 +51,8 @@ export async function runAttendanceAutoCharge(now = new Date()): Promise<{ charg
       title: `${soon.length} unmarked class${soon.length === 1 ? "" : "es"} will be charged as attended soon`,
       body: `${lines}. Mark each Present or No-show, or cancel it, before then.`,
       emailCategory: "classes",
-      cta: { label: "Mark attendance", path: "/admin/schedule" },
+      // The Today screen lists every earlier class still to mark, each with Present and No-show right there.
+      cta: { label: "Mark attendance", path: "/admin/today" },
     }).catch((err) => console.error("Unmarked-class alert failed (non-blocking):", err));
   }
   return { charged, warned: soon.length };

@@ -3,6 +3,8 @@ import { etDayKey } from "@/lib/fingerPractice";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
 import { discordLinkState } from "@/lib/discordLinkState";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { getNextScales, type NextScaleInfo } from "@/lib/nextScaleSummary";
+import { easternDayStart, easternDayWindow } from "@/lib/teachingDayRules";
 
 export interface TodayStudent {
   bookingId: string;
@@ -20,6 +22,8 @@ export interface TodayStudent {
   scale: string | null;
   practicedDaysLast7: number | null;
   note: { body: string; at: Date } | null;
+  /** The next scale to release (full access only), so the teacher can approve it from the class row. */
+  nextScale: NextScaleInfo | null;
 }
 
 export interface TodaySlot {
@@ -30,11 +34,15 @@ export interface TodaySlot {
 
 const TERM_LABEL: Record<string, string> = { MONTHLY: "Monthly", TERM_3: "3-month", TERM_6: "6-month", TERM_12: "Yearly" };
 
-/** Everything the teacher needs for today's classes (Eastern time), grouped by start time, in one read. */
-export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: string; slots: TodaySlot[] }> {
-  const dayKey = etDayKey(now);
+/**
+ * Everything the teacher needs for one day's classes (Eastern time), grouped by start time, in one read. Today by default; `day`
+ * ("YYYY-MM-DD") opens any other day, so the screen can step back and forward.
+ */
+export async function getTeachingDay(now: Date = new Date(), day?: string): Promise<{ dayKey: string; slots: TodaySlot[] }> {
+  const dayKey = day ?? etDayKey(now);
+  const window = easternDayWindow(dayKey);
   const bookings = await prisma.classBooking.findMany({
-    where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: new Date(now.getTime() - 16 * 3_600_000), lte: new Date(now.getTime() + 40 * 3_600_000) } },
+    where: { status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: window.from, lt: window.to } },
     orderBy: { scheduledAt: "asc" },
     select: {
       id: true,
@@ -60,8 +68,10 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
   const ids = [...new Set(today.map((b) => b.student.id))];
   if (ids.length === 0) return { dayKey, slots: [] };
 
-  const [completed, notes, progress, practice] = await Promise.all([
-    prisma.classBooking.groupBy({ by: ["studentId"], where: { studentId: { in: ids }, status: "COMPLETED", scheduledAt: { lt: now } }, _count: { _all: true } }),
+  // A first class is one with no class finished before this day (for today: before now, as before).
+  const firstBefore = dayKey === etDayKey(now) ? now : easternDayStart(dayKey);
+  const [completed, notes, progress, practice, nextScales] = await Promise.all([
+    prisma.classBooking.groupBy({ by: ["studentId"], where: { studentId: { in: ids }, status: "COMPLETED", scheduledAt: { lt: firstBefore } }, _count: { _all: true } }),
     prisma.studentNote.findMany({ where: { studentId: { in: ids } }, orderBy: { createdAt: "desc" }, select: { studentId: true, body: true, createdAt: true } }),
     prisma.scaleProgress.findMany({
       where: { userId: { in: ids }, unlockedAt: { not: null }, completedAt: null },
@@ -69,6 +79,7 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
       select: { userId: true, scaleGroup: { select: { code: true } } },
     }),
     getDoneLast7ByUser(ids),
+    getNextScales(ids),
   ]);
   const done = new Map(completed.map((c) => [c.studentId, c._count._all]));
   const noteBy = new Map<string, { body: string; at: Date }>();
@@ -95,6 +106,7 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
       scale: scaleBy.get(s.id) ?? null,
       practicedDaysLast7: plan ? practice.get(s.id) ?? 0 : null,
       note: noteBy.get(s.id) ?? null,
+      nextScale: nextScales.get(s.id) ?? null,
     };
     const key = b.scheduledAt.getTime();
     const slot = slots.get(key) ?? { startsAt: b.scheduledAt, label: b.schedule.label, students: [] };
@@ -102,6 +114,36 @@ export async function getTeachingDay(now: Date = new Date()): Promise<{ dayKey: 
     slots.set(key, slot);
   }
   return { dayKey, slots: [...slots.values()].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime()) };
+}
+
+export interface StillToMarkRow {
+  bookingId: string;
+  studentId: string;
+  name: string;
+  scheduledAt: Date;
+  label: string | null;
+  inPerson: boolean;
+}
+
+/**
+ * Classes from before `day` (an Eastern "YYYY-MM-DD") that still have no Present or No-show: marked right on the Today screen instead
+ * of on Schedule > Attendance. Oldest first, the first `take` of them, with how many there are in all.
+ */
+export async function getStillToMark(day: string, take = 25): Promise<{ rows: StillToMarkRow[]; total: number }> {
+  const where = { status: "SCHEDULED" as const, scheduledAt: { lt: easternDayStart(day) } };
+  const [rows, total] = await Promise.all([
+    prisma.classBooking.findMany({
+      where,
+      orderBy: { scheduledAt: "asc" },
+      take,
+      select: { id: true, scheduledAt: true, inPerson: true, schedule: { select: { label: true } }, student: { select: { id: true, name: true, email: true } } },
+    }),
+    prisma.classBooking.count({ where }),
+  ]);
+  return {
+    total,
+    rows: rows.map((b) => ({ bookingId: b.id, studentId: b.student.id, name: b.student.name ?? b.student.email, scheduledAt: b.scheduledAt, label: b.schedule.label, inPerson: b.inPerson })),
+  };
 }
 
 /** How many students have a class on each of the next 7 days (today first, Eastern time): the Overview's week strip. */
