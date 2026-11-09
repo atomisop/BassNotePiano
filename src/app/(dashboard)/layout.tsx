@@ -133,7 +133,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppDock isAdmin={isAdmin} />
       </div>
       <AppSidebar cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />
-      <CommandMenu isAdmin={isAdmin} />
+      <CommandMenu isAdmin={isAdmin} isOwner={isOwner} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>

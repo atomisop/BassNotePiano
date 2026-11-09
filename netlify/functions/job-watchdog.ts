@@ -14,7 +14,7 @@ const ALERT_ROW = "watchdog-alert";
 // (HEALTHCHECK_PING_URL, free at healthchecks.io) so a dead watchdog, a dead
 // database or a dead site is noticed from outside. Plain queries on purpose:
 // this runs outside Next, like the other scheduled functions.
-export const handler = schedule("*/30 * * * *", async () =>
+export const runJobWatchdog = () =>
   runJob("job-watchdog", async () => {
     const result = await runWatchdog({
       findProblems: async () => {
@@ -32,5 +32,6 @@ export const handler = schedule("*/30 * * * *", async () =>
     });
     console.log(`Job watchdog: ${result.problems.length} problem(s)${result.alerted ? ", alert sent" : ""}${result.recovered ? ", recovery sent" : ""}`);
     return { statusCode: 200 };
-  }),
-);
+  });
+
+export const handler = schedule("*/30 * * * *", async () => runJobWatchdog());

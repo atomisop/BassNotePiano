@@ -29,7 +29,7 @@ async function tellOwnerOnce(ownerId: string | undefined, marker: string, title:
 
 // Every minute, so a call opens and closes, and people are pulled into it, within a minute of their time. Does nothing until the bot token is set, so it is safe to
 // ship before Discord is fully set up.
-export const handler = schedule("* * * * *", async () =>
+export const runDiscordClassChannels = () =>
   runJob("discord-class-channels", async () => {
     if (!process.env.DISCORD_BOT_TOKEN) {
       console.log("Discord class channels: no bot token yet, nothing to do");
@@ -219,4 +219,6 @@ export const handler = schedule("* * * * *", async () =>
   }, {
     // A run that opened or closed nothing writes a run row at most every 15 minutes (see runJob): every minute was 1,440 rows a day.
     quietWhen: (r) => (r as { body?: string }).body !== "changed",
-  }));
+  });
+
+export const handler = schedule("* * * * *", async () => runDiscordClassChannels());

@@ -9,6 +9,7 @@ import { StudentScheduler } from "@/components/admin/StudentScheduler";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, liftPaymentLockAction, unbanUserAction } from "./actions";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
+import { accountAuditWhere } from "@/lib/accountAudit";
 import type { ReactNode } from "react";
 import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
 import { Wrench } from "@/components/ui/appIcons";
@@ -43,7 +44,8 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const [plan, discord, changes, lastCanceled, discountRow, scholarship] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true, installmentAmountCents: true, installmentsPaid: true, termMonths: true, startsAt: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true, trialEndsAt: true } }),
-    prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
+    // Their plans', payments' and classes' changes too: those are logged against the plan, payment or class, not the person.
+    accountAuditWhere(params.userId).then((where) => prisma.auditLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 8 })),
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "CANCELED" }, orderBy: { canceledAt: "desc" }, select: { id: true, cadence: true, term: true } }),
     prisma.accountDiscount.findUnique({ where: { userId: params.userId }, select: { percent: true } }),
     prisma.scholarshipCode.aggregate({ where: { claimedById: params.userId, claimedAt: { not: null }, revokedAt: null }, _max: { percent: true } }),

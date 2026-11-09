@@ -6,6 +6,7 @@ import { X } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { personPeekAction, type PersonPeek } from "@/app/(dashboard)/admin/person-peek-actions";
 import { personActionHref } from "@/lib/commandRecents";
+import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 
 /**
  * A side panel beside the Accounts list: the person's key facts and their most used jobs, so the list stays in view while you look.
@@ -29,7 +30,8 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
   }, [userId]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // Escape inside the message sheet closes only the sheet, not this panel behind it.
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"]') && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -61,6 +63,8 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
           </dl>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href={`/admin/users/${data.id}`} className={buttonVariants({ size: "sm" })}>Open full page</Link>
+            {/* Written right here, beside the list: the same sheet as the Message button on their page. */}
+            <QuickMessageButton userId={data.id} name={data.name ?? data.email} />
             <Link href={personActionHref(data.id, "credits")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Add credits</Link>
             <Link href={personActionHref(data.id, "book")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Book a class</Link>
             <Link href={personActionHref(data.id, "plan")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Plan tools</Link>

@@ -133,7 +133,7 @@ async function isGroupMemberNotPayer(plan: PaymentPlan): Promise<boolean> {
 //      because the row from (a) already exists by the time this can ever
 //      match; a missed escalation day just means one fewer nudge, not a
 //      never-created invoice.
-export const handler = schedule("0 16 * * *", async () =>
+export const runPaymentPlanInstallments = () =>
   runJob("payment-plan-installments", async () => {
   const now = new Date();
   const leadDays = await getNumberSetting("payments.installmentLeadDays");
@@ -220,4 +220,6 @@ export const handler = schedule("0 16 * * *", async () =>
     `Payment plan installments: lapsed ${lapsed}, opened ${opened} of ${duePlans.length} due plans, escalated ${escalated} of ${overduePayments.length} overdue installments`,
   );
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("0 16 * * *", async () => runPaymentPlanInstallments());
