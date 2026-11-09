@@ -45,7 +45,7 @@ const VIEWS: { label: string; value: ViewValue }[] = [
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string }> }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; name?: string; email?: string; phone?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
@@ -79,7 +79,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
               scheduledAt: g.scheduledAt.toISOString(),
               label: g.label,
               alreadyBooked: g.alreadyBooked,
-              requests: g.requests.map((r) => ({ id: r.id, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
+              requests: g.requests.map((r) => ({ id: r.id, studentId: r.studentId, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
             }))}
             requestMode={requestMode}
             showSettingsLink={isOwnerEmail(session?.user?.email)}
@@ -105,7 +105,12 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         </div>
 
         <div className="mt-6">
-          <AdminReservations hours={hours} reservations={reservations} />
+          {/* ?name=&email=&phone= (from Applicants and elsewhere) fills in the customer, so keeping a time for them is one step. */}
+          <AdminReservations
+            hours={hours}
+            reservations={reservations}
+            initial={{ name: (searchParams.name ?? "").slice(0, 120), email: (searchParams.email ?? "").slice(0, 200), phone: (searchParams.phone ?? "").slice(0, 40) }}
+          />
         </div>
       </div>
     );
