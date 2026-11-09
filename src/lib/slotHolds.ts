@@ -23,6 +23,12 @@ export function holdAppliesTo(hold: Pick<HoldLike, "until" | "releasedAt">, occu
   return occurrenceDate.getTime() <= hold.until.getTime();
 }
 
+/** True when two email addresses are the same inbox as typed (case and spaces aside): how a contact is matched to an account. */
+export function sameInboxEmail(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = (a ?? "").trim().toLowerCase();
+  return x !== "" && x === (b ?? "").trim().toLowerCase();
+}
+
 /** Reads a "YYYY-MM-DD" day as UTC midnight, or null when it is not a real date. */
 export function parseDay(raw: string | null | undefined): Date | null {
   if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;

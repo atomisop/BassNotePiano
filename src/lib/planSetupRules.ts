@@ -9,7 +9,8 @@ export const SETUP_MAX_WEEKS_AHEAD = 12;
 /** The term a scholarship prices. Kept here as a plain string so this file needs nothing else. */
 const SCHOLARSHIP_TERM = "TERM_6";
 
-export type ScholarshipChoice = { kind: "keep" } | { kind: "full" } | { kind: "percent"; percent: number };
+/** `replace` on a percent lower than the one claimed: the owner confirmed "End the current N% and give M%". */
+export type ScholarshipChoice = { kind: "keep" } | { kind: "full" } | { kind: "percent"; percent: number; replace?: boolean };
 
 /**
  * Whether a plan's weekly class starting at `scheduledAt` may be booked: never before the plan's first class (`startsAt`) and never
@@ -63,14 +64,17 @@ export function weeksBetweenYmd(from: string, to: string): number {
 
 /**
  * The scholarship the account ends up with. `current` is the best one already claimed. Keeping gives that; Full or a percent gives a
- * new studio scholarship when it is better than the current one. A lower one than she already has is refused: ending a scholarship is
- * done on purpose, on Billing > Scholarships, never as a side effect of setting up a plan.
+ * new studio scholarship when it is better than the current one. A lower one is never a side effect: it needs the owner's confirmed
+ * "End the current N% and give M%" (`replace`), and then `ends` says which one is ended in the same step.
  */
-export function resolveScholarship(current: number, choice: ScholarshipChoice): { error: string } | { percent: number; grant: number | null } {
+export function resolveScholarship(current: number, choice: ScholarshipChoice): { error: string } | { percent: number; grant: number | null; ends?: number } {
   if (choice.kind === "keep") return { percent: current, grant: null };
   const target = choice.kind === "full" ? 100 : choice.percent;
   if (!Number.isInteger(target) || target < 1 || target > 100) return { error: "A scholarship is a whole number from 1 to 100 percent." };
-  if (target < current) return { error: `This account already has a ${current}% scholarship. To lower it, end it on Billing > Scholarships first.` };
+  if (target < current) {
+    if (choice.kind === "percent" && choice.replace) return { percent: target, grant: target, ends: current };
+    return { error: `This account already has a ${current}% scholarship. To give ${target}% instead, confirm ending the ${current}% below.` };
+  }
   if (target === current) return { percent: current, grant: null };
   return { percent: target, grant: target };
 }

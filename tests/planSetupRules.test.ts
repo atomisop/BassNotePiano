@@ -61,6 +61,13 @@ describe("resolveScholarship", () => {
     expect(resolveScholarship(0, { kind: "percent", percent: 12.5 })).toHaveProperty("error");
   });
 
+  it("lowers one only when the owner confirms ending the current one, and says which ends", () => {
+    expect(resolveScholarship(100, { kind: "percent", percent: 40 })).toEqual({ error: "This account already has a 100% scholarship. To give 40% instead, confirm ending the 100% below." });
+    expect(resolveScholarship(100, { kind: "percent", percent: 40, replace: true })).toEqual({ percent: 40, grant: 40, ends: 100 });
+    // Confirming means nothing when the new one is not lower.
+    expect(resolveScholarship(30, { kind: "percent", percent: 50, replace: true })).toEqual({ percent: 50, grant: 50 });
+  });
+
   it("a scholarship always means the 6 Month plan", () => {
     expect(setupTerm(100, "MONTHLY")).toBe("TERM_6");
     expect(setupTerm(0, "TERM_3")).toBe("TERM_3");

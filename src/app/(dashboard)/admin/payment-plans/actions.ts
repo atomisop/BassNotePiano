@@ -279,11 +279,14 @@ export async function planSetupApplyAction(input: PlanSetupInput, key?: string, 
 
 /** A server action's input is only typed at compile time: rebuild it from plain values before it reaches the plan code. */
 function cleanSetupInput(input: PlanSetupInput): PlanSetupInput {
-  const s = input?.scholarship as { kind?: unknown; percent?: unknown } | undefined;
+  const s = input?.scholarship as { kind?: unknown; percent?: unknown; replace?: unknown } | undefined;
   const scholarship: ScholarshipChoice =
-    s?.kind === "full" ? { kind: "full" } : s?.kind === "percent" ? { kind: "percent", percent: Number(s.percent) } : { kind: "keep" };
+    s?.kind === "full" ? { kind: "full" } : s?.kind === "percent" ? { kind: "percent", percent: Number(s.percent), replace: s.replace === true } : { kind: "keep" };
   const term = (["MONTHLY", "TERM_3", "TERM_6"] as const).find((t) => t === input?.term) ?? "TERM_6";
-  return { userId: String(input?.userId ?? ""), scheduleId: String(input?.scheduleId ?? ""), chunkIndex: Number(input?.chunkIndex), firstClassDate: String(input?.firstClassDate ?? ""), scholarship, term };
+  // "Another time…": a typed day and start time, checked again on the server (planSetup.ts).
+  const t = input?.newTime as { dayOfWeek?: unknown; startTime?: unknown } | null | undefined;
+  const newTime = t ? { dayOfWeek: Number(t.dayOfWeek), startTime: String(t.startTime ?? "") } : null;
+  return { userId: String(input?.userId ?? ""), scheduleId: String(input?.scheduleId ?? ""), chunkIndex: Number(input?.chunkIndex), newTime, firstClassDate: String(input?.firstClassDate ?? ""), scholarship, term };
 }
 
 /** The plan's weekly time and the free times it could move to. Changes nothing. */
