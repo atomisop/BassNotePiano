@@ -2,11 +2,12 @@
 
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { PianoCat } from "@/components/layout/PianoCat";
 import { submitClassRegistrationAction } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -90,6 +91,11 @@ export function ClassRegistrationForm() {
   const [website, setWebsite] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
+  // The long form shrinks to a short card on success, which can leave it under the top bar: bring it into view.
+  const thanksRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (success) thanksRef.current?.scrollIntoView({ block: "center" });
+  }, [success]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -113,16 +119,15 @@ export function ClassRegistrationForm() {
   }
 
   if (success) {
+    // No review step anymore: the details go straight to the teacher, who gets in touch outside the app. The cat is the
+    // pull-to-refresh mascot (PianoCat), smiling.
     return (
-      <div className="glass-surface-elevated p-8 text-center">
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Request received</p>
-        <h3 className="mt-2 font-serif text-body text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
-        {/* No coming-soon branch here anymore: the instrument pill for
-            Drums/Vocal is disabled now, so `instrument` can never actually
-            hold one of those values by the time this renders. */}
-        <p className="mt-2 text-small text-slate-400">
-          We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
-          We&apos;ll reach out at {email} or {phone} shortly.
+      <div ref={thanksRef} role="status" className="glass-surface-elevated flex flex-col items-center p-8 text-center">
+        <PianoCat size={88} smile />
+        <h3 className="mt-4 font-serif text-title text-slate-50">Thanks, {fullName.split(" ")[0]}!</h3>
+        <p className="mt-2 text-body text-slate-300">An instructor will reach out to you soon.</p>
+        <p className="mt-1 text-small text-slate-400">
+          We&apos;ll contact you at {email} or {phone}.
         </p>
       </div>
     );
@@ -262,7 +267,7 @@ export function ClassRegistrationForm() {
         className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-        {submitting ? "Submitting…" : "Request to register"}
+        {submitting ? "Sending…" : "Send"}
       </button>
 
       {/* No account is created by this form (see ClassRegistration's own

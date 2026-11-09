@@ -11,6 +11,9 @@ describe("buildNeedsYou", () => {
     expect(buildNeedsYou({}, [])).toEqual([]);
   });
   it("uses the singular for one", () => {
-    expect(buildNeedsYou({ "/admin/students": 1 }, [])[0].text).toBe("1 applicant to answer");
+    expect(buildNeedsYou({ "/admin/support": 1 }, [])[0].text).toBe("1 chat waiting for a reply");
+  });
+  it("has no applicants row (class applications were removed)", () => {
+    expect(buildNeedsYou({ "/admin/students": 2 }, [])).toEqual([]);
   });
 });

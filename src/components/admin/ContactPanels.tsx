@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageBack } from "@/components/ui/BackLink";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Mail, MessageSquare, Phone } from "@/components/ui/appIcons";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/Card";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
@@ -298,6 +299,80 @@ export function ContactSessions({
         </div>
       </form>
     </Card>
+  );
+}
+
+/**
+ * One person who sent the public class form (there is no review step): what they typed and one tap to call, text or email them
+ * outside the app. Remove takes the entry off the list, with a few seconds to undo.
+ */
+export function ClassFormEntry({
+  id,
+  name,
+  email,
+  phone,
+  instrument,
+  level,
+  notes,
+  sent,
+  onRemove,
+}: {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  instrument: string;
+  level: string;
+  notes: string | null;
+  sent: string;
+  onRemove: (registrationId: string) => Promise<Result>;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const dial = phone.replace(/[^\d+]/g, "");
+  const action = buttonVariants({ variant: "secondary", size: "sm", className: "tap gap-1.5" });
+
+  function remove() {
+    setError(null);
+    start(async () => {
+      const hold = await toast.held(`Removing ${name}`, () => onRemove(id));
+      if (hold.undone) return;
+      const result = hold.value;
+      if (!result.ok) return setError(result.error);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="rounded-card bg-neu-base px-4 py-3 shadow-raised-low">
+      <p className="flex items-center gap-2">
+        <span className="truncate text-body font-semibold text-slate-50">{name}</span>
+        <span className="shrink-0 rounded-full bg-slate-700/40 px-2 py-0.5 text-small font-medium text-slate-200">Class form</span>
+      </p>
+      <p className="text-small text-slate-400">
+        {instrument} · {level} · <span className="whitespace-nowrap">sent {sent}</span>
+      </p>
+      <p className="mt-2 break-words text-small text-slate-300">
+        {phone} · {email}
+      </p>
+      {notes && <p className="mt-1 whitespace-pre-line break-words text-small text-slate-400">&ldquo;{notes}&rdquo;</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a href={`tel:${dial}`} className={action}>
+          <Phone className="h-4 w-4" aria-hidden /> Call
+        </a>
+        <a href={`sms:${dial}`} className={action}>
+          <MessageSquare className="h-4 w-4" aria-hidden /> Text
+        </a>
+        <a href={`mailto:${email}?subject=${encodeURIComponent("Your Bass Note Piano classes")}`} className={action}>
+          <Mail className="h-4 w-4" aria-hidden /> Email
+        </a>
+        <Button type="button" size="sm" variant="ghost" className="tap ml-auto" onClick={remove} disabled={pending} aria-label={`Remove ${name}`}>
+          Remove
+        </Button>
+      </div>
+      <ErrorLine error={error} />
+    </div>
   );
 }
 

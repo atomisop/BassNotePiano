@@ -76,10 +76,6 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
 
 export interface GettingStartedInput {
   kind: "ADMIN" | "PAID" | "COMPED" | "TRIAL" | "NONE";
-  /** The student has applied for a class and nobody has answered yet. */
-  applicationPending: boolean;
-  /** Length of the free trial in days, from Settings. 0 or missing means the copy does not mention a trial by length (default 3). */
-  trialDays?: number;
 }
 
 export interface GettingStartedStep {
@@ -90,26 +86,17 @@ export interface GettingStartedStep {
   secondary?: { href: string; cta: string };
 }
 
-/** What a student with no access yet should do next. Null for anyone who already has access. */
+/**
+ * What a student with no access should do next. Null for anyone who already has access. Every new account starts on the free
+ * trial, so NONE means it ended (or trials are off): the way on is a plan, or a word with an instructor through the class form.
+ */
 export function gettingStartedStep(input: GettingStartedInput): GettingStartedStep | null {
   if (input.kind !== "NONE") return null;
-  const trialDays = input.trialDays ?? 3;
-  if (input.applicationPending) {
-    return {
-      action: "Your class application is being reviewed",
-      detail: "We will email you as soon as it is approved, and your first lessons open right away. In the meantime you can look at class plans.",
-      href: "/billing/plans",
-      cta: "See class plans",
-      secondary: { href: "/practice", cta: "Try finger exercises" },
-    };
-  }
   return {
-    action: "Two ways to start",
-    detail: trialDays > 0
-      ? `Apply for a free trial class and get the first lessons for ${trialDays} days, or choose a class plan and start right away.`
-      : "Apply for classes, or choose a class plan and start right away.",
-    href: "/classes",
-    cta: trialDays > 0 ? "Apply for a free trial class" : "Apply for classes",
-    secondary: { href: "/billing/plans", cta: "See class plans" },
+    action: "Choose a class plan",
+    detail: "Your lessons open as soon as your first payment is approved. Want to talk first? Send your details and an instructor will reach out.",
+    href: "/billing/plans",
+    cta: "See class plans",
+    secondary: { href: "/classes", cta: "Talk to an instructor" },
   };
 }

@@ -1,24 +1,25 @@
 import Link from "next/link";
 import { Plus } from "@/components/ui/appIcons";
 import { listDirectory, type PersonKind } from "@/lib/contacts";
-import { INSTRUMENT_LABEL } from "@/lib/classRegistrationLabels";
+import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { Card } from "@/components/ui/Card";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
-import { ContactForm } from "@/components/admin/ContactPanels";
-import { createContactAction } from "./actions";
+import { ClassFormEntry, ContactForm } from "@/components/admin/ContactPanels";
+import { createContactAction, removeClassFormAction } from "./actions";
 
 export const metadata = { title: "Admin: Contacts" };
 
 const FILTERS: { label: string; value: PersonKind | "ALL" }[] = [
-  { label: "Everyone", value: "ALL" },
+  // Short labels, so the four fit across a 320px phone without running off the edge.
+  { label: "All", value: "ALL" },
   { label: "Accounts", value: "ACCOUNT" },
-  { label: "Applied", value: "APPLICATION" },
-  { label: "Added by you", value: "ADDED" },
+  { label: "Class form", value: "APPLICATION" },
+  { label: "Added", value: "ADDED" },
 ];
 
 const KIND_TAG: Record<PersonKind, { label: string; className: string }> = {
   ACCOUNT: { label: "Account", className: "bg-signal/16 text-signal-fg" },
-  APPLICATION: { label: "Applied", className: "bg-slate-700/40 text-slate-200" },
+  APPLICATION: { label: "Class form", className: "bg-slate-700/40 text-slate-200" },
   ADDED: { label: "Added", className: "bg-slate-700/40 text-slate-200" },
 };
 
@@ -68,10 +69,28 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
       <ul className="mt-5 grid gap-2">
         {people.length === 0 && (
           <li className="rounded-card bg-neu-base px-4 py-8 text-center text-small text-slate-400 shadow-raised-low">
-            {q ? `Nobody matches "${q}".` : "Nobody here yet. Tap Add person."}
+            {q ? `Nobody matches "${q}".` : active === "APPLICATION" ? "Nobody has sent the class form yet." : "Nobody here yet. Tap Add person."}
           </li>
         )}
         {people.map((person) => {
+          // Someone who sent the class form: everything they typed, with call, text and email (no review step any more).
+          if (person.form) {
+            return (
+              <li key={person.key}>
+                <ClassFormEntry
+                  id={person.form.id}
+                  name={person.name}
+                  email={person.email ?? ""}
+                  phone={person.phone ?? ""}
+                  instrument={INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? "Not said"}
+                  level={SKILL_LABEL[person.form.skillLevel as keyof typeof SKILL_LABEL] ?? person.form.skillLevel}
+                  notes={person.form.notes}
+                  sent={day(person.form.sentAt)}
+                  onRemove={removeClassFormAction}
+                />
+              </li>
+            );
+          }
           const tag = KIND_TAG[person.kind];
           const sub = [person.detail ? (INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? null) : null, person.phone, person.email].filter(Boolean).join(" · ");
           return (

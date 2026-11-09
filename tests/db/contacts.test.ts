@@ -123,11 +123,31 @@ describe("the combined list of everyone", () => {
     expect(account).toMatchObject({ classesTaken: 1, href: `/admin/users/${accountUser.id}` });
     expect(account.reserved).toContain("Monday");
     expect(all.filter((r) => r.kind === "APPLICATION").map((r) => r.name)).toEqual([`${tag} Applied`]);
+    // The class form row carries what they typed, so the teacher can reach them outside the app.
+    expect(all.find((r) => r.kind === "APPLICATION")).toMatchObject({ phone: "+12125550111", detail: "BASS", form: { id: appliedOnly.id, skillLevel: "BEGINNER" } });
     expect(all.find((r) => r.kind === "ADDED")!.href).toBe(`/admin/contacts/${added.id}`);
     expect((await listDirectory(tag, "ACCOUNT")).every((r) => r.kind === "ACCOUNT")).toBe(true);
     await prisma.classBooking.deleteMany({ where: { studentId: accountUser.id } });
     await prisma.paymentPlan.delete({ where: { id: plan.id } });
     await prisma.classRegistration.deleteMany({ where: { id: { in: [appliedOnly.id, appliedWithAccount.id] } } });
     await prisma.user.delete({ where: { id: accountUser.id } });
+  });
+
+  it("lists someone who sent the class form twice once, newest first, and removing it takes it off the list", async () => {
+    const { listDirectory } = await import("@/lib/contacts");
+    const { removeClassRegistration } = await import("@/lib/classRegistration");
+    const admin = await prisma.user.create({ data: { email: `${tag}-admin@example.com`, name: `${tag} Admin`, passwordHash: "x", role: "ADMIN" } });
+    const email = `${tag}-twice@example.com`;
+    const older = await prisma.classRegistration.create({ data: { fullName: `${tag} Twice`, email, phone: "+12125550121", instrument: "BASS", skillLevel: "BEGINNER", createdAt: new Date(Date.now() - 86_400_000) } });
+    const newer = await prisma.classRegistration.create({ data: { fullName: `${tag} Twice`, email, phone: "+12125550121", instrument: "GUITAR", skillLevel: "BEGINNER", notes: "Evenings only" } });
+    const forms = (await listDirectory(tag, "APPLICATION")).filter((r) => r.name === `${tag} Twice`);
+    expect(forms).toHaveLength(1);
+    expect(forms[0].form).toMatchObject({ id: newer.id, notes: "Evenings only" });
+    await removeClassRegistration(newer.id, admin.id);
+    expect(await prisma.classRegistration.count({ where: { id: newer.id } })).toBe(0);
+    expect(await prisma.auditLog.count({ where: { action: "registration.remove", targetId: newer.id } })).toBe(1);
+    await prisma.classRegistration.deleteMany({ where: { id: older.id } });
+    await prisma.auditLog.deleteMany({ where: { targetId: newer.id } });
+    await prisma.user.delete({ where: { id: admin.id } });
   });
 });

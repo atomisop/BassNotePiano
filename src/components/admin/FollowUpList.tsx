@@ -6,7 +6,7 @@ import { Hint } from "@/components/ui/Hint";
 import { HomeRows } from "@/components/home/HomeRow";
 
 /**
- * People who need a nudge (overdue bills, not practicing, trial ending, credits expiring, stale applications), each with a one-tap
+ * People who need a nudge (overdue bills, not practicing, trial ending, credits expiring, Discord not linked), each with a one-tap
  * reminder. Lives on People > Accounts (moved off the Overview 2026-10-30: it is about people, not about how the studio is doing).
  */
 export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; className?: string }) {

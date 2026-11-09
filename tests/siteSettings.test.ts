@@ -9,9 +9,10 @@ describe("setting definitions", () => {
     for (const d of SETTING_DEFS) expect(categories.has(d.category)).toBe(true);
   });
 
-  it("keeps the two older automation switches on their original stored keys", () => {
+  it("keeps the older automation switch on its original stored key", () => {
     expect(storageKeyOf(SETTING_BY_KEY["access.autoApproveScales"])).toBe("auto_approve_scales");
-    expect(storageKeyOf(SETTING_BY_KEY["access.autoApproveApplications"])).toBe("auto_approve_applications");
+    // Class applications were removed (2026-11-09), and with them their auto-approve switch.
+    expect(SETTING_BY_KEY["access.autoApproveApplications"]).toBeUndefined();
   });
 
   it("defaults every number inside its own range", () => {

@@ -31,12 +31,11 @@ export const runAdminDailySummary = () =>
   }
   const now = Date.now();
   const today = todayBoundsEt();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline, followUps, paymentFacts] = await Promise.all([
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, openChats, classesToday, unmarked, stoppedJobs, pipeline, followUps, paymentFacts] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     // Payment emails that matched nobody and nobody has dismissed (the same count the Overview shows).
     countUnmatchedReceipts(new Date(now)),
-    prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.findMany({
       where: { status: "SCHEDULED", scheduledAt: { gte: today.start, lt: today.end } },
@@ -85,7 +84,6 @@ export const runAdminDailySummary = () =>
     item(unmatchedEmails, "payment email that matched no one", "payment emails that matched no one", "/admin/payments?tab=emails"),
     item(paymentFacts.likelyMatches, "of those already has a likely payment (one tap to approve)", "of those already have a likely payment (one tap each to approve)", "/admin/payments?tab=emails"),
     item(paymentFacts.waitingOverDay, "payment has waited for you more than a day", "payments have waited for you more than a day", "/admin/payments"),
-    item(applications, "class application to review", "class applications to review", "/admin/students"),
     item(openChats, "open support chat", "open support chats", "/admin/support"),
     item(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked", "/admin/schedule?view=ATTENDANCE"),
     stoppedJobs.length

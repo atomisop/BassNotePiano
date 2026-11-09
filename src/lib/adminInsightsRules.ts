@@ -214,8 +214,8 @@ export function buildInsights(input: InsightInputs): Insight[] {
         tone: rate < 0.15 ? "fix" : "watch",
         title: "Few free trials become plans",
         evidence: `${startedPlan} of ${started} trials started in the last 90 days led to a plan (${pct(startedPlan, started)}%).`,
-        tryThis: "Reach out on the last day of a trial (Overview > People to follow up with) and offer to book their first class.",
-        href: "/admin/students",
+        tryThis: "Reach out on the last day of a trial (People > Accounts, Follow up) and offer to book their first class.",
+        href: "/admin/users",
       });
     } else if (rate >= 0.5) {
       out.push({

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { addHold, addSession, ContactError, createContact, deleteContact, deleteSession, releaseHold, updateContact, type ContactInput } from "@/lib/contacts";
 import { reportError } from "@/lib/reportError";
+import { removeClassRegistration } from "@/lib/classRegistration";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -15,10 +16,10 @@ async function requireAdmin() {
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-async function run<T extends object>(work: () => Promise<T>): Promise<Result<T>> {
-  await requireAdmin();
+async function run<T extends object>(work: (adminId: string) => Promise<T>): Promise<Result<T>> {
+  const admin = await requireAdmin();
   try {
-    const value = await work();
+    const value = await work(admin.id);
     revalidatePath("/", "layout");
     return { ok: true, ...value };
   } catch (err) {
@@ -35,6 +36,14 @@ export async function createContactAction(input: ContactInput): Promise<Result<{
 export async function updateContactAction(contactId: string, input: ContactInput): Promise<Result> {
   return run(async () => {
     await updateContact(contactId, input);
+    return {};
+  });
+}
+
+/** Takes a class form entry off the list (spam, or someone already reached). */
+export async function removeClassFormAction(registrationId: string): Promise<Result> {
+  return run(async (adminId) => {
+    await removeClassRegistration(registrationId, adminId);
     return {};
   });
 }

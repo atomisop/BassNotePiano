@@ -18,14 +18,12 @@ export function buildNeedsYou(badges: Record<string, number>, followUps: { key: 
     { id: "payments", href: "/admin/payments", count: badges["/admin/payments"] ?? 0, text: "" },
     { id: "overdue", href: overdue?.href ?? "/admin/users", count: overdue?.total ?? 0, text: "" },
     { id: "support", href: "/admin/support", count: badges["/admin/support"] ?? 0, text: "" },
-    { id: "applicants", href: "/admin/students", count: badges["/admin/students"] ?? 0, text: "" },
     { id: "unmarked", href: "/admin/schedule?view=ATTENDANCE", count: badges["/admin/schedule"] ?? 0, text: "" },
   ];
   const words: Record<string, (n: number) => string> = {
     payments: (n) => `${plural(n, "payment", "payments")} to approve`,
     overdue: (n) => `${plural(n, "bill", "bills")} overdue`,
     support: (n) => `${plural(n, "chat", "chats")} waiting for a reply`,
-    applicants: (n) => `${plural(n, "applicant", "applicants")} to answer`,
     unmarked: (n) => `${plural(n, "class", "classes")} to mark present or no-show`,
   };
   return rows.filter((r) => r.count > 0).map((r) => ({ ...r, text: words[r.id](r.count) }));

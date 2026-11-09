@@ -12,7 +12,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "FAILED_LOGIN_SPIKE", label: "Many failed sign-in attempts in an hour", group: "People", defaultOn: false, ownerOnly: true },
   { kind: "ACCOUNT_BANNED", label: "An account was banned or a ban was lifted", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "EMAIL_BOUNCED", label: "An email to a student bounced (the address may be mistyped)", group: "People", defaultOn: true, ownerOnly: false },
-  { kind: "NEW_REGISTRATION", label: "New class registration", group: "People", defaultOn: true, ownerOnly: false },
+  { kind: "NEW_REGISTRATION", label: "Someone sent the class form", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_EMAIL_REJECTED", label: "A forwarded bank email failed its sender check and was ignored", group: "Payments", defaultOn: true, ownerOnly: false },

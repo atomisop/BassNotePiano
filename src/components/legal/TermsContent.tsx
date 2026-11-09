@@ -5,7 +5,7 @@
 // can never quietly drift out of sync with each other.
 
 
-export const TERMS_LAST_UPDATED = "October 24, 2026";
+export const TERMS_LAST_UPDATED = "November 9, 2026";
 
 function TermsSection({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
@@ -31,7 +31,7 @@ export function TermsContent() {
         <p>
           The curriculum isn&apos;t sold separately. It comes with an active class plan, and your teacher opens it one
           scale at a time as you progress. When a plan ends, curriculum access continues until the end of the 28 days
-          you already paid for, then closes. Approved applicants get a 3-day free trial of the first lessons.
+          you already paid for, then closes. Every new account gets a 3-day free trial of the first lessons, once per person.
         </p>
         <p>
           <span className="font-medium text-slate-50">Payments are final.</span> Curriculum content is digital

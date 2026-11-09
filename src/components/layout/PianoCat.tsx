@@ -2,7 +2,8 @@
  * The pull-to-refresh mascot: a pixel cat in headphones that dances while the page refreshes (the way Claude's pixel crab does).
  * Drawn from a small character grid so every pixel lands on the grid; `o` is the cat, `h` the headphones, `d` the eyes, `p` the nose.
  * The dance is CSS (`.ptr-cat*` in globals.css): the body sways and hops on two beats, the paws swap, a note floats up. While you are
- * still pulling it stands and sways gently; reduced motion gets it standing still.
+ * still pulling it stands and sways gently; reduced motion gets it standing still. `smile` swaps in happy closed eyes (^ ^) and a smiling
+ * mouth, for a thank-you screen; everything else is the same cat.
  */
 export const ROWS = [
   "..oo......oo..",
@@ -18,6 +19,16 @@ export const ROWS = [
   ".oo........oo.",
 ];
 
+/** The same cat, smiling: rows 3 to 6 swapped for ^ ^ eyes and a curved mouth. */
+export const SMILE_ROWS = [
+  ...ROWS.slice(0, 3),
+  "hoooDooooDoooh",
+  "hooDoDooDoDooh",
+  ".oooopoopoooo.",
+  "..ooooppoooo..",
+  ...ROWS.slice(7),
+];
+
 const COLORS: Record<string, string> = {
   o: "rgb(var(--signal))",
   h: "rgb(var(--c-s-50))",
@@ -27,9 +38,10 @@ const COLORS: Record<string, string> = {
 
 const PIXEL = 4;
 
-export function PianoCat({ size = 56 }: { size?: number }) {
-  const cols = ROWS[0].length;
-  const rows = ROWS.length;
+export function PianoCat({ size = 56, smile = false }: { size?: number; smile?: boolean }) {
+  const grid = smile ? SMILE_ROWS : ROWS;
+  const cols = grid[0].length;
+  const rows = grid.length;
   return (
     <svg
       aria-hidden
@@ -40,7 +52,7 @@ export function PianoCat({ size = 56 }: { size?: number }) {
       className="ptr-cat overflow-visible"
     >
       <g className="ptr-cat-body" transform={`translate(${3 * PIXEL} ${3 * PIXEL})`}>
-        {ROWS.map((row, y) =>
+        {grid.map((row, y) =>
           [...row].map((ch, x) =>
             COLORS[ch] ? (
               <rect
