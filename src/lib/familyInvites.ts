@@ -1,7 +1,8 @@
-import type { Prisma } from "@prisma/client";
+import type { PaymentPlanTerm, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkFamilyMember } from "@/lib/familyMemberCheck";
-import { noticePlanUpdated } from "@/lib/studentNotices";
+import { createNotification } from "@/lib/notifications";
+import { answerHref } from "@/lib/bellAnswers";
 
 /** An invitation (and an acceptance) counts for this long; after that the payer asks again. */
 export const FAMILY_INVITE_DAYS = 7;
@@ -14,6 +15,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export type InviteState = "PENDING" | "ACCEPTED" | "DECLINED";
 
 export class FamilyInviteError extends Error {}
+
+const PLAN_TERMS: readonly PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6", "TERM_12"];
+
+/** A plan length sent by the browser, or null when it is not one. */
+export function parsePlanTerm(value: unknown): PaymentPlanTerm | null {
+  return typeof value === "string" && (PLAN_TERMS as readonly string[]).includes(value) ? (value as PaymentPlanTerm) : null;
+}
+
+/** Where "they accepted" sends the payer: the group plan form, on the plan length they had picked when they invited. */
+export function acceptedInviteHref(term: PaymentPlanTerm | null): string {
+  return term ? `/billing/plans?who=family&term=${term}` : "/billing/plans?who=family";
+}
 
 export function inviteIsFresh(createdAt: Date, now = Date.now()): boolean {
   return now - createdAt.getTime() < FAMILY_INVITE_DAYS * DAY_MS;
@@ -44,8 +57,11 @@ export async function listInvitesForPerson(userId: string) {
   return rows.map((r) => ({ id: r.id, payerName: nameOf(r.payer), createdAt: r.createdAt }));
 }
 
-/** Asks an existing account to join the payer's group plan. Nothing is created for them until they say yes. */
-export async function sendFamilyInvite(payerId: string, rawEmail: string): Promise<InviteState> {
+/**
+ * Asks an existing account to join the payer's group plan. Nothing is created for them until they say yes. `term` is the plan length the
+ * payer has picked on the form, kept so their "accepted" notice can open the form on it again.
+ */
+export async function sendFamilyInvite(payerId: string, rawEmail: string, options: { term?: PaymentPlanTerm | null } = {}): Promise<InviteState> {
   const email = rawEmail.trim().toLowerCase();
   const check = await checkFamilyMember(payerId, email);
   if (check === "self") throw new FamilyInviteError("That is your own account. You are already included.");
@@ -59,23 +75,32 @@ export async function sendFamilyInvite(payerId: string, rawEmail: string): Promi
   ]);
   const existing = await prisma.familyInvite.findUnique({ where: { payerId_inviteeId: { payerId, inviteeId: invitee.id } } });
   const now = Date.now();
+  const term = options.term ?? null;
 
   if (existing?.status === "DECLINED" && existing.respondedAt && now - existing.respondedAt.getTime() < FAMILY_INVITE_DECLINE_DAYS * DAY_MS) {
     return "DECLINED";
   }
   if (existing?.status === "ACCEPTED" && inviteIsFresh(existing.createdAt, now)) return "ACCEPTED";
-  if (existing?.status === "PENDING" && inviteIsFresh(existing.createdAt, now) && now - existing.createdAt.getTime() < RENOTIFY_MS) return "PENDING";
+  if (existing?.status === "PENDING" && inviteIsFresh(existing.createdAt, now) && now - existing.createdAt.getTime() < RENOTIFY_MS) {
+    // Not announced again, but a changed plan length is still remembered for the "accepted" notice.
+    if (term && existing.term !== term) await prisma.familyInvite.update({ where: { id: existing.id }, data: { term } });
+    return "PENDING";
+  }
 
-  await prisma.familyInvite.upsert({
+  const invite = await prisma.familyInvite.upsert({
     where: { payerId_inviteeId: { payerId, inviteeId: invitee.id } },
-    create: { payerId, inviteeId: invitee.id, status: "PENDING" },
-    update: { status: "PENDING", createdAt: new Date(), respondedAt: null },
+    create: { payerId, inviteeId: invitee.id, status: "PENDING", term },
+    update: { status: "PENDING", createdAt: new Date(), respondedAt: null, term },
   });
-  await noticePlanUpdated({
+  // In the bell with Accept and Decline on it (bellAnswers.ts); the email's button opens Billing > Plans, where the same answer works.
+  await createNotification({
     userId: invitee.id,
+    type: "GROUP_INVITE",
     title: "You were invited to a group plan",
-    body: `${nameOf(payer)} would like you on their group plan. Open Billing > Plans to accept or decline. Nothing starts for you unless you accept. They pay for your classes, you pick your own class times with your credits, and credits expire at the end of each 28-day cycle.`,
-  });
+    body: `${nameOf(payer)} would like you on their group plan. Nothing starts for you unless you accept. They pay for your classes, you pick your own class times with your credits, and credits expire at the end of each 28-day cycle.`,
+    emailCategory: "payments",
+    href: answerHref("/billing/plans", invite.id),
+  }).catch((err) => console.error("Group invitation notice failed (non-blocking):", err));
   return "PENDING";
 }
 
@@ -91,11 +116,16 @@ export async function respondToFamilyInvite(userId: string, inviteId: string, ac
   });
   if (claimed.count === 0) throw new FamilyInviteError("That invitation is no longer waiting.");
   if (accept) {
-    const [payer, me] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { id: invite.payerId }, select: { id: true } }),
-      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true } }),
-    ]);
-    await noticePlanUpdated({ userId: payer.id, title: "Family invitation accepted", body: `${nameOf(me)} accepted your group invitation. When everyone has accepted, pick the weekly time and start the plan.` });
+    const me = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true } });
+    // Opens the group plan form on the length the payer had picked, so they pick up where they left off.
+    await createNotification({
+      userId: invite.payerId,
+      type: "PAYMENT_PLAN_UPDATED",
+      title: "Group invitation accepted",
+      body: `${nameOf(me)} accepted your group invitation. When everyone has accepted, pick the weekly time and start the plan.`,
+      emailCategory: "payments",
+      cta: { label: "Pick the time and start", path: acceptedInviteHref(invite.term) },
+    }).catch((err) => console.error("Invitation accepted notice failed (non-blocking):", err));
   }
 }
 

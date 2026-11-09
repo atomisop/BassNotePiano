@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { checkSocialBadges } from "@/lib/gamification";
-import { assertRateLimit, consumeRateLimit } from "@/lib/rateLimit";
+import { assertRateLimit, consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
+import { answerHref } from "@/lib/bellAnswers";
+import { looksLikeEmail } from "@/lib/familyMemberCheck";
+import { sendRegisterInvite } from "@/lib/registerInvite";
 
 export class SocialError extends Error {}
 
@@ -105,8 +108,16 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
   const receiver = await prisma.user.findUnique({ where: { username: normalizeUsername(receiverUsername) } });
   if (!receiver) throw new SocialError("No user found with that username.");
   if (receiver.id === senderId) throw new SocialError("You can't add yourself.");
+  return requestFriendship(senderId, receiver.id, "username");
+}
 
-  if (await isBlockedEitherWay(senderId, receiver.id)) {
+/**
+ * The one place a friend request is made, whether the person was found by username (Friends) or by email (asking to book a class
+ * together). Blocks, the hourly cap and "they already asked you" work the same both ways. The notice carries the request, so the bell
+ * shows Accept and Decline on it.
+ */
+async function requestFriendship(senderId: string, receiverId: string, via: "username" | "booking") {
+  if (await isBlockedEitherWay(senderId, receiverId)) {
     throw new SocialError("You can't send a request to this user.");
   }
 
@@ -120,7 +131,7 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
 
   // They already sent us a pending request, accept theirs instead of creating a mirrored duplicate.
   const reverse = await prisma.friendRequest.findUnique({
-    where: { senderId_receiverId: { senderId: receiver.id, receiverId: senderId } },
+    where: { senderId_receiverId: { senderId: receiverId, receiverId: senderId } },
   });
   if (reverse?.status === "ACCEPTED") throw new SocialError("You're already friends.");
   if (reverse?.status === "PENDING") return acceptFriendRequestById(reverse.id);
@@ -128,20 +139,57 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
   const sender = await prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { name: true, username: true } });
 
   const request = await prisma.friendRequest.upsert({
-    where: { senderId_receiverId: { senderId, receiverId: receiver.id } },
+    where: { senderId_receiverId: { senderId, receiverId } },
     update: { status: "PENDING", respondedAt: null, createdAt: new Date() },
-    create: { senderId, receiverId: receiver.id, status: "PENDING" },
+    create: { senderId, receiverId, status: "PENDING" },
   });
 
+  const who = sender.username ? `@${sender.username} (${sender.name ?? "unnamed"})` : (sender.name ?? "Someone");
   await createNotification({
-    userId: receiver.id,
+    userId: receiverId,
     type: "FRIEND_REQUEST_RECEIVED",
     title: "New friend request",
-    body: `@${sender.username ?? "someone"} (${sender.name ?? "unnamed"}) wants to be friends.`,
+    body: via === "booking" ? `${who} wants to be friends so you can book classes together.` : `${who} wants to be friends.`,
     emailCategory: "social",
+    href: answerHref("/friends#requests", request.id),
   });
 
   return request;
+}
+
+/** Said for every "ask to book together", whatever happened behind it, so the answer never tells whether an email has an account. */
+export const ASK_TOGETHER_SENT = "Asked. Once they say yes, you can book together.";
+const ASK_TOGETHER_LIMIT = "You have asked a lot of people today. Please try again tomorrow.";
+
+/**
+ * "Ask to book together" from the family class form: a friend request by email, since a class with someone needs a friendship first.
+ * An account gets a friend request (answered in the bell); an email with no account gets the invitation to make one. Either way the
+ * answer is the same, and it is limited before anything is looked up, so it cannot be used to find out who has an account.
+ */
+export async function askToBookTogether(senderId: string, rawEmail: string): Promise<"asked"> {
+  const email = rawEmail.trim().toLowerCase();
+  if (!looksLikeEmail(email) || email.length > 254) throw new SocialError("That does not look like an email.");
+  await consumeRateLimit(prisma, `ask-together:${senderId}`, { windowMinutes: 24 * 60, max: 10, message: ASK_TOGETHER_LIMIT });
+  const [sender, receiver] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { email: true } }),
+    prisma.user.findUnique({ where: { email }, select: { id: true, role: true, bannedAt: true } }),
+  ]);
+  if (sender.email.toLowerCase() === email) throw new SocialError("That is your own email.");
+  try {
+    if (!receiver) {
+      await sendRegisterInvite(senderId, email);
+    } else if (receiver.role === "STUDENT" && !receiver.bannedAt) {
+      const waiting = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId: receiver.id } }, select: { status: true } });
+      // Already asked and not answered yet: they are not told twice.
+      if (waiting?.status !== "PENDING") await requestFriendship(senderId, receiver.id, "booking");
+    }
+    // A banned or admin account is treated like any other address: nothing is sent, and the answer is the same.
+  } catch (err) {
+    // A block, "already friends" or an inner limit would each say something about the address, so all are folded into the same answer.
+    if (err instanceof RateLimitError) throw new SocialError(ASK_TOGETHER_LIMIT);
+    if (!(err instanceof SocialError)) throw err;
+  }
+  return "asked";
 }
 
 export async function respondToFriendRequest(userId: string, requestId: string, accept: boolean) {

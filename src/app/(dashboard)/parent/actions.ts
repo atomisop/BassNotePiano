@@ -5,10 +5,13 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RateLimitError } from "@/lib/rateLimit";
+import { askParentAboutClass, listClassesToAskAbout, ParentAskError, type ParentAskClass } from "@/lib/parentAsk";
 import {
   assertParentOf,
   cancelParentLinkByEmail,
+  claimParentInvites,
   endParentLink,
+  listLinkedChildren,
   listLinkStatesFromParent,
   listLinksFromParent,
   listLinksToChild,
@@ -200,8 +203,36 @@ export interface ParentModeState {
 
 export async function getParentModeStateAction(): Promise<ParentModeState> {
   const user = await requireUser();
+  // A request a parent made before this account existed shows up here too, once the account's email is confirmed.
+  await claimParentInvites(user.id, user.email).catch(() => 0);
   const [children, toMe] = await Promise.all([listLinksFromParent(user.id), listLinksToChild(user.id)]);
   return { children, requests: toMe.requests, parents: toMe.parents };
+}
+
+/** The children this person manages, for the Parent mode entry in the sidebar and the profile menu (empty for everyone else). */
+export async function myLinkedChildrenAction(): Promise<{ id: string; name: string }[]> {
+  const session = await getServerAuthSession();
+  if (!session?.user || session.user.role === "ADMIN") return [];
+  return listLinkedChildren(session.user.id);
+}
+
+// ---------------------------------------------------------------------------
+// The child's side: "Ask my parent to move or skip this" on a class they cannot change themselves.
+// ---------------------------------------------------------------------------
+
+export async function classesToAskAboutAction(): Promise<{ parentNames: string[]; classes: ParentAskClass[] }> {
+  const user = await requireUser();
+  return listClassesToAskAbout(user.id);
+}
+
+export async function askParentAboutClassAction(bookingId: string): Promise<{ ok: true; already: boolean } | Fail> {
+  const user = await requireUser();
+  try {
+    const result = await askParentAboutClass(user.id, String(bookingId));
+    return { ok: true, already: result === "already" };
+  } catch (err) {
+    return { ok: false, error: err instanceof ParentAskError ? err.message : messageOf(err) };
+  }
 }
 
 /** A parent ends the plan they pay for. The child keeps the 28 days already paid; nothing is billed after. */

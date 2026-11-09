@@ -3,7 +3,7 @@
 import { OPEN_NOTIFICATIONS, OPEN_SUPPORT, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
 import { notificationTarget } from "@/lib/notificationTargets";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { SupportThread } from "@/components/notifications/SupportThread";
@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Bell,
   Calendar,
+  Check,
   CheckCheck,
   ChevronRight,
   ClipboardList,
@@ -24,21 +25,28 @@ import {
   Settings,
   Timer,
   Users,
+  X,
 } from "@/components/ui/appIcons";
 import {
+  answerFromBellAction,
   fetchNotificationsAction,
   markAllNotificationsReadAction,
+  markMailReadAction,
   markNotificationReadAction,
   type NotificationRow,
 } from "@/app/(dashboard)/notification-actions";
+import { answeredLabel } from "@/lib/bellAnswers";
+import { buttonVariants } from "@/components/ui/button";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
-import { onChange } from "@/lib/liveEvents";
+import { announceChange, onChange } from "@/lib/liveEvents";
 import { newPaymentToasts } from "@/lib/paymentToasts";
 import { toast } from "@/components/ui/Toaster";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { cn } from "@/lib/utils";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -116,6 +124,8 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   ACCOUNT_UPDATE: { key: "account", label: "Account" },
   PARENT_LINK_REQUEST: { key: "account", label: "Account" },
   PARENT_LINK_ACCEPTED: { key: "account", label: "Account" },
+  PARENT_CLASS_ASK: { key: "bookings", label: "Bookings" },
+  GROUP_INVITE: { key: "billing", label: "Group plan" },
   LESSON_BOOKING_CONFIRMED: { key: "bookings", label: "Bookings" },
   ATTENDANCE_RECORDED: { key: "bookings", label: "Bookings" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
@@ -207,7 +217,7 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
 }
 
 /** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
-function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
+function NotificationEntry({ notification, onClick, onAnswer }: { notification: NotificationRow; onClick: (n: NotificationRow) => void; onAnswer?: AnswerHandler }) {
   // Cards get their own bg-slate-900 rather than the panel's bg-surface,
   // the two were identical before, which is exactly why every row read as
   // one uniform gray field with nothing to tell "card" from "page." Unread
@@ -232,6 +242,11 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   );
   const href = notification.href ?? notificationHref(notification.type);
 
+  // A request (friend, parent link, group plan) is answered right here: the words still open its page, and the buttons sit under them.
+  if (notification.answer && onAnswer) {
+    return <AnswerableEntry notification={notification} href={href} inner={inner} cardClassName={itemClassName} onClick={onClick} onAnswer={onAnswer} />;
+  }
+
   if (href) {
     return (
       <Link href={href} onClick={() => onClick(notification)} className={itemClassName}>
@@ -243,6 +258,61 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
     <button type="button" onClick={() => onClick(notification)} className={itemClassName}>
       {inner}
     </button>
+  );
+}
+
+type AnswerHandler = (n: NotificationRow, accept: boolean) => Promise<void>;
+
+/** An entry carrying Accept and Decline (or, once answered, what was said). Kept out of the link so the buttons are not inside it. */
+function AnswerableEntry({
+  notification,
+  href,
+  inner,
+  cardClassName,
+  onClick,
+  onAnswer,
+}: {
+  notification: NotificationRow;
+  href: string | null;
+  inner: ReactNode;
+  cardClassName: string;
+  onClick: (n: NotificationRow) => void;
+  onAnswer: AnswerHandler;
+}) {
+  const [busy, setBusy] = useState<"yes" | "no" | null>(null);
+  const state = notification.answer?.state ?? "GONE";
+  const done = answeredLabel(state);
+  const answer = async (accept: boolean) => {
+    setBusy(accept ? "yes" : "no");
+    await onAnswer(notification, accept);
+    setBusy(null);
+  };
+  return (
+    <div className={cn(cardClassName, "flex-col gap-0")}>
+      {href ? (
+        <Link href={href} onClick={() => onClick(notification)} className="flex w-full items-start gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {inner}
+        </Link>
+      ) : (
+        <div className="flex w-full items-start gap-3">{inner}</div>
+      )}
+      <div className="mt-2.5 flex w-full flex-wrap items-center gap-2 pl-5">
+        {state === "PENDING" ? (
+          <>
+            <button type="button" disabled={busy !== null} onClick={() => void answer(true)} className={buttonVariants({ variant: "primary", size: "sm" })}>
+              {busy === "yes" ? <MorphingSquare size={12} /> : <Check aria-hidden className="h-3.5 w-3.5" />}
+              Accept
+            </button>
+            <button type="button" disabled={busy !== null} onClick={() => void answer(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              {busy === "no" ? <MorphingSquare size={12} /> : <X aria-hidden className="h-3.5 w-3.5" />}
+              Decline
+            </button>
+          </>
+        ) : (
+          done && <span className="text-small font-medium text-slate-400">{done}</span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -259,11 +329,13 @@ function NotificationGroup({
   expanded,
   onToggle,
   onItemClick,
+  onAnswer,
 }: {
   cluster: NotificationCluster;
   expanded: boolean;
   onToggle: () => void;
   onItemClick: (n: NotificationRow) => void;
+  onAnswer?: AnswerHandler;
 }) {
   const { items, categoryKey, categoryLabel } = cluster;
   const latest = items[0]!;
@@ -328,7 +400,7 @@ function NotificationGroup({
             <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
               {items.map((n, i) => (
                 <div key={n.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
-                  <NotificationEntry notification={n} onClick={onItemClick} />
+                  <NotificationEntry notification={n} onClick={onItemClick} onAnswer={onAnswer} />
                 </div>
               ))}
             </div>
@@ -480,12 +552,33 @@ export function NotificationBell() {
     }
   }
 
-  // A mail row opens its own message page, which marks it read on the server.
-  function handleMailClick(message: NotificationRow) {
+  // A mail row opens its button's page straight away (or the message itself when it has no button), and counts as read either way.
+  async function handleMailClick(message: NotificationRow) {
     setOpen(false);
     if (message.read) return;
     setMail((prev) => prev.map((n) => (n.id === message.id ? { ...n, read: true } : n)));
     setMailUnreadCount((prev) => Math.max(0, prev - 1));
+    // The message page marks itself read; a page opened from the button does not, so the bell says so.
+    if (message.href?.startsWith("/mail/")) return;
+    try {
+      await markMailReadAction(message.id);
+    } catch {
+      await refresh();
+    }
+  }
+
+  // Accept or Decline on a request entry: the answer goes through the same function as its own page, and the entry turns into what was said.
+  async function handleAnswer(notification: NotificationRow, accept: boolean) {
+    const result = await answerFromBellAction(notification.id, accept).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    if (!notification.read) setUnreadCount((prev) => Math.max(0, prev - 1));
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.id === notification.id && n.answer ? { ...n, read: true, answer: { ...n.answer, state: result.ok ? result.state : "GONE" } } : n,
+      ),
+    );
+    if (!result.ok) return void toast.warning(result.error);
+    toast.success(accept ? "Accepted" : "Declined");
+    announceChange("notifications", "status", "page");
   }
 
   async function handleNotificationClick(notification: NotificationRow) {
@@ -502,6 +595,7 @@ export function NotificationBell() {
 
   const shown = tab === "MAIL" ? mail : notifications;
   const onItem = tab === "MAIL" ? handleMailClick : handleNotificationClick;
+  const onAnswer = tab === "MAIL" ? undefined : handleAnswer;
   const supportOpen = open && tab === "SUPPORT" && hasSupport;
 
   return (
@@ -638,7 +732,7 @@ export function NotificationBell() {
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (
-                                <NotificationEntry key={cluster.items[0]!.id} notification={cluster.items[0]!} onClick={onItem} />
+                                <NotificationEntry key={cluster.items[0]!.id} notification={cluster.items[0]!} onClick={onItem} onAnswer={onAnswer} />
                               ) : (
                                 <NotificationGroup
                                   key={cluster.key}
@@ -646,6 +740,7 @@ export function NotificationBell() {
                                   expanded={expandedGroups.has(cluster.key)}
                                   onToggle={() => toggleGroup(cluster.key)}
                                   onItemClick={onItem}
+                                  onAnswer={onAnswer}
                                 />
                               ),
                             )}

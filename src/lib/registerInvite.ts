@@ -12,6 +12,25 @@ export type RegisterInviteResult = "sent" | "exists" | "recent" | "invalid" | "f
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
 
+/** Why they are asked: "classes" (a family plan or booking together, the default) or "parent" (a parent who wants to link to them). */
+export type RegisterInvitePurpose = "classes" | "parent";
+
+/** The invitation's words. A parent's says what accepting means; the account is made with the invited address so the request can find it. */
+export function registerInviteText(who: string, purpose: RegisterInvitePurpose): { subject: string; body: string; label: string } {
+  if (purpose === "parent") {
+    return {
+      subject: `${who} invited you to Bass Note Piano`,
+      body: `${who} would like to be your parent account at Bass Note Piano, to help with your classes. Create an account with this email address and you will be asked to accept. Nothing is shared unless you say yes.`,
+      label: "Create your account",
+    };
+  }
+  return {
+    subject: `${who} invited you to Bass Note Piano`,
+    body: `${who} would like you in their classes at Bass Note Piano. Create an account with this email address and they can add you.`,
+    label: "Create your account",
+  };
+}
+
 const markerKey = (email: string) => `register-invite:${createHash("sha256").update(email).digest("hex").slice(0, 32)}`;
 /** The studio may send an applicant the sign-up link again the next day (a student's invitation waits 14). */
 const STUDIO_RESEND_AFTER_MS = 24 * 60 * 60 * 1000;
@@ -30,7 +49,7 @@ export async function registerInvitesSentAt(rawEmails: string[]): Promise<Map<st
  * `fromStudio`: the studio sending an approved applicant the sign-up link (Applicants). It comes from Bass Note Piano, opens sign-up with
  * their address filled in, carries no referral code, and may go again after a day.
  */
-export async function sendRegisterInvite(senderId: string, rawEmail: string, opts: { fromStudio?: boolean } = {}): Promise<RegisterInviteResult> {
+export async function sendRegisterInvite(senderId: string, rawEmail: string, opts: { fromStudio?: boolean; purpose?: RegisterInvitePurpose } = {}): Promise<RegisterInviteResult> {
   // Whether an address already has an account is an answer worth guarding, so even the "exists" and "recent" answers are limited.
   await consumeRateLimit(prisma, `register-invite-lookup:${senderId}`, { windowMinutes: 60, max: 30, message: "Too many tries. Please wait a while and try again." });
   const email = rawEmail.trim().toLowerCase();
@@ -45,14 +64,16 @@ export async function sendRegisterInvite(senderId: string, rawEmail: string, opt
   const sender = await prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { name: true, email: true } });
   try {
     if (opts.fromStudio) {
+      // From the studio itself (Applicants): no referral code, the address filled in.
       await sendPersonalEmail(email, "Create your Bass Note Piano account", "Your classes at Bass Note Piano are ready to set up. Create an account with this email address and we can choose your weekly time.", {
         link: { label: "Create your account", url: getAppUrl(`/register?email=${encodeURIComponent(email)}`) },
       });
     } else {
       const code = await ensureReferralCode(senderId);
       const who = sender.name?.trim() || "Someone";
-      await sendPersonalEmail(email, `${who} invited you to Bass Note Piano`, `${who} would like you in their classes at Bass Note Piano. Create an account with this email address and they can add you.`, {
-        link: { label: "Create your account", url: getAppUrl(`/register?ref=${encodeURIComponent(code)}`) },
+      const text = registerInviteText(who, opts.purpose ?? "classes");
+      await sendPersonalEmail(email, text.subject, text.body, {
+        link: { label: text.label, url: getAppUrl(`/register?ref=${encodeURIComponent(code)}&email=${encodeURIComponent(email)}`) },
       });
     }
   } catch (err) {

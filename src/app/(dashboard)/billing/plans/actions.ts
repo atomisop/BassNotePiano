@@ -14,7 +14,7 @@ import { getMyWaitlist, getTakenSlots, joinWaitlist, leaveWaitlist, WaitlistErro
 import { RateLimitError, consumeRateLimit } from "@/lib/rateLimit";
 import { createAndSendCode, verifyCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
-import { cancelFamilyInvite, FamilyInviteError, listInvitesFromPayer, respondToFamilyInvite, sendFamilyInvite, type InviteState } from "@/lib/familyInvites";
+import { cancelFamilyInvite, FamilyInviteError, listInvitesFromPayer, parsePlanTerm, respondToFamilyInvite, sendFamilyInvite, type InviteState } from "@/lib/familyInvites";
 import { checkFamilyMember, type MemberCheck } from "@/lib/familyMemberCheck";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
@@ -57,12 +57,12 @@ export async function listMyFamilyInvitesAction(): Promise<FamilyInviteRow[]> {
 }
 
 /** Asks one existing account to join the family. Limited: each answer says whether an email has an account. */
-export async function sendFamilyInviteAction(email: string): Promise<{ ok: boolean; status: InviteState | null; error: string | null }> {
+export async function sendFamilyInviteAction(email: string, term?: string): Promise<{ ok: boolean; status: InviteState | null; error: string | null }> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
   try {
     await consumeRateLimit(prisma, `family-invite:${session.user.id}`, { windowMinutes: 60, max: 20, message: "Too many invitations. Please wait a while and try again." });
-    const status = await sendFamilyInvite(session.user.id, String(email).slice(0, 254));
+    const status = await sendFamilyInvite(session.user.id, String(email).slice(0, 254), { term: parsePlanTerm(term) });
     return { ok: true, status, error: null };
   } catch (error) {
     if (error instanceof FamilyInviteError || error instanceof RateLimitError) return { ok: false, status: null, error: error.message };

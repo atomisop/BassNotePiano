@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CalendarCheck, Check, Clock, Flame, Lightbulb, Map, Sparkles, Ticket, Trophy, Users, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
-import { getHomeData } from "@/lib/homeData";
+import { getHomeData, type HomeChild } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
 import { WEEKLY_GOAL_MINUTES, joinReadiness } from "@/lib/homeRules";
-import { formatEtDateTime } from "@/lib/classScheduleLabels";
+import { formatEtDateTime, formatEtShort } from "@/lib/classScheduleLabels";
 import { formatCredits } from "@/lib/classCreditPricing";
 import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
@@ -23,6 +23,8 @@ import { GlanceTiles } from "@/components/home/GlanceTiles";
 import { PathCard, ShelfCard } from "@/components/home/ShelfCards";
 import { Shelf, ShelfItem } from "@/components/ui/Shelf";
 import { BADGES } from "@/lib/badges";
+import { ParentRequestCard } from "@/components/home/ParentRequestCard";
+import { TrialApplyButton } from "@/components/home/TrialApplyButton";
 
 export const metadata = { title: "Home" };
 
@@ -39,7 +41,9 @@ function untilLabel(when: Date): string {
 
 /**
  * Home: a welcome and the one thing to do today, as one hero and quiet rows (2026-10-30, the owner picked "one hero, then rows"). A new account (no plan, no trial) gets the free trial class and how the studio
- * works; a student gets today's step, their roadmap, the next class, practice, a tip and their friends. The course itself lives on
+ * works (the trial request is sent right here, from the account); a parent who only manages children gets Parent mode and their
+ * children instead of a trial pitch; a student gets today's step, their roadmap, the next class, practice, a tip and their friends, plus
+ * their children when they are a parent too. A parent asking to link shows on top with Accept and Decline. The course itself lives on
  * the Roadmap screen (/roadmap). Design: docs/superpowers/specs/2026-10-29-new-home-and-roadmaps-design.md.
  */
 export default async function HomePage() {
@@ -55,22 +59,29 @@ export default async function HomePage() {
   );
 
   if (data.isNew) {
+    const parentOnly = data.children.length > 0;
     return (
       <WideLayout>
         {greeting}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
           <div className="grid min-w-0 grid-cols-1 gap-6">
+            {data.parentRequests.length > 0 && <ParentRequestCard requests={data.parentRequests} />}
             <HomeHero
               artwork={data.roadmap.artwork}
-              eyebrow="Start here"
+              eyebrow={parentOnly ? "Parent mode" : "Start here"}
               title={data.nextStep.action}
               detail={data.nextStep.detail}
               actions={
                 <>
-                  <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
-                    {data.nextStep.cta}
-                    <ArrowRight aria-hidden className="h-4 w-4" />
-                  </Link>
+                  {/* The free trial request is sent right here from the account, not on the public form. */}
+                  {data.trialApply ? (
+                    <TrialApplyButton label={data.nextStep.cta} facts={data.trialApply} />
+                  ) : (
+                    <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
+                      {data.nextStep.cta}
+                      <ArrowRight aria-hidden className="h-4 w-4" />
+                    </Link>
+                  )}
                   {data.nextStep.secondary && (
                     <Link href={data.nextStep.secondary.href} className={buttonVariants({ variant: "secondary", size: "lg" })}>
                       {data.nextStep.secondary.cta}
@@ -81,6 +92,7 @@ export default async function HomePage() {
             />
           </div>
           <div className="grid min-w-0 grid-cols-1 gap-8">
+            {parentOnly && <ChildrenRows kids={data.children} />}
             <HomeRows title="How it works">
               <li>
                 <HomeRow href="/lessons" icon={<Video />} title="Live classes on Discord" detail="A real teacher every week, at a time you pick." />
@@ -115,6 +127,7 @@ export default async function HomePage() {
       {greeting}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         <div className="grid min-w-0 grid-cols-1 gap-6">
+          {data.parentRequests.length > 0 && <ParentRequestCard requests={data.parentRequests} />}
           {data.celebration && <CelebrationCard win={data.celebration} />}
           <HomeHero
             artwork={data.roadmap.artwork}
@@ -198,6 +211,8 @@ export default async function HomePage() {
             </li>
           </HomeRows>
 
+          {data.children.length > 0 && <ChildrenRows kids={data.children} />}
+
           {/* Studio as a shelf you swipe through, the way Spotify shows its rows. */}
           <Shelf title="Studio">
             <ShelfItem>
@@ -241,6 +256,31 @@ export default async function HomePage() {
 function ordinal(n: number): string {
   const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
   return `${n}${s}`;
+}
+
+/** A parent's children as Home rows: each one's next class and this week's practice, and one tap into their page in Parent mode. */
+function ChildrenRows({ kids }: { kids: HomeChild[] }) {
+  return (
+    <HomeRows
+      title={kids.length === 1 ? "Your child" : "Your children"}
+      aside={
+        <Link href="/parent" className="tap inline-flex items-center text-small text-slate-300 underline underline-offset-4 hover:text-slate-50">
+          Parent mode
+        </Link>
+      }
+    >
+      {kids.map((k) => (
+        <li key={k.id}>
+          <HomeRow
+            href={`/parent/${k.id}`}
+            icon={<Users />}
+            title={k.name}
+            detail={`${k.nextClass ? `Next class ${formatEtShort(k.nextClass)} ET` : "No class booked"} · ${k.weekMinutes} min practice this week`}
+          />
+        </li>
+      ))}
+    </HomeRows>
+  );
 }
 
 /** The tip of the day as a quiet line on the page, not a card. */

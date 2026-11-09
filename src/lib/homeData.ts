@@ -12,11 +12,27 @@ import { minutesThisWeek, pickCelebration, weekDayMinutes, weekDayIndex, tipOfTh
 import { roadmapsForViewer } from "@/lib/roadmaps";
 import { storedToCredits } from "@/lib/classCreditPricing";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
+import { claimParentInvites, listLinkedChildren, listLinksToChild } from "@/lib/parentLinks";
+import { getTrialApplyFacts, type TrialApplyFacts } from "@/lib/trialApplication";
+
+/** One child a parent manages, as a Home row: the next class and this week's practice, one tap into their page. */
+export interface HomeChild {
+  id: string;
+  name: string;
+  nextClass: Date | null;
+  weekMinutes: number;
+}
 
 export interface HomeData {
   name: string | null;
   /** No plan and no trial yet (and not the admin): Home shows the free trial welcome instead of the student cards. */
   isNew: boolean;
+  /** Children this person manages in parent mode (accepted links). A parent who only pays for them is shown them, not a trial pitch. */
+  children: HomeChild[];
+  /** Parents asking to link to this account, answered right on Home. */
+  parentRequests: { linkId: string; parentName: string }[];
+  /** Set when Home can send a free trial class request from the account in place (what is still missing is asked there). */
+  trialApply: TrialApplyFacts | null;
   nextStep: NextStep;
   /** Progress through the roadmap the student is on now. */
   progress: ReturnType<typeof summariseProgress>;
@@ -53,11 +69,13 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const now = new Date();
   const today = etDayKey(now);
   const isAdmin = user.role === "ADMIN";
+  // A parent's request made before this account existed reaches it here, on the first Home visit after the email is confirmed.
+  await claimParentInvites(userId, user.email).catch((err) => console.error("Claiming parent requests failed (non-blocking):", err));
 
-  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows] = await Promise.all([
+  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true, trialEndsAt: true } }),
     getFingerPracticeStatusOnce(userId),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
     prisma.classBooking.findFirst({
@@ -79,7 +97,10 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       where: { status: "ACCEPTED", OR: [{ senderId: userId }, { receiverId: userId }] },
       select: { senderId: true, receiverId: true },
     }),
+    isAdmin ? Promise.resolve([]) : listLinkedChildren(userId),
+    isAdmin ? Promise.resolve({ requests: [], parents: [] }) : listLinksToChild(userId),
   ]);
+  const children = await childRows(linkedChildren, today, now);
   const [everBooked, everPracticed, earnedBadges] = await Promise.all([
     prisma.classBooking.count({ where: { studentId: userId } }),
     prisma.fingerPracticeDay.count({ where: { userId, completedAt: { not: null } } }),
@@ -93,7 +114,15 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const showChecklist = !isAdmin && entitlement.kind !== "NONE" && checklist.some((c) => !c.done);
 
   const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
-  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
+  const starting = gettingStartedStep({
+    kind: entitlement.kind,
+    applicationPending: pendingApplication > 0,
+    trialDays,
+    trialUsed: Boolean(profile?.trialEndsAt),
+    children: children.length,
+  });
+  // The free trial pitch is the one Home answers in place: only when that is the step it shows.
+  const trialApply = !isAdmin && starting?.href === "/classes" ? await getTrialApplyFacts(userId) : null;
   const resolved = resolveNextStep(roadmap);
   const nextStep: NextStep = starting
     ? { ...resolved, ...starting }
@@ -141,6 +170,9 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   return {
     name: profile?.name ?? null,
     isNew: entitlement.kind === "NONE" && !isAdmin,
+    children,
+    parentRequests: toMe.requests,
+    trialApply,
     nextStep,
     progress: summariseProgress(inCurrent),
     roadmap: { name: currentRoadmap?.name ?? "Scales", artwork: currentRoadmap?.artwork ?? "dusk" },
@@ -167,4 +199,25 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     earnedBadgeCodes: earnedBadges.map((b) => b.code),
     credits: storedToCredits(profile?.classCredits ?? 0),
   };
+}
+
+/** Each managed child's next class and this week's practice minutes, in two queries for all of them. */
+async function childRows(kids: { id: string; name: string }[], today: string, now: Date): Promise<HomeChild[]> {
+  if (kids.length === 0) return [];
+  const ids = kids.map((k) => k.id);
+  const [classes, practice] = await Promise.all([
+    prisma.classBooking.findMany({
+      where: { studentId: { in: ids }, status: "SCHEDULED", scheduledAt: { gt: now } },
+      orderBy: { scheduledAt: "asc" },
+      distinct: ["studentId"],
+      select: { studentId: true, scheduledAt: true },
+    }),
+    prisma.fingerPracticeDay.findMany({ where: { userId: { in: ids }, day: { gte: weekStartKey(today), lte: today } }, select: { userId: true, day: true, seconds: true } }),
+  ]);
+  return kids.map((k) => ({
+    id: k.id,
+    name: k.name,
+    nextClass: classes.find((c) => c.studentId === k.id)?.scheduledAt ?? null,
+    weekMinutes: minutesThisWeek(practice.filter((p) => p.userId === k.id), today),
+  }));
 }

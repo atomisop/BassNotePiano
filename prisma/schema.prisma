@@ -212,6 +212,8 @@ model FamilyInvite {
   inviteeId   String
   invitee     User               @relation("FamilyInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
   status      FamilyInviteStatus @default(PENDING)
+  /// The plan length the payer had picked when inviting, so "they accepted" opens the plan form on that same length.
+  term        PaymentPlanTerm?
   createdAt   DateTime           @default(now())
   respondedAt DateTime?
 
@@ -514,6 +516,8 @@ enum NotificationType {
   FRIEND_NUDGE // to a student, when a friend taps "Nudge to practice" on their profile (fixed wording, banner plus bell)
   BOOKING_REQUEST_RECEIVED // to the student, when the request they sent is waiting for the teacher to confirm
   BOOKING_REQUEST_DECLINED // to the student, when a requested time was not given to them
+  PARENT_CLASS_ASK // to a parent, when their linked child asks them to move or skip one class (opens that class's move picker)
+  GROUP_INVITE // to an account invited to a group plan, answered with Accept or Decline right in the bell
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -978,13 +982,14 @@ model User {
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
-  paymentPlans          PaymentPlan[]     @relation("PaymentPlanStudent")
-  familyPlanGroupsPaid  FamilyPlanGroup[] @relation("FamilyPlanPayer")
-  familyInvitesSent     FamilyInvite[]    @relation("FamilyInvitePayer")
-  familyInvitesReceived FamilyInvite[]    @relation("FamilyInviteInvitee")
-  parentLinksAsParent   ParentLink[]      @relation("ParentLinkParent")
-  parentLinksAsChild    ParentLink[]      @relation("ParentLinkChild")
-  paymentPlansCanceled  PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
+  paymentPlans          PaymentPlan[]      @relation("PaymentPlanStudent")
+  familyPlanGroupsPaid  FamilyPlanGroup[]  @relation("FamilyPlanPayer")
+  familyInvitesSent     FamilyInvite[]     @relation("FamilyInvitePayer")
+  familyInvitesReceived FamilyInvite[]     @relation("FamilyInviteInvitee")
+  parentLinksAsParent   ParentLink[]       @relation("ParentLinkParent")
+  parentLinksAsChild    ParentLink[]       @relation("ParentLinkChild")
+  parentLinkInvites     ParentLinkInvite[] @relation("ParentLinkInviteParent")
+  paymentPlansCanceled  PaymentPlan[]      @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
 
@@ -2244,6 +2249,20 @@ model ParentLink {
 
   @@unique([parentId, childId])
   @@index([childId, status])
+}
+
+// A parent asked to link an email that had no account yet. Nothing is shared and nobody is told but the invited address (an email
+// asking them to make an account). Once an account with this email exists and has confirmed its email, the request becomes a waiting
+// ParentLink the child accepts or declines, and this row is removed. Rows older than PARENT_INVITE_DAYS are ignored and cleared.
+model ParentLinkInvite {
+  id        String   @id @default(cuid())
+  parentId  String
+  parent    User     @relation("ParentLinkInviteParent", fields: [parentId], references: [id], onDelete: Cascade)
+  email     String
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, email])
+  @@index([email])
 }
 
 // One row per "do this once" request: the browser makes a key when a form opens and sends it with the submit, so a double tap, a
