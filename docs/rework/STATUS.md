@@ -23,6 +23,7 @@ Source plan: Rework.md (owner's copy). Update after every task; a task is DONE o
 | P1-MUS-05 scoring and feedback | DONE in code and tests (pending owner approval) | rework/phase0-evidence-gate | ef5c6143 | docs/rework/evidence/P1-MUS-02 |
 | P1-MUS-06 save progress | IN PROGRESS: finished runs saved and tested; resume-after-reload and streak links not done. Migration is not on production until merged | rework/phase0-evidence-gate | ab4e121d | docs/rework/evidence/P1-MUS-06 |
 | P1-HOME-01/02 home next action and class | IN PROGRESS: home already had one hero action and a next-class row with date and ET; added tested join-readiness wording. No instructor name shown (none is stored per class). No screenshots yet, so not done | rework/phase0-evidence-gate | | |
+| P1-PAY-04 readable prices | IN PROGRESS: animated price now has one real text copy (sr-only), reel digits drawn by CSS so page text no longer holds 0123456789 per digit; 3 render tests pass. No screen reader pass, no before/after screenshots yet | rework/phase0-evidence-gate | | |
 | P1-MUS-07..10, P0-OPS-02/03, P0-SEC-01..03, P0-BIZ-01, Phases 3-7 | NOT STARTED | | | |
 
 ## How to run

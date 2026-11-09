@@ -1,0 +1,10 @@
+/* The reel's digits are drawn by CSS so the page text holds one price, not 0123456789 for every digit. */
+.strip {
+  white-space: pre;
+  text-align: center;
+  line-height: 1.15;
+  user-select: none;
+}
+.strip::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+}
