@@ -74,7 +74,12 @@ export async function resendBillAction(planId: string): Promise<{ ok: boolean; m
   try {
     const result = await resendPlanInvoice(planId);
     await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.resend-bill", targetType: "PaymentPlan", targetId: planId, detail: result });
-    return { ok: true, message: result === "sent" ? "Bill sent again." : "They turned off payment emails, so nothing was sent." };
+    // A group or parent plan's bill goes to the person who pays it, so say who got it.
+    const { planBillTarget } = await import("@/lib/planBillPayer");
+    const target = await planBillTarget(planId).catch(() => null);
+    const payerName = target?.paysForSomeoneElse ? (target.payer.name ?? target.payer.email) : null;
+    if (result !== "sent") return { ok: true, message: payerName ? `${payerName} pays this bill and turned off payment emails, so nothing was sent.` : "They turned off payment emails, so nothing was sent." };
+    return { ok: true, message: payerName ? `Bill sent again to ${payerName}, who pays it.` : "Bill sent again." };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Could not send." };
   }

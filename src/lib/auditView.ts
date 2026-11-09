@@ -80,6 +80,10 @@ const LABELS: Record<string, string> = {
   "reservation.book": "Booked a customer into their reserved time",
   "scale.release": "Released the next scale",
   "payment.mark-paid": "Marked a bill paid (money came another way)",
+  "schedule.add-time": "Added a weekly time",
+  "schedule.move-window": "Moved a weekly time with everyone on it",
+  "studio.move-day": "Moved a closed day's classes to other times",
+  "invite.register": "Sent a sign-up invitation",
 };
 
 export function auditLabel(action: string): string {
@@ -109,6 +113,9 @@ export const AUDIT_KIND_LABEL: Record<string, string> = {
   scale: "Scales",
   scholarship: "Scholarships",
   job: "Automatic tasks",
+  schedule: "Weekly times",
+  studio: "Studio days",
+  invite: "Invitations",
 };
 
 export const AUDIT_PAGE_SIZE = 50;
