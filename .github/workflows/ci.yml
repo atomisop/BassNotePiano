@@ -51,7 +51,7 @@ jobs:
 
       # A squash merge leaves the branch's own commits out of main's history (and the branch is
       # deleted), but GitHub keeps them under refs/pull/*/head. The evidence verifiers need them.
-      - run: git fetch --quiet origin '+refs/pull/*/head:refs/remotes/pull/*'
+      - run: git fetch --quiet origin '+refs/pull/*/head:refs/remotes/pr-heads/*'
 
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
       # step this session), same Node version in CI as in dev and on
