@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
-import { getTeachingDay } from "@/lib/teachingToday";
+import { getStillToMark, getTeachingDay } from "@/lib/teachingToday";
 import { etDayKey } from "@/lib/fingerPractice";
 import { makeUser, newTag, prisma } from "./helpers";
 
@@ -50,5 +50,29 @@ describe("getTeachingDay", () => {
     const ann = day.slots[0].students.find((s) => s.name === "Ann Today")!;
     expect(ann.planLabel).toBeNull();
     expect(ann.discord.connected).toBe(false);
+    // Ann has no paid plan, so there is no next scale to offer from her row.
+    expect(ann.nextScale).toBeNull();
+
+    // Any other day opens with ?day=: the next day holds Cy's class only.
+    const next = await getTeachingDay(now, "2031-03-13");
+    expect(next.dayKey).toBe("2031-03-13");
+    expect(next.slots.flatMap((s) => s.students.map((x) => x.name))).toEqual(["Cy Tomorrow"]);
+    expect((await getTeachingDay(now, "2031-03-14")).slots).toEqual([]);
+  });
+
+  it("lists the earlier classes still to mark, oldest first, and leaves marked and later ones out", async () => {
+    const d = await makeUser(tag, "Dee Unmarked");
+    ids.push(d.id);
+    const slot = await prisma.classSchedule.findUniqueOrThrow({ where: { id: slotId } });
+    const mk = (at: string, status: "SCHEDULED" | "COMPLETED" = "SCHEDULED") =>
+      prisma.classBooking.create({ data: { studentId: d.id, scheduleId: slot.id, occurrenceDate: new Date(at.slice(0, 10)), scheduledAt: new Date(at), creditsSpent: 2, status } });
+    const older = await mk("2031-04-01T21:00:00Z");
+    const newer = await mk("2031-04-02T21:00:00Z");
+    await mk("2031-03-31T22:00:00Z", "COMPLETED");
+    const sameDay = await mk("2031-04-03T15:00:00Z");
+    const { rows } = await getStillToMark("2031-04-03", 1000);
+    const mine = rows.filter((r) => r.studentId === d.id).map((r) => r.bookingId);
+    expect(mine).toEqual([older.id, newer.id]);
+    expect(mine).not.toContain(sameDay.id);
   });
 });

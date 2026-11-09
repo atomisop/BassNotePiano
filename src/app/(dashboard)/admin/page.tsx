@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getAdminNavBadges, getOverviewStats, getRevenueSummary, getSubscriptionStats } from "@/lib/admin";
+import { getAttentionItems, getOverviewStats, getRevenueSummary, getSubscriptionStats, type AttentionItem } from "@/lib/admin";
+import { NeedsYouList } from "@/components/admin/NeedsYouList";
+import { easternDay, todayHref } from "@/lib/teachingDayRules";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { buildNeedsYou } from "@/lib/needsYou";
 import { getDueWeek } from "@/lib/adminDue";
@@ -40,17 +42,19 @@ export const metadata = { title: "Admin: Overview" };
  * Payments, and what is waiting shows as dots on the admin menu and in the alerts button.
  */
 export default async function AdminOverviewPage() {
-  const [stats, subs, dueWeek, revenue, today, week, badges, followUps] = await Promise.all([
+  const [stats, subs, dueWeek, revenue, today, week, attention, followUps] = await Promise.all([
     getOverviewStats(),
     getSubscriptionStats(),
     getDueWeek(),
     getRevenueSummary(),
     getTeachingDay(),
     getWeekSchedule(),
-    getAdminNavBadges().catch(() => ({} as Record<string, number>)),
+    // The same list as the alerts button: ready scales, stopped tasks, payments to check and unmatched bank emails show here too.
+    getAttentionItems().catch(() => [] as AttentionItem[]),
     getFollowUps().catch(() => []),
   ]);
-  const needsYou = buildNeedsYou(badges, followUps);
+  const needsYou = buildNeedsYou(attention, followUps);
+  const todayKey = easternDay(new Date());
 
   const classesToday = today.slots.reduce((n, slot) => n + slot.students.length, 0);
   const upcoming = today.slots.find((s) => s.startsAt.getTime() > Date.now() - 45 * 60_000) ?? null;
@@ -64,20 +68,11 @@ export default async function AdminOverviewPage() {
       {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
       <h1 className="sr-only">Overview</h1>
 
-      {/* Needs you: the jobs waiting right now, each one tap from where it is done. Empty is a good day. */}
+      {/* Needs you: the jobs waiting right now. A row opens right here with its first few and their main action. Empty is a good day. */}
       <section aria-label="Needs you" className={needsYou.length > 0 ? "mb-8" : "mb-5"}>
         {needsYou.length > 0 && <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Needs you</h2>}
         {needsYou.length > 0 ? (
-          <ul className={PANEL}>
-            {needsYou.map((row) => (
-              <li key={row.id}>
-                <Link href={row.href} className="tap flex items-center justify-between gap-3 px-4 py-3 text-body text-slate-50 hover:bg-slate-50/5">
-                  <span>{row.text}</span>
-                  <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-50/60" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <NeedsYouList rows={needsYou} />
         ) : (
           <p className="text-small text-slate-400"><Hint>Nothing needs you right now.</Hint></p>
         )}
@@ -125,7 +120,7 @@ export default async function AdminOverviewPage() {
               {week.map((d, i) => (
                 <li key={d.dayKey}>
                   <Link
-                    href="/admin/schedule"
+                    href={todayHref(d.dayKey, todayKey)}
                     aria-label={`${d.weekday} ${d.day}: ${d.students} ${d.students === 1 ? "class" : "classes"}`}
                     className={cn(
                       "flex flex-col items-center gap-1 rounded-control py-2.5 ring-1 ring-inset transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

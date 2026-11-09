@@ -909,12 +909,14 @@ export async function pausePaymentPlan(userId: string, weeks: number): Promise<{
     body: `Your plan is paused for ${weeks} week${weeks === 1 ? "" : "s"}. Your weekly time is still yours and classes start again on ${resumesOn.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}. Your next payment moved back by the same time.`,
     emailCategory: "payments",
   }).catch((err) => console.error("Pause notice failed (non-blocking):", err));
+  // Names the student and opens their page, so the alert is about someone, not a trip to the whole plans list.
+  const pauser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }).catch(() => null);
   await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
     type: "ADMIN_ALERT",
-    title: "A student paused their plan",
+    title: `${pauser?.name ?? pauser?.email ?? "A student"} paused their plan`,
     body: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}. Their slot is held and the next payment moved back.`,
     emailCategory: "social",
-    cta: { label: "See the plans", path: "/admin/payment-plans" },
+    cta: { label: "Open their account", path: `/admin/users/${userId}` },
   }).catch((err) => console.error("Pause admin alert failed (non-blocking):", err));
   return { resumesOn };
 }

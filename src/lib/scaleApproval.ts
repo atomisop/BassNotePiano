@@ -58,8 +58,14 @@ export async function approveNextScale(userId: string, opts: { force?: boolean }
   }
 
   await unlockScaleForUser(userId, next.nextSlug);
+  await sendScaleUnlockedNotice(userId, next.nextSlug);
 
-  const scale = await prisma.scaleGroup.findUnique({ where: { slug: next.nextSlug }, select: { code: true, title: true } });
+  return next.nextSlug;
+}
+
+/** "A new scale is unlocked": the one notice for a scale opened by the teacher, whether by approval or the student page's Unlock. */
+export async function sendScaleUnlockedNotice(userId: string, slug: string): Promise<void> {
+  const scale = await prisma.scaleGroup.findUnique({ where: { slug }, select: { code: true, title: true } });
   await createNotification({
     userId,
     type: "CURRICULUM_ACCESS_GRANTED",
@@ -67,6 +73,4 @@ export async function approveNextScale(userId: string, opts: { force?: boolean }
     body: scale ? `${scale.code}: ${scale.title} is ready for you.` : "Your next scale is ready for you.",
     emailCategory: "roleUpdates",
   }).catch((err) => console.error(`Failed to notify user ${userId} of a scale unlock (non-blocking):`, err));
-
-  return next.nextSlug;
 }

@@ -472,6 +472,8 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
 }
 
 export interface AttentionItem {
+  /** Which kind of job it is (the Overview's Needs you row it feeds, see needsYou.ts). */
+  id: string;
   label: string;
   count: number;
   href: string;
@@ -498,27 +500,29 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
-    { label: bookingRequests === 1 ? "Booking request to answer" : "Booking requests to answer", count: bookingRequests, href: "/admin/schedule?view=REQUESTS" },
-    { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
-    { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
-    { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
-    { label: "No bank emails lately, but payments are waiting", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
+    { id: "requests", label: bookingRequests === 1 ? "Booking request to answer" : "Booking requests to answer", count: bookingRequests, href: "/admin/schedule?view=REQUESTS" },
+    { id: "payments", label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
+    { id: "unchecked", label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
+    { id: "unmatched", label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
+    { id: "pipeline", label: "No bank emails lately, but payments are waiting", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
     {
+      id: "jobs",
       label:
         stoppedJobs.length === 1 ? "An automatic task stopped" : `${stoppedJobs.length} automatic tasks stopped`,
       count: stoppedJobs.length,
       href: "/admin/security#tasks",
     },
-    { label: "Studio email is not arriving", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
+    { id: "mail", label: "Studio email is not arriving", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
     {
+      id: "atom",
       label: atom?.note === "busy" ? "The assistant keeps failing (Google may be slow)" : "The assistant is down: check Gemini credits",
       count: atom ? 1 : 0,
       href: atom?.note === "busy" ? "/admin" : GEMINI_BILLING_URL,
     },
-    { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
-    { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
-    { label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/schedule?view=ATTENDANCE" },
-    { label: readyScales === 1 ? "Student ready for the next scale" : "Students ready for the next scale", count: readyScales, href: "/admin/users?filter=approval" },
+    { id: "applicants", label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
+    { id: "support", label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
+    { id: "unmarked", label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/today" },
+    { id: "scales", label: readyScales === 1 ? "Student ready for the next scale" : "Students ready for the next scale", count: readyScales, href: "/admin/users?filter=approval" },
   ];
   return items.filter((i) => i.count > 0);
 }
