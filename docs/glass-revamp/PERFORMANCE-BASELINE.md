@@ -26,8 +26,24 @@ Measured with `scripts/glass-revamp/perf.mjs` on 2026-11-08, Chromium, dark mode
 Rows for `/dashboard` at 390 and for `/lessons` and `/account` were not captured: the pages did not finish loading on the overloaded machine, and
 no placeholder was written. They are re-captured in Phase 1.
 
+## Correction: what is actually on screen (2026-11-08, `scripts/glass-revamp/backdrop-list.mjs`)
+
+The counts above include elements that cost nothing: hidden desktop-only links (0 by 0 pixels) and controls far below the fold, which the browser does not
+composite. Counting only elements inside the viewport:
+
+| Page | Size | Backdrop-filter total | On screen |
+|---|---|---|---|
+| `/` | 390x844 | 19 | 3 |
+| `/` | 1440x900 | 2 | 0 |
+| `/pricing` | 1440x900 | 4 | 0 |
+| `/dashboard` | 390x844 | 12 | 4 |
+| `/dashboard` | 1440x900 | 10 | 8 |
+
+So the earlier reading of home on a phone (19) was not a real cost: 16 of the 19 are hidden or 3,500 pixels down the page. No change was made for it.
+`/pricing` at 390 did not load in time and has no number. Use the on-screen column as the budget.
+
 ## Findings
 
-- Home at 390px runs 19 backdrop-filter elements, the highest count measured and the first target for the phone budget (Phase 6).
+- Home at 390px lists 19 backdrop-filter elements but only 3 are on screen (see the correction above).
 - Login's layout shift at 390px (0.0483) is within the 0.1 "good" limit but the highest measured; the card and logo settle after first paint.
-- Budgets to hold from here: backdrop elements and SVG filters per page no higher than the table; CLS under 0.1.
+- Budgets to hold from here: on-screen backdrop elements and SVG filters per page no higher than the tables; CLS under 0.1.

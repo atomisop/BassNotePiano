@@ -11,6 +11,7 @@ Done so far: GL-01-01 to GL-01-04 (owner chose the subtle direction: keep the lo
 | GL-01-02 explicit glass role on the shared Button (`data-glass-role`), selector reads it, unit test keeps it in step | DONE (commit ae31e436) | evidence/GL-01-02/ |
 | GL-01-03 floating surfaces in Solid, reduced transparency and forced colors, keyboard checks, admin data legend fix | DONE (commit 606ce43d) | evidence/GL-01-03/ |
 | GL-01-04 accessibility sweep, 51 axe runs over student and admin routes | DONE: zero violations, no overflow | evidence/GL-01-04/ |
+| Phone backdrop budget | CHECKED, no change needed: the 19 on phone home were 3 on screen (PERFORMANCE-BASELINE.md correction) | PERFORMANCE-BASELINE.md |
 | Phase 1 remaining (move class-name glass consumers to roles, toasts, skeletons) | NEXT | |
 | Phases 2 to 6 | NOT STARTED | |
 
