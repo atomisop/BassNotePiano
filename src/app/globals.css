@@ -1105,13 +1105,13 @@
   }
 
   [data-mode="light"] {
-    --ground: 245 245 247; /* #f5f5f7, the light gray band on apple.com */
+    --ground: 235 235 239; /* a step darker than apple.com's #f5f5f7 so the white cards stand out clearly */
     --neu-base: 255 255 255; /* cards are white on that gray */
     --neu-lift: 255 255 255;
     --neu-hi: rgb(255 255 255 / 0.95);
     --neu-lo: rgb(140 140 158 / 0.38);
     --neu-top: rgb(255 255 255 / 0.9);
-    --neu-edge: rgb(0 0 0 / 0.08);
+    --neu-edge: rgb(0 0 0 / 0.16);
     --field-edge: rgb(0 0 0 / 0.45);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1849,10 +1849,25 @@ input[type="radio"],
 }
 
 /* View transitions between screens: a quick crossfade of the page; the dock, the top bar and the sidebar are named so they stay put. */
-::view-transition-old(root),
+/* The old screen stays fully solid underneath and the new one fades in over it (a plain crossfade fades both, so the translucent dock glass,
+   which is part of the snapshot, dipped to see-through halfway and then came back blurry). Normal blending, since the default plus-lighter
+   would brighten the solid pair. */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+/* The browser's own animation list for the new screen is a fade-in AND a plus-lighter blend; keeping only the duration left the blend
+   running, so the new screen was ADDED to the solid old one for a few frames (a bright flash). Our own single fade replaces both. */
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 ::view-transition-new(root) {
-  animation-duration: 160ms;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation: vt-fade-in 160ms cubic-bezier(0.32, 0.72, 0, 1) both;
   mix-blend-mode: normal;
 }
 /* The old screen stays fully drawn underneath while the new one fades in over it. A true crossfade drops both pictures to half strength
@@ -2551,9 +2566,9 @@ body:has([data-surface="app"]) .glass-surface-modal {
 .ig-dock {
   isolation: isolate;
   corner-shape: round;
-  background: rgb(36 38 44 / 0.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.7);
-  backdrop-filter: blur(16px) saturate(1.7);
+  background: rgb(78 80 88 / 0.5);
+  -webkit-backdrop-filter: blur(10px) saturate(1.6);
+  backdrop-filter: blur(10px) saturate(1.6);
   box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
   --ig-icon: rgb(255 255 255);
   --dock-cut: rgb(78 78 81);
@@ -2638,7 +2653,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   background: rgb(255 48 64);
 }
 [data-mode="light"] .ig-dock {
-  background: rgb(250 250 252 / 0.6);
+  background: rgb(222 223 229 / 0.55);
   box-shadow: 0 10px 30px -10px rgb(30 30 60 / 0.28), 0 2px 6px rgb(30 30 60 / 0.08);
   --ig-icon: rgb(10 10 12);
   --dock-cut: rgb(226 226 230);
@@ -2902,12 +2917,6 @@ html[data-splash] .bnp-splash {
   width: min(59vw, 280px);
   aspect-ratio: 901 / 645;
 }
-.bnp-splash-mark {
-  width: 100%;
-  height: 100%;
-  background: url("/brand/lockup-cream.png") center / contain no-repeat;
-  /* Already there on the first frame and then still, so the cat can stand against it. */
-}
 /* The logo drawing itself (LaunchLogo.tsx): plain CSS on plain paths so it runs the same in Safari's engine (the installed iPhone app).
    `--bnp-slow` stretches every time (1 normally). */
 .bnp-logo {
@@ -3022,7 +3031,6 @@ html[data-splash] .bnp-splash {
   100% { opacity: 0; visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bnp-splash-mark { animation: none; }
   .bnp-splash-ring { display: none; }
   .bnp-splash.is-leaving .bnp-splash-stage { transform: none; transition: none; }
   .bnp-splash.is-leaving { animation-duration: 200ms; }
@@ -3294,7 +3302,7 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
   background: rgb(var(--c-s-50) / 0.06) !important;
 }
 
-/* ==========================================================================
+/* ===================================================================
    Solid surfaces (glass revamp). One switch turns every glass surface into a plain opaque one: no backdrop blur, no lens, no rim glow.
    Set before first paint by THEME_BOOT_SCRIPT from localStorage["bnp-solid-surfaces"] (Settings > Appearance). The same look is used for
    forced-colors. Kept at the end of the file and unlayered so it wins over every glass utility.
@@ -3403,3 +3411,43 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
     background-color: rgb(var(--c-surface-solid)) !important;
   }
 }
+/* The logo with its name comes in two colourings; the theme picks one (Paper is the default). */
+.brand-for-ink { display: none; }
+[data-theme="ink"] .brand-for-ink { display: block; }
+[data-theme="ink"] .brand-for-paper { display: none; }
+
+/* ── Light theme (Paper): stronger contrast ───────────────────────────────────────────────────────────────────────────────────
+   In Paper the "faint" utilities (a few percent of the ink colour) all but vanish on the cream ground, so cards, rows and dividers
+   looked washed out. These raise only Paper's versions; Ink is untouched. Unlayered on purpose: it must beat the utility layer. */
+[data-theme="paper"] .bg-slate-50\/4 { background-color: rgb(var(--c-s-50) / 0.07); }
+[data-theme="paper"] .bg-slate-50\/5 { background-color: rgb(var(--c-s-50) / 0.08); }
+[data-theme="paper"] .bg-slate-50\/6 { background-color: rgb(var(--c-s-50) / 0.09); }
+[data-theme="paper"] .bg-slate-50\/7 { background-color: rgb(var(--c-s-50) / 0.1); }
+[data-theme="paper"] .bg-slate-50\/8 { background-color: rgb(var(--c-s-50) / 0.11); }
+[data-theme="paper"] .bg-slate-50\/10 { background-color: rgb(var(--c-s-50) / 0.14); }
+[data-theme="paper"] .ring-slate-50\/8,
+[data-theme="paper"] .ring-slate-50\/10 { --tw-ring-color: rgb(var(--c-s-50) / 0.24); }
+[data-theme="paper"] .border-slate-50\/8,
+[data-theme="paper"] .border-slate-50\/10 { border-color: rgb(var(--c-s-50) / 0.24); }
+[data-theme="paper"] .divide-slate-50\/8 > :not(:last-child),
+[data-theme="paper"] .divide-slate-50\/10 > :not(:last-child) { border-color: rgb(var(--c-s-50) / 0.2); }
+[data-theme="paper"] .text-slate-50\/80 { color: rgb(var(--c-s-50) / 0.92); }
+
+/* Scale pictures in Paper: the picture used to be washed with the cream card colour (a milky white veil over the photo). Here the
+   photo keeps its colour under a dark shade, and the card's text turns light, as on the dark theme. */
+[data-theme="paper"] .scale-art-card {
+  --c-s-50: 245 245 245;
+  --c-s-100: 232 232 232;
+  --c-s-200: 216 216 216;
+  --c-s-300: 200 200 200;
+  --c-s-400: 184 184 184;
+  --c-s-500: 168 168 168;
+  --c-s-600: 150 150 150;
+  color: rgb(245 245 245);
+}
+[data-theme="paper"] .scale-art-fade {
+  background:
+    linear-gradient(90deg, rgb(12 12 14 / 0.74) 0%, rgb(12 12 14 / 0.46) 55%, rgb(12 12 14 / 0.14) 100%),
+    linear-gradient(180deg, transparent 40%, rgb(12 12 14 / 0.55) 100%);
+}
+[data-theme="paper"] .scale-art-fade-locked { background: rgb(12 12 14 / 0.66); }

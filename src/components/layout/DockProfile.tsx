@@ -4,7 +4,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { ProfileMenu } from "./ProfileMenu";
 
 /**
- * The dock's round island: the signed-in person's own picture. Tapping it opens their menu upward (the dock is at the bottom).
+ * The signed-in person's own picture and menu. In the top bar the menu opens downward; the "up" placement is for a spot at the bottom of the screen.
  * A server component for the same reason TopBar's old avatar was: the picture is kept out of the session cookie and read from the DB here.
  */
 export async function DockProfile({ isAdmin, placement = "up" }: { isAdmin: boolean; placement?: "up" | "down" }) {

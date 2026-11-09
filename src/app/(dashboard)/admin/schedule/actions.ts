@@ -21,6 +21,7 @@ import { cancelUpcomingClasses, closeStudioDay, previewClosedDay, type ClosedDay
 import { sendReservationEmail } from "@/lib/email";
 import { reportError } from "@/lib/reportError";
 import { rotateTeacherCalendarVersion } from "@/lib/teacherCalendar";
+import { BookingRequestError, confirmBookingRequest, declineBookingRequest } from "@/lib/bookingRequests";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -222,6 +223,29 @@ export async function rotateTeacherCalendarLinkAction(): Promise<void> {
   await rotateTeacherCalendarVersion();
   await logAudit({ actorId: session.user.id, actorEmail: session.user.email ?? null, action: "calendar.reset", targetType: "Calendar", detail: "Teacher calendar link replaced" });
   revalidatePath("/admin/schedule");
+}
+
+/** Request mode: books the requested time for the student and answers the others who asked for it. */
+export async function confirmBookingRequestAction(requestId: string) {
+  const admin = await requireAdmin();
+  try {
+    await confirmBookingRequest(requestId, admin.id);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError || err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function declineBookingRequestAction(requestId: string, reason?: string) {
+  const admin = await requireAdmin();
+  try {
+    await declineBookingRequest(requestId, admin.id, reason);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError ? err.message : "Something went wrong." };
+  }
 }
 
 /** Owner only: checks every step the Discord bot needs, and makes then removes a test channel. */

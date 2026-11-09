@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { PricingBento } from "@/components/stageshow/scenes/PricingBento";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { SPRING } from "@/lib/motionTokens";
@@ -55,6 +56,10 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
 
         <div className="mt-10">
           <PaymentPlanTierGrid pricing={pricing} />
+        </div>
+
+        <div className="mx-auto mt-16 max-w-3xl">
+          <PricingBento pricing={pricing} />
         </div>
       </motion.section>
       </main>

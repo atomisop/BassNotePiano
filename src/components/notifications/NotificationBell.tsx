@@ -109,6 +109,8 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   PAYMENT_RECEIVED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_UPDATED: { key: "billing", label: "Billing" },
   SLOT_WAITLIST_OPENED: { key: "billing", label: "Billing" },
+  BOOKING_REQUEST_RECEIVED: { key: "bookings", label: "Bookings" },
+  BOOKING_REQUEST_DECLINED: { key: "bookings", label: "Bookings" },
   TRIAL_ENDING: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   ACCOUNT_UPDATE: { key: "account", label: "Account" },

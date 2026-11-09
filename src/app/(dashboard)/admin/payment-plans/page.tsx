@@ -1,5 +1,6 @@
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import type { PaymentPlanStatus } from "@prisma/client";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { getAdminPaymentPlans, getPlanCancellationFeedback } from "@/lib/paymentPlans";
 import { PaymentPlanList } from "@/components/admin/PaymentPlanList";
 import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellationFeedbackList";
@@ -63,6 +64,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);
   const statusParam = activeFilter === "ALL" || activeFilter === "OVERDUE" ? undefined : activeFilter;
+  const firstBillLapseDays = await getNumberSetting("payments.firstBillLapseDays");
   const fetched = await getAdminPaymentPlans(statusParam);
   const plans = activeFilter === "OVERDUE" ? fetched.filter((plan) => plan.isOverdue) : fetched;
 
@@ -91,6 +93,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
           onCancel={cancelPaymentPlanAction}
           onRecordPayment={isOwner ? recordPlanPaymentAction : undefined}
           onResendBill={resendBillAction}
+          firstPaymentHoldDays={firstBillLapseDays}
           emptyMessage={activeFilter === "ACTIVE" ? "No active plans." : `No ${activeLabel.toLowerCase()} plans.`}
         />
       </div>

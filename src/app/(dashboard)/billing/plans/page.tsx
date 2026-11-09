@@ -5,6 +5,7 @@ import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@p
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
@@ -33,6 +34,7 @@ export default async function BillingPlansPage(
     redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
   }
 
+  const firstBillLapseDays = await getNumberSetting("payments.firstBillLapseDays");
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   // Lets a specific tile on the marketing pricing page (PaymentPlanTierGrid,
@@ -171,6 +173,8 @@ export default async function BillingPlansPage(
                   term: activePlan.term,
                   installmentsPaid: activePlan.installmentsPaid,
                   termMonths: activePlan.termMonths,
+                  // Until the first payment arrives the weekly time is only held: when it would be let go.
+                  heldUntil: activePlan.installmentsPaid === 0 ? new Date(activePlan.createdAt.getTime() + firstBillLapseDays * 86_400_000).toISOString() : null,
                 }
               : null
           }

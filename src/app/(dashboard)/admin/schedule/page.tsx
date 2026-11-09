@@ -8,6 +8,9 @@ import { currentTeacherCalendarVersion, teacherCalendarToken } from "@/lib/teach
 import { rotateTeacherCalendarLinkAction } from "./actions";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getServerAuthSession } from "@/lib/auth";
+import { getAdminBookingRequests } from "@/lib/bookingRequests";
+import { AdminBookingRequests } from "@/components/admin/AdminBookingRequests";
+import { getBoolSetting } from "@/lib/siteSettings";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
@@ -15,6 +18,8 @@ import {
   markAttendanceAction,
   undoAttendanceAction,
   setClassInPersonAction,
+  confirmBookingRequestAction,
+  declineBookingRequestAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
@@ -23,7 +28,7 @@ import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 import { Hint } from "@/components/ui/Hint";
 
-type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
+type ViewValue = "WINDOWS" | "REQUESTS" | "ATTENDANCE" | "RESERVED";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -33,6 +38,7 @@ type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
   { label: "Times", value: "WINDOWS" },
+  { label: "Requests", value: "REQUESTS" },
   { label: "Attendance", value: "ATTENDANCE" },
   { label: "Reserved", value: "RESERVED" },
 ];
@@ -57,6 +63,33 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       ))}
     </div>
   );
+
+  if (activeView === "REQUESTS") {
+    const [groups, requestMode, session] = await Promise.all([getAdminBookingRequests(), getBoolSetting("booking.requestMode"), getServerAuthSession()]);
+    return (
+      <div>
+        <h1 className="sr-only">Weekly schedule</h1>
+
+        {viewSwitcher}
+
+        <div className="mt-6">
+          <AdminBookingRequests
+            groups={groups.map((g) => ({
+              key: g.key,
+              scheduledAt: g.scheduledAt.toISOString(),
+              label: g.label,
+              alreadyBooked: g.alreadyBooked,
+              requests: g.requests.map((r) => ({ id: r.id, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
+            }))}
+            requestMode={requestMode}
+            showSettingsLink={isOwnerEmail(session?.user?.email)}
+            onConfirm={confirmBookingRequestAction}
+            onDecline={declineBookingRequestAction}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (activeView === "RESERVED") {
     const [hours, reservations] = await Promise.all([getReservableHours(), listOwnerReservations()]);

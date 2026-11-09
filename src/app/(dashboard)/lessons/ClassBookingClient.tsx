@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction, rescheduleClassBookingAction } from "./actions";
+import { bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction, rescheduleClassBookingAction, requestClassTimesAction, cancelBookingRequestAction } from "./actions";
 import { BookingAgenda, type AgendaRow } from "./BookingAgenda";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
@@ -27,7 +27,27 @@ import { NETWORK_ERROR, type OccurrenceRow, type BookingRow, type BookingMode, t
 import { MaskReveal } from "@/components/ui/MaskReveal";
 import { SuccessPulse } from "@/components/ui/SuccessPulse";
 
+/** A request the student sent (request mode), as the booking screen shows it. */
+export interface MyRequestRow {
+  id: string;
+  label: string | null;
+  scheduledAt: string;
+  status: "PENDING" | "CONFIRMED" | "DECLINED" | "CANCELED";
+  ahead: number;
+}
+
+/** Hours that already have requests waiting. Never says who. */
+export interface RequestHintRow {
+  scheduleId: string;
+  scheduledAtMs: number;
+  count: number;
+  mine: boolean;
+}
+
 export function ClassBookingClient({
+  requestMode = false,
+  myRequests = [],
+  requestHints = [],
   initialCredits,
   cancellationCutoffHours,
   canCancel,
@@ -43,6 +63,10 @@ export function ClassBookingClient({
   fifthClassOffer = null,
   extraClassCents = EXTRA_CLASS_PRICE_CENTS,
 }: {
+  /** Settings > Booking > "Students request times": picking times sends a request the teacher confirms. */
+  requestMode?: boolean;
+  myRequests?: MyRequestRow[];
+  requestHints?: RequestHintRow[];
   /** What one extra class costs now (Admin > Pricing). */
   extraClassCents?: number;
   /** A Monthly subscriber's optional fifth class (their cycle holds five of their weekday): when it is, and the price. */
@@ -203,6 +227,29 @@ export function ClassBookingClient({
     setBundleSubmitting(true);
 
     const picked = selectedRows;
+
+    // Request mode: nothing is booked or charged. The times go to the teacher, who confirms them.
+    if (requestMode) {
+      try {
+        const sent = await requestClassTimesAction(picked.map((r) => ({ scheduleId: r.scheduleId, occurrenceDateMs: r.occurrenceDateMs, chunkIndex: r.chunkIndex })));
+        announceChange("page");
+        if (!sent.ok) {
+          setError(sent.error);
+          return;
+        }
+        const okKeys = new Set(sent.results.filter((r) => r.ok).map((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
+        const failed = sent.results.filter((r) => !r.ok);
+        setSelectedKeys(new Set(picked.filter((r) => !okKeys.has(rowKey(r))).map(rowKey)));
+        if (okKeys.size > 0) setSuccess(`Request sent for ${okKeys.size} time${okKeys.size === 1 ? "" : "s"}. We will tell you as soon as ${okKeys.size === 1 ? "it is" : "they are"} confirmed. See Upcoming.`);
+        if (failed.length > 0) setError(`${failed[0]!.error ?? "One time could not be requested."}${okKeys.size > 0 ? ` (${okKeys.size} of ${sent.results.length} sent.)` : ""}`);
+      } catch {
+        setError(NETWORK_ERROR);
+      } finally {
+        setBundleSubmitting(false);
+      }
+      return;
+    }
+
     const selections = picked.map((r) => ({
       scheduleId: r.scheduleId,
       occurrenceDateMs: r.occurrenceDateMs,
@@ -262,6 +309,23 @@ export function ClassBookingClient({
       setError(`Booked ${succeeded.length} of ${result.results.length}. ${failed[0]!.error ?? ""}`.trim());
     }
   }
+
+  const [cancelingRequestId, setCancelingRequestId] = useState<string | null>(null);
+  async function handleCancelRequest(id: string) {
+    setError(null);
+    setCancelingRequestId(id);
+    try {
+      const result = await cancelBookingRequestAction(id);
+      announceChange("page");
+      if (!result.ok) setError(result.error);
+    } catch {
+      setError(NETWORK_ERROR);
+    } finally {
+      setCancelingRequestId(null);
+    }
+  }
+  const hintFor = (row: OccurrenceRow) => requestHints.find((h) => h.scheduleId === row.scheduleId && h.scheduledAtMs === new Date(row.scheduledAt).getTime()) ?? null;
+  const pendingRequests = myRequests.filter((r) => r.status === "PENDING");
 
   async function handleCancel(booking: BookingRow) {
     setError(null);
@@ -505,7 +569,7 @@ export function ClassBookingClient({
           }}
           items={[
             { id: "book", label: "Book" },
-            { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
+            { id: "upcoming", label: "Upcoming", count: upcoming.length + pendingRequests.length || undefined },
             { id: "past", label: "Past", count: history.length || undefined },
           ]}
         />
@@ -545,6 +609,7 @@ export function ClassBookingClient({
 
             {/* One row: who the class is for, and the credits there are to spend. */}
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              {!requestMode && (
               <Tabs
                 label="Who is this class for?"
                 items={[
@@ -558,6 +623,7 @@ export function ClassBookingClient({
                   setFamilyRowKey(null);
                 }}
               />
+              )}
               <p
                 className="flex items-center gap-2 rounded-full bg-neu-base px-3.5 py-2 text-small font-semibold tabular-nums text-slate-50 shadow-pressed-low"
                 aria-label={`${formatCredits(storedToCredits(credits))} credits to spend`}
@@ -735,7 +801,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : "Taken"}</span>
+                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : row.heldByPlan ? "Reserved" : "Taken"}</span>
                         </>,
                         undefined,
                         "opacity-60",
@@ -799,11 +865,24 @@ export function ClassBookingClient({
                       );
                     }
 
+                    const hint = requestMode ? hintFor(row) : null;
+                    if (hint?.mine) {
+                      return card(
+                        <>
+                          {time}
+                          <span className="shrink-0 text-small font-medium text-amber-300">You asked</span>
+                        </>,
+                        undefined,
+                        "opacity-70",
+                      );
+                    }
+
                     return card(
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                                                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
+                          {!isSelected && (hint && hint.count > 0 ? <span className="text-small font-medium text-amber-300">Requested</span> : <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>)}
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>
                         </span>
@@ -831,8 +910,10 @@ export function ClassBookingClient({
                   </p>
                   <p className={`mt-0.5 text-small ${missingCredits > 0 ? "text-red-400" : "text-slate-500"}`}>
                     {missingCredits > 0
-                      ? `Need ${creditsLabel(missingCredits)} more`
-                      : `${creditsLabel(credits - selectedCreditTotal)} left after`}
+                      ? `You have ${creditsLabel(credits)}, so you need ${creditsLabel(missingCredits)} more.`
+                      : requestMode
+                        ? `You have ${creditsLabel(credits)}. Nothing is booked or charged until we confirm.`
+                        : `You have ${creditsLabel(credits)}. ${creditsLabel(credits - selectedCreditTotal)} left after this.`}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -851,7 +932,7 @@ export function ClassBookingClient({
                       className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
                     >
                       {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                      {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
+                      {bundleSubmitting ? (requestMode ? "Sending…" : "Booking…") : requestMode ? `Request ${selectedRows.length} time${selectedRows.length === 1 ? "" : "s"}` : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
                     </button>
                   )}
                 </div>
@@ -862,6 +943,34 @@ export function ClassBookingClient({
 
         {tab === "upcoming" && (
           <div className="tab-in max-w-3xl">
+            {myRequests.length > 0 && (
+              <div className="mb-6">
+                <p className="mb-2 text-small font-medium text-slate-400">Your requests</p>
+                <ul className="space-y-2">
+                  {myRequests.map((r) => (
+                    <li key={r.id} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                      <div className="min-w-0">
+                        <p className="text-small font-medium text-slate-100">{formatDateTime(r.scheduledAt)}</p>
+                        <p className="text-small text-slate-400">
+                          {r.status === "PENDING"
+                            ? r.ahead === 0
+                              ? "Waiting for us. You are first in line."
+                              : `Waiting for us. ${r.ahead} ${r.ahead === 1 ? "person" : "people"} asked first.`
+                            : r.status === "CONFIRMED"
+                              ? "Confirmed. It is in your classes below."
+                              : "Not available. Pick another time."}
+                        </p>
+                      </div>
+                      {r.status === "PENDING" && (
+                        <button type="button" onClick={() => handleCancelRequest(r.id)} disabled={cancelingRequestId === r.id} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                          {cancelingRequestId === r.id ? "Canceling…" : "Cancel"}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {upcoming.length === 0 ? (
               <p className="text-small text-slate-500">Nothing booked</p>
             ) : (

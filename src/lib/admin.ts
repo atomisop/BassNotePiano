@@ -480,7 +480,7 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom, mailProblem] = await Promise.all([
+  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom, mailProblem, bookingRequests] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
@@ -494,9 +494,11 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     findStoppedJobsOnce(),
     getAtomAlertState(),
     findMailChainProblem(),
+    prisma.bookingRequest.count({ where: { status: "PENDING", scheduledAt: { gt: new Date() } } }),
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
+    { label: bookingRequests === 1 ? "Booking request to answer" : "Booking requests to answer", count: bookingRequests, href: "/admin/schedule?view=REQUESTS" },
     { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
     { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
     { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
@@ -526,13 +528,14 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
 export const getAdminNavBadges = cache(readAdminNavBadges);
 
 async function readAdminNavBadges(): Promise<Record<string, number>> {
-  const [payments, applications, chats, unmarked] = await Promise.all([
+  const [payments, applications, chats, unmarked, requests] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(Date.now() - 3 * 3_600_000) } } }),
+    prisma.bookingRequest.count({ where: { status: "PENDING", scheduledAt: { gt: new Date() } } }),
   ]);
-  return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked };
+  return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked + requests };
 }
 
 /**

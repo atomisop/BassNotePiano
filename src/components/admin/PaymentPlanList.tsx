@@ -24,6 +24,8 @@ export interface PaymentPlanListProps {
   onRecordPayment?: (planId: string, notify?: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Sends the open bill to the student again. */
   onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
+  /** Days a plan's weekly time stays held while its first payment is missing (Settings > Payments). */
+  firstPaymentHoldDays?: number;
   emptyMessage?: string;
 }
 
@@ -42,6 +44,18 @@ const STATUS_TONE: Record<string, "success" | "neutral"> = {
   COMPLETED: "neutral",
   CANCELED: "neutral",
 };
+
+/**
+ * A plan is "Active" the moment it is set up (its weekly time is held), but nothing has been paid until the first
+ * installment is approved. Say that plainly instead of showing a green Active dot on an unpaid plan.
+ */
+function planBadge(plan: AdminPaymentPlan): { label: string; tone: "success" | "neutral" | "warning" } {
+  if (plan.status === "ACTIVE" && plan.installmentsPaid === 0) {
+    const first = plan.installmentPayments.find((p) => p.status === "PENDING_REVIEW" || p.status === "AWAITING_TRANSFER" || p.status === "REJECTED");
+    return { label: first?.status === "PENDING_REVIEW" ? "First payment to review" : "Waiting for first payment", tone: "warning" };
+  }
+  return { label: STATUS_LABEL[plan.status], tone: STATUS_TONE[plan.status] ?? "neutral" };
+}
 
 function receivedCents(plan: AdminPaymentPlan): number {
   return plan.installmentPayments.filter((p) => p.status === "VERIFIED").reduce((sum, p) => sum + p.amountCents, 0);
@@ -69,7 +83,7 @@ function formatTimeLabel(hhmm: string): string {
  * payment happens entirely through the existing /admin/payments queue,
  * unchanged, this list is read-mostly by design.
  */
-export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, firstPaymentHoldDays, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
   const [notify, setNotify] = useNotifyStudent("student-changes");
   const shown = plans.filter((item) => matchesQuery(item, query));
@@ -134,63 +148,65 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   return (
     <div data-stagger="" className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I cancel or record a payment" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {recordError && <p className="text-small text-red-400">{recordError}</p>}
       <ViewMore items={shown} initial={8}>
       {(plan) => (
-        <div key={plan.id} className="glass-surface p-4">
-          {/* The name, what is owed and when: bold. Everything else sits back in gray. */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="truncate text-title font-semibold text-slate-50">{plan.user.name ?? plan.user.email}</h2>
-              <p className="mt-0.5 text-small text-slate-500">{describePaymentPlan(plan.cadence, plan.term)}</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              {plan.isOverdue && <StatusDot tone="danger">Overdue</StatusDot>}
-              {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) && <StatusDot tone="neutral">Paused</StatusDot>}
-              {plan.status !== "ACTIVE" && <StatusDot tone={STATUS_TONE[plan.status] ?? "neutral"}>{STATUS_LABEL[plan.status]}</StatusDot>}
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-end justify-between gap-3">
+        <div key={plan.id} className="glass-surface p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(plan.installmentAmountCents)}</p>
-              <p className={`text-small ${plan.isOverdue ? "font-medium text-red-400" : "text-slate-400"}`}>
-                {plan.status !== "ACTIVE"
-                  ? `Received ${formatUsd(receivedCents(plan))}`
-                  : isPausedNow(plan, new Date()) && isIndefinitePause(plan)
-                    ? "Due on resume"
-                    : `${plan.isOverdue ? "Was due" : "Due"} ${new Date(plan.nextDueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+                {describePaymentPlan(plan.cadence, plan.term)}
               </p>
-            </div>
-            <div className="text-right text-small tabular-nums text-slate-500">
-              <p>
-                <span className="font-medium text-slate-300">{plan.installmentsPaid}</span>/{plan.termMonths} paid
-              </p>
-              {plan.reservedSchedule && (
-                <p>
-                  {DAY_LABELS[plan.reservedSchedule.dayOfWeek]} {formatTimeLabel(plan.reservedSchedule.startTime)}
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
+              {plan.familyGroup && (
+                <p className="mt-1 text-small text-slate-400">
+                  Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}
                 </p>
+              )}
+              <p className="mt-1 text-small text-slate-500">
+                {plan.installmentsPaid} of {plan.termMonths} installments paid · {formatUsd(plan.installmentAmountCents)}/mo
+              </p>
+              <p className="mt-1 text-small text-slate-500">Received {formatUsd(receivedCents(plan))}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1.5 text-right">
+              {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) ? null : (
+                <StatusDot tone={planBadge(plan).tone}>{planBadge(plan).label}</StatusDot>
+              )}
+              {plan.status === "ACTIVE" && (
+                <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-slate-50 underline underline-offset-4">
+                  Scheduler
+                </Link>
+              )}
+              {plan.isOverdue && (
+                <StatusDot tone="danger">Overdue</StatusDot>
               )}
             </div>
           </div>
 
-          <div aria-hidden className="mt-3 flex gap-1">
-            {Array.from({ length: Math.min(plan.termMonths, 12) }, (_, i) => (
-              <span key={i} className={`h-1 flex-1 rounded-full ${i < plan.installmentsPaid ? "bg-signal" : "bg-slate-50/10"}`} />
-            ))}
-          </div>
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
+            <div>
+              <dt className="text-small text-slate-500">Next due</dt>
+              <dd className="text-slate-300">{plan.status === "ACTIVE" && isPausedNow(plan, new Date()) && isIndefinitePause(plan) ? "On resume" : new Date(plan.nextDueDate).toLocaleDateString()}</dd>
+            </div>
+            <div>
+              <dt className="text-small text-slate-500">Started</dt>
+              <dd className="text-slate-300">{new Date(plan.createdAt).toLocaleDateString()}</dd>
+            </div>
+            <div>
+              <dt className="text-small text-slate-500">Reserved slot</dt>
+              <dd className="text-slate-300">
+                {plan.reservedSchedule
+                  ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}${plan.reservedSchedule.label ? ` · ${plan.reservedSchedule.label}` : ""}`
+                  : "None"}
+              </dd>
+            </div>
+          </dl>
 
-          {(plan.familyGroup || (plan.status === "ACTIVE" && receivedCents(plan) > 0)) && (
-            <p className="mt-2 text-caption text-slate-500">
-              {plan.familyGroup ? `Group of ${plan.familyGroup._count.plans}, paid by ${plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}` : ""}
-              {plan.familyGroup && plan.status === "ACTIVE" && receivedCents(plan) > 0 ? " · " : ""}
-              {plan.status === "ACTIVE" && receivedCents(plan) > 0 ? `${formatUsd(receivedCents(plan))} received` : ""}
-            </p>
+          {plan.status === "CANCELED" && plan.cancellationNote && (
+            <p className="mt-2 text-small text-red-400">Canceled: {plan.cancellationNote}</p>
           )}
-
-          {plan.status === "CANCELED" && plan.cancellationNote && <p className="mt-2 text-small text-red-400">{plan.cancellationNote}</p>}
 
           {onRecordPayment && plan.status === "ACTIVE" && needsPaymentRecord(plan) && (
             <div className="mt-4 rounded-lg bg-neu-base p-3 shadow-pressed-low">
@@ -222,7 +238,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-small text-slate-300">No payment recorded.</p>
+                  <p className="text-small text-slate-300">No payment on record for this plan.</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -275,9 +291,6 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
             ) : (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                 {/* Compact actions at the end of the plan, not full-width bars: Resend is the everyday one, Cancel stays quiet. */}
-                <Link href={`/admin/users/${plan.user.id}#scheduler`} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
-                  Scheduler
-                </Link>
                 {onResendBill && (
                   <>
                     <button
@@ -297,7 +310,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                   onClick={() => setCancelingId(plan.id)}
                   className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
                 >
-                  Cancel
+                  Cancel plan
                 </button>
               </div>
             ))}

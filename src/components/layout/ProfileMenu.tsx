@@ -193,7 +193,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           >
             Profile
           </Link>
-          {/* Inside the app Settings is the gear in the top bar; the menu repeats it only on the public pages. */}
+          {/* Inside the app Settings is in the dock (and the sidebar); the menu repeats it only on the public pages. */}
           {!appExtras && (
             <Link
               href="/account"

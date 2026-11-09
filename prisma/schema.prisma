@@ -508,6 +508,8 @@ enum NotificationType {
   BANNER_DISCORD // same, for the "connect your Discord" banner
   BANNER_PRACTICE // same, for the "time to practice" banner
   FRIEND_NUDGE // to a student, when a friend taps "Nudge to practice" on their profile (fixed wording, banner plus bell)
+  BOOKING_REQUEST_RECEIVED // to the student, when the request they sent is waiting for the teacher to confirm
+  BOOKING_REQUEST_DECLINED // to the student, when a requested time was not given to them
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -810,11 +812,12 @@ model GroupMessageReaction {
 // ---------------------------------------------------------------------------
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String    @unique
-  emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
-  emailVerified  DateTime?
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  bookingRequests BookingRequest[] @relation("BookingRequestStudent")
+  emailCanonical  String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
+  emailVerified   DateTime?
 
   // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
   // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
@@ -1716,6 +1719,7 @@ model ClassSchedule {
   slotHolds            SlotHold[]
   ownerReservations    OwnerReservation[]
   slotWaitlist         SlotWaitlist[]
+  bookingRequests      BookingRequest[]
 
   @@index([dayOfWeek, active])
 }
@@ -2274,4 +2278,40 @@ model OwnerReservation {
 
   @@index([scheduleId, occurrenceDate])
   @@index([groupId])
+}
+
+// ---------------------------------------------------------------------------
+// Booking requests: when Settings > Booking > "Students request times" is on, a
+// student asks for a time instead of booking it. The teacher confirms (which
+// books it) or declines. The earliest request for an hour is first in line.
+// ---------------------------------------------------------------------------
+
+enum BookingRequestStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  CANCELED
+}
+
+model BookingRequest {
+  id             String               @id @default(cuid())
+  studentId      String
+  student        User                 @relation("BookingRequestStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  scheduleId     String
+  schedule       ClassSchedule        @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  // The ET calendar day of the class (stored at UTC midnight, like ClassBooking) and the exact start instant.
+  occurrenceDate DateTime
+  scheduledAt    DateTime
+  chunkIndex     Int
+  status         BookingRequestStatus @default(PENDING)
+
+  // The moment the request was sent: the order requests are served in.
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
+  decidedById   String?
+  declineReason String?
+
+  @@index([status, createdAt])
+  @@index([scheduleId, scheduledAt, status])
+  @@index([studentId, status])
 }

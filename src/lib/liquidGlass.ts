@@ -11,10 +11,8 @@ export type LiquidGlassOptions = {
   scale?: number;
   /** Per-channel scale stagger (the prism fringe); 0 turns it off. */
   chroma?: number;
-  /** Neutral interior inset, as a fraction of the smaller side. */
+  /** Bezel width (the band that bends), as a fraction of the smaller side. */
   border?: number;
-  /** Softness of the bulge's curve in px: small is a hard rim, large a dome. */
-  mapBlur?: number;
   /** Backdrop blur inside the glass. */
   blur?: number;
   saturate?: number;
@@ -52,33 +50,73 @@ function ensureDefs(): SVGDefsElement {
   return svgDefs;
 }
 
-// Red left-to-right ramp = x push, blue top-to-bottom ramp = y push; a blurred inset 50% gray rounded rect neutralizes the interior so only an
-// edge band refracts.
-function makeMap(w: number, h: number, radius: number, border: number, mapBlur: number): string {
+// Physics-based map (the method in kube.io's "Liquid Glass in the Browser" and Aave's "Building glass for the web"): the rim is a convex
+// squircle bezel, f(x) = (1 - (1 - x)^4)^(1/4) for x from 0 at the outer edge to 1 at the inner end of the bezel. Its slope gives a surface
+// normal, Snell's law (air 1.0 to glass 1.5) bends a straight-down ray against it, and the bend times the glass height is how far that pixel
+// is pushed, always along the edge's outward normal. Red = x push, green = y push, 128 = neutral; the interior stays neutral so only the
+// bezel refracts. Magnitudes are normalised to 1 so `scale` is the peak push in px.
+const GLASS_INDEX = 1.5;
+
+function bezelProfile(samples: number): Float32Array {
+  const f = (x: number) => Math.pow(1 - Math.pow(1 - Math.min(Math.max(x, 0), 1), 4), 0.25);
+  const out = new Float32Array(samples);
+  let max = 0;
+  for (let i = 0; i < samples; i++) {
+    const x = (i + 0.5) / samples;
+    const d = 0.001;
+    const slope = (f(x + d) - f(x - d)) / (2 * d);
+    const sin1 = Math.abs(slope) / Math.sqrt(1 + slope * slope);
+    const t1 = Math.asin(Math.min(sin1, 1));
+    const t2 = Math.asin(sin1 / GLASS_INDEX);
+    out[i] = Math.tan(t1 - t2) * f(x);
+    max = Math.max(max, out[i]);
+  }
+  if (max > 0) for (let i = 0; i < samples; i++) out[i] /= max;
+  return out;
+}
+
+function makeMap(w: number, h: number, radius: number, border: number): string {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
-  const gx = ctx.createLinearGradient(0, 0, w, 0);
-  gx.addColorStop(0, "rgb(0,0,0)");
-  gx.addColorStop(1, "rgb(255,0,0)");
-  ctx.fillStyle = gx;
-  ctx.fillRect(0, 0, w, h);
-  const gy = ctx.createLinearGradient(0, 0, 0, h);
-  gy.addColorStop(0, "rgb(0,0,0)");
-  gy.addColorStop(1, "rgb(0,0,255)");
-  ctx.globalCompositeOperation = "difference";
-  ctx.fillStyle = gy;
-  ctx.fillRect(0, 0, w, h);
-  ctx.globalCompositeOperation = "source-over";
-  const inset = border * Math.min(w, h);
-  ctx.filter = `blur(${mapBlur}px)`;
-  ctx.fillStyle = "rgba(128,128,128,0.93)";
-  ctx.beginPath();
-  ctx.roundRect(inset, inset, w - inset * 2, h - inset * 2, Math.max(radius - inset, 2));
-  ctx.fill();
-  ctx.filter = "none";
+  const bezel = Math.max(border * Math.min(w, h), 1);
+  const profile = bezelProfile(128);
+  const img = ctx.createImageData(w, h);
+  const hx = w / 2;
+  const hy = h / 2;
+  const r = Math.min(radius, hx, hy);
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const dx = px + 0.5 - hx;
+      const dy = py + 0.5 - hy;
+      const qx = Math.abs(dx) - (hx - r);
+      const qy = Math.abs(dy) - (hy - r);
+      const ox = Math.max(qx, 0);
+      const oy = Math.max(qy, 0);
+      const outside = Math.hypot(ox, oy);
+      // Signed distance to the rounded rectangle's edge; negative inside. `inside` is how far in from the edge.
+      const inside = -(outside + Math.min(Math.max(qx, qy), 0) - r);
+      let nx = 0;
+      let ny = 0;
+      if (inside < bezel) {
+        if (qx > 0 && qy > 0) {
+          nx = (qx / outside) * Math.sign(dx);
+          ny = (qy / outside) * Math.sign(dy);
+        } else if (qx > qy) nx = Math.sign(dx);
+        else ny = Math.sign(dy);
+      }
+      const i = (py * w + px) * 4;
+      let mag = 0;
+      if (inside < bezel) mag = profile[Math.min(127, Math.max(0, Math.floor((1 - inside / bezel) * 128)))];
+      img.data[i] = 128 + nx * mag * 127;
+      img.data[i + 1] = 128 + ny * mag * 127;
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
   return canvas.toDataURL();
 }
 
@@ -93,7 +131,7 @@ function buildFilter(id: string, scales: number[]) {
   filter.appendChild(feImage);
   const keep = ["1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0", "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"];
   for (let i = 0; i < 3; i++) {
-    filter.appendChild(make("feDisplacementMap", { in: "SourceGraphic", in2: "map", scale: scales[i], xChannelSelector: "R", yChannelSelector: "B", result: `d${i}` }));
+    filter.appendChild(make("feDisplacementMap", { in: "SourceGraphic", in2: "map", scale: scales[i], xChannelSelector: "R", yChannelSelector: "G", result: `d${i}` }));
     filter.appendChild(make("feColorMatrix", { in: `d${i}`, type: "matrix", values: keep[i], result: `c${i}` }));
   }
   filter.appendChild(make("feBlend", { in: "c0", in2: "c1", mode: "screen", result: "c01" }));
@@ -110,7 +148,7 @@ function resolveRadius(el: HTMLElement, w: number, h: number, override: number |
 }
 
 export function liquidGlass(el: HTMLElement, opts: LiquidGlassOptions = {}): LiquidGlassHandle {
-  const o = { scale: -112, chroma: 6, border: 0.07, mapBlur: 12, blur: 3, saturate: 1.5, radius: null as number | null, fallbackBlur: 16, ...opts };
+  const o = { scale: -112, chroma: 6, border: 0.07, blur: 3, saturate: 1.5, radius: null as number | null, fallbackBlur: 16, ...opts };
 
   if (!canBendBackdrop()) {
     const frosted = `blur(${o.fallbackBlur}px) saturate(${o.saturate})`;
@@ -133,7 +171,7 @@ export function liquidGlass(el: HTMLElement, opts: LiquidGlassOptions = {}): Liq
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     if (!w || !h) return;
-    parts.feImage.setAttribute("href", makeMap(w, h, resolveRadius(el, w, h, o.radius), o.border, o.mapBlur));
+    parts.feImage.setAttribute("href", makeMap(w, h, resolveRadius(el, w, h, o.radius), o.border));
     parts.feImage.setAttribute("width", String(w));
     parts.feImage.setAttribute("height", String(h));
   }

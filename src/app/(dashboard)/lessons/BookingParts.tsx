@@ -28,6 +28,8 @@ export interface OccurrenceRow {
   isBooked: boolean;
   /** The owner kept this time for this student: open to them, locked for everyone else. */
   reservedForYou?: boolean;
+  /** Held by someone's payment plan (not yet an actual booking). Shown as Reserved, not Taken. */
+  heldByPlan?: boolean;
 }
 
 export interface BookingRow {

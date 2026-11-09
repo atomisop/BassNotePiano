@@ -1,6 +1,7 @@
 import { discordLinkState } from "@/lib/discordLinkState";
 import { ParentLockedArea } from "@/components/parent/ParentLockedArea";
 import { hasParentControl } from "@/lib/parentLinks";
+import { getMyBookingRequests, getRequestHints, isRequestMode } from "@/lib/bookingRequests";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -52,7 +53,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getBoolSetting("cancel.studentCanReschedule"),
   ]);
 
-  const [credits, occurrences, bookings, weeklyLimited, pricing] = await Promise.all([
+  const [credits, occurrences, bookings, weeklyLimited, pricing, requestMode, myRequests, requestHints] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
@@ -61,6 +62,9 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getUserClassBookings(session.user.id),
     hasLivePaymentPlan(session.user.id),
     getDisplayPricingConfig(),
+    isRequestMode(),
+    getMyBookingRequests(session.user.id),
+    getRequestHints(session.user.id),
   ]);
 
   // A Monthly subscriber whose billing month holds a fifth class day can add it for a set price.
@@ -70,6 +74,9 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     <ClassBookingClient
       extraClassCents={pricing.extraClassCents}
       fifthClassOffer={fifthOffer ? { scheduledAt: fifthOffer.scheduledAt.toISOString(), priceCents: fifthOffer.priceCents } : null}
+      requestMode={requestMode}
+      myRequests={myRequests.map((r) => ({ id: r.id, label: r.label, scheduledAt: r.scheduledAt.toISOString(), status: r.status, ahead: r.ahead }))}
+      requestHints={requestHints}
       extraMode={Boolean(activePlan)}
       weeklyLimited={weeklyLimited}
       initialCredits={credits}
@@ -91,6 +98,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         scheduledAt: o.scheduledAt.toISOString(),
         isBooked: o.isBooked,
         reservedForYou: o.reservedForYou,
+        heldByPlan: o.reservedByPlan === true,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,
