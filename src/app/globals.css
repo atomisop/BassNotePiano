@@ -3384,3 +3384,22 @@ html[data-solid-surfaces="on"] [data-glass-lens] > * {
     display: none !important;
   }
 }
+
+/* Tailwind backdrop-blur utilities (the top notification banner, dialog and navigation scrims, the marketing nav) get the same two looks:
+   Solid surfaces on, or the operating system's reduce-transparency. A scrim stays a plain dim layer; every other blurred panel turns opaque. */
+html[data-solid-surfaces="on"] [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"]) {
+  background-color: rgb(var(--c-surface-solid)) !important;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  [class*="backdrop-blur"]:not([class*="bg-scrim"]) {
+    background-color: rgb(var(--c-surface-solid)) !important;
+  }
+}
