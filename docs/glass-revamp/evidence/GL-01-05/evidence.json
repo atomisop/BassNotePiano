@@ -1,0 +1,28 @@
+{
+  "taskId": "GL-01-05",
+  "status": "DONE",
+  "commit": "31dc4f06",
+  "title": "Tailwind backdrop-blur panels honor Solid and reduced transparency",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x700"
+  ],
+  "before": [
+    "before/dashboard-student-dark-solid-chromium-1440x900.png",
+    "before/dashboard-student-dark-solid-chromium-320x700.png",
+    "before/dashboard-student-dark-solid-chromium-390x844.png"
+  ],
+  "after": [
+    "after/dashboard-student-dark-solid-chromium-1440x900.png",
+    "after/dashboard-student-dark-solid-chromium-320x700.png",
+    "after/dashboard-student-dark-solid-chromium-390x844.png"
+  ],
+  "stateProof": [
+    "after/dashboard-student-dark-solid-chromium-390x844.png"
+  ],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "accessibilityResults": "axe-results.json",
+  "blockingIssues": []
+}
