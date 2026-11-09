@@ -192,6 +192,8 @@ export interface SentAdminMessageRow {
   read: boolean;
   readAt: Date | null;
   createdAt: Date;
+  /** The student answered: their reply opened this Support Chat case (openSupportCaseFromMail). */
+  supportCaseId: string | null;
 }
 
 export async function listSentAdminMessages(limit = 30): Promise<SentAdminMessageRow[]> {
@@ -201,6 +203,11 @@ export async function listSentAdminMessages(limit = 30): Promise<SentAdminMessag
     take: limit,
     include: { user: { select: { name: true, email: true } } },
   });
+  // A support case can be deleted for good; only link to the ones still there.
+  const caseIds = rows.map((r) => r.supportCaseId).filter((id): id is string => !!id);
+  const liveCases = caseIds.length
+    ? new Set((await prisma.assistantEscalation.findMany({ where: { id: { in: caseIds } }, select: { id: true } })).map((c) => c.id))
+    : new Set<string>();
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -211,5 +218,6 @@ export async function listSentAdminMessages(limit = 30): Promise<SentAdminMessag
     readAt: r.readAt,
     read: !!r.readAt,
     createdAt: r.createdAt,
+    supportCaseId: r.supportCaseId && liveCases.has(r.supportCaseId) ? r.supportCaseId : null,
   }));
 }

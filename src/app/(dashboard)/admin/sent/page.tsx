@@ -150,6 +150,12 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                         <span>{r.kind}</span>
                         <span aria-hidden>·</span>
                         <span className={r.read ? "text-slate-500" : "text-amber-300"}>{r.read ? "Read" : "Not read yet"}</span>
+                        {r.supportCaseId && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <Link href={`/admin/support/${r.supportCaseId}?filter=all`} className="tap inline-flex items-center font-medium text-signal-fg underline underline-offset-4">Replied</Link>
+                          </>
+                        )}
                       </>
                     )}
                     {r.userId && (

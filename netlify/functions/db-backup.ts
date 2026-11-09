@@ -18,7 +18,7 @@ import {
 // can be read back with the key, keep the last 35 days. If anything fails, or
 // the job stops running, the job watchdog emails the owner (this is registered
 // in JOB_MAX_SILENCE_HOURS), so a backup problem is never silent.
-export const handler = schedule("30 6 * * *", async () =>
+export const runDbBackup = () =>
   runJob("db-backup", async () => {
     if (!isObjectStorageConfigured()) throw new Error("Backups need the R2 storage settings (R2_*).");
     const key = parseBackupKey(process.env.BACKUP_ENCRYPTION_KEY);
@@ -41,5 +41,6 @@ export const handler = schedule("30 6 * * *", async () =>
     const { tableCount, rowCount } = summarizeTables(tables);
     console.log(`Backup ${objectKey}: ${tableCount} tables, ${rowCount} rows, ${encrypted.length} bytes`);
     return { statusCode: 200 };
-  }),
-);
+  });
+
+export const handler = schedule("30 6 * * *", async () => runDbBackup());

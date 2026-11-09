@@ -11,7 +11,7 @@ const HOUR_MS = 3_600_000;
 // Every 15 minutes. Each booked class gets two reminders, once each: the day
 // before and shortly before it starts. A class booked less than a day ahead
 // skips the first one, since the student just chose that time.
-export const handler = schedule("*/15 * * * *", async () =>
+export const runClassReminders = () =>
   runJob("class-reminders", async () => {
     const now = new Date();
     const sendDayBefore = await getBoolSetting("reminders.classDayBefore");
@@ -65,4 +65,6 @@ export const handler = schedule("*/15 * * * *", async () =>
 
     console.log(`Class reminders: ${dayBefore.length} day-before, ${soon.length} starting soon`);
     return { statusCode: 200 };
-  }));
+  });
+
+export const handler = schedule("*/15 * * * *", async () => runClassReminders());

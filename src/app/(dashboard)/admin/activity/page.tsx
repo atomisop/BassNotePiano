@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
+import { accountAuditWhere } from "@/lib/accountAudit";
 import { AUDIT_KIND_LABEL, AUDIT_PAGE_SIZE, auditKind, auditLabel } from "@/lib/auditView";
 import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
@@ -35,10 +36,12 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
   const kind = (sp.kind ?? "").replace(/[^a-z_]/g, "").slice(0, 30);
   const page = Math.max(1, Math.floor(Number(sp.page) || 1));
 
+  // One person's history matches their own id and their plans', payments' and classes' ids, where most money and class changes are logged.
+  const personWhere = userId ? await accountAuditWhere(userId) : {};
   const where = {
     ...(days !== "all" ? { createdAt: { gte: new Date(Date.now() - Number(days) * DAY) } } : {}),
     ...(kind ? { action: { startsWith: `${kind}.` } } : {}),
-    ...(userId ? { targetId: userId } : {}),
+    ...personWhere,
     ...(q ? { OR: [{ action: { contains: q, mode: "insensitive" as const } }, { detail: { contains: q, mode: "insensitive" as const } }, { actorEmail: { contains: q, mode: "insensitive" as const } }] } : {}),
   };
 
@@ -91,7 +94,7 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
           )}
           {person && (
             <span className="text-small text-slate-300">
-              Only changes to <Link href={`/admin/users/${userId}`} className="underline underline-offset-4">{person.name ?? person.email}</Link>
+              Only changes to <Link href={`/admin/users/${userId}`} className="underline underline-offset-4">{person.name ?? person.email}</Link>, their plans, payments and classes
             </span>
           )}
         </div>

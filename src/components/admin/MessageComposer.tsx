@@ -3,6 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, X } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +25,8 @@ interface SentRow {
   read: boolean;
   readAt: string | null;
   createdAt: string;
+  /** They answered: the Support Chat case their reply opened. */
+  supportCaseId: string | null;
 }
 
 function relativeTime(iso: string): string {
@@ -42,12 +45,19 @@ const EMAIL_NOTE = {
   failed: "Delivered to their Mail. The email could not be sent.",
 } as const;
 
-export function MessageComposer({ sent }: { sent: SentRow[] }) {
+/** `prefill`: people picked on another screen (`/admin/messages?to=...`), already in the To list. */
+export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefill?: MessageRecipient[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MessageRecipient[]>([]);
   const [searching, setSearching] = useState(false);
-  const [recipients, setRecipients] = useState<MessageRecipient[]>([]);
+  const [recipients, setRecipients] = useState<MessageRecipient[]>(prefill);
+  const titleRef = useRef<HTMLInputElement>(null);
+  // Arriving with people filled in, the next thing to type is the title.
+  useEffect(() => {
+    if (prefill.length > 0) titleRef.current?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [openId, setOpenId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -192,6 +202,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
           </div>
 
           <input
+            ref={titleRef}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -243,27 +254,35 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             sent.map((m) => {
               const open = openId === m.id;
               return (
-                <div key={m.id} className="rounded-xl bg-neu-base shadow-raised-low">
+                <div key={m.id} className="relative rounded-xl bg-neu-base shadow-raised-low">
                   <button
                     type="button"
                     onClick={() => setOpenId(open ? null : m.id)}
                     aria-expanded={open}
-                    className="tap block w-full rounded-xl p-4 text-left transition hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap block w-full rounded-xl p-4 pr-24 text-left transition hover:shadow-raised-mid active:shadow-pressed-low"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="truncate text-small font-medium text-slate-100">{m.title}</p>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${m.read ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"}`}
-                      >
-                        {m.read ? "Read" : "Unread"}
-                      </span>
-                    </div>
+                    <p className="truncate text-small font-medium text-slate-100">{m.title}</p>
                     <p className="mt-1 text-small text-slate-400">
                       To {m.recipientName ?? m.recipientEmail}
                       {m.supportCta ? " · with contact support" : ""}
                     </p>
                     <p className="mt-1 text-small text-slate-500">{relativeTime(m.createdAt)}</p>
                   </button>
+                  {/* A reply opens a Support Chat case: "Replied" goes straight to it. Kept outside the row's button (no link in a button). */}
+                  {m.supportCaseId ? (
+                    <Link
+                      href={`/admin/support/${m.supportCaseId}?filter=all`}
+                      className="tap absolute right-3 top-3 inline-flex items-center rounded-full bg-signal/16 px-2 py-0.5 text-small font-medium text-signal-fg hover:underline"
+                    >
+                      Replied
+                    </Link>
+                  ) : (
+                    <span
+                      className={`pointer-events-none absolute right-3 top-3 rounded-full px-2 py-0.5 text-small font-medium ${m.read ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"}`}
+                    >
+                      {m.read ? "Read" : "Unread"}
+                    </span>
+                  )}
                   <Collapse open={open}>
                     <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">
                       <p className="whitespace-pre-wrap text-small text-slate-200">{m.body}</p>

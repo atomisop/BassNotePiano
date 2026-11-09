@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pause, Play, RefreshCw } from "@/components/ui/appIcons";
+import { Check, Pause, Play, RefreshCw, RotateCw } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
-import { checkJobsAction, setJobPausedAction } from "@/app/(dashboard)/admin/jobActions";
+import { checkJobsAction, runJobNowAction, setJobPausedAction } from "@/app/(dashboard)/admin/jobActions";
 
 export interface TaskRow {
   name: string;
@@ -27,6 +27,7 @@ interface Fresh {
  * Refresh that checks, live and without running anything, that each task COULD work right now: the database tables, email, Discord,
  * backup storage, mail chain and outside monitor it depends on are each tested (src/lib/jobCheckNow.ts), and every row shows what
  * answered or what is broken, next to its last real run (which a check never changes). The rows fill in one after another.
+ * Run now (owner only) starts the task's real run at once instead of waiting for its next turn; a stopped task shows it in orange.
  */
 export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[]; checkedAt: string; canPause: boolean }) {
   const router = useRouter();
@@ -36,6 +37,7 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
   const [sure, setSure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pausedNow, setPausedNow] = useState<Record<string, boolean>>({});
+  const [running, setRunning] = useState<string | null>(null);
 
   async function refresh() {
     if (checking) return;
@@ -59,6 +61,23 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
     const broken = Object.values(res.jobs).filter((j) => !j.verdict.ok).length;
     if (broken > 0) toast.warning(`${broken} task${broken === 1 ? " can't" : "s can't"} work right now. The reason is under ${broken === 1 ? "it" : "each"}.`);
     else toast.success("Everything the tasks need is working.");
+  }
+
+  // Run now: the same run the schedule starts, recorded like one. One task at a time from this screen.
+  async function runNow(job: TaskRow) {
+    if (running) return;
+    setRunning(job.name);
+    const res = await runJobNowAction(job.name).catch(() => ({ ok: false, outcome: null, error: "Could not reach the server to run it." }));
+    setRunning(null);
+    // Its fresh check result (if any) described the old state; the page's own row is read again below.
+    setFresh((f) => {
+      const copy = { ...f };
+      delete copy[job.name];
+      return copy;
+    });
+    router.refresh();
+    if (!res.ok) return void toast.warning(res.error ?? "It could not run.");
+    toast.success(res.outcome === "done" ? `${job.name} ran.` : `${job.name} is still running. Its row updates when it ends.`);
   }
 
   async function toggle(job: TaskRow, isPaused: boolean) {
@@ -113,8 +132,8 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
           return (
             <li key={job.name} className="py-2 text-small">
               <div className="flex items-center justify-between gap-3">
-                <span className={isPaused ? "text-slate-500" : "text-slate-200"}>{job.name}</span>
-                <span className="flex items-center gap-2">
+                <span className={`min-w-0 break-words ${isPaused ? "text-slate-500" : "text-slate-200"}`}>{job.name}</span>
+                <span className="flex flex-wrap items-center justify-end gap-2">
                   {phase === "looking" && (
                     <span className="inline-flex items-center gap-1.5 text-slate-400">
                       <MorphingSquare size={12} />
@@ -122,6 +141,22 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                     </span>
                   )}
                   {phase === "done" && <span className={isPaused ? "text-amber-300" : bad ? "text-red-300" : "text-slate-500"}>{text}</span>}
+                  {canPause && !isPaused && (
+                    <button
+                      type="button"
+                      onClick={() => void runNow(job)}
+                      disabled={running !== null || checking || busy === job.name}
+                      aria-busy={running === job.name}
+                      aria-label={running === job.name ? `Running ${job.name}` : `Run ${job.name} now`}
+                      title="Run this task now"
+                      className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium shadow-raised-low transition active:shadow-pressed-low disabled:opacity-50 ${
+                        bad ? "bg-signal/16 text-signal-fg" : "bg-neu-base text-slate-300 hover:text-slate-50"
+                      }`}
+                    >
+                      {running === job.name ? <MorphingSquare size={12} /> : <RotateCw aria-hidden className="h-3.5 w-3.5" />}
+                      {bad && running !== job.name && "Run now"}
+                    </button>
+                  )}
                   {canPause && (
                     <button
                       type="button"

@@ -28,7 +28,7 @@ function daysSince(date: Date, now: Date): number {
 // onboarding and have practiced at least once, someone who signed up and
 // never started doesn't need a "come back" nudge, they need an onboarding
 // flow (already handled separately).
-export const handler = schedule("0 15 * * *", async () =>
+export const runPracticeReminders = () =>
   runJob("practice-reminders", async () => {
   if (!(await getBoolSetting("reminders.practiceEnabled"))) {
     console.log("Practice reminders: turned off in settings");
@@ -71,4 +71,6 @@ export const handler = schedule("0 15 * * *", async () =>
 
   console.log(`Practice reminders: sent ${sent} of ${users.length} eligible users`);
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("0 15 * * *", async () => runPracticeReminders());

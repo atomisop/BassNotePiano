@@ -27,7 +27,7 @@ import {
   TOGGLE_SIDEBAR_EVENT,
   goKeysFor,
 } from "@/lib/shortcuts";
-import { readRecentCommands, rememberCommand, personActionHref, type RecentCommand } from "@/lib/commandRecents";
+import { readRecentCommands, rememberCommand, personActionHref, personActionLabel, personActionsFor, type RecentCommand } from "@/lib/commandRecents";
 import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/admin/quick-find-actions";
 
 /**
@@ -40,15 +40,10 @@ import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/a
  * content, and the routes it links to enforce their own access rules, an
  * unpaid student who picks a locked scale still lands on /billing/plans
  * exactly as if they'd clicked it on the roadmap.
+ *
+ * The jobs offered for a person found by name (PERSON_ACTIONS) live in lib/commandRecents.ts with the `?do=` links they open.
  */
-const PERSON_ACTIONS = [
-  { id: "credits", label: "Add credits", keywords: "grant credit balance" },
-  { id: "book", label: "Book a class", keywords: "schedule lesson" },
-  { id: "plan", label: "Plan tools", keywords: "pause weekly time bill date settings cancel upcoming" },
-  { id: "payments", label: "See payments", keywords: "money bill receipt refund" },
-] as const;
-
-export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
+export function CommandMenu({ isAdmin, isOwner = false }: { isAdmin: boolean; isOwner?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -185,13 +180,13 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
           <CommandGroup heading="Do for this person">
             {people.flatMap((p) => {
               const who = (p.name ?? p.email).split(" ")[0];
-              return PERSON_ACTIONS.map((a) => (
+              return personActionsFor(people.length, isOwner).map((a) => (
                 <CommandItem
                   key={`${p.id}-${a.id}`}
                   value={`${search} ${p.name ?? ""} ${p.email} ${a.id} ${a.keywords}`}
-                  onSelect={() => go(personActionHref(p.id, a.id), `${a.label} for ${who}`)}
+                  onSelect={() => go(personActionHref(p.id, a.id), personActionLabel(a, who))}
                 >
-                  <span className="truncate">{a.label} for {who}</span>
+                  <span className="truncate">{personActionLabel(a, who)}</span>
                 </CommandItem>
               ));
             })}
@@ -273,18 +268,44 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </CommandGroup>
 
+        {/* Admins also get each scale's lesson files, so adding or reordering a lesson starts from here, not from the student player. */}
+        {isAdmin && (
+          <CommandGroup heading="Lessons">
+            {SCALE_GROUPS.map((scale) => (
+              <CommandItem
+                key={`lessons-${scale.slug}`}
+                value={`lessons files upload ${scale.code} ${scale.title} ${scale.kinitName ?? ""}`}
+                onSelect={() => go(`/admin/lessons?scale=${scale.slug}`, `Lessons for ${scale.code}`)}
+              >
+                Lessons for {scale.code}
+                <span className="ml-2 truncate text-small text-slate-500">{scale.kinitName ?? scale.title}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
         {isAdmin && (
           <CommandGroup heading="Admin">
             <CommandItem value="admin overview studio" onSelect={() => go("/admin", "Studio overview")}>
               Studio overview
             {hint("/admin")}
             </CommandItem>
-            <CommandItem value="admin students" onSelect={() => go("/admin/students", "Students")}>
-              Students
+            <CommandItem value="admin today classes teaching day" onSelect={() => go("/admin/today", "Today")}>
+              Today
+              {hint("/admin/today")}
+            </CommandItem>
+            <CommandItem value="admin applicants applications students trial" onSelect={() => go("/admin/students", "Applicants")}>
+              Applicants
             </CommandItem>
             <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments", "Payments")}>
               Payments
             {hint("/admin/payments")}
+            </CommandItem>
+            <CommandItem value="admin plans payment plans subscriptions pause" onSelect={() => go("/admin/payment-plans", "Plans")}>
+              Plans
+            </CommandItem>
+            <CommandItem value="admin schedule weekly times slots reserved" onSelect={() => go("/admin/schedule", "Schedule")}>
+              Schedule
             </CommandItem>
             <CommandItem value="admin lessons upload" onSelect={() => go("/admin/lessons", "Lesson content")}>
               Lesson content
@@ -294,6 +315,13 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             </CommandItem>
             <CommandItem value="admin support chat inbox" onSelect={() => go("/admin/support", "Support chat")}>
               Support chat
+              {hint("/admin/support")}
+            </CommandItem>
+            <CommandItem value="admin messages write mail" onSelect={() => go("/admin/messages", "Messages")}>
+              Messages
+            </CommandItem>
+            <CommandItem value="admin announcements announce everyone news" onSelect={() => go("/admin/messages?tab=announcements", "Announcements")}>
+              Announcements
             </CommandItem>
             <CommandItem value="admin accounts people users" onSelect={() => go("/admin/users", "Accounts")}>
               Accounts
@@ -307,6 +335,19 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             <CommandItem value="admin settings owner switches" onSelect={() => go("/admin/settings", "Settings")}>
               Settings
             </CommandItem>
+            {isOwner && (
+              <>
+                <CommandItem value="admin activity log audit changes history" onSelect={() => go("/admin/activity", "Activity")}>
+                  Activity
+                </CommandItem>
+                <CommandItem value="admin system automatic tasks jobs security page views" onSelect={() => go("/admin/security", "System")}>
+                  System
+                </CommandItem>
+                <CommandItem value="admin roadmaps scales chapters curriculum" onSelect={() => go("/admin/roadmaps", "Roadmaps")}>
+                  Roadmaps
+                </CommandItem>
+              </>
+            )}
           </CommandGroup>
         )}
       </CommandList>
