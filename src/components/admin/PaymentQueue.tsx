@@ -161,7 +161,9 @@ export function PaymentQueue({
   const [query, setQuery] = useState("");
   // On by default here: a student who paid is waiting for the answer (and the receipt). On the person's own page the one switch at the
   // top of the page (student-changes) decides, so this list draws no switch of its own there.
-  const [notify, setNotify] = useNotifyStudent(personView ? "student-changes" : "payments", !personView);
+  // A payment result is something the student is waiting for, so it defaults to telling them here too (the student page's own
+  // switch defaults off). The person view shows its own switch so the choice is visible where the button is.
+  const [notify, setNotify] = useNotifyStudent("payments", true);
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -364,7 +366,7 @@ export function PaymentQueue({
           Search every page for &ldquo;{query.trim()}&rdquo;
         </Link>
       )}
-      {!personView && <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />}
+      <NotifyToggle on={notify} onChange={setNotify} label={personView ? "Tell them about payment results" : "Notify the student"} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {shown.filter(canTick).length > 1 && (
         <label className="tap flex items-center gap-2 text-small text-slate-400">

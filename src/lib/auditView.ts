@@ -72,6 +72,14 @@ const LABELS: Record<string, string> = {
   "pricing.discount.set": "Gave or changed a discount",
   "pricing.discount.clear": "Removed a discount",
   "security.csp.clear": "Cleared security reports",
+  "job.run-now": "Ran an automatic task now",
+  "booking.book": "Booked a class for a student",
+  "booking.book-custom": "Booked a class at a new one-time time",
+  "booking.walk-in": "Recorded a class already taught (marked Present)",
+  "booking.book-over-plan-hold": "Booked into a time another plan keeps",
+  "reservation.book": "Booked a customer into their reserved time",
+  "scale.release": "Released the next scale",
+  "payment.mark-paid": "Marked a bill paid (money came another way)",
 };
 
 export function auditLabel(action: string): string {
@@ -96,6 +104,11 @@ export const AUDIT_KIND_LABEL: Record<string, string> = {
   email: "Email",
   pricing: "Pricing",
   security: "Security",
+  booking: "Classes",
+  reservation: "Reservations",
+  scale: "Scales",
+  scholarship: "Scholarships",
+  job: "Automatic tasks",
 };
 
 export const AUDIT_PAGE_SIZE = 50;
