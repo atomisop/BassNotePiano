@@ -17,6 +17,7 @@ import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/l
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 import { applyPlanSetup, getPlanSetupContext, previewPlanSetup, type PlanSetupContext, type PlanSetupInput, type PlanSetupPreview, type PlanSetupResult } from "@/lib/planSetup";
 import type { ScholarshipChoice } from "@/lib/planSetupRules";
+import { refuseIfPaidThroughGroup, resolvePlanFix, type PlanFix } from "@/lib/planFixes";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -39,19 +40,32 @@ export async function cancelPaymentPlanAction(planId: string, note: string, noti
   });
 }
 
-// Owner only: this writes revenue and can open someone's access.
-export async function recordPlanPaymentAction(planId: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
+// Owner only: this writes revenue and can open someone's access. Once per attempt (`key`): a second tap after it worked would
+// otherwise record the next bill too.
+export async function recordPlanPaymentAction(planId: string, notify = true, key?: string): Promise<{ ok: boolean; error: string | null; fix?: PlanFix | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
     if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can record a payment." };
-    try {
-      const outcome = await recordPlanPaymentReceived(planId, admin.id);
-      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.record-payment", targetType: "PaymentPlan", targetId: planId, detail: outcome });
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : "Could not record the payment." };
-    }
-    revalidatePath("/", "layout");
-    return { ok: true, error: null };
+    type Recorded = { ok: boolean; error: string | null; fix?: PlanFix | null };
+    const result = await runOnce<Recorded>(
+      admin.id,
+      `record-payment:${String(planId)}`,
+      key,
+      async () => {
+        try {
+          // A member's bill held in the group's combined bill is paid through the combined bill, never on its own.
+          await refuseIfPaidThroughGroup(String(planId));
+          const outcome = await recordPlanPaymentReceived(String(planId), admin.id);
+          await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.record-payment", targetType: "PaymentPlan", targetId: planId, detail: outcome });
+          return { ok: true, error: null };
+        } catch (err) {
+          return { ok: false, error: err instanceof Error ? err.message : "Could not record the payment.", fix: await resolvePlanFix(err) };
+        }
+      },
+      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } },
+    );
+    if (result.ok) revalidatePath("/", "layout");
+    return result;
   });
 }
 
@@ -118,7 +132,7 @@ export async function changeBillDateAction(planId: string, day: string, notify =
 }
 
 /** Owner only: sets how many bills are paid and the next bill date, with none of the usual limits (see setPlanProgress). */
-export async function setPlanProgressAction(planId: string, billsPaid: number, nextBillDay: string, notify = true): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
+export async function setPlanProgressAction(planId: string, billsPaid: number, nextBillDay: string, notify = true): Promise<{ ok: boolean; error: string | null; warning?: string | null; fix?: PlanFix | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
     if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change a plan's progress." };
@@ -127,25 +141,25 @@ export async function setPlanProgressAction(planId: string, billsPaid: number, n
       revalidatePath("/", "layout");
       return { ok: true, error: null, warning: warnings.join(" ") };
     } catch (err) {
-      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message, fix: await resolvePlanFix(err) };
       throw err;
     }
   });
 }
 
 /** Owner only: what settling a late payer would do (the bill, the classes taught on credit, the new due date). Changes nothing. */
-export async function lateSettlementPreviewAction(planId: string): Promise<{ ok: true; preview: LateSettlementPreview } | { ok: false; error: string }> {
+export async function lateSettlementPreviewAction(planId: string): Promise<{ ok: true; preview: LateSettlementPreview } | { ok: false; error: string; fix?: PlanFix | null }> {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can settle a late payment." };
   try {
     return { ok: true, preview: await getLateSettlementPreview(planId) };
   } catch (err) {
-    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again.", fix: await resolvePlanFix(err) };
   }
 }
 
 /** Owner only: records the payment, charges the class taught on credit, and puts the next bill 28 days from today, in one step. */
-export async function settleLatePaymentAction(planId: string, input: LateSettlementInput, key?: string, notify = true): Promise<{ ok: boolean; error: string | null; newDueDate?: string }> {
+export async function settleLatePaymentAction(planId: string, input: LateSettlementInput, key?: string, notify = true): Promise<{ ok: boolean; error: string | null; newDueDate?: string; fix?: PlanFix | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
     if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can settle a late payment." };
@@ -155,13 +169,15 @@ export async function settleLatePaymentAction(planId: string, input: LateSettlem
       key,
       async () => {
         try {
+          // A member's open bill inside the group's combined bill is paid with the combined bill, never on its own.
+          if (input.recordPayment) await refuseIfPaidThroughGroup(String(planId));
           const done = await settleLatePayment(planId, admin.id, input);
           return { ok: true, error: null, newDueDate: done.newDueDate.toISOString() };
         } catch (err) {
-          return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again." };
+          return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again.", fix: await resolvePlanFix(err) };
         }
       },
-      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } as { ok: boolean; error: string | null; newDueDate?: string } },
+      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." } as { ok: boolean; error: string | null; newDueDate?: string; fix?: PlanFix | null } },
     );
     if (result.ok) revalidatePath("/", "layout");
     return result;
@@ -169,13 +185,13 @@ export async function settleLatePaymentAction(planId: string, input: LateSettlem
 }
 
 /** Owner only: what the plan builder starts from for this student (their plan if any, the free weekly times, the lengths on offer). */
-export async function planBuilderContextAction(userId: string): Promise<{ ok: true; context: PlanBuilderContext } | { ok: false; error: string }> {
+export async function planBuilderContextAction(userId: string): Promise<{ ok: true; context: PlanBuilderContext } | { ok: false; error: string; fix?: PlanFix | null }> {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can use the plan builder." };
   try {
     return { ok: true, context: await getPlanBuilderContext(userId) };
   } catch (err) {
-    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again.", fix: await resolvePlanFix(err) };
   }
 }
 
@@ -296,7 +312,7 @@ export async function moveWeeklyTimeAction(planId: string, scheduleId: string, c
   });
 }
 
-type PlanToolResult = { ok: true; message: string } | { ok: false; error: string };
+type PlanToolResult = { ok: true; message: string } | { ok: false; error: string; fix?: PlanFix | null };
 
 // The owner only, like the bill date and the plan builder: these change what a student pays.
 async function ownerPlanTool(notify: boolean, work: (adminId: string) => Promise<string>): Promise<PlanToolResult> {
@@ -308,7 +324,7 @@ async function ownerPlanTool(notify: boolean, work: (adminId: string) => Promise
       revalidatePath("/", "layout");
       return { ok: true, message };
     } catch (err) {
-      if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+      if (err instanceof PaymentPlanError) return { ok: false, error: err.message, fix: await resolvePlanFix(err) };
       throw err;
     }
   });

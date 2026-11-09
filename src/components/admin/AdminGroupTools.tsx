@@ -17,37 +17,48 @@ import {
   unlinkParentAction,
 } from "@/app/(dashboard)/admin/payment-plans/actions";
 import type { AdminLinkRow, GroupView } from "@/lib/adminGroupTools";
+import type { PlanFix } from "@/lib/planFixes";
+import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
 
 const field = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-type Result = { ok: true; message: string } | { ok: false; error: string };
+type Result = { ok: true; message: string } | { ok: false; error: string; fix?: PlanFix | null };
 
 function useRun() {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  // A refusal the owner can fix here (a payment waiting for review, a group start not yet approved) shows the payment in the dialog.
+  const [refusal, setRefusal] = useState<{ error: string; fix: PlanFix } | null>(null);
   async function run(key: string, work: () => Promise<Result>, after?: () => void | Promise<void>) {
     setBusy(key);
+    setRefusal(null);
     const label = { split: "Moving them onto their own plan", payer: "Changing who pays", link: "Linking the parent" }[key] ?? "Unlinking the parent";
-    const hold = await toast.held(label, () => work().catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true });
+    const hold = await toast.held(label, () => work().catch((): Result => ({ ok: false, error: "Something went wrong. Try again." })), { mail: true });
     setBusy(null);
     if (hold.undone) return;
     const result = hold.value;
-    if (!result.ok) return void toast.warning(result.error);
+    if (!result.ok) {
+      if (result.fix) setRefusal({ error: result.error, fix: result.fix });
+      return void toast.warning(result.error);
+    }
     toast.success(result.message);
     await after?.();
     router.refresh();
   }
-  return { busy, run };
+  return { busy, run, refusal, clearRefusal: () => setRefusal(null) };
 }
 
-/** Owner only, next to the plan tools when this person is on a group or parent plan: who is on it, who pays, and the two fixes. */
-export function AdminGroupButton({ groupId, planId, userId }: { groupId: string; planId: string; userId: string }) {
+/**
+ * Owner only, next to the plan tools when this person is on a group or parent plan, or pays for one without a plan of their own
+ * (`planId` null): who is on it, who pays, and the two fixes.
+ */
+export function AdminGroupButton({ groupId, planId, userId, label = "Group" }: { groupId: string; planId: string | null; userId: string; label?: string }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<GroupView | null>(null);
   const [payer, setPayer] = useState("");
   const [confirmSplit, setConfirmSplit] = useState(false);
   const [notify, setNotify] = useNotifyStudent("student-changes");
-  const { busy, run } = useRun();
+  const { busy, run, refusal, clearRefusal } = useRun();
 
   async function load() {
     const result = await groupViewAction(groupId).catch(() => ({ ok: false as const, error: "Could not load the group." }));
@@ -64,10 +75,11 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
     setOpen(true);
     setView(null);
     setConfirmSplit(false);
+    clearRefusal();
     void load();
   }
 
-  const me = view?.members.find((m) => m.planId === planId);
+  const me = planId ? view?.members.find((m) => m.planId === planId) : undefined;
   const isPayer = view?.payer.id === userId;
   const running = view?.members.filter((m) => m.status === "ACTIVE") ?? [];
 
@@ -75,10 +87,23 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
     <>
       <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
         <Users aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Group
+        {label}
       </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title={view?.kind === "PARENT" ? "Parent plan" : "Group plan"}>
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />
+        {refusal && (
+          <div className="mb-4 space-y-2">
+            <p role="alert" className="text-small text-red-400">{refusal.error}</p>
+            <PlanFixPanel
+              fix={refusal.fix}
+              notify={notify}
+              onDone={() => {
+                clearRefusal();
+                void load();
+              }}
+            />
+          </div>
+        )}
         {!view ? (
           <div className="inline-flex items-center gap-2 text-small text-slate-400">
             <MorphingSquare size={12} />
@@ -119,7 +144,7 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
                     <button
                       type="button"
                       disabled={busy !== null}
-                      onClick={() => void run("split", () => separateFromGroupAction(planId, notify), () => setOpen(false))}
+                      onClick={() => void run("split", () => separateFromGroupAction(me.planId, notify), () => setOpen(false))}
                       className={buttonVariants({ variant: "primary", size: "sm" })}
                     >
                       {busy === "split" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}

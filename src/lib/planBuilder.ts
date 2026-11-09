@@ -10,6 +10,7 @@ import { getDiscountPercent, getPersonalDiscount } from "@/lib/accountDiscounts"
 import { drawDownCredits } from "@/lib/creditLedger";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { groupNotStartedError } from "@/lib/planFixes";
 import { buildPlanTimeline, parseYmd, type PlanTimeline } from "@/lib/planTimeline";
 
 /**
@@ -62,7 +63,7 @@ export interface PlanBuilderContext {
 // Each person on a group or parent plan has their own plan (weekly time, bills, credits), so it is rebuilt on its own like a solo one. Only a
 // group whose combined first payment is still open is left alone: that one payment starts every plan in it at once.
 function assertGroupPlanStarted(plan: { familyGroupId: string | null; installmentsPaid: number } | null) {
-  if (plan?.familyGroupId && plan.installmentsPaid < 1) throw new PaymentPlanError("This group plan has not started yet. Approve its combined first payment on Billing > Payments first.");
+  if (plan?.familyGroupId && plan.installmentsPaid < 1) throw groupNotStartedError(plan.familyGroupId);
 }
 
 async function loadSlot(scheduleId: string, chunkIndex: number) {

@@ -4,7 +4,7 @@ import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle"
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -20,20 +20,35 @@ import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { Hint } from "@/components/ui/Hint";
+import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
+import { adminPaymentsHref, type PaymentFilterValue } from "@/lib/adminPaymentLinks";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
   onApprove: (paymentId: string, notify?: boolean) => Promise<void>;
   onReject: (paymentId: string, reason: string, notify?: boolean) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
-  /** Owner only. Marks a verified payment refunded, optionally taking back its credits and ending its plan. */
-  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
+  /** Owner only. Marks a verified payment refunded, optionally taking back its credits, ending its plan and canceling their upcoming classes. */
+  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean, cancelClasses?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
   /** Owner only: put a refunded payment back as paid. */
   onUndoRefund?: (paymentId: string, restoreCredits: boolean, reactivatePlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only: close a bill nobody paid, keeping the record as expired. */
   onCancelBill?: (paymentId: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** Owner only: the money for an unpaid bill came another way (cash, an email that never arrived). Records it and approves it. */
+  onMarkPaid?: (paymentId: string, notify?: boolean, key?: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** Owner only: correct an approved payment's amount or day (Fix). */
+  canFix?: boolean;
+  /** Each person's classes booked from now on, for the refund panel's "also cancel their classes". */
+  upcomingClasses?: Record<string, number>;
+  /** A link to one payment: it is marked and scrolled to. */
+  highlightId?: string | null;
+  /** On the person's own page: their name is not a link and the list starts shorter. */
+  personView?: boolean;
+  /** Billing > Payments: the view the page shows, so a search can reach every page, not only the one loaded. */
+  listView?: { status: PaymentFilterValue; user: string | null; morePages: boolean };
   emptyMessage?: string;
 }
 
@@ -135,11 +150,18 @@ export function PaymentQueue({
   onRefund,
   onUndoRefund,
   onCancelBill,
+  onMarkPaid,
+  canFix = false,
+  upcomingClasses = {},
+  highlightId = null,
+  personView = false,
+  listView,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
-  // On by default here: a student who paid is waiting for the answer (and the receipt).
-  const [notify, setNotify] = useNotifyStudent("payments", true);
+  // On by default here: a student who paid is waiting for the answer (and the receipt). On the person's own page the one switch at the
+  // top of the page (student-changes) decides, so this list draws no switch of its own there.
+  const [notify, setNotify] = useNotifyStudent(personView ? "student-changes" : "payments", !personView);
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -173,7 +195,17 @@ export function PaymentQueue({
   const [refundNote, setRefundNote] = useState("");
   const [refundCredits, setRefundCredits] = useState(true);
   const [refundPlan, setRefundPlan] = useState(true);
+  const [refundClasses, setRefundClasses] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  // One key per attempt: a double tap on "Yes, mark paid" records the money once.
+  const [markKey, setMarkKey] = useState(() => newIdempotencyKey());
+  // A link to one payment opens with it marked, on screen.
+  useEffect(() => {
+    if (!highlightId) return;
+    const t = window.setTimeout(() => document.getElementById(`pay-${highlightId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 200);
+    return () => window.clearTimeout(t);
+  }, [highlightId]);
 
   /** "Jordan Alemu, $55.00": who and how much, for the toast, so the admin can tell which row it was. */
   function whoAndHow(id: string): string | undefined {
@@ -205,7 +237,7 @@ export function PaymentQueue({
     setBusyId(id);
     setRefundError(null);
     try {
-      const h = await toast.held("Refunding payment", () => onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify), { mail: notify });
+      const h = await toast.held("Refunding payment", () => onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify, refundClasses), { mail: notify });
       if (h.undone) return;
       const result = h.value;
       if (!result.ok) {
@@ -215,6 +247,7 @@ export function PaymentQueue({
       }
       setRefundingId(null);
       setRefundNote("");
+      setRefundClasses(false);
       router.refresh();
       // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now,
       // and keep the toast up until it is dismissed.
@@ -259,6 +292,25 @@ export function PaymentQueue({
     }
   }
 
+  async function handleMarkPaid(id: string) {
+    if (!onMarkPaid) return;
+    setBusyId(id);
+    try {
+      const h = await toast.held("Marking the bill paid", () => onMarkPaid(id, notify, markKey), { mail: notify });
+      if (h.undone) return;
+      const result = h.value;
+      if (!result.ok) return void toast.warning(result.error ?? "Could not mark the bill paid.");
+      toast.success("Marked paid", { description: whoAndHow(id) });
+      setMarkingId(null);
+      setMarkKey(newIdempotencyKey());
+      router.refresh();
+    } catch (err) {
+      toast.error("Couldn't mark that bill paid", { description: failureText(err) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!onDelete) return;
     setBusyId(id);
@@ -294,14 +346,25 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New payments show up here as soon as they come in." />
+      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description={personView ? "Their bills and payments show up here." : "New payments show up here as soon as they come in."} />
     );
   }
 
+  const firstShown = personView ? 4 : 8;
+  const highlightAt = highlightId ? shown.findIndex((p) => p.id === highlightId) : -1;
+
   return (
     <div className="space-y-3">
-      <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />
+      {(!personView || payments.length > firstShown) && (
+        <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
+      )}
+      {listView?.morePages && query.trim() && (
+        // The box above only searches this page; this one searches every payment.
+        <Link href={adminPaymentsHref({ status: listView.status, user: listView.user, q: query.trim() })} className="tap -mt-2 inline-flex items-center text-small font-medium text-signal-fg underline underline-offset-4">
+          Search every page for &ldquo;{query.trim()}&rdquo;
+        </Link>
+      )}
+      {!personView && <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />}
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {shown.filter(canTick).length > 1 && (
         <label className="tap flex items-center gap-2 text-small text-slate-400">
@@ -331,7 +394,7 @@ export function PaymentQueue({
         ]}
         extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
       />
-      <ViewMore items={shown} initial={8} animateRemovals>
+      <ViewMore key={highlightId ?? "list"} items={shown} initial={Math.max(firstShown, highlightAt + 1)} animateRemovals>
       {(payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
@@ -341,14 +404,23 @@ export function PaymentQueue({
           key={payment.id}
           exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-          className="glass-surface p-4"
+          id={`pay-${payment.id}`}
+          className={`glass-surface scroll-mt-28 p-4 ${highlightId === payment.id ? "ring-2 ring-signal" : ""}`}
         >
           {/* Who and how much: bold. How it arrived: one gray line. */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-2">
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
               <div className="min-w-0">
-                <h2 className="truncate text-title font-semibold text-slate-50">{payment.user.name ?? payment.user.email}</h2>
+                <h2 className="truncate text-title font-semibold text-slate-50">
+                  {personView ? (
+                    payment.user.name ?? payment.user.email
+                  ) : (
+                    <Link href={`/admin/users/${payment.user.id}`} className="hover:underline hover:underline-offset-4">
+                      {payment.user.name ?? payment.user.email}
+                    </Link>
+                  )}
+                </h2>
                 <p className="mt-0.5 truncate text-small text-slate-500">{title === (payment.user.name ?? payment.user.email) ? eyebrow : `${eyebrow} · ${title}`}</p>
                 {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
                   <p className="mt-0.5 text-caption text-slate-500">To: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}</p>
@@ -494,9 +566,12 @@ export function PaymentQueue({
           )}
 
           {payment.status === "VERIFIED" && (
-            <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center text-small font-medium text-signal-fg hover:underline">
-              Receipt
-            </Link>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Link href={`/billing/receipt/${payment.id}`} className="tap inline-flex items-center text-small font-medium text-signal-fg hover:underline">
+                Receipt
+              </Link>
+              {canFix && <AdminEditPaymentButton paymentId={payment.id} amountCents={payment.amountCents} paidAt={payment.reviewedAt ?? payment.updatedAt} />}
+            </div>
           )}
 
           {onRefund && payment.status === "VERIFIED" && (
@@ -523,6 +598,21 @@ export function PaymentQueue({
                       Cancel the plan too
                     </label>
                   )}
+                  {(() => {
+                    // Canceled before the credits are taken back, so the credits those classes held come back too.
+                    const group = payment.purpose === "FAMILY_PLAN_INSTALLMENT" || payment.purpose === "FAMILY_PLAN_START";
+                    const count = upcomingClasses[payment.user.id] ?? 0;
+                    if (!group && count === 0) return null;
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        <label className="flex items-center gap-2 text-small text-slate-300">
+                          <input type="checkbox" checked={refundClasses} onChange={(e) => setRefundClasses(e.target.checked)} className="h-4 w-4 accent-slate-50" />
+                          {group ? "Also cancel everyone's upcoming classes on it" : `Also cancel their ${count} upcoming class${count === 1 ? "" : "es"}`}
+                        </label>
+                        <Hint>Canceled first, so the credits those classes held come back too.</Hint>
+                      </div>
+                    );
+                  })()}
                   {refundError && <p className="text-small text-red-400">{refundError}</p>}
                   <div className="flex gap-2">
                     <button
@@ -549,6 +639,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => {
                     setRefundError(null);
+                    setRefundClasses(false);
                     setRefundingId(payment.id);
                   }}
                   className="tap inline-flex items-center text-small font-medium text-slate-400 transition hover:text-amber-300"
@@ -585,9 +676,23 @@ export function PaymentQueue({
             </div>
           )}
 
-          {onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED") && (
+          {((onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED")) || (onMarkPaid && payment.status === "AWAITING_TRANSFER")) && (
             <div className="mt-4 border-t border-slate-50/10 pt-3">
-              {cancelingId === payment.id ? (
+              {markingId === payment.id ? (
+                <div className="space-y-2">
+                  <p className="text-small text-slate-300">
+                    Record {formatUsd(payment.amountCents)} as received from {payment.user.name ?? payment.user.email}? Use this when the money came another way, like cash or a bank email
+                    that never arrived. It is approved now, exactly as if they had sent it in.
+                  </p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setMarkingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Back</button>
+                    <button type="button" onClick={() => handleMarkPaid(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+                      {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                      {busyId === payment.id ? "Recording…" : "Yes, mark paid"}
+                    </button>
+                  </div>
+                </div>
+              ) : cancelingId === payment.id ? (
                 <div className="space-y-2">
                   <p className="text-small text-slate-400"><Hint>Close this unpaid bill? The record stays as expired. The plan is not changed.</Hint></p>
                   <div className="flex gap-2">
@@ -598,7 +703,14 @@ export function PaymentQueue({
                   </div>
                 </div>
               ) : (
-                <button type="button" onClick={() => setCancelingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel bill</button>
+                <div className="flex flex-wrap gap-2">
+                  {onMarkPaid && payment.status === "AWAITING_TRANSFER" && (
+                    <button type="button" onClick={() => setMarkingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Mark paid</button>
+                  )}
+                  {onCancelBill && (
+                    <button type="button" onClick={() => setCancelingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel bill</button>
+                  )}
+                </div>
               )}
             </div>
           )}

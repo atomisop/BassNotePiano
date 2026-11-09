@@ -3,6 +3,7 @@
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
@@ -251,7 +252,9 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
     <li className="py-3">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <p className="truncate text-body text-slate-50">{row.name ?? row.email}</p>
+          <p className="truncate text-body text-slate-50">
+            <Link href={`/admin/users/${row.userId}`} className="hover:underline hover:underline-offset-4">{row.name ?? row.email}</Link>
+          </p>
           {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
           {row.note && <p className="text-small text-slate-400">{row.note}</p>}
           <p className="mt-1 text-small">
