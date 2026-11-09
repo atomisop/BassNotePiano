@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, Trophy, CalendarCheck, Users, Settings, Globe, ArrowUpRight, type AppIcon } from "@/components/ui/appIcons";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, Settings, Globe, ArrowUpRight, ShieldCheck, type AppIcon } from "@/components/ui/appIcons";
 import GenerateAIButton from "@/components/ui/button-33";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
@@ -13,6 +13,7 @@ import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminNavBadges } from "@/
 import { HUB_ICON } from "@/components/admin/AdminNav";
 import { atomHiddenOn, openAtom } from "@/lib/atomTrigger";
 import { GlassLens } from "@/components/ui/GlassLens";
+import { useLinkedChildren } from "@/components/parent/useLinkedChildren";
 
 type Item = { href: string; label: string; icon: AppIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
 
@@ -45,6 +46,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
   },
 ];
 
+/** The main menu with Parent mode added after Lessons. */
+function withParentMode(groups: { title: string; items: Item[] }[]): { title: string; items: Item[] }[] {
+  return groups.map((g, i) => (i === 0 ? { ...g, items: [...g.items, { href: "/parent", label: "Parent mode", icon: ShieldCheck }] } : g));
+}
+
 /**
  * Desktop navigation (lg and up). Phones and tablets keep the floating
  * AppDock; this takes its place on wide screens so nothing floats over the
@@ -53,11 +59,14 @@ const GROUPS: { title: string; items: Item[] }[] = [
 export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: SidebarCard[]; isAdmin: boolean; adminBadges?: AdminNavBadges }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  // A parent (anyone with an accepted child) gets Parent mode in the main menu, right under Lessons, so it is one tap from anywhere.
+  const kids = useLinkedChildren(!isAdmin);
+  const base = kids.length > 0 ? withParentMode(GROUPS) : GROUPS;
   // The admin's six sections sit under Website as one more group, so the admin pages need no second menu of their own on a computer.
   const adminHub = pathname.startsWith("/admin") ? locateAdminPage(pathname)?.hub.id ?? "overview" : null;
   const groups: { title: string; items: Item[] }[] = isAdmin
     ? [
-        ...GROUPS,
+        ...base,
         {
           title: "Admin",
           items: ADMIN_HUBS.map((hub) => ({
@@ -69,7 +78,7 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
           })),
         },
       ]
-    : GROUPS;
+    : base;
   useEffect(() => setMounted(true), []);
 
   // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
@@ -110,7 +119,7 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
       window.clearTimeout(stop);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [pathname, mounted]);
+  }, [pathname, mounted, kids.length]);
 
   return (
     <nav

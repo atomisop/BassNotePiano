@@ -32,7 +32,8 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
         "Every plan includes live classes with your teacher and all of the lessons. Pick a plan and your first scale opens right away.",
       ],
       primary: { label: "Choose a plan", href: "/billing/plans" },
-      secondary: { label: "Try a free class first", href: "/classes" },
+      // Home asks for the free class right there from the account (no second form), so this goes to Home, not the public /classes form.
+      secondary: { label: "Try a free class first", href: "/dashboard" },
       canAsk: false,
     };
   }
@@ -80,6 +81,10 @@ export interface GettingStartedInput {
   applicationPending: boolean;
   /** Length of the free trial in days, from Settings. 0 or missing means the copy does not mention a trial by length (default 3). */
   trialDays?: number;
+  /** Their free trial already ran (it is once per person): offer plans, never a second trial. */
+  trialUsed?: boolean;
+  /** How many children this person manages in parent mode. A parent who only pays for children is not a new student. */
+  children?: number;
 }
 
 export interface GettingStartedStep {
@@ -98,6 +103,24 @@ export function gettingStartedStep(input: GettingStartedInput): GettingStartedSt
     return {
       action: "Your class application is being reviewed",
       detail: "We will email you as soon as it is approved, and your first lessons open right away. In the meantime you can look at class plans.",
+      href: "/billing/plans",
+      cta: "See class plans",
+      secondary: { href: "/practice", cta: "Try finger exercises" },
+    };
+  }
+  if ((input.children ?? 0) > 0) {
+    return {
+      action: input.children === 1 ? "Your child's classes" : "Your children's classes",
+      detail: "See their next class and practice, move a class, or pay for their plan. Want lessons for yourself too? Pick a plan any time.",
+      href: "/parent",
+      cta: "Open Parent mode",
+      secondary: { href: "/billing/plans", cta: "Lessons for me" },
+    };
+  }
+  if (input.trialUsed) {
+    return {
+      action: "Pick a plan to keep going",
+      detail: "Your free trial has ended. Choose a class plan to keep your weekly class and open your lessons again.",
       href: "/billing/plans",
       cta: "See class plans",
       secondary: { href: "/practice", cta: "Try finger exercises" },

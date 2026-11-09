@@ -176,7 +176,7 @@ export function NewPlanForm({
   // Each typed email is looked up once it stops changing; answers are kept so retyping the same one is instant.
   const [lookups, setLookups] = useState<Record<string, CheckState>>({});
   const asked = useRef(new Set<string>());
-  const groupInvites = useFamilyInvites(inviteApi, audience === "FAMILY" && !parentMode);
+  const groupInvites = useFamilyInvites(inviteApi, audience === "FAMILY" && !parentMode, term);
   const parentInvites = useFamilyInvites(parent?.inviteApi, audience === "FAMILY" && parentMode);
   const invites = parentMode && parent ? parentInvites : groupInvites;
   const gated = parentMode && parent ? true : Boolean(inviteApi);

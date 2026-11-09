@@ -54,3 +54,21 @@ describe("getting started copy follows the trial length", () => {
     expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 0 })?.detail).not.toMatch(/trial|days/);
   });
 });
+
+describe("Home for a parent and for someone whose trial ran", () => {
+  it("never pitches a free trial to a parent who only manages children: it opens Parent mode", () => {
+    const one = gettingStartedStep({ kind: "NONE", applicationPending: false, children: 1 });
+    expect(one?.href).toBe("/parent");
+    expect(one?.action).toBe("Your child's classes");
+    expect(`${one?.cta} ${one?.detail}`).not.toMatch(/trial/i);
+    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, children: 2 })?.action).toBe("Your children's classes");
+  });
+  it("a parent learning too (with access) is not given the parent step", () => {
+    expect(gettingStartedStep({ kind: "PAID", applicationPending: false, children: 2 })).toBeNull();
+  });
+  it("after the free trial ran, offers plans instead of a second trial", () => {
+    const s = gettingStartedStep({ kind: "NONE", applicationPending: false, trialUsed: true, trialDays: 3 });
+    expect(s?.href).toBe("/billing/plans");
+    expect(s?.cta).not.toMatch(/trial/i);
+  });
+});

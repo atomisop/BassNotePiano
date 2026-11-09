@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, MoveRight, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
@@ -13,13 +13,43 @@ import { childOpenSlotsAction, parentBookClassAction, parentCancelClassAction, p
 import { Hint } from "@/components/ui/Hint";
 
 /** A child's classes: what is coming (move or cancel each), what has passed, and booking another with their credits. */
-export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { childId: string; upcoming: ChildClass[]; recent: ChildClass[]; creditsLabel: string }) {
+export function ChildClasses({
+  childId,
+  upcoming,
+  recent,
+  creditsLabel,
+  openMoveFor,
+}: {
+  childId: string;
+  upcoming: ChildClass[];
+  recent: ChildClass[];
+  creditsLabel: string;
+  /** A class to open the move picker for straight away (the child asked to move or skip it: /parent/<child>?move=<class>). */
+  openMoveFor?: string | null;
+}) {
   const router = useRouter();
   // null: closed. "book": a new class. A class id: moving that class.
   const [picking, setPicking] = useState<"book" | string | null>(null);
   const [slots, setSlots] = useState<OpenClassSlot[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [sure, setSure] = useState<string | null>(null);
+  const [asked, setAsked] = useState<string | null>(null);
+
+  // Opened from the child's "move or skip this" notice: that class's picker opens at once, and it is marked so Cancel is right there too.
+  const handled = useRef(false);
+  useEffect(() => {
+    if (!openMoveFor || handled.current) return;
+    handled.current = true;
+    // The link has done its job: a reload should not open the picker again.
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+    if (upcoming.some((c) => c.id === openMoveFor)) {
+      setAsked(openMoveFor);
+      void openPicker(openMoveFor);
+    } else {
+      toast.info("That class is no longer coming up.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the class the link named
+  }, [openMoveFor]);
 
   async function openPicker(target: "book" | string) {
     setPicking(target);
@@ -49,6 +79,19 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
 
   async function cancel(id: string) {
     if (sure !== id) return setSure(id);
+    await cancelNow(id);
+  }
+
+  // "Skip it" inside the picker the child's ask opened: its own second tap is the confirmation, then the picker closes and the class is canceled.
+  const [skipSure, setSkipSure] = useState(false);
+  async function skipFromPicker(id: string) {
+    if (!skipSure) return setSkipSure(true);
+    setSkipSure(false);
+    setPicking(null);
+    await cancelNow(id);
+  }
+
+  async function cancelNow(id: string) {
     setBusy(id);
     const hold = await toast.held("Canceling the class", () => parentCancelClassAction(childId, id).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." })), { mail: true });
     setBusy(null);
@@ -111,7 +154,25 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
         </div>
       )}
 
-      <Dialog open={picking !== null} onOpenChange={(open) => busy === null && !open && setPicking(null)} title={picking === "book" ? "Book a class for them" : "Move the class to"}>
+      <Dialog
+        open={picking !== null}
+        onOpenChange={(open) => {
+          if (busy !== null || open) return;
+          setPicking(null);
+          setSkipSure(false);
+        }}
+        title={picking === "book" ? "Book a class for them" : "Move the class to"}
+      >
+        {picking && picking !== "book" && picking === asked && (
+          // Arrived from the child's "move or skip this": both answers are here, so nothing else has to be found.
+          <div className="mb-4 flex flex-col gap-3 rounded-control bg-signal/10 p-3 text-small text-slate-200 ring-1 ring-inset ring-signal/20 sm:flex-row sm:items-center sm:justify-between">
+            <p>They asked to move or skip this class. Pick a new time below, or skip it.</p>
+            <button type="button" disabled={busy !== null} onClick={() => void skipFromPicker(picking)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+              <X aria-hidden className="h-3.5 w-3.5" />
+              {skipSure ? "Tap again to skip" : "Skip this class"}
+            </button>
+          </div>
+        )}
         {slots === null ? (
           <div className="flex justify-center py-6">
             <MorphingSquare size={20} />

@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type InviteStatus = "PENDING" | "ACCEPTED" | "DECLINED";
 export type FamilyInviteApi = {
   list: () => Promise<{ email: string; status: InviteStatus }[]>;
-  send: (email: string) => Promise<{ ok: boolean; status: InviteStatus | null; error: string | null }>;
+  /** `term` is the plan length picked on the form, kept with a group invitation (a parent link ignores it). */
+  send: (email: string, term?: string) => Promise<{ ok: boolean; status: InviteStatus | null; error: string | null }>;
   cancel: (email: string) => Promise<void>;
 };
 
@@ -13,7 +14,7 @@ export type FamilyInviteApi = {
  * Where each typed family email stands: not asked, being asked, waiting for their yes, accepted or declined. Loaded when the form opens (so
  * a reload keeps the invitations), and checked again every few seconds while anyone is still deciding (not while the tab is hidden).
  */
-export function useFamilyInvites(api: FamilyInviteApi | undefined, enabled: boolean) {
+export function useFamilyInvites(api: FamilyInviteApi | undefined, enabled: boolean, term?: string) {
   const [status, setStatus] = useState<Record<string, InviteStatus | "SENDING">>({});
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -53,7 +54,7 @@ export function useFamilyInvites(api: FamilyInviteApi | undefined, enabled: bool
       const wanted = emails.map((e) => e.trim().toLowerCase());
       setStatus((prev) => ({ ...prev, ...Object.fromEntries(wanted.map((e) => [e, "SENDING" as const])) }));
       for (const email of wanted) {
-        const result = await api.send(email).catch(() => ({ ok: false, status: null, error: "Something went wrong. Please try again." }));
+        const result = await api.send(email, term).catch(() => ({ ok: false, status: null, error: "Something went wrong. Please try again." }));
         setStatus((prev) => {
           const next = { ...prev };
           if (result.ok && result.status) next[email] = result.status;
@@ -63,7 +64,7 @@ export function useFamilyInvites(api: FamilyInviteApi | undefined, enabled: bool
         if (!result.ok) setError(result.error);
       }
     },
-    [api],
+    [api, term],
   );
 
   const cancel = useCallback(

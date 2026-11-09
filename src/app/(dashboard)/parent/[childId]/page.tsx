@@ -15,10 +15,13 @@ import { isParentOf } from "@/lib/parentLinks";
 
 export const metadata = { title: "Parent mode" };
 
-export default async function ParentChildPage({ params }: { params: Promise<{ childId: string }> }) {
+export default async function ParentChildPage({ params, searchParams }: { params: Promise<{ childId: string }>; searchParams: Promise<{ move?: string | string[] }> }) {
   const { childId } = await params;
+  // ?move=<class>: the child asked to move or skip that class, so its move picker opens on arrival (ChildClasses checks it is theirs).
+  const move = (await searchParams).move;
+  const openMoveFor = typeof move === "string" && /^[a-z0-9]{10,40}$/i.test(move) ? move : null;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect(`/login?callbackUrl=/parent/${childId}`);
+  if (!session?.user) redirect(`/login?callbackUrl=${encodeURIComponent(`/parent/${childId}${openMoveFor ? `?move=${openMoveFor}` : ""}`)}`);
   // Anyone who is not this child's linked parent sees nothing, not even that the account exists.
   if (!(await isParentOf(session.user.id, childId))) notFound();
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
@@ -57,12 +60,12 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
         </section>
       )}
       {!view.plan && bills.length === 0 && (
-        <Link href="/billing/plans?who=parent" className={buttonVariants({ variant: "primary", size: "sm", className: "mt-5" })}>
+        <Link href={`/billing/plans?who=parent&child=${encodeURIComponent(childId)}`} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-5" })}>
           <Plus aria-hidden className="mr-1.5 h-4 w-4" />
           Start a plan for {view.name.split(" ")[0]}
         </Link>
       )}
-      <ChildView view={view} />
+      <ChildView view={view} openMoveFor={openMoveFor} />
     </WideLayout>
   );
 }
