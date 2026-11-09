@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getUpcomingOccurrences } from "@/lib/classSchedule";
 import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
-import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
+import { getAllClassSchedules, countUpcomingBookingsBySchedule, getWindowHolders } from "@/lib/classScheduleManage";
+import { getWaitlistByWindow, setupLinkFor } from "@/lib/slotWaitlist";
+import { editWeeklyWindowAction, moveWindowWithEveryoneAction, previewWindowMoveAction } from "./weeklyTimeActions";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { currentTeacherCalendarVersion, teacherCalendarToken } from "@/lib/teacherCalendar";
@@ -13,7 +15,6 @@ import { AdminBookingRequests } from "@/components/admin/AdminBookingRequests";
 import { getBoolSetting } from "@/lib/siteSettings";
 import {
   createClassScheduleAction,
-  updateClassScheduleAction,
   setClassScheduleActiveAction,
   markAttendanceAction,
   undoAttendanceAction,
@@ -100,7 +101,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         {viewSwitcher}
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-small text-slate-400"><Hint>A holiday or a sick day: close it and every class that day is canceled.</Hint></p>
+          <p className="text-small text-slate-400"><Hint>A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</Hint></p>
           <AdminCloseDay />
         </div>
 
@@ -140,7 +141,11 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
   }
 
   const schedules = await getAllClassSchedules();
-  const upcomingCounts = await countUpcomingBookingsBySchedule(schedules.map((s) => s.id));
+  const [upcomingCounts, holders, waiting] = await Promise.all([
+    countUpcomingBookingsBySchedule(schedules.map((s) => s.id)),
+    getWindowHolders(schedules.map((s) => s.id)),
+    getWaitlistByWindow(schedules.map((s) => s.id)),
+  ]);
   const viewer = await getServerAuthSession();
   const viewerIsOwner = Boolean(viewer?.user && isOwnerEmail(viewer.user.email));
   const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
@@ -176,10 +181,14 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             label: s.label,
             active: s.active,
             upcomingBookings: upcomingCounts.get(s.id) ?? 0,
+            holders: holders.get(s.id) ?? [],
+            waiting: (waiting.get(s.id) ?? []).map((w) => ({ ...w, setupHref: setupLinkFor(w.userId, s.id, w.chunkIndex) })),
           }))}
           onCreate={createClassScheduleAction}
-          onUpdate={updateClassScheduleAction}
+          onUpdate={editWeeklyWindowAction}
           onSetActive={setClassScheduleActiveAction}
+          onPreviewMove={previewWindowMoveAction}
+          onMoveEveryone={moveWindowWithEveryoneAction}
         />
       </div>
     </div>

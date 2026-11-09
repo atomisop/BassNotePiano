@@ -19,7 +19,12 @@ const markerKey = (email: string) => `register-invite:${createHash("sha256").upd
  * family. Never to an address that already has an account, at most one invitation to the same address every 14 days (whoever sends it),
  * and a daily limit per sender, so it cannot be used to mail strangers. The invitation carries the sender's own invite link.
  */
-export async function sendRegisterInvite(senderId: string, rawEmail: string): Promise<RegisterInviteResult> {
+export async function sendRegisterInvite(
+  senderId: string,
+  rawEmail: string,
+  /** The studio inviting a contact (Admin > Contacts): the studio's own wording and a plain sign-up link, never the sender's referral code. */
+  options: { fromStudio?: boolean } = {},
+): Promise<RegisterInviteResult> {
   // Whether an address already has an account is an answer worth guarding, so even the "exists" and "recent" answers are limited.
   await consumeRateLimit(prisma, `register-invite-lookup:${senderId}`, { windowMinutes: 60, max: 30, message: "Too many tries. Please wait a while and try again." });
   const email = rawEmail.trim().toLowerCase();
@@ -32,12 +37,18 @@ export async function sendRegisterInvite(senderId: string, rawEmail: string): Pr
   await consumeRateLimit(prisma, `register-invite:${senderId}`, { windowMinutes: 24 * 60, max: 10, message: "Too many invitations today. Try again tomorrow." });
 
   const sender = await prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { name: true, email: true } });
-  const code = await ensureReferralCode(senderId);
+  const code = options.fromStudio ? null : await ensureReferralCode(senderId);
   const who = sender.name?.trim() || "Someone";
   try {
-    await sendPersonalEmail(email, `${who} invited you to Bass Note Piano`, `${who} would like you in their classes at Bass Note Piano. Create an account with this email address and they can add you.`, {
-      link: { label: "Create your account", url: getAppUrl(`/register?ref=${encodeURIComponent(code)}`) },
-    });
+    if (code === null) {
+      await sendPersonalEmail(email, "Create your Bass Note Piano account", "Bass Note Piano would like to set up your classes. Create an account with this email address and the studio will put your weekly class on it.", {
+        link: { label: "Create your account", url: getAppUrl("/register") },
+      });
+    } else {
+      await sendPersonalEmail(email, `${who} invited you to Bass Note Piano`, `${who} would like you in their classes at Bass Note Piano. Create an account with this email address and they can add you.`, {
+        link: { label: "Create your account", url: getAppUrl(`/register?ref=${encodeURIComponent(code)}`) },
+      });
+    }
   } catch (err) {
     // The email service refused the address or is down: nothing was sent, so nothing is recorded and they can try again.
     reportError(err, "registerInvite");

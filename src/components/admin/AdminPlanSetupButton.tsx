@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { CalendarPlus } from "@/components/ui/appIcons";
@@ -9,8 +9,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
 import { toast } from "@/components/ui/Toaster";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
-import { planSetupApplyAction, planSetupContextAction, planSetupPreviewAction } from "@/app/(dashboard)/admin/payment-plans/actions";
-import type { PlanSetupContext, PlanSetupInput, PlanSetupPreview } from "@/lib/planSetup";
+import { planSetupApplyAction, planSetupContextAction, planSetupPreviewAction, resumePlanAdminAction } from "@/app/(dashboard)/admin/payment-plans/actions";
+import { planSetupTypedTimeAction } from "@/app/(dashboard)/admin/schedule/weeklyTimeActions";
+import { liftPaymentLockAction } from "@/app/(dashboard)/admin/users/[userId]/actions";
+import { approvePaymentAction, rejectPaymentAction } from "@/app/(dashboard)/admin/payments/actions";
+import type { PlanSetupContext, PlanSetupFix, PlanSetupInput, PlanSetupPreview, PlanSetupSlot } from "@/lib/planSetup";
+import { clashSummary, clashesFrom, firstClearDate, weekdayDay, type TypedWeeklyTime } from "@/lib/weeklyTimeRules";
+import { ANOTHER_TIME, AnotherTimeFields, ClashMover, TimeFacts, choiceSuffix } from "@/components/admin/WeeklyTimeParts";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -32,61 +37,129 @@ const weekLabel = (ymd: string) => {
 
 type ScholarshipPick = "keep" | "full" | "percent";
 
+/** The window event that opens this dialog with a weekly time picked: `detail.slot` is "<scheduleId>:<chunkIndex>" (the `?do=setup&slot=` link). */
+export const OPEN_PLAN_SETUP_EVENT = "bnp-open-plan-setup";
+
 /**
  * "Set up plan" (owner only, first in the student page's Plan menu): weekly time, first class and scholarship in one step. A full
  * scholarship puts them on the 6 Month plan at $0, where every bill settles by itself, so they are a regular subscriber who never pays.
  * The steps it will take show before anything changes. See src/lib/planSetup.ts.
+ *
+ * Nothing sends the owner elsewhere: a paused plan resumes, a payment lock lifts and a payment under review is approved or rejected right
+ * here; a weekly time with someone else's class on it can start after that class or move it in place; "Another time…" types a time that
+ * has no window yet; a time kept for a contact asks first; a lower scholarship is one confirmed step.
  */
 export function AdminPlanSetupButton({ userId, compact = false }: { userId: string; compact?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notify, setNotify] = useNotifyStudent("student-changes");
   const [ctx, setCtx] = useState<PlanSetupContext | null>(null);
+  /** Times typed with "Another time…" in this dialog, shown with the listed ones. */
+  const [typed, setTyped] = useState<PlanSetupSlot[]>([]);
   const [slotKey, setSlotKey] = useState("");
+  const [askingTime, setAskingTime] = useState(false);
+  const [typingBusy, setTypingBusy] = useState(false);
+  const [wantedNote, setWantedNote] = useState<string | null>(null);
   const [firstClass, setFirstClass] = useState("");
   const [pick, setPick] = useState<ScholarshipPick>("keep");
   const [percent, setPercent] = useState("50");
+  const [replaceScholarship, setReplaceScholarship] = useState(false);
+  const [takeHeld, setTakeHeld] = useState(false);
   const [term, setTerm] = useState<PlanSetupInput["term"]>("TERM_6");
   const [preview, setPreview] = useState<PlanSetupPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fixBusy, setFixBusy] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [key, setKey] = useState(() => newIdempotencyKey());
 
-  async function openBox() {
-    setOpen(true);
-    setCtx(null);
-    setPreview(null);
-    setError(null);
-    const result = await planSetupContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load." }));
-    if (!result.ok) {
-      toast.warning(result.error);
-      return setOpen(false);
-    }
-    const c = result.context;
-    setCtx(c);
-    const slot = c.slots.find((s) => s.key === c.plan?.slotKey) ?? c.slots[0];
-    setSlotKey(slot?.key ?? "");
-    setFirstClass(c.plan?.firstClass && slot?.dates.includes(c.plan.firstClass) ? c.plan.firstClass : (slot?.dates[0] ?? ""));
-    setPick("keep");
-    setTerm(c.plan && c.plan.term !== "TERM_12" ? c.plan.term : "TERM_6");
-  }
+  const slots = useMemo(() => [...(ctx?.slots ?? []), ...typed.filter((t) => !(ctx?.slots ?? []).some((s) => s.key === t.key))], [ctx, typed]);
+  const slot = slots.find((s) => s.key === slotKey) ?? null;
 
-  const slot = ctx?.slots.find((s) => s.key === slotKey) ?? null;
+  /** Loads (or reloads) what the dialog starts from. `wanted` picks that weekly time when it is free for this person. */
+  const load = useCallback(
+    async (wanted?: string | null, keep = false) => {
+      const result = await planSetupContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load." }));
+      if (!result.ok) {
+        toast.warning(result.error);
+        if (!keep) setOpen(false);
+        return;
+      }
+      const c = result.context;
+      setCtx(c);
+      if (keep) return;
+      const want = wanted ? c.slots.find((s) => s.key === wanted) : undefined;
+      setWantedNote(wanted && !want ? "That weekly time is someone else's now, so it is not offered. Pick another." : null);
+      const chosen = want ?? c.slots.find((s) => s.key === c.preferredSlotKey) ?? c.slots[0];
+      setSlotKey(chosen?.key ?? "");
+      setFirstClass(c.plan?.firstClass && chosen?.dates.includes(c.plan.firstClass) ? c.plan.firstClass : (chosen?.dates[0] ?? ""));
+      setPick("keep");
+      setReplaceScholarship(false);
+      setTakeHeld(false);
+      setTerm(c.plan && c.plan.term !== "TERM_12" ? c.plan.term : "TERM_6");
+    },
+    [userId],
+  );
+
+  const openBox = useCallback(
+    async (wanted?: string | null) => {
+      setOpen(true);
+      setCtx(null);
+      setTyped([]);
+      setAskingTime(false);
+      setPreview(null);
+      setError(null);
+      setRejectReason("");
+      await load(wanted);
+    },
+    [load],
+  );
+
+  // The `?do=setup&slot=` link (a waitlist notice, a contact's held time) opens this with the time picked. The Plan menu stays mounted
+  // while closed, so this listener is always there.
+  useEffect(() => {
+    const onOpen = (e: Event) => void openBox((e as CustomEvent<{ slot?: string }>).detail?.slot ?? null);
+    window.addEventListener(OPEN_PLAN_SETUP_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_PLAN_SETUP_EVENT, onOpen);
+  }, [openBox]);
 
   function chooseSlot(next: string) {
+    if (next === ANOTHER_TIME) return setAskingTime(true);
+    setAskingTime(false);
+    setTakeHeld(false);
     setSlotKey(next);
-    const s = ctx?.slots.find((x) => x.key === next);
+    const s = slots.find((x) => x.key === next);
     // Keep the same week when the new time has a class that week; otherwise its first date.
     const week = slot ? slot.dates.indexOf(firstClass) : 0;
     setFirstClass(s ? (s.dates[Math.max(0, week)] ?? s.dates[0]) : "");
   }
 
-  const scholarshipApplies = pick !== "keep" || (ctx?.scholarshipPercent ?? 0) > 0;
+  async function pickTypedTime(time: TypedWeeklyTime) {
+    setTypingBusy(true);
+    const result = await planSetupTypedTimeAction(userId, time).catch(() => ({ ok: false as const, error: "Could not check that time." }));
+    setTypingBusy(false);
+    if (!result.ok) return void toast.warning(result.error);
+    const s = result.slot;
+    setTyped((list) => [...list.filter((x) => x.key !== s.key), s]);
+    setAskingTime(false);
+    setTakeHeld(false);
+    setSlotKey(s.key);
+    setFirstClass(firstClearDate(s.dates, s.clashes.map((c) => c.date)) ?? s.dates[0] ?? "");
+  }
+
+  const current = ctx?.scholarshipPercent ?? 0;
+  const lowering = pick === "percent" && Number(percent) > 0 && Number(percent) < current;
+  const scholarshipApplies = pick !== "keep" || current > 0;
+  const heldForOther = Boolean(slot?.holds.some((h) => !h.mine));
+  const blocking = slot ? clashesFrom(slot.clashes, firstClass) : [];
+  const clearDate = slot ? firstClearDate(slot.dates, slot.clashes.map((c) => c.date)) : null;
+
   const input = useMemo<PlanSetupInput | null>(() => {
-    if (!ctx || ctx.blocked || !slot || !firstClass) return null;
-    const scholarship = pick === "full" ? { kind: "full" as const } : pick === "percent" ? { kind: "percent" as const, percent: Number(percent) } : { kind: "keep" as const };
-    return { userId, scheduleId: slot.scheduleId, chunkIndex: slot.chunkIndex, firstClassDate: firstClass, scholarship, term };
-  }, [ctx, slot, firstClass, pick, percent, term, userId]);
+    if (!ctx || ctx.blocked || !slot || !firstClass || askingTime) return null;
+    const scholarship =
+      pick === "full" ? { kind: "full" as const } : pick === "percent" ? { kind: "percent" as const, percent: Number(percent), replace: replaceScholarship } : { kind: "keep" as const };
+    return { userId, scheduleId: slot.scheduleId, chunkIndex: slot.chunkIndex, newTime: slot.newTime, firstClassDate: firstClass, scholarship, term };
+  }, [ctx, slot, firstClass, pick, percent, replaceScholarship, term, userId, askingTime]);
 
   // What will happen follows the form, a moment after the last change.
   useEffect(() => {
@@ -128,12 +201,52 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
     router.refresh();
   }
 
+  /** Clears the reason the tool is blocked, right here, then loads it again. */
+  async function runFix(fix: PlanSetupFix, action: "go" | "approve" | "reject") {
+    setFixBusy(true);
+    let message: string | null = null;
+    try {
+      if (fix.kind === "resume") {
+        const r = await resumePlanAdminAction(fix.planId, notify);
+        if (!r.ok) message = r.error ?? "Could not resume the plan.";
+      } else if (fix.kind === "unlock") {
+        const r = await liftPaymentLockAction(userId);
+        if (!r.ok) message = r.error;
+      } else if (fix.kind === "review") {
+        if (action === "reject") await rejectPaymentAction(fix.payment.id, rejectReason.trim() || "The studio could not match this payment.", notify);
+        else await approvePaymentAction(fix.payment.id, notify);
+      }
+    } catch {
+      message = "Something went wrong. Try again.";
+    }
+    setFixBusy(false);
+    if (message) return void toast.warning(message);
+    toast.success(fix.kind === "resume" ? "Plan resumed" : fix.kind === "unlock" ? "Payment lock lifted" : action === "reject" ? "Payment rejected" : "Payment approved");
+    router.refresh();
+    await load(null);
+  }
+
+  /** A class was moved out of the way: the choices load again, so the time shows as free (a typed time is checked again too). */
+  async function afterClassMoved() {
+    if (slot?.newTime) {
+      const result = await planSetupTypedTimeAction(userId, slot.newTime).catch(() => null);
+      if (result?.ok) setTyped((list) => list.map((x) => (x.key === result.slot.key ? result.slot : x)));
+    }
+    await load(null, true);
+  }
+
+  function openGroupTool() {
+    setOpen(false);
+    // The Group tool sits in the same Plan menu, mounted while closed; it opens on this event.
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent("bnp-open-group-tool")), 50);
+  }
+
   const field = "min-h-11 w-full min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-body text-slate-100 shadow-pressed-low";
   // Chips turn solid orange when picked; data-no-lens keeps the glass lens (attached while they are plain) from painting over that.
   const chip = (on: boolean) => `tap rounded-lg px-3 py-2 text-small font-medium ${on ? "bg-signal text-slate-950" : "bg-neu-base text-slate-200 shadow-raised-low"}`;
-  const byDay = DAYS.map((day, i) => ({ day, items: (ctx?.slots ?? []).filter((s) => s.dayOfWeek === i) })).filter((g) => g.items.length > 0);
-  const current = ctx?.scholarshipPercent ?? 0;
+  const byDay = DAYS.map((day, i) => ({ day, items: slots.filter((s) => s.dayOfWeek === i) })).filter((g) => g.items.length > 0);
   const laterDates = slot?.dates.slice(4) ?? [];
+  const ready = Boolean(preview) && !busy && !ctx?.blocked && (!heldForOther || takeHeld) && (!lowering || replaceScholarship);
 
   return (
     <>
@@ -151,7 +264,7 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
             <Button type="button" variant="secondary" disabled={busy} onClick={() => setOpen(false)} className="w-full sm:w-auto">
               Never mind
             </Button>
-            <Button type="button" disabled={!preview || busy || Boolean(ctx?.blocked)} loading={busy} onClick={apply} className="w-full sm:w-auto">
+            <Button type="button" disabled={!ready} loading={busy} onClick={apply} className="w-full sm:w-auto">
               Set up plan
             </Button>
           </div>
@@ -160,9 +273,55 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
         {!ctx ? (
           <p className="text-small text-slate-500">Loading…</p>
         ) : ctx.blocked ? (
-          <p role="alert" className="text-small text-amber-300">{ctx.blocked}</p>
-        ) : ctx.slots.length === 0 ? (
-          <p className="text-small text-slate-300">No weekly time is free. Add one on Classes &gt; Schedule first.</p>
+          <div className="grid gap-3">
+            <p role="alert" className="text-small text-amber-300">
+              {ctx.blocked}
+            </p>
+            {ctx.fix?.kind === "resume" && (
+              <div>
+                <Button type="button" size="sm" loading={fixBusy} onClick={() => void runFix(ctx.fix!, "go")}>
+                  Resume now
+                </Button>
+              </div>
+            )}
+            {ctx.fix?.kind === "unlock" && (
+              <div>
+                <Button type="button" size="sm" loading={fixBusy} onClick={() => void runFix(ctx.fix!, "go")}>
+                  Lift lock
+                </Button>
+              </div>
+            )}
+            {ctx.fix?.kind === "review" && (
+              <div className="grid gap-2 rounded-xl bg-neu-base p-3 shadow-pressed-low">
+                <p className="text-small text-slate-200">
+                  {usd(ctx.fix.payment.amountCents)}
+                  {ctx.fix.payment.installmentNumber ? `, bill ${ctx.fix.payment.installmentNumber}` : ""}
+                  {ctx.fix.payment.senderName ? ` from ${ctx.fix.payment.senderName}` : ""}
+                  <span className="text-slate-500">
+                    {" "}
+                    · {ctx.fix.payment.method === "VENMO" ? "Venmo" : "Zelle"}
+                    {ctx.fix.payment.submittedAt ? ` · sent ${new Date(ctx.fix.payment.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : ""}
+                  </span>
+                </p>
+                <input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} maxLength={200} placeholder="Reason, if you reject it" aria-label="Reason, if you reject it" className={field} />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" loading={fixBusy} onClick={() => void runFix(ctx.fix!, "approve")}>
+                    Approve
+                  </Button>
+                  <Button type="button" size="sm" variant="destructive" disabled={fixBusy} onClick={() => void runFix(ctx.fix!, "reject")}>
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            )}
+            {ctx.fix?.kind === "group" && (
+              <div>
+                <Button type="button" size="sm" variant="secondary" onClick={openGroupTool}>
+                  Open the Group tool
+                </Button>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {ctx.plan && (
@@ -170,24 +329,39 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
                 Now: {ctx.plan.label}, {ctx.plan.priceCents === 0 ? "$0.00" : `${usd(ctx.plan.priceCents)} every 28 days`}, {ctx.plan.installmentsPaid} of {ctx.plan.termMonths} bills paid.
               </p>
             )}
+            {wantedNote && <p className="text-small text-amber-300">{wantedNote}</p>}
 
-            <label className="block">
-              <span className="mb-1 block text-small font-medium text-slate-200">Weekly time</span>
-              <select value={slotKey} onChange={(e) => chooseSlot(e.target.value)} className={field}>
-                {byDay.map((g) => (
-                  <optgroup key={g.day} label={g.day}>
-                    {g.items.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                        {s.key === ctx.plan?.slotKey ? " (now)" : ""}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
+            <div>
+              <label className="block">
+                <span className="mb-1 block text-small font-medium text-slate-200">Weekly time</span>
+                <select value={askingTime ? ANOTHER_TIME : slotKey} onChange={(e) => chooseSlot(e.target.value)} className={field}>
+                  {slots.length === 0 && <option value="">No weekly time yet</option>}
+                  {byDay.map((g) => (
+                    <optgroup key={g.day} label={g.day}>
+                      {g.items.map((s) => (
+                        <option key={s.key} value={s.key}>
+                          {s.label}
+                          {s.key === ctx.plan?.slotKey ? " (now)" : ""}
+                          {s.newTime ? " (new)" : ""}
+                          {choiceSuffix(s, clashSummary)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value={ANOTHER_TIME}>Another time…</option>
+                </select>
+              </label>
+              {(askingTime || slots.length === 0) && <AnotherTimeFields onUse={(t) => void pickTypedTime(t)} busy={typingBusy} />}
+              {slot && !askingTime && <TimeFacts holds={slot.holds} waiting={slot.waiting} isNew={Boolean(slot.newTime)} />}
+              {slot && !askingTime && heldForOther && (
+                <label className="mt-1.5 flex items-center gap-2 text-small text-slate-200">
+                  <input type="checkbox" checked={takeHeld} onChange={(e) => setTakeHeld(e.target.checked)} className="h-4 w-4 accent-signal" />
+                  Take it anyway (the hold stays on Contacts)
+                </label>
+              )}
+            </div>
 
-            {slot && (
+            {slot && !askingTime && (
               <div>
                 <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                   First class
@@ -214,6 +388,29 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
               </div>
             )}
 
+            {slot && !askingTime && blocking.length > 0 && (
+              <div className="grid gap-2 rounded-xl bg-amber-300/10 p-3">
+                <p className="text-small font-medium text-amber-300">
+                  {blocking.length === 1 ? "Someone has a class on this time from that week on." : "Some people have classes on this time from that week on."}
+                </p>
+                {clearDate && (
+                  <div>
+                    <Button type="button" size="sm" variant="secondary" onClick={() => setFirstClass(clearDate)}>
+                      Start after {blocking.length === 1 ? "it" : "them"}: {weekdayDay(clearDate)}
+                    </Button>
+                  </div>
+                )}
+                <ul className="grid gap-2">
+                  {blocking.map((c) => (
+                    <ClashMover key={c.bookingId} clash={c} notify={notify} onMoved={() => void afterClassMoved()} />
+                  ))}
+                </ul>
+              </div>
+            )}
+            {slot && !askingTime && blocking.length === 0 && slot.clashes.length > 0 && (
+              <p className="text-small text-slate-400">{clashSummary(slot.clashes)} on this time, before the first class. Those classes stay as they are.</p>
+            )}
+
             <div>
               <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                 Scholarship
@@ -224,20 +421,24 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
                   {current > 0 ? `Keep ${current}%` : "None"}
                 </button>
                 {current < 100 && (
-                  <>
-                    <button type="button" data-no-lens="" aria-pressed={pick === "full"} onClick={() => setPick("full")} className={chip(pick === "full")}>
-                      Full (free)
-                    </button>
-                    <button type="button" data-no-lens="" aria-pressed={pick === "percent"} onClick={() => setPick("percent")} className={chip(pick === "percent")}>
-                      Part
-                    </button>
-                  </>
+                  <button type="button" data-no-lens="" aria-pressed={pick === "full"} onClick={() => setPick("full")} className={chip(pick === "full")}>
+                    Full (free)
+                  </button>
                 )}
+                <button type="button" data-no-lens="" aria-pressed={pick === "percent"} onClick={() => setPick("percent")} className={chip(pick === "percent")}>
+                  {current > 0 ? "Another percent" : "Part"}
+                </button>
               </div>
               {pick === "percent" && (
                 <label className="mt-1.5 flex items-center gap-2 text-small text-slate-300">
-                  <input type="number" inputMode="numeric" min={Math.max(1, current + 1)} max={99} value={percent} onChange={(e) => setPercent(e.target.value)} className={`${field} w-24`} />
+                  <input type="number" inputMode="numeric" min={1} max={99} value={percent} onChange={(e) => setPercent(e.target.value)} className={`${field} w-24`} />
                   percent off the 6 Month plan
+                </label>
+              )}
+              {lowering && (
+                <label className="mt-1.5 flex items-center gap-2 text-small text-amber-300">
+                  <input type="checkbox" checked={replaceScholarship} onChange={(e) => setReplaceScholarship(e.target.checked)} className="h-4 w-4 accent-signal" />
+                  End the current {current}% and give {Number(percent)}%
                 </label>
               )}
             </div>
@@ -257,7 +458,11 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
               </div>
             )}
 
-            {error && <p role="alert" className="text-small text-red-400">{error}</p>}
+            {error && blocking.length === 0 && (
+              <p role="alert" className="text-small text-red-400">
+                {error}
+              </p>
+            )}
 
             {preview && (
               <div className="rounded-xl bg-neu-base p-3 shadow-pressed-low">

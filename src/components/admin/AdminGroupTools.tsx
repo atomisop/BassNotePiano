@@ -1,7 +1,7 @@
 "use client";
 
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Users } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
@@ -66,6 +66,13 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
     setConfirmSplit(false);
     void load();
   }
+
+  // Set up plan's "Open the Group tool" (a group plan is set up together): this button stays mounted in the Plan menu, so it listens.
+  useEffect(() => {
+    const onOpen = () => show();
+    window.addEventListener("bnp-open-group-tool", onOpen);
+    return () => window.removeEventListener("bnp-open-group-tool", onOpen);
+  });
 
   const me = view?.members.find((m) => m.planId === planId);
   const isPayer = view?.payer.id === userId;
