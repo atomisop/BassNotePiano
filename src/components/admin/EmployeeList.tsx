@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { EmployeeRow } from "@/lib/admin";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -14,11 +14,19 @@ export interface EmployeeListProps {
   /** Only the owner can revoke, so everyone else sees the list without the button. */
   canRevoke: boolean;
   onRevoke: (userId: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** The person just added: their row is marked new, scrolled to, and shows `settings` (their alerts) open under it. */
+  openId?: string | null;
+  settings?: ReactNode;
 }
 
 /** Admin accounts with a two-step revoke, same confirm pattern as the payment queue. */
-export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRevoke, onRevoke }: EmployeeListProps) {
+export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRevoke, onRevoke, openId = null, settings }: EmployeeListProps) {
   const router = useRouter();
+  const openRef = useRef<HTMLDivElement | null>(null);
+  const openShown = employees.some((e) => e.id === openId);
+  useEffect(() => {
+    if (openShown) openRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [openShown, openId]);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +55,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
       {employees.map((employee, i) => {
         const canRevoke = viewerCanRevoke && !employee.isOwner && employee.id !== currentUserId;
         return (
-          <div key={employee.id} style={{ "--i": i } as import("react").CSSProperties} className="stagger-item glass-surface p-5">
+          <div key={employee.id} ref={employee.id === openId ? openRef : undefined} style={{ "--i": i } as import("react").CSSProperties} className="stagger-item glass-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="truncate text-title font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
@@ -57,6 +65,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                 {employee.isOwner && (
                   <StatusDot tone="accent">Owner</StatusDot>
                 )}
+                {employee.id === openId && <StatusDot tone="accent">New</StatusDot>}
                 {employee.id === currentUserId && (
                   <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400 shadow-pressed-low">
                     You
@@ -64,6 +73,8 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                 )}
               </div>
             </div>
+
+            {employee.id === openId && settings && <div className="mt-4">{settings}</div>}
 
             {canRevoke &&
               (confirmingId === employee.id ? (

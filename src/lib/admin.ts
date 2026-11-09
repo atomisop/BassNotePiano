@@ -162,7 +162,7 @@ export interface AdminUserRow {
   assistantMessageCount: number;
 }
 
-export async function searchUsers(query: string, opts: { complimentaryOnly?: boolean } = {}): Promise<AdminUserRow[]> {
+export async function searchUsers(query: string, opts: { complimentaryOnly?: boolean; onlyIds?: string[] } = {}): Promise<AdminUserRow[]> {
   const trimmed = query.trim();
   const users = await prisma.user.findMany({
     where: {
@@ -176,6 +176,8 @@ export async function searchUsers(query: string, opts: { complimentaryOnly?: boo
         : {}),
       // Complimentary = the owner switched curriculum access on by hand; an admin account does not need it.
       ...(opts.complimentaryOnly ? { hasCurriculumAccess: true, role: { not: "ADMIN" as const } } : {}),
+      // One follow-up reason's people (Accounts > Trial ending, Credits expiring, No Discord).
+      ...(opts.onlyIds ? { id: { in: opts.onlyIds } } : {}),
     },
     orderBy: { createdAt: "desc" },
     include: {

@@ -5,6 +5,7 @@ import { getNumberSetting } from "@/lib/siteSettings";
 import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { sendWelcomeEmail } from "@/lib/email";
 import { notifyAdmins } from "@/lib/adminNotifications";
+import { noticeApprovedApplicantJoined } from "@/lib/classRegistration";
 import { withTimingFloor } from "@/lib/timingSafe";
 import { phoneVerifyMode, resendPhoneCode } from "@/lib/phoneVerification";
 
@@ -38,6 +39,8 @@ export async function verifyEmailAction(email: string, code: string) {
     emailCategory: "social",
     cta: { label: "View account", path: `/admin/users/${user.id}` },
   });
+  // Someone the studio approved before they had an account: tell the studio, with a link to set up their plan.
+  await noticeApprovedApplicantJoined(user);
 
   // First real proof the account is fully created, a one-time welcome
   // email, not routed through the notification-preference system since

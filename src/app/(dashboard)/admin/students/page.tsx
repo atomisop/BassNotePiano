@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ClassRegistrationStatus } from "@prisma/client";
 import { getAdminClassRegistrations } from "@/lib/classRegistration";
 import { StudentQueue } from "@/components/admin/StudentQueue";
-import { approveRegistrationAction, rejectRegistrationAction } from "./actions";
+import { approveRegistrationAction, rejectRegistrationAction, sendApplicantSignUpLinkAction } from "./actions";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
@@ -14,7 +14,7 @@ const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
 
 export const metadata = { title: "Admin: Applications" };
 
-export default async function AdminStudentsPage(props: { searchParams: Promise<{ status?: string }> }) {
+export default async function AdminStudentsPage(props: { searchParams: Promise<{ status?: string; q?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING";
@@ -45,6 +45,8 @@ export default async function AdminStudentsPage(props: { searchParams: Promise<{
           registrations={registrations}
           onApprove={approveRegistrationAction}
           onReject={rejectRegistrationAction}
+          onSendSignUpLink={sendApplicantSignUpLinkAction}
+          initialQuery={searchParams.q?.slice(0, 200) ?? ""}
           emptyMessage={activeFilter === "PENDING" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} registrations.`}
         />
       </div>
