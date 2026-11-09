@@ -23,6 +23,7 @@ import { AdminGroupButton, AdminParentLinksButton } from "@/components/admin/Adm
 import { AdminPlanSettingsButton, AdminRestartPlanButton } from "@/components/admin/AdminPlanSettingsButton";
 import { etDayKey } from "@/lib/fingerPractice";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
+import { AdminPlanSetupButton } from "@/components/admin/AdminPlanSetupButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getServerAuthSession } from "@/lib/auth";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
@@ -39,13 +40,15 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
-  const [plan, discord, changes, lastCanceled, discountRow] = await Promise.all([
-    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true, installmentAmountCents: true, installmentsPaid: true, termMonths: true } }),
+  const [plan, discord, changes, lastCanceled, discountRow, scholarship] = await Promise.all([
+    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true, installmentAmountCents: true, installmentsPaid: true, termMonths: true, startsAt: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true, trialEndsAt: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "CANCELED" }, orderBy: { canceledAt: "desc" }, select: { id: true, cadence: true, term: true } }),
     prisma.accountDiscount.findUnique({ where: { userId: params.userId }, select: { percent: true } }),
+    prisma.scholarshipCode.aggregate({ where: { claimedById: params.userId, claimedAt: { not: null }, revokedAt: null }, _max: { percent: true } }),
   ]);
+  const scholarshipPercent = scholarship._max.percent ?? 0;
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
   const viewer = await getServerAuthSession();
   const isOwner = isOwnerEmail(viewer?.user?.email);
@@ -57,6 +60,8 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   const planMenu =
     plan || isOwner || nextBooking ? (
       <ActionMenu key="plan-menu" label="Plan" openEvent="bnp-open-plan-menu" icon={<Wrench aria-hidden className="mr-1.5 h-4 w-4" />}>
+        {/* The everyday way to put someone on a plan or move its start: weekly time, first class and scholarship in one step. */}
+        {isOwner && <AdminPlanSetupButton userId={params.userId} compact />}
         {/* Group and parent plans too: each person on one has their own plan, paused, moved and rebuilt on its own. */}
         {plan && <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />}
         {plan && !planPaused && <AdminWeeklyTimeButton planId={plan.id} compact />}
@@ -77,6 +82,13 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
     {
       label: "Plan",
       value: plan ? describePaymentPlan(plan.cadence, plan.term) : "None",
+      extra:
+        plan && ((scholarshipPercent > 0 && plan.term === "TERM_6") || (plan.startsAt && plan.startsAt.getTime() > Date.now())) ? (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {scholarshipPercent > 0 && plan.term === "TERM_6" && <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 text-caption font-medium text-emerald-300">Scholarship {scholarshipPercent}%</span>}
+            {plan.startsAt && plan.startsAt.getTime() > Date.now() && <span className="rounded-md bg-signal/16 px-1.5 py-0.5 text-caption font-medium text-signal-fg">Starts {when(plan.startsAt).replace(/, \d+:\d+ [AP]M$/, "")}</span>}
+          </div>
+        ) : undefined,
     },
     { label: "Next bill", value: plan && planPaused && isIndefinitePause(plan) ? "Paused" : plan ? when(plan.nextDueDate).replace(/, \d+:\d+ [AP]M$/, "") : "None", warn: !!plan && plan.nextDueDate.getTime() < Date.now() },
     { label: "Credits", value: formatCredits(storedToCredits(profile.user.classCredits)) },

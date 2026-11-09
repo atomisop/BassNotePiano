@@ -627,7 +627,7 @@ export async function getAdminPayments(
  * entitlement grant happen here so the two can never drift apart (a
  * VERIFIED payment that never actually unlocked anything).
  */
-export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean; requireNoUncheckedAuto?: boolean }) {
+export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean; requireNoUncheckedAuto?: boolean; skipStudentNotice?: boolean }) {
   // STEP 19: the status flip and the entitlement grant used to be two (or
   // three, counting the legacy-scale read) separate, un-transacted writes.
   // The docstring above already says the point is that they "can never
@@ -903,9 +903,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
     const ordinal = payment.installmentNumber ?? plan?.installmentsPaid ?? 1;
     const creditsNote = `${creditsLabelFromStored(payment.lessonQuantity)} ${payment.lessonQuantity === CREDITS_PER_CLASS ? "is" : "are"} on your account`;
-    notificationBody = plan
-      ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
-      : `Your payment plan installment was verified. ${creditsNote}.`;
+    notificationBody =
+      payment.amountCents === 0
+        ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified.
+          `Your scholarship covers ${plan ? `payment ${ordinal} of ${plan.termMonths}` : "this bill"}. ${creditsNote}. Nothing to pay.`
+        : plan
+          ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
+          : `Your payment plan installment was verified. ${creditsNote}.`;
     // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
     fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
     if (fifthClass) notificationBody += ` ${fifthClass.text}`;
@@ -916,13 +920,16 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 
   // The bell notice only: the email that goes with an approval is the receipt below (the old plain "Payment approved" email,
   // which had no amount, date or receipt number, would have been a second email about the same payment).
-  await createNotification({
-    userId: payment.userId,
-    type: "PAYMENT_APPROVED",
-    title: "Payment approved",
-    body: notificationBody,
-    ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
-  });
+  // Skipped only when the caller tells the student itself in one notice (the owner's "Set up plan", planSetup.ts).
+  if (!opts?.skipStudentNotice) {
+    await createNotification({
+      userId: payment.userId,
+      type: "PAYMENT_APPROVED",
+      title: payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.amountCents === 0 ? "Covered by your scholarship" : "Payment approved",
+      body: notificationBody,
+      ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
+    });
+  }
   if (!opts?.skipReceipt) await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
 
   // A completed plan is a distinct milestone worth its own bell entry, on
@@ -1002,7 +1009,10 @@ export async function applyPlanInstallment(
   const plan = await tx.paymentPlan.findUnique({ where: { id: args.paymentPlanId } });
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
-  const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+  let cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+  // A plan the studio set up to start on a later day (planSetup.ts): its first cycle begins on that first class, so all four of the
+  // cycle's classes fall inside it and the credits last until 28 days after it.
+  if (plan && plan.installmentsPaid === 0 && plan.startsAt && cycleStart && plan.startsAt > cycleStart) cycleStart = plan.startsAt;
   const cycleEnd = plan && cycleStart ? addBillingCycles(cycleStart, 1) : null;
 
   // Quantity is snapshotted onto the payment row at installment-creation

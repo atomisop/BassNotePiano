@@ -8,6 +8,7 @@ import { PaymentPlanError, bookReservedWindowForPlan } from "@/lib/paymentPlans"
 import { applyPlanInstallment } from "@/lib/payments";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
+import { nextBillSentence } from "@/lib/planSetupRules";
 
 /**
  * The studio's plan fixes, for any one person's plan (a person on a group or parent plan included): change its length, set an exact
@@ -47,7 +48,7 @@ export async function setPlanLength(adminId: string, planId: string, term: Payme
   });
   const label = describePaymentPlan(plan.cadence, term);
   await logAudit({ actorId: adminId, action: "plan.length", targetType: "PaymentPlan", targetId: plan.id, detail: `Length ${describePaymentPlan(plan.cadence, plan.term)} to ${label}, ${usd(price)} a bill` }).catch(() => undefined);
-  await noticePlanUpdated({ userId: plan.userId, title: "Your plan length changed", body: `Your plan is now ${label}, ${usd(price)} every 28 days. ${plan.installmentsPaid} of ${rate.termMonths} bills are paid.` });
+  await noticePlanUpdated({ userId: plan.userId, title: "Your plan length changed", body: `Your plan is now ${label}, ${price === 0 ? "covered by your scholarship" : `${usd(price)} every 28 days`}. ${plan.installmentsPaid} of ${rate.termMonths} bills are ${price === 0 ? "done" : "paid"}.` });
   return `${label}, ${usd(price)} a bill`;
 }
 
@@ -123,7 +124,7 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   );
   if (keptTime) await bookReservedWindowForPlan(plan.id);
   await logAudit({ actorId: adminId, action: "plan.restart", targetType: "PaymentPlan", targetId: plan.id, detail: `Restarted the plan, next bill ${day(nextDue)}${keptTime ? "" : ", its weekly time was taken"}` }).catch(() => undefined);
-  await noticePlanUpdated({ userId: plan.userId, title: "Your plan is back on", body: `The studio restarted your ${describePaymentPlan(plan.cadence, plan.term)} plan. Your next payment is due ${day(nextDue)}.` });
+  await noticePlanUpdated({ userId: plan.userId, title: "Your plan is back on", body: `The studio restarted your ${describePaymentPlan(plan.cadence, plan.term)} plan. ${nextBillSentence(plan.installmentAmountCents, day(nextDue))}` });
   return { keptTime, nextDue };
 }
 
@@ -160,7 +161,7 @@ export async function setPlanProgress(adminId: string, planId: string, input: { 
   await noticePlanUpdated({
     userId: plan.userId,
     title: "Your plan was updated",
-    body: `Your plan now shows ${billsPaid} of ${plan.termMonths} bills paid. Your next payment is due ${day(nextDueDate)}.`,
+    body: `Your plan now shows ${billsPaid} of ${plan.termMonths} bills ${plan.installmentAmountCents === 0 ? "done" : "paid"}. ${nextBillSentence(plan.installmentAmountCents, day(nextDueDate))}`,
   }).catch((err) => console.error("Plan progress notice failed (non-blocking):", err));
   return { warnings: ["Credits and booked classes were not changed. Adjust them under Credits if they should change too."] };
 }

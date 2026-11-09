@@ -10,6 +10,7 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS, creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { getBoolSetting, getNumberSetting, getTextSetting } from "@/lib/siteSettings";
+import { planMayBookAt } from "@/lib/planSetupRules";
 
 export class ClassBookingError extends Error {}
 
@@ -1400,8 +1401,10 @@ export async function createReservedBookingIfAbsent(
 ) {
   const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent, planId } = params;
   // The members of a family plan share one weekly class: their rows form one booking party (one credit charge per row).
-  const planRow = await db.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true, reservedChunkIndex: true } });
+  const planRow = await db.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true, reservedChunkIndex: true, startsAt: true, pausedAt: true, pauseUntil: true } });
   const familyGroupId = planRow?.familyGroupId ?? null;
+  // Never before the plan's first class, never inside a pause: the one place every booking of a weekly class checks this.
+  if (planRow && !planMayBookAt(planRow, scheduledAt)) return null;
   // A day the owner is keeping for someone else: the plan's class is simply not booked that week.
   if (planRow?.reservedChunkIndex != null && (await findOwnerReservation(db, scheduleId, occurrenceDate, planRow.reservedChunkIndex, studentId))) return null;
 

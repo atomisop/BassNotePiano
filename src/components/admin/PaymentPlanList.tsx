@@ -168,6 +168,17 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               <p className="mt-1 text-small text-slate-500">
                 {plan.installmentsPaid} of {plan.termMonths} installments paid · {formatUsd(plan.installmentAmountCents)}/mo
               </p>
+              {/* Only a full scholarship makes a bill $0; a later first class is set by "Set up plan". */}
+              {(plan.installmentAmountCents === 0 || (plan.startsAt && new Date(plan.startsAt).getTime() > Date.now())) && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {plan.installmentAmountCents === 0 && <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 text-caption font-medium text-emerald-300">Scholarship · free</span>}
+                  {plan.startsAt && new Date(plan.startsAt).getTime() > Date.now() && (
+                    <span className="rounded-md bg-signal/16 px-1.5 py-0.5 text-caption font-medium text-signal-fg">
+                      Starts {new Date(plan.startsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}
+                    </span>
+                  )}
+                </div>
+              )}
               <p className="mt-1 text-small text-slate-500">Received {formatUsd(receivedCents(plan))}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">

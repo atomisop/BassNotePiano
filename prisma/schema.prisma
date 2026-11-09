@@ -128,6 +128,10 @@ model PaymentPlan {
   pausedAt   DateTime?
   pauseUntil DateTime?
 
+  // The first class (Eastern midnight of that day), set by the owner's "Set up plan" (planSetup.ts). No weekly class of this plan is
+  // booked before it, and the first paid cycle starts on it when it is later than the approval. Null: classes start as soon as it is paid.
+  startsAt DateTime?
+
   canceledAt       DateTime?
   canceledById     String?
   canceledBy       User?     @relation("PaymentPlanCanceledBy", fields: [canceledById], references: [id])

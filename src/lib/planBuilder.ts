@@ -216,7 +216,8 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
     let id: string;
     if (r.plan) {
       id = r.plan.id;
-      await tx.paymentPlan.update({ where: { id }, data: { reservedScheduleId: input.scheduleId, reservedChunkIndex: input.chunkIndex, nextDueDate: nextDue } });
+      // Rebuilt from a day that has passed: classes run from now, so a later first class set by "Set up plan" no longer holds.
+      await tx.paymentPlan.update({ where: { id }, data: { reservedScheduleId: input.scheduleId, reservedChunkIndex: input.chunkIndex, nextDueDate: nextDue, startsAt: null } });
       const grant = await tx.creditGrant.findFirst({ where: { userId: input.userId, paymentPlanId: id, source: "PAYMENT_PLAN_INSTALLMENT", expiredAt: null }, orderBy: { createdAt: "desc" }, select: { id: true } });
       if (grant) await tx.creditGrant.update({ where: { id: grant.id }, data: { expiresAt: nextDue } });
     } else {

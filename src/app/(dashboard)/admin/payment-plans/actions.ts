@@ -15,6 +15,8 @@ import type { PaymentPlanTerm } from "@prisma/client";
 import { adminLinkParent, adminUnlinkParent, changeGroupPayer, getGroupView, listLinksFor, separateFromGroup, type AdminLinkRow, type GroupView } from "@/lib/adminGroupTools";
 import { getWeeklyTimeChoices, moveWeeklyTime, type WeeklyTimeChoice } from "@/lib/adminWeeklyTime";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
+import { applyPlanSetup, getPlanSetupContext, previewPlanSetup, type PlanSetupContext, type PlanSetupInput, type PlanSetupPreview, type PlanSetupResult } from "@/lib/planSetup";
+import type { ScholarshipChoice } from "@/lib/planSetupRules";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -210,6 +212,62 @@ export async function planBuilderApplyAction(input: PlanBuilderInput, key?: stri
     if (result.ok) revalidatePath("/", "layout");
     return result;
   });
+}
+
+/** Owner only: what "Set up plan" starts from (the plan if any, the scholarship, the free weekly times and their dates). */
+export async function planSetupContextAction(userId: string): Promise<{ ok: true; context: PlanSetupContext } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can set up a plan." };
+  try {
+    return { ok: true, context: await getPlanSetupContext(String(userId)) };
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+  }
+}
+
+/** Owner only: exactly what "Set up plan" would do, without changing anything. */
+export async function planSetupPreviewAction(input: PlanSetupInput): Promise<{ ok: true; preview: PlanSetupPreview } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can set up a plan." };
+  try {
+    return { ok: true, preview: await previewPlanSetup(cleanSetupInput(input)) };
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
+  }
+}
+
+/** Owner only: sets up the plan in one step (weekly time, first class, scholarship). Once per attempt, whatever the taps. */
+export async function planSetupApplyAction(input: PlanSetupInput, key?: string, notify = true): Promise<{ ok: boolean; error: string | null; result?: PlanSetupResult }> {
+  return withStudentNotice(notify, async () => {
+    const admin = await requireAdmin();
+    if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can set up a plan." };
+    const clean = cleanSetupInput(input);
+    const result = await runOnce(
+      admin.id,
+      `plan-setup:${clean.userId}`,
+      key,
+      async () => {
+        try {
+          const done = await applyPlanSetup(admin.id, clean);
+          return { ok: true, error: null as string | null, result: done as PlanSetupResult | undefined };
+        } catch (err) {
+          return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again.", result: undefined as PlanSetupResult | undefined };
+        }
+      },
+      { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." as string | null, result: undefined as PlanSetupResult | undefined } },
+    );
+    if (result.ok) revalidatePath("/", "layout");
+    return result;
+  });
+}
+
+/** A server action's input is only typed at compile time: rebuild it from plain values before it reaches the plan code. */
+function cleanSetupInput(input: PlanSetupInput): PlanSetupInput {
+  const s = input?.scholarship as { kind?: unknown; percent?: unknown } | undefined;
+  const scholarship: ScholarshipChoice =
+    s?.kind === "full" ? { kind: "full" } : s?.kind === "percent" ? { kind: "percent", percent: Number(s.percent) } : { kind: "keep" };
+  const term = (["MONTHLY", "TERM_3", "TERM_6"] as const).find((t) => t === input?.term) ?? "TERM_6";
+  return { userId: String(input?.userId ?? ""), scheduleId: String(input?.scheduleId ?? ""), chunkIndex: Number(input?.chunkIndex), firstClassDate: String(input?.firstClassDate ?? ""), scholarship, term };
 }
 
 /** The plan's weekly time and the free times it could move to. Changes nothing. */
