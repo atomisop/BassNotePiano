@@ -49,6 +49,10 @@ jobs:
           # which a one-commit shallow clone cannot answer.
           fetch-depth: 0
 
+      # A squash merge leaves the branch's own commits out of main's history (and the branch is
+      # deleted), but GitHub keeps them under refs/pull/*/head. The evidence verifiers need them.
+      - run: git fetch --quiet origin '+refs/pull/*/head:refs/remotes/pull/*'
+
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
       # step this session), same Node version in CI as in dev and on
       # Netlify, not a separate floating version.
