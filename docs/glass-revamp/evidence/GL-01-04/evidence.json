@@ -1,0 +1,32 @@
+{
+  "taskId": "GL-01-04",
+  "status": "DONE",
+  "commit": "606ce43d",
+  "title": "Accessibility sweep of every student and admin route (dark, light, Solid, 1440/390/320)",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x700"
+  ],
+  "before": [
+    "before/admin_data-admin-dark-chromium-1440x900.png",
+    "before/dashboard-student-dark-chromium-1440x900.png"
+  ],
+  "after": [
+    "keep/account-student-dark-solid-chromium-390x844.png",
+    "keep/account-student-light-chromium-1440x900.png",
+    "keep/admin_data-admin-dark-chromium-1440x900.png",
+    "keep/dashboard-student-dark-chromium-1440x900.png",
+    "keep/dashboard-student-dark-solid-chromium-390x844.png",
+    "keep/dashboard-student-light-chromium-1440x900.png",
+    "keep/lessons-student-dark-solid-chromium-320x700.png",
+    "keep/lessons-student-light-chromium-1440x900.png"
+  ],
+  "stateProof": [
+    "keep/dashboard-student-dark-solid-chromium-390x844.png"
+  ],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "accessibilityResults": "axe-results.json",
+  "blockingIssues": []
+}

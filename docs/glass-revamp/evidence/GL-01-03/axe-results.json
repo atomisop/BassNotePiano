@@ -1,0 +1,34 @@
+[
+  {
+    "path": "/admin/data",
+    "role": "admin",
+    "theme": "dark",
+    "solid": false,
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "dark",
+    "solid": true,
+    "size": "390x844",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "dark",
+    "solid": false,
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "light",
+    "solid": false,
+    "size": "1440x900",
+    "violations": []
+  }
+]

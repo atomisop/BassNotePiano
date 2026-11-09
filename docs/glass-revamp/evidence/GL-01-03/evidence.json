@@ -1,0 +1,35 @@
+{
+  "taskId": "GL-01-03",
+  "status": "DONE",
+  "commit": "606ce43d",
+  "title": "Floating surfaces in Solid, reduced transparency, forced colors, keyboard",
+  "viewports": [
+    "1440x900",
+    "390x844"
+  ],
+  "before": [
+    "before/atom-glass-1440x900.png",
+    "before/atom-glass-390x844.png",
+    "before/notifications-glass-1440x900.png",
+    "before/profile-menu-glass-1440x900.png",
+    "before/profile-menu-glass-390x844.png",
+    "before/shortcuts-glass-1440x900.png",
+    "before/shortcuts-glass-390x844.png"
+  ],
+  "after": [
+    "after/atom-solid-1440x900.png",
+    "after/atom-solid-390x844.png",
+    "after/notifications-solid-1440x900.png",
+    "after/profile-menu-solid-1440x900.png",
+    "after/profile-menu-solid-390x844.png",
+    "after/shortcuts-solid-1440x900.png",
+    "after/shortcuts-solid-390x844.png"
+  ],
+  "stateProof": [
+    "after/atom-solid-1440x900.png"
+  ],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "accessibilityResults": "axe-results.json",
+  "blockingIssues": []
+}

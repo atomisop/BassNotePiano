@@ -1,6 +1,6 @@
 # Glass revamp status
 
-Done so far: GL-01-01 and GL-01-02. A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
+Done so far: GL-01-01 to GL-01-04 (owner chose the subtle direction: keep the look and the approved dock; make glass consistent, accessible and reliable). A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
 
 | Task | State | Evidence |
 |---|---|---|
@@ -9,7 +9,9 @@ Done so far: GL-01-01 and GL-01-02. A task is DONE only when `npm run glass:veri
 | GL-00-03 accessibility and evidence gates | BUILT: `npm run glass:verify` (rejects DONE without real screenshots, tests, review, axe with no serious or critical), CI step added, skill `bnp-liquid-glass`. CI step not yet run on GitHub | scripts/glass-revamp/verify-evidence.mjs, .github/workflows/ci.yml |
 | GL-01-01 Solid surfaces switch plus dashboard contrast, top-banner and sidebar-highlight fixes | DONE (commit 46bfb9f5; `npm run glass:verify` passes) | evidence/GL-01-01/ |
 | GL-01-02 explicit glass role on the shared Button (`data-glass-role`), selector reads it, unit test keeps it in step | DONE (commit ae31e436) | evidence/GL-01-02/ |
-| Phase 1 remaining (class-name consumers to roles, top bar, dock, popovers, toasts, skeletons) | NEXT: needs the owner's call on how far the look changes (see below) | |
+| GL-01-03 floating surfaces in Solid, reduced transparency and forced colors, keyboard checks, admin data legend fix | DONE (commit 606ce43d) | evidence/GL-01-03/ |
+| GL-01-04 accessibility sweep, 51 axe runs over student and admin routes | DONE: zero violations, no overflow | evidence/GL-01-04/ |
+| Phase 1 remaining (move class-name glass consumers to roles, toasts, skeletons) | NEXT | |
 | Phases 2 to 6 | NOT STARTED | |
 
 ## Baseline defects to fix (from GL-00-01)
@@ -19,6 +21,7 @@ Done so far: GL-01-01 and GL-01-02. A task is DONE only when `npm run glass:veri
 - On phones the dock's lensing distorts text of the card scrolling behind it.
 - At 390px `/login` shows a dim second logo behind the card.
 - FIXED in GL-01-01: dashboard axe findings, banner over the top bar, no Solid switch, sidebar highlight placed at the top left.
+- The dim second logo on /login is not a bug in this branch: it is fixed upstream (main has the `.brand-for-ink` rules this branch lacks). Rebase before merging.
 - Public pages (home, pricing, login, register, classes, terms) are locked to the dark theme by design, so they have no light look to restyle.
 
 ## Tooling and honesty notes
