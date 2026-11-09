@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
+import { solidSurfacesOn } from "@/lib/solidSurfaces";
 
 /**
  * A real pane of Liquid Glass behind its parent: the page behind it is refracted through a curved edge (a displacement map worked out
@@ -43,6 +44,7 @@ export function GlassLens({
   magnify = 0.4,
   tint = "transparent",
   blur = 0,
+  surface = false,
   className = "",
 }: {
   /** Corner radius in px, or "full" for a pill. */
@@ -57,6 +59,8 @@ export function GlassLens({
   tint?: string;
   /** Blur of what is behind the middle of the glass, px (small: glass is clear). */
   blur?: number;
+  /** True when this lens IS the panel's own background (a menu or sheet); false for a highlight, knob or bubble that sits on something else. Solid surfaces draws the first as an opaque panel and the second as a soft fill. */
+  surface?: boolean;
   className?: string;
 }) {
   const id = `lg-${useId().replace(/:/g, "")}`;
@@ -69,7 +73,7 @@ export function GlassLens({
   useEffect(() => {
     // Only browsers that can bend the backdrop (Chrome, Edge) do any lens work at all: elsewhere (Safari, Firefox) measuring the glass
     // and drawing its maps was work for nothing (2026-10-31 speed pass).
-    if (!refractionSupported()) return;
+    if (!refractionSupported() || solidSurfacesOn()) return;
     setRefract(true);
     setTokens(lensTokens());
   }, []);
@@ -107,7 +111,7 @@ export function GlassLens({
   const split = disperse(tokens.dispersion);
 
   return (
-    <div ref={host} aria-hidden className={`pointer-events-none absolute inset-0 ${className}`} style={{ borderRadius: r || undefined }}>
+    <div ref={host} aria-hidden data-glass-lens={surface ? "surface" : "highlight"} className={`pointer-events-none absolute inset-0 ${className}`} style={{ borderRadius: r || undefined }}>
       {refract && maps && size && (
         <svg width={size.w} height={size.h} className="absolute left-0 top-0" style={{ pointerEvents: "none" }} colorInterpolationFilters="sRGB">
           <filter id={id} filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x={0} y={0} width={size.w} height={size.h} colorInterpolationFilters="sRGB">

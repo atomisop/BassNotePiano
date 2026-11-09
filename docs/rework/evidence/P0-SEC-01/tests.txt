@@ -1,0 +1,3 @@
+Commands run at 8d4b6f6e (throwaway DB bnp_rework_verify)
+npx vitest run --config vitest.db.config.ts tests/db/paymentEmailReplay.test.ts (1 passed)
+exit status: 0

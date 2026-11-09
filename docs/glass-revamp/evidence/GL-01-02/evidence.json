@@ -1,0 +1,34 @@
+{
+  "taskId": "GL-01-02",
+  "status": "DONE",
+  "commit": "ae31e436",
+  "title": "Explicit glass role on the shared Button",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x700"
+  ],
+  "before": [
+    "before/dashboard-student-dark-chromium-1440x900.png",
+    "before/dashboard-student-dark-chromium-320x700.png",
+    "before/dashboard-student-dark-chromium-390x844.png",
+    "before/lessons-student-dark-chromium-1440x900.png",
+    "before/lessons-student-dark-chromium-320x700.png",
+    "before/lessons-student-dark-chromium-390x844.png"
+  ],
+  "after": [
+    "after/dashboard-student-dark-chromium-1440x900.png",
+    "after/dashboard-student-dark-chromium-320x700.png",
+    "after/dashboard-student-dark-chromium-390x844.png",
+    "after/lessons-student-dark-chromium-1440x900.png",
+    "after/lessons-student-dark-chromium-320x700.png",
+    "after/lessons-student-dark-chromium-390x844.png"
+  ],
+  "stateProof": [
+    "after/dashboard-student-dark-chromium-1440x900.png"
+  ],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "accessibilityResults": "axe-results.json",
+  "blockingIssues": []
+}

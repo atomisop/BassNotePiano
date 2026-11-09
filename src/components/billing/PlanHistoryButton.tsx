@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Clock } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
+import { Hint } from "@/components/ui/Hint";
 
 export interface PastPlanRow {
   id: string;
@@ -38,7 +39,7 @@ export function PlanHistoryButton({ plans }: { plans: PastPlanRow[] }) {
 
       <Dialog open={open} onOpenChange={setOpen} title="Plan history">
         {plans.length === 0 ? (
-          <p className="text-small text-slate-400">No earlier plans yet. Plans that finished or were canceled show up here.</p>
+          <p className="text-small text-slate-400"><Hint>No earlier plans yet. Plans that finished or were canceled show up here.</Hint></p>
         ) : (
           <ul className="space-y-3">
             {plans.map((plan) => (

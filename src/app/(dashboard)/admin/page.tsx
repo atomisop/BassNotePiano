@@ -13,6 +13,7 @@ import { GlanceTiles } from "@/components/home/GlanceTiles";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, CalendarCheck, CalendarClock, CalendarDays, ChevronDown, Coins, CreditCard, PlayCircle, Users } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/Hint";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -78,7 +79,7 @@ export default async function AdminOverviewPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-small text-slate-400">Nothing needs you right now.</p>
+          <p className="text-small text-slate-400"><Hint>Nothing needs you right now.</Hint></p>
         )}
       </section>
 

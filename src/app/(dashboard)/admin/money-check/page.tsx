@@ -4,6 +4,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { findMoneyIssues } from "@/lib/moneyCheck";
 import { MoneyIssueCard } from "@/components/admin/MoneyIssueCard";
 import { applyMoneyFixAction } from "./actions";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Money check" };
 
@@ -12,8 +13,7 @@ export default async function AdminMoneyCheckPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="sr-only">Money check</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can use the money check.</p>
+        <h1 className="sr-only">Money check<Hint className="ml-1.5">Only the owner can use the money check.</Hint></h1>
       </div>
     );
   }

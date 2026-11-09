@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { restartPlanAction, setPlanLengthAction, setPlanPriceAction, waiveNextBillAction } from "@/app/(dashboard)/admin/payment-plans/actions";
+import { Hint } from "@/components/ui/Hint";
 
 const TERMS: { term: PaymentPlanTerm; label: string; bills: number }[] = [
   { term: "MONTHLY", label: "1 Month", bills: 1 },
@@ -108,10 +109,10 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
             <h3 className="text-body font-semibold text-slate-50">Price per bill</h3>
             {props.hasDiscount ? (
-              <p className="text-small text-slate-400">This account has a personal discount, which sets the price. Change it on Billing &gt; Pricing.</p>
+              <p className="text-small text-slate-400"><Hint>This account has a personal discount, which sets the price. Change it on Billing &gt; Pricing.</Hint></p>
             ) : (
               <>
-                <p className="text-small text-slate-400">Every bill from the next one on. An unpaid bill already sent is replaced at the new price.</p>
+                <p className="text-small text-slate-400"><Hint>Every bill from the next one on. An unpaid bill already sent is replaced at the new price.</Hint></p>
                 <label className="grid max-w-48 gap-1.5">
                   <span className="sr-only">Price in dollars</span>
                   <input inputMode="decimal" value={dollars} onChange={(e) => setDollars(e.target.value.replace(/[^\d.]/g, ""))} className={field} />
@@ -130,8 +131,7 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
           </section>
 
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
-            <h3 className="text-body font-semibold text-slate-50">Next 28 days free</h3>
-            <p className="text-small text-slate-400">Counts as a paid bill: their classes and credits for the cycle are added and the next bill moves 28 days out. Recorded as a $0 payment.</p>
+            <h3 className="text-body font-semibold text-slate-50">Next 28 days free<Hint className="ml-1.5">Counts as a paid bill: their classes and credits for the cycle are added and the next bill moves 28 days out. Recorded as a $0 payment.</Hint></h3>
             <button
               type="button"
               disabled={!!busy || props.installmentsPaid < 1}

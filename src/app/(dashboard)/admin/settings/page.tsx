@@ -4,6 +4,7 @@ import { getAllSettings } from "@/lib/siteSettings";
 import { CLIENT_SETTING_DEFS, SETTING_CATEGORIES, SETTING_DEFS } from "@/lib/siteSettingsDefs";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { saveSettingAction, resetSettingAction } from "./actions";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Settings" };
 
@@ -15,8 +16,7 @@ export default async function AdminSettingsPage() {
   if (!isOwner) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can change the app&apos;s settings.</p>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings<Hint className="ml-1.5">Only the owner can change the app&apos;s settings.</Hint></h1>
       </div>
     );
   }

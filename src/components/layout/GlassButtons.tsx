@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
+import { solidSurfacesOn } from "@/lib/solidSurfaces";
 
 /**
  * Real Liquid Glass for every button in the app, from one place. It finds each glass control (the shared Button, tabs, the admin menu,
@@ -16,6 +17,8 @@ import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
 const SOLID_FILL = ':not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"])';
 
 export const GLASS_SELECTOR = [
+  // The explicit role (set by the shared Button). The class-name entries below stay until every consumer says its role itself.
+  '[data-glass-role="button"]',
   ".liquid",
   ".liquid-signal",
   ".neu-btn",
@@ -64,7 +67,7 @@ export function glassFilter(id: string, maps: GlassMaps, w: number, h: number, b
 
 export function GlassButtons() {
   useEffect(() => {
-    if (!refractionSupported() || window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
+    if (!refractionSupported() || solidSurfacesOn() || window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
     const root = document.documentElement;
     const num = (name: string, fallback: number) => {
       const v = parseFloat(getComputedStyle(root).getPropertyValue(name));

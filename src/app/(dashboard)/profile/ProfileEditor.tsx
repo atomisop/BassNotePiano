@@ -15,6 +15,7 @@ import {
 } from "../account/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { Hint } from "@/components/ui/Hint";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -365,7 +366,7 @@ function AvatarSection({
         </div>
       </div>
 
-      {!storageConfigured && <p className="mt-2 text-small text-slate-500">Image upload isn&apos;t configured yet.</p>}
+      {!storageConfigured && <p className="mt-2 text-small text-slate-500"><Hint>Image upload isn&apos;t configured yet.</Hint></p>}
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
       {success && <p className="mt-2 text-small text-slate-50">Profile photo updated.</p>}
     </SectionCard>

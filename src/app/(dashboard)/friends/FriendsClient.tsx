@@ -59,19 +59,21 @@ function ProfileLine({ profile }: { profile: PublicProfile }) {
 
 function SectionCard({
   title,
-  description,
+  count,
   children,
   id,
 }: {
   title: string;
-  description?: string;
+  count?: number;
   children: React.ReactNode;
   id?: string;
 }) {
   return (
     <div id={id} className="glass-surface scroll-mt-24 p-6">
-      <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
-      {description && <p className="mt-1 text-small text-slate-500">{description}</p>}
+      <h2 className="text-title text-slate-50 font-semibold">
+        {title}
+        {count ? <span className="ml-2 text-small font-normal text-slate-500">{count}</span> : null}
+      </h2>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -219,16 +221,15 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
       }
       list={
         <div className="space-y-6">
-          <SectionCard title={`Friends (${friends.length})`}>
+          <SectionCard title="Friends" count={friends.length}>
             {friends.length === 0 ? (
               <div className="flex flex-col items-center gap-1 py-6 text-center">
                 <p className="text-body font-semibold text-slate-100">No friends yet</p>
-                <p className="max-w-[32ch] text-small text-slate-400">Search a username above to send a friend request.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {friends.map((friend, i) => (
-                  <div key={friend.id} style={{ "--i": i } as CSSProperties} className="stagger-item rounded-lg bg-neu-base shadow-raised-low">
+                  <div key={friend.id} style={{ "--i": i } as CSSProperties} className="stagger-item rounded-lg bg-slate-50/5">
                     <div className="flex flex-wrap items-center justify-between gap-3 p-2.5">
                       {/* The name opens that friend's practice, badges and streak right here: one place for looking and nudging. */}
                       <button
@@ -293,7 +294,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             <SectionCard title="Blocked">
               <div className="space-y-2">
                 {blocked.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                  <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={entry.user} />
                       <ProfileLine profile={entry.user} />
@@ -340,7 +341,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             {results.length > 0 && (
               <div className="mt-4 space-y-2">
                 {results.map((profile) => (
-                  <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                  <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={profile} />
                       <ProfileLine profile={profile} />
@@ -364,7 +365,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             <SectionCard id="requests" title="Friend requests">
               <div className="space-y-2">
                 {receivedRequests.map((req, i) => (
-                  <div key={req.id} style={{ "--i": i } as CSSProperties} className="stagger-item flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                  <div key={req.id} style={{ "--i": i } as CSSProperties} className="stagger-item flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={req.sender} />
                       <ProfileLine profile={req.sender} />
@@ -399,7 +400,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             <SectionCard title="Sent requests">
               <div className="space-y-2">
                 {sentRequests.map((req) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                  <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={req.receiver} />
                       <ProfileLine profile={req.receiver} />

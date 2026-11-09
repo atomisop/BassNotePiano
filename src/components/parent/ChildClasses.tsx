@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/Toaster";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import type { ChildClass } from "@/lib/parentChildren";
 import { childOpenSlotsAction, parentBookClassAction, parentCancelClassAction, parentMoveClassAction, type OpenClassSlot } from "@/app/(dashboard)/parent/actions";
+import { Hint } from "@/components/ui/Hint";
 
 /** A child's classes: what is coming (move or cancel each), what has passed, and booking another with their credits. */
 export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { childId: string; upcoming: ChildClass[]; recent: ChildClass[]; creditsLabel: string }) {
@@ -116,7 +117,7 @@ export function ChildClasses({ childId, upcoming, recent, creditsLabel }: { chil
             <MorphingSquare size={20} />
           </div>
         ) : slots.length === 0 ? (
-          <p className="text-small text-slate-400">No open class times right now.</p>
+          <p className="text-small text-slate-400"><Hint>No open class times right now.</Hint></p>
         ) : (
           <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
             {slots.map((slot) => {

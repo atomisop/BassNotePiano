@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Info } from "@/components/ui/appIcons";
+import { Eye } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 
 /**
- * A tiny "i" that opens a small popup with one short line, only when someone taps it. For the few things that really need a word of
+ * A tiny eye that opens a small popup with one short line, when someone taps it (or hovers it on a computer). For the few things that really need a word of
  * explanation (a privacy warning, a one-time step), so the screen itself stays free of explainer text. Closes on a tap elsewhere or Escape.
  */
 export function Hint({
   children,
-  label = "More info",
+  label = "Explain",
   className,
   side = "bottom",
   align = "left",
@@ -41,16 +41,21 @@ export function Hint({
   }, [open]);
 
   return (
-    <span ref={ref} className={cn("relative inline-flex align-middle", className)}>
+    <span
+      ref={ref}
+      className={cn("relative inline-flex align-middle", className)}
+      onMouseEnter={(e) => e.nativeEvent instanceof MouseEvent && window.matchMedia("(hover: hover)").matches && setOpen(true)}
+      onMouseLeave={() => window.matchMedia("(hover: hover)").matches && setOpen(false)}
+    >
       <button
         type="button"
         aria-label={label}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((v) => (window.matchMedia("(hover: hover)").matches ? true : !v))}
         className="tap flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Info aria-hidden className="h-4 w-4" strokeWidth={1.75} />
+        <Eye aria-hidden className="h-4 w-4" strokeWidth={1.75} />
       </button>
       {open && (
         <span

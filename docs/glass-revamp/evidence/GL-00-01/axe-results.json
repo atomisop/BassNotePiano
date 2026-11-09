@@ -1,0 +1,326 @@
+[
+  {
+    "path": "/admin",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/today",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/payments",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/users",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/schedule",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/support",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/pricing",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/security",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/data",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": [
+      {
+        "id": "role-img-alt",
+        "impact": "serious",
+        "nodes": 4
+      }
+    ]
+  },
+  {
+    "path": "/admin/activity",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/settings",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/admin/messages",
+    "role": "admin",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/pricing",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/login",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/register",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/classes",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/shop",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/terms",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/privacy",
+    "role": "guest",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 5
+      },
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "path": "/roadmap",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/practice",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/lessons",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/friends",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/account",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/billing/plans",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/billing/history",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/mail",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/profile",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/about",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/streak",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/leaderboard",
+    "role": "student",
+    "theme": "dark",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "light",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 5
+      },
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "path": "/lessons",
+    "role": "student",
+    "theme": "light",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/account",
+    "role": "student",
+    "theme": "light",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/billing/plans",
+    "role": "student",
+    "theme": "light",
+    "browser": "chromium",
+    "size": "1440x900",
+    "violations": []
+  }
+]

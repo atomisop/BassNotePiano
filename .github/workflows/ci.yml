@@ -44,6 +44,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # rework:verify and glass:verify check that each evidence file names a real commit,
+          # which a one-commit shallow clone cannot answer.
+          fetch-depth: 0
 
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
       # step this session), same Node version in CI as in dev and on
@@ -71,6 +75,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
+      - run: npm run rework:verify
+      - run: npm run glass:verify
 
       # NOTE, honestly: this step has not been verified against a real
       # GitHub Actions run, doing that would mean pushing to trigger CI,

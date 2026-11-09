@@ -1,0 +1,9 @@
+P1-MUS-06 (persist progress), partial: saving of finished piano runs. No UI redesign, so no before/after pair; the changed state is the result card (see screenshots under P1-MUS-02 for the layout; the "Saved" line is new).
+
+Built: table PianoPracticeAttempt with a hand-written migration (applied to a throwaway database, `prisma migrate diff` printed an empty migration, i.e. zero drift). recordPianoAttempt saves only a FINISHED run (correct must equal the exercise length), refuses impossible numbers, works accuracy out on the server (the browser never sends it), is idempotent by clientKey (a double tap or retry saves once, also under concurrent calls) and limits a person to 30 saves an hour. The lesson shows "Saved. Your best is X% over N runs.", offers a retry if the save fails, and shows the best after a reload.
+
+Verified: 6 database tests (save, idempotent incl. 4 concurrent calls, 9 refusal cases, rate limit, isolation between people and best of several, cascade on account deletion) and 2 end-to-end tests on desktop and 320px (a run with one wrong note saves 7 attempts / 6 correct, the row is in the database, a reload shows "Your best so far: 86% over 1 run", an unfinished run saves nothing).
+
+Safety note: I confirmed (read-only) that the owner's dev database `ethiopian_scales` was not migrated by me. It is on 84 migrations and does not have the new table; only the throwaway database got it. This migration is NOT applied to production: the production build runs `prisma migrate deploy`, so it will apply when this branch is merged and deployed.
+
+NOT done: resuming a half-finished run after a reload or offline (P1-MUS-06 asks for it; an unfinished run is deliberately not stored), practice minutes feeding the daily streak, and teacher-unlock integration. Results are self-reported by the browser: the server rejects impossible values but cannot prove a person really played the notes.

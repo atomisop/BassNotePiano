@@ -34,19 +34,21 @@ const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
  * One look per plan length, for Just me and for a group. Every value is a registered CSS colour (globals.css), so flipping between
  * the two glides from one colour to the other instead of switching.
  */
+// The badge states the commitment, which is always true. It used to say "Most popular" and "Best value", claims nothing in our data
+// backed (P1-PAY-01); the owner can set the discounts to anything, so a price claim could also go stale.
 const TIER_LOOK: Record<"MONTHLY" | "TERM_3" | "TERM_6", { tag: string; solo: Look; family: Look }> = {
   MONTHLY: {
-    tag: "Starter",
+    tag: "No commitment",
     solo: { tint: "rgb(70 105 200)", accent: "rgb(165 195 255)", glow: "rgb(120 160 255)" },
     family: { tint: "rgb(214 150 70)", accent: "rgb(255 205 150)", glow: "rgb(255 170 90)" },
   },
   TERM_3: {
-    tag: "Best value",
+    tag: "3 payments",
     solo: { tint: "rgb(140 140 40)", accent: "rgb(225 232 120)", glow: "rgb(200 210 80)" },
     family: { tint: "rgb(225 170 40)", accent: "rgb(255 224 120)", glow: "rgb(255 205 70)" },
   },
   TERM_6: {
-    tag: "Most popular",
+    tag: "6 payments",
     solo: { tint: "rgb(120 80 210)", accent: "rgb(200 175 255)", glow: "rgb(170 130 255)" },
     family: { tint: "rgb(226 78 42)", accent: "rgb(255 150 105)", glow: "rgb(255 105 55)" },
   },

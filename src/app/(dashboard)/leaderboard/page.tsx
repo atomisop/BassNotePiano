@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { LeaderboardRows } from "@/components/home/LeaderboardRows";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { PageBack } from "@/components/ui/BackLink";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Leaderboard" };
 
@@ -25,18 +26,18 @@ export default async function LeaderboardPage() {
           <PageBack href="/dashboard" />
           <Eyebrow>Studio</Eyebrow>
           <h1 className="mt-1 text-hero font-semibold text-slate-50">Leaderboard</h1>
-          <p className="mt-1 text-body text-slate-400">Practice minutes this week. A new week starts every Sunday.</p>
+          <p className="mt-1 text-body text-slate-400"><Hint>Practice minutes this week. A new week starts every Sunday.</Hint></p>
         </div>
 
         <Card className="deck-card p-4 md:p-5">
           {board.rows.length > 0 ? (
             <LeaderboardRows rows={board.rows} viewerId={session.user.id} />
           ) : (
-            <p className="py-6 text-center text-body text-slate-400">Nobody has practiced yet this week. Be the first.</p>
+            <p className="py-6 text-center text-body text-slate-400"><Hint>Nobody has practiced yet this week. Be the first.</Hint></p>
           )}
           {!mine && !board.viewerHidden && !board.viewerIsLinkedChild && session.user.role !== "ADMIN" && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-small text-slate-400">Practice today to get on the board.</p>
+              <p className="text-small text-slate-400"><Hint>Practice today to get on the board.</Hint></p>
               <Link href="/practice" className={buttonVariants({ variant: "secondary", size: "sm" })}>
                 Start practice
               </Link>
@@ -47,7 +48,7 @@ export default async function LeaderboardPage() {
         {session.user.role !== "ADMIN" && (
           <Card className="deck-card p-4 md:p-5">
             {board.viewerIsLinkedChild ? (
-              <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+              <p className="text-small text-slate-400"><Hint>Accounts linked to a parent are never shown on the leaderboard.</Hint></p>
             ) : (
               <LeaderboardPrivacySwitch initialHidden={board.viewerHidden} />
             )}

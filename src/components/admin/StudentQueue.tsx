@@ -78,17 +78,17 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   }
 
   if (registrations.length === 0) {
-    return <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New applications show up here as soon as they come in." />;
+    return <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")}  />;
   }
 
   return (
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, instrument" shown={shown.length} total={registrations.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Email the applicant when I approve or turn them down" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the applicant" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       <ViewMore items={shown} initial={8}>
       {(reg) => (
-        <div key={reg.id} className="glass-surface p-5">
+        <div key={reg.id} className="glass-surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <Avatar image={reg.user?.image} name={reg.fullName} />
@@ -107,27 +107,16 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             </span>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
-            <div>
-              <dt className="text-small text-slate-500">Email</dt>
-              <dd className="text-slate-300">{reg.email}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Phone</dt>
-              <dd className="text-slate-300">{reg.phone}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Submitted</dt>
-              <dd className="text-slate-300">{new Date(reg.createdAt).toLocaleString()}</dd>
-            </div>
-          </dl>
+          <p className="mt-3 break-words text-small tabular-nums text-slate-500">
+            {[reg.email, reg.phone, new Date(reg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })].join(" · ")}
+          </p>
 
-          {reg.notes && <p className="mt-3 text-small text-slate-500">Note: {reg.notes}</p>}
+          {reg.notes && <p className="mt-2 text-small text-slate-400">&ldquo;{reg.notes}&rdquo;</p>}
           {reg.status === "REJECTED" && reg.rejectionReason && (
-            <p className="mt-2 text-small text-red-400">Rejected: {reg.rejectionReason}</p>
+            <p className="mt-2 text-small text-red-400">{reg.rejectionReason}</p>
           )}
           {reg.status !== "PENDING" && reg.reviewedBy && (
-            <p className="mt-2 text-small text-slate-500">Reviewed by {reg.reviewedBy.name ?? "an admin"}</p>
+            <p className="mt-2 text-caption text-slate-500">{reg.reviewedBy.name ?? "Admin"}</p>
           )}
 
           {reg.status !== "PENDING" ? null : rejectingId === reg.id ? (

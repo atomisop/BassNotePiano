@@ -1,0 +1,9 @@
+{
+  "taskId": "GL-00-01",
+  "status": "IN_PROGRESS",
+  "note": "Baseline captured (150 shots). Left IN_PROGRESS: before/after pairs do not exist yet, so glass:verify must not accept it as DONE. Closes after owner review of the baseline.",
+  "reviewerNotes": "REVIEW.md",
+  "testResults": "tests.txt",
+  "accessibilityResults": "axe-results.json",
+  "metrics": "metrics.json"
+}

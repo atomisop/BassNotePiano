@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import type { LearningGoal, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
+import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
@@ -33,98 +34,130 @@ const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
 ];
 
 const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
-  { value: "BEGINNER", label: "Beginner" },
-  { value: "INTERMEDIATE", label: "Intermediate" },
-  { value: "ADVANCED", label: "Advanced" },
-];
-
-const GENRES: { value: MusicGenre; label: string }[] = [
-  { value: "JAZZ", label: "Jazz" },
-  { value: "CLASSICAL", label: "Classical" },
-  { value: "RNB", label: "R&B" },
-  { value: "ROCK", label: "Rock" },
-  { value: "POP", label: "Pop" },
-  { value: "GOSPEL", label: "Gospel" },
+  { value: "BEGINNER", label: "I'm new to it" },
+  { value: "INTERMEDIATE", label: "I know the basics" },
+  { value: "ADVANCED", label: "I'm experienced" },
 ];
 
 const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
   { value: "LEARN_THEORY_SCALES", label: "Learn theory & scales" },
   { value: "MASTER_RHYTHM_CHORDS", label: "Master rhythm & chords" },
   { value: "PREPARE_PERFORMANCE", label: "Prepare for a performance" },
-  { value: "HOBBYIST", label: "Just for fun (hobbyist)" },
+  { value: "HOBBYIST", label: "Just for fun" },
 ];
 
-const STEP_TITLES = ["Your username", "Your instrument", "Your skill level", "Your genres", "Your goal"];
-/** Steps up to and including this one are required. The rest can be skipped and filled in later from the profile. */
-const LAST_REQUIRED_STEP = 1;
+const STEP_TITLES = ["Who are you?", "How much do you play?"];
+const LAST_STEP = STEP_TITLES.length - 1;
 
-function OptionButton({
+/**
+ * A choice drawn as a button but built on a real radio input, so the selected state, the arrow keys
+ * and the group name are announced by the browser instead of being faked with styling.
+ */
+function RadioOption({
+  name,
   label,
-  selected,
-  onClick,
+  checked,
+  onSelect,
   comingSoon,
+  describedBy,
 }: {
+  name: string;
   label: string;
-  selected: boolean;
-  onClick: () => void;
+  checked: boolean;
+  onSelect: () => void;
   comingSoon?: boolean;
+  describedBy?: string;
 }) {
   return (
-    // disabled when comingSoon: same fix as ClassRegistrationForm's Pill.
-    // A "Coming soon" tag on an option you can still click and select reads
-    // as a bug, not a feature.
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={comingSoon}
-      className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow disabled:cursor-not-allowed disabled:opacity-50 ${
-        selected
-          ? "text-signal-fg shadow-pressed-low ring-1 ring-signal"
-          : "text-slate-300 shadow-raised-low hover:text-slate-50"
-      }`}
+    <label
+      className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
+        comingSoon ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      } ${checked ? "text-signal-fg shadow-pressed-low ring-1 ring-signal" : "text-slate-300 shadow-raised-low hover:text-slate-50"}`}
     >
-      {label}
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        disabled={comingSoon}
+        onChange={onSelect}
+        aria-describedby={comingSoon ? describedBy : undefined}
+        className="sr-only"
+      />
+      <span>{label}</span>
       {comingSoon && (
-        <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
+        <span id={describedBy} className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
-    </button>
+    </label>
   );
 }
 
-export function OnboardingWizard() {
+export function OnboardingWizard({ initialInstrument = null }: { initialInstrument?: PrimaryInstrument | null }) {
   const router = useRouter();
   const { update } = useSession();
+  const uid = useId();
 
   const [step, setStep] = useState(0);
   const [username, setUsernameValue] = useState("");
-  const [instrument, setInstrument] = useState<PrimaryInstrument | null>(null);
+  const [instrument, setInstrument] = useState<PrimaryInstrument | null>(initialInstrument);
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
-  const [genres, setGenres] = useState<MusicGenre[]>([]);
   const [goal, setGoal] = useState<LearningGoal | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggleGenre(value: MusicGenre) {
-    setGenres((prev) => (prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]));
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const touchedInstrument = useRef(initialInstrument !== null);
+  const firstRender = useRef(true);
+
+  // Start with the instrument the visitor picked on the home page, unless they have already chosen here.
+  useEffect(() => {
+    if (touchedInstrument.current) return;
+    try {
+      const intent = parseInstrumentIntent(window.sessionStorage.getItem(INSTRUMENT_INTENT_KEY));
+      if (intent) setInstrument(intent);
+    } catch {
+      /* storage can be blocked; nothing is preselected */
+    }
+  }, []);
+
+  // A new step moves focus to its heading so a keyboard or screen reader user lands on it.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [step]);
+
+  // A new error takes focus to where it can be fixed.
+  useEffect(() => {
+    if (error && step === 0 && /username|characters|taken|available/i.test(error)) usernameRef.current?.focus();
+  }, [error, step]);
+
+  const usernameValid = username.trim().length >= 3;
+  const canAdvance = step === 0 ? usernameValid && instrument !== null : true;
+
+  function chooseInstrument(value: PrimaryInstrument) {
+    touchedInstrument.current = true;
+    setInstrument(value);
   }
-
-  // Only the username and the instrument are needed to get going.
-  const canAdvance = step === 0 ? username.trim().length >= 3 : step === 1 ? instrument !== null : true;
-  const optional = step > LAST_REQUIRED_STEP;
-
-  const lastStep = STEP_TITLES.length - 1;
 
   async function save() {
     if (!instrument) return;
     setSubmitting(true);
-    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
+    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres: [], learningGoal: goal });
     if (!result.ok) {
       setError(result.error);
       setSubmitting(false);
       return;
+    }
+    try {
+      window.sessionStorage.removeItem(INSTRUMENT_INTENT_KEY);
+    } catch {
+      /* ignore */
     }
 
     await update();
@@ -145,24 +178,11 @@ export function OnboardingWizard() {
       }
     }
 
-    if (step < lastStep) {
+    if (step < LAST_STEP) {
       setStep((s) => s + 1);
       return;
     }
 
-    await save();
-  }
-
-  /** Skips this step's question, and finishes if it was the last. */
-  async function handleSkip() {
-    setError(null);
-    if (step === 2) setSkillLevel(null);
-    if (step === 3) setGenres([]);
-    if (step === 4) setGoal(null);
-    if (step < lastStep) {
-      setStep((s) => s + 1);
-      return;
-    }
     await save();
   }
 
@@ -171,125 +191,123 @@ export function OnboardingWizard() {
     setStep((s) => Math.max(0, s - 1));
   }
 
+  const usernameHintId = `${uid}-username-hint`;
+  const errorId = `${uid}-error`;
+  const busy = submitting || checkingUsername;
+
   return (
-    <motion.div
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      className="w-full glass-surface-elevated p-7"
-    >
-      {/* Replaces five undifferentiated bars. The horizontal Stepper marks
-          completed steps with a check, the current one with a filled marker,
-          and carries `aria-current="step"`, so the position is announced
-          rather than only drawn. */}
+    <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
       <div className="mb-6">
-        <Stepper
-          orientation="horizontal"
-          current={step}
-          steps={STEP_TITLES.map((title) => ({ title }))}
-        />
+        <Stepper orientation="horizontal" current={step} steps={STEP_TITLES.map((title) => ({ title }))} />
       </div>
 
       <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         Step {step + 1} of {STEP_TITLES.length}
-        {optional ? " · optional" : ""}
       </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{STEP_TITLES[step]}</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 outline-none">
+        {STEP_TITLES[step]}
+      </h1>
 
       <AnimatePresence mode="wait">
-        <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
+        <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-5">
           {step === 0 && (
-            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-slate-50/60">
-              <span className="text-small text-slate-500">@</span>
-              <input
-                type="text"
-                autoFocus
-                value={username}
-                onChange={(e) => setUsernameValue(e.target.value)}
-                placeholder="yourname"
-                className="w-full bg-transparent px-2 py-3 text-body text-slate-100 outline-none"
-              />
-            </div>
+            <>
+              <div>
+                <label htmlFor={`${uid}-username`} className="mb-1.5 block text-small font-medium text-slate-50/80">
+                  Username
+                </label>
+                <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-slate-50/60">
+                  <span className="text-small text-slate-500" aria-hidden="true">
+                    @
+                  </span>
+                  <input
+                    id={`${uid}-username`}
+                    ref={usernameRef}
+                    type="text"
+                    autoFocus
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={username}
+                    onChange={(e) => setUsernameValue(e.target.value)}
+                    aria-invalid={error && step === 0 ? true : undefined}
+                    aria-describedby={error && step === 0 ? `${usernameHintId} ${errorId}` : usernameHintId}
+                    placeholder="yourname"
+                    className="w-full bg-transparent px-2 py-3 text-body text-slate-100 outline-none"
+                  />
+                </div>
+                <p id={usernameHintId} className="mt-1.5 text-small text-slate-400">
+                  3 to 20 characters: lowercase letters, numbers and underscores.
+                </p>
+              </div>
+
+              <fieldset>
+                <legend className="mb-2 text-small font-medium text-slate-50/80">What do you want to learn?</legend>
+                <div className="space-y-2">
+                  {INSTRUMENTS.map((opt) => (
+                    <RadioOption
+                      key={opt.value}
+                      name={`${uid}-instrument`}
+                      label={opt.label}
+                      checked={instrument === opt.value}
+                      onSelect={() => chooseInstrument(opt.value)}
+                      comingSoon={INSTRUMENTS_COMING_SOON.has(opt.value)}
+                      describedBy={`${uid}-soon-${opt.value}`}
+                    />
+                  ))}
+                </div>
+              </fieldset>
+            </>
           )}
-          {step === 1 &&
-            INSTRUMENTS.map((opt) => (
-              <OptionButton
-                key={opt.value}
-                label={opt.label}
-                selected={instrument === opt.value}
-                onClick={() => setInstrument(opt.value)}
-                comingSoon={INSTRUMENTS_COMING_SOON.has(opt.value)}
-              />
-            ))}
-          {step === 2 &&
-            SKILL_LEVELS.map((opt) => (
-              <OptionButton
-                key={opt.value}
-                label={opt.label}
-                selected={skillLevel === opt.value}
-                onClick={() => setSkillLevel(opt.value)}
-              />
-            ))}
-          {step === 3 &&
-            GENRES.map((opt) => (
-              <OptionButton
-                key={opt.value}
-                label={opt.label}
-                selected={genres.includes(opt.value)}
-                onClick={() => toggleGenre(opt.value)}
-              />
-            ))}
-          {step === 4 &&
-            LEARNING_GOALS.map((opt) => (
-              <OptionButton
-                key={opt.value}
-                label={opt.label}
-                selected={goal === opt.value}
-                onClick={() => setGoal(opt.value)}
-              />
-            ))}
+
+          {step === 1 && (
+            <>
+              <fieldset>
+                <legend className="mb-2 text-small font-medium text-slate-50/80">Your level</legend>
+                <div className="space-y-2">
+                  {SKILL_LEVELS.map((opt) => (
+                    <RadioOption key={opt.value} name={`${uid}-level`} label={opt.label} checked={skillLevel === opt.value} onSelect={() => setSkillLevel(opt.value)} />
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend className="mb-2 text-small font-medium text-slate-50/80">Your main goal (optional)</legend>
+                <div className="space-y-2">
+                  {LEARNING_GOALS.map((opt) => (
+                    <RadioOption key={opt.value} name={`${uid}-goal`} label={opt.label} checked={goal === opt.value} onSelect={() => setGoal(opt.value)} />
+                  ))}
+                </div>
+              </fieldset>
+              <p className="text-small text-slate-400">Both are optional. You can change them any time in Settings.</p>
+            </>
+          )}
         </motion.div>
       </AnimatePresence>
 
-      {error && <p className="mt-4 text-small text-red-400">{error}</p>}
-
-      {step === LAST_REQUIRED_STEP && instrument !== null && (
-        <button type="button" onClick={save} disabled={submitting} className="mt-4 text-small font-medium text-slate-400 underline-offset-4 transition hover:text-slate-100 hover:underline disabled:opacity-60">
-          Finish now, I&apos;ll fill in the rest later
-        </button>
-      )}
+      <div aria-live="assertive" role="status">
+        {error && (
+          <p id={errorId} role="alert" className="mt-4 text-small text-red-400">
+            {error}
+          </p>
+        )}
+      </div>
 
       <div className="mt-6 flex items-center gap-2">
         {step > 0 && (
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={submitting}
-            className={buttonVariants({ variant: "secondary" })}
-          >
+          <button type="button" onClick={handleBack} disabled={busy} className={buttonVariants({ variant: "secondary" })}>
             Back
           </button>
         )}
         <GuardedButton
-          reason={submitting || checkingUsername ? null : step === 0 && !canAdvance ? "Username needs 3 or more characters" : step === 1 && !canAdvance ? "Pick your instrument" : null}
+          reason={busy ? null : step === 0 && !usernameValid ? "Username needs 3 or more characters" : step === 0 && instrument === null ? "Pick your instrument" : null}
           onClick={() => {
-            if (!submitting && !checkingUsername) void handleNext();
+            if (!busy && canAdvance) void handleNext();
           }}
           className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
         >
-          {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
-          {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
+          {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+          {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < LAST_STEP ? "Next" : "Finish"}
         </GuardedButton>
-        {optional && (
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={submitting}
-            className={buttonVariants({ variant: "secondary" })}
-          >
-            Skip
-          </button>
-        )}
       </div>
     </motion.div>
   );

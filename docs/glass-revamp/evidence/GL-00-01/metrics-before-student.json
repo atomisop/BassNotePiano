@@ -1,0 +1,17 @@
+{
+  "note": "dev server, shared machine, compare only on the same machine",
+  "rows": [
+    {
+      "path": "/dashboard",
+      "size": "1440x900",
+      "role": "student",
+      "solid": false,
+      "lcpMs": 85548,
+      "cls": 0.0166,
+      "backdropElements": 10,
+      "svgFilters": 5,
+      "domNodes": 1514,
+      "at": "2026-11-08T20:54:36.335Z"
+    }
+  ]
+}

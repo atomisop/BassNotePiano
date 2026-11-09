@@ -7,6 +7,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { AppearanceTiles } from "@/components/theme/AppearanceTiles";
+import { SolidSurfacesSwitch } from "@/components/theme/SolidSurfacesSwitch";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
 import { PausePlanCard } from "@/components/account/PausePlanCard";
@@ -24,6 +25,7 @@ import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, Sh
 import { SectionCard } from "./SectionCard";
 import { EmailChange } from "./EmailChange";
 import { PasswordSection, DangerZoneSection, TutorialsSection, NotificationSettingsSection } from "./AccountSections";
+import { Hint } from "@/components/ui/Hint";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
   name: string | null;
@@ -412,7 +414,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
       <AccountGroup id="privacy" title="Privacy & data">
         <SectionCard title="Studio leaderboard">
           {account.leaderboardLinkedChild ? (
-            <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+            <p className="text-small text-slate-400"><Hint>Hidden while linked to a parent.</Hint></p>
           ) : (
             <LeaderboardPrivacySwitch initialHidden={account.leaderboardHidden} />
           )}
@@ -478,6 +480,9 @@ function AppearanceSection() {
       <h2 className="text-title text-slate-50 font-semibold">Appearance</h2>
       <div className="mt-6 max-w-md">
         <AppearanceTiles />
+        <div className="mt-6">
+          <SolidSurfacesSwitch />
+        </div>
       </div>
     </section>
   );

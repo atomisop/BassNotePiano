@@ -11,6 +11,7 @@ import {
   revokeScholarshipAction,
   updateScholarshipAction,
 } from "@/app/(dashboard)/admin/scholarships/actions";
+import { Hint } from "@/components/ui/Hint";
 
 export interface ScholarshipRow {
   id: string;
@@ -133,8 +134,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
   return (
     <div className="space-y-6">
       <form onSubmit={create} className="glass-surface space-y-4 p-6">
-        <h2 className="text-title font-semibold text-slate-50">New scholarship code</h2>
-        <p className="text-small text-slate-400">For a student who already has an account. The code takes a percent off that account\u2019s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</p>
+        <h2 className="text-title font-semibold text-slate-50">New scholarship code<Hint className="ml-1.5">For a student who already has an account. The code takes a percent off that account\u2019s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</Hint></h2>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-email">Student email</label>

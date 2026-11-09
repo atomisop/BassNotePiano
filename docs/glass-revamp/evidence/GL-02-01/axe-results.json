@@ -1,0 +1,178 @@
+[
+  {
+    "path": "/admin",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/today",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/payments",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/users",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/schedule",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/support",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/pricing",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/security",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/data",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/activity",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/settings",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/admin/messages",
+    "role": "admin",
+    "browser": "chromium",
+    "size": "390x844",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/pricing",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/login",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/register",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/classes",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/shop",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/terms",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/privacy",
+    "role": "guest",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/practice",
+    "role": "student",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  },
+  {
+    "path": "/practice/piano",
+    "role": "student",
+    "browser": "chromium",
+    "size": "1440x900",
+    "solid": true,
+    "violations": []
+  }
+]

@@ -4,7 +4,7 @@
  * The dance is CSS (`.ptr-cat*` in globals.css): the body sways and hops on two beats, the paws swap, a note floats up. While you are
  * still pulling it stands and sways gently; reduced motion gets it standing still.
  */
-const ROWS = [
+export const ROWS = [
   "..oo......oo..",
   "hooooooooooooh",
   "hooooooooooooh",

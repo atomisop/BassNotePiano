@@ -79,3 +79,18 @@ export function pickCelebration(wins: Win[], now: Date, maxAgeDays = 7): Win | n
   const cutoff = now.getTime() - maxAgeDays * 86_400_000;
   return wins.filter((w) => w.at.getTime() >= cutoff).sort((a, b) => b.at.getTime() - a.at.getTime())[0] ?? null;
 }
+
+/** Minutes before a Discord class when the join button appears on Home. */
+export const JOIN_OPENS_MINUTES = 30;
+
+/**
+ * What to tell a student about joining their next class, from facts only: the start time, whether it is in person and
+ * the current time. Never claims a link is ready unless the class is inside the join window.
+ */
+export function joinReadiness(input: { scheduledAt: Date; inPerson: boolean; now: Date }): { ready: boolean; text: string } {
+  const minutes = Math.round((input.scheduledAt.getTime() - input.now.getTime()) / 60_000);
+  if (input.inPerson) return { ready: false, text: "In person, no link needed" };
+  if (minutes <= -60) return { ready: false, text: "This class has ended" };
+  if (minutes <= JOIN_OPENS_MINUTES) return { ready: true, text: "Join is open on Discord" };
+  return { ready: false, text: `Join opens ${JOIN_OPENS_MINUTES} minutes before` };
+}

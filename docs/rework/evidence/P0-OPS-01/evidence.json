@@ -1,0 +1,1 @@
+{"taskId":"P0-OPS-01","status":"IN_PROGRESS","commit":"a4f9609d","testEnvironment":"local-dev","browser":"chromium","viewports":["1440x900","390x844","320x700"],"after":["after/pricing-dark-1440x900.png","after/pricing-dark-390x844.png","after/pricing-dark-320x700.png"],"testResults":"tests.txt","reviewerNotes":"NOTES.md","blockingIssues":[]}

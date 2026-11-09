@@ -4,6 +4,7 @@ import { getAllSettings } from "@/lib/siteSettings";
 import { listAccountDiscounts } from "@/lib/accountDiscounts";
 import { PricingManager, type PricingDiscountRow } from "@/components/admin/PricingManager";
 import { clearAccountDiscountAction, savePricingAction, searchDiscountCandidatesAction, setAccountDiscountAction, type PricingFormValues } from "./actions";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Pricing" };
 
@@ -12,8 +13,7 @@ export default async function AdminPricingPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can change prices and discounts.</p>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing<Hint className="ml-1.5">Only the owner can change prices and discounts.</Hint></h1>
       </div>
     );
   }
@@ -40,8 +40,7 @@ export default async function AdminPricingPage() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Pricing</h1>
-      <p className="mt-2 text-small text-slate-500">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</p>
+      <h1 data-page-title="" className="sr-only">Pricing<Hint className="ml-1.5">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</Hint></h1>
       <div className="mt-6">
         <PricingManager
           initial={initial}

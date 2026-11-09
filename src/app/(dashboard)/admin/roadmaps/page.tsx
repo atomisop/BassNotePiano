@@ -2,6 +2,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listRoadmapsForAdmin } from "@/lib/roadmaps";
 import { RoadmapsAdmin } from "@/components/admin/RoadmapsAdmin";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Roadmaps" };
 
@@ -11,8 +12,7 @@ export default async function AdminRoadmapsPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can change the roadmaps.</p>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps<Hint className="ml-1.5">Only the owner can change the roadmaps.</Hint></h1>
       </div>
     );
   }
@@ -20,10 +20,7 @@ export default async function AdminRoadmapsPage() {
   return (
     <div>
       <h1 data-page-title="" className="sr-only">Roadmaps</h1>
-      <p className="mt-2 max-w-2xl text-small text-slate-500">
-        Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you
-        already give. A new roadmap starts hidden: add its scales (and their lessons under Classes &gt; Lessons), then turn it on.
-      </p>
+      <p className="mt-2 max-w-2xl text-small text-slate-500"><Hint>Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you already give. A new roadmap starts hidden: add its scales (and their lessons under Classes &gt; Lessons), then turn it on.</Hint></p>
       <div className="mt-6">
         <RoadmapsAdmin
           roadmaps={roadmaps.map((r) => ({

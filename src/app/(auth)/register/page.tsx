@@ -19,6 +19,8 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { UserPlus } from "@/components/ui/appIcons";
+import { Hint } from "@/components/ui/Hint";
+import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -48,6 +50,17 @@ function RegisterForm() {
       cancelled = true;
     };
   }, [status, session, router]);
+
+  // Remember which instrument the visitor picked on the home page so setup can start with it chosen.
+  // Only a validated value is stored; anything else clears an old one.
+  useEffect(() => {
+    try {
+      const slug = searchParams.get("instrument");
+      if (parseInstrumentIntent(slug)) window.sessionStorage.setItem(INSTRUMENT_INTENT_KEY, String(slug).trim().toLowerCase());
+    } catch {
+      /* storage can be blocked; setup then simply starts with nothing chosen */
+    }
+  }, [searchParams]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
@@ -120,7 +133,7 @@ function RegisterForm() {
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
-        <p className="mt-3 text-center text-small text-slate-300">A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</p>
+        <p className="mt-3 text-center text-small text-slate-300"><Hint>A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</Hint></p>
       )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">

@@ -201,7 +201,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     <div className="space-y-6">
       {!activePlan && (
         <div>
-          <p className="mb-6 text-center text-small text-slate-400">No active plan yet. Pick one to start.</p>
+          <p className="mb-6 text-center text-small text-slate-400"><Hint>No active plan yet. Pick one to start.</Hint></p>
           <PaymentPlanTierGrid narrow pricing={pricing} personalDiscountPercent={personalDiscountPercent} scholarshipPercent={scholarshipPercent} />
         </div>
       )}
@@ -388,9 +388,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {(cancelStage === "reason" || cancelStage === "canceling") && (
             <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
               <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
-              <p className="mt-1 text-small text-slate-500">
-                This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.
-              </p>
+              <p className="mt-1 text-small text-slate-500"><Hint>This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.</Hint></p>
               <div className="mt-3 space-y-1.5">
                 {CANCELLATION_REASONS.map((r) => (
                   <label key={r.value} className="flex cursor-pointer items-center gap-2 text-small text-slate-300">

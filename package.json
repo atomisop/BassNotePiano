@@ -20,7 +20,12 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "upload:media": "tsx scripts/upload-marketing-media.ts",
     "smoke": "node scripts/smoke/run.mjs",
-    "seed:staging": "node scripts/seed-staging.mjs"
+    "seed:staging": "node scripts/seed-staging.mjs",
+    "rework:verify": "node scripts/rework/verify-evidence.mjs",
+    "rework:capture": "node scripts/rework/capture.mjs",
+    "e2e": "playwright test",
+    "glass:verify": "node scripts/glass-revamp/verify-evidence.mjs",
+    "glass:capture": "node scripts/glass-revamp/capture.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -74,7 +79,9 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@netlify/plugin-nextjs": "^5.16.2",
+    "@playwright/test": "^1.65.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",

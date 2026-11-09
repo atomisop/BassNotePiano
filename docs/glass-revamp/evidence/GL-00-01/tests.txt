@@ -1,0 +1,3 @@
+Baseline capture is not a code change; no code under src was modified for GL-00-01.
+Captures were produced by scripts/glass-revamp/baseline.sh GL-00-01 before.
+exit status: 0

@@ -11,6 +11,7 @@ import { toast } from "@/components/ui/Toaster";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { cancelUpcomingClassesAction, closeStudioDayAction, previewClosedDayAction } from "@/app/(dashboard)/admin/schedule/actions";
 import type { ClosedDayPreview } from "@/lib/adminClassTools";
+import { Hint } from "@/components/ui/Hint";
 
 const field = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const easternToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
@@ -127,7 +128,7 @@ export function AdminCloseDay() {
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Close the studio for a day">
         <NotifyToggle on={notify} onChange={setNotify} label="Notify the students" className="mb-3" />
         <div className="grid gap-4">
-          <p className="text-small text-slate-400">Every class that day is canceled with no credit charged, and the day is kept so nobody books it. Open it again by releasing it under Reserved.</p>
+          <p className="text-small text-slate-400"><Hint>Every class that day is canceled with no credit charged, and the day is kept so nobody books it. Open it again by releasing it under Reserved.</Hint></p>
           <label className="grid gap-1.5">
             <span className="text-small font-medium text-slate-200">Day</span>
             <input type="date" value={date} min={easternToday()} onChange={(e) => void pick(e.target.value)} className={field} />

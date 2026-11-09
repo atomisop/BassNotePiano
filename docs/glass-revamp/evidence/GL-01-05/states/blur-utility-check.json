@@ -1,0 +1,32 @@
+[
+  {
+    "name": "/dashboard: has blur-utility elements in the normal look",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":1}"
+  },
+  {
+    "name": "/dashboard: Solid removes every utility blur",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":0}"
+  },
+  {
+    "name": "/dashboard: reduced transparency removes every utility blur",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":0}"
+  },
+  {
+    "name": "/pricing: has blur-utility elements in the normal look",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":1}"
+  },
+  {
+    "name": "/pricing: Solid removes every utility blur",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":0}"
+  },
+  {
+    "name": "/pricing: reduced transparency removes every utility blur",
+    "ok": true,
+    "detail": "{\"n\":1,\"blurred\":0}"
+  }
+]

@@ -1,0 +1,8 @@
+Commands run (dev server :3102)
+npm run typecheck -- failed on its first run (error code 2, since resolved): Finder "* 2.ts" duplicates in .next/types. Fixed by excluding "**/* 2.ts" and "**/* 2.tsx" in tsconfig.json.
+npm run typecheck (after the fix)
+exit status: 0
+npx eslint src/components/marketing/PaymentPlanTierGrid.tsx
+exit status: 0
+no test references the old badge text (grep of tests/ e2e/ scripts/)
+exit status: 0

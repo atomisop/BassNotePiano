@@ -7,6 +7,7 @@ import { clearCspViolationsAction } from "./actions";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: System" };
 
@@ -18,8 +19,7 @@ export default async function AdminSecurityPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System<Hint className="ml-1.5">Only the owner can see this.</Hint></h1>
       </div>
     );
   }
@@ -76,13 +76,12 @@ export default async function AdminSecurityPage() {
         </PhoneAccordion>
       </div>
 
-      <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy</h2>
-      <p className="mt-2 text-small text-slate-500">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</p>
+      <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy<Hint className="ml-1.5">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</Hint></h2>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">
         <h2 className="text-title font-semibold text-slate-50">Is it safe to turn on?</h2>
         {rows.length === 0 ? (
-          <p className="mt-2 text-small text-slate-300">No reports yet. Reports arrive as people use the site; check again after a few days of normal use.</p>
+          <p className="mt-2 text-small text-slate-300"><Hint>No reports yet. Reports arrive as people use the site; check again after a few days of normal use.</Hint></p>
         ) : realRecent.length === 0 ? (
           <p className="mt-2 text-small text-slate-300">
             <span className="font-semibold text-signal-fg">Looking good.</span> No real findings in the last 3 days

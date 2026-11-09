@@ -20,6 +20,7 @@ import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 import { toast } from "@/components/ui/Toaster";
+import { Hint } from "@/components/ui/Hint";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -92,7 +93,7 @@ function NotesSection({ studentId }: { studentId: string }) {
         </button>
       }
     >
-      {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500">Permanent notes on this student. Mark any as hidden from them.</p>}
+      {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500"><Hint>Permanent notes on this student. Mark any as hidden from them.</Hint></p>}
     </SectionCard>
   );
 }
@@ -522,9 +523,7 @@ export function CustomerProfile({
             {confirmingBan && !user.bannedAt && (
               <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
-                <p className="mt-1 text-small text-slate-300">
-                  This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
-                </p>
+                <p className="mt-1 text-small text-slate-300"><Hint>This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint></p>
                 <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
                   Private note for yourself (optional)
                 </label>

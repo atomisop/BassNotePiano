@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import type { ContactInput, HoldChoice } from "@/lib/contacts";
 import { toast } from "@/components/ui/Toaster";
+import { Hint } from "@/components/ui/Hint";
 
 const STATUS_LABEL: Record<string, string> = { INTERESTED: "Interested", TRIAL: "Trial", ACTIVE: "Active", PAUSED: "Paused" };
 const selectClass =
@@ -175,8 +176,7 @@ export function ContactHolds({
 
   return (
     <Card>
-      <h2 className="text-title font-semibold text-slate-50">Reserved times</h2>
-      <p className="mt-1 text-small text-slate-400">A reminder only. When you book someone into one of these times from Schedule, you are asked first. Nothing is blocked.</p>
+      <h2 className="text-title font-semibold text-slate-50">Reserved times<Hint className="ml-1.5">A reminder only. When you book someone into one of these times from Schedule, you are asked first. Nothing is blocked.</Hint></h2>
       <ul className="mt-4 grid gap-2">
         {active.length === 0 && <li className="text-small text-slate-500">No reserved times.</li>}
         {active.map((hold) => (

@@ -3,6 +3,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listScholarshipCodes } from "@/lib/scholarships";
 import { formatScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
 import { ScholarshipManager, type ScholarshipRow } from "@/components/admin/ScholarshipManager";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Scholarships" };
 
@@ -11,8 +12,7 @@ export default async function AdminScholarshipsPage() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="sr-only">Scholarships</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can manage scholarship codes.</p>
+        <h1 className="sr-only">Scholarships<Hint className="ml-1.5">Only the owner can manage scholarship codes.</Hint></h1>
       </div>
     );
   }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FollowUp } from "@/lib/adminFollowUps";
 import { REMINDER_KINDS } from "@/lib/followUpReminders";
 import { RemindButton } from "@/components/admin/RemindButton";
+import { Hint } from "@/components/ui/Hint";
 import { HomeRows } from "@/components/home/HomeRow";
 
 /**
@@ -16,12 +17,14 @@ export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; 
       {followUps.map((f) => (
         <li key={f.key} className="px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <Link href={f.href} className="text-body font-semibold text-slate-50 hover:underline">
-              {f.title}
-            </Link>
+            <span className="flex items-center gap-1.5">
+              <Link href={f.href} className="text-body font-semibold text-slate-50 hover:underline">
+                {f.title}
+              </Link>
+              <Hint>{f.hint}</Hint>
+            </span>
             <span className="text-small tabular-nums text-slate-400">{f.total}</span>
           </div>
-          <p className="mt-0.5 text-small text-slate-500">{f.hint}</p>
           {f.people.length > 0 && (
             <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-small">
               {f.people.map((p) => (

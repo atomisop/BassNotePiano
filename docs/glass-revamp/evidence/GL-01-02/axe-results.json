@@ -1,0 +1,16 @@
+[
+  {
+    "path": "/dashboard",
+    "role": "student",
+    "theme": "dark",
+    "size": "1440x900",
+    "violations": []
+  },
+  {
+    "path": "/lessons",
+    "role": "student",
+    "theme": "dark",
+    "size": "1440x900",
+    "violations": []
+  }
+]

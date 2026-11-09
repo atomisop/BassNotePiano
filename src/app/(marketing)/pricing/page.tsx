@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/site";
 import { PricingPageContent } from "@/components/marketing/PricingPageContent";
-import { getPricingConfig } from "@/lib/pricing";
+import { getPricingForDisplay } from "@/lib/pricing";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
@@ -11,5 +11,15 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function Page() {
-  return <PricingPageContent pricing={await getPricingConfig()} />;
+  const { config, stale } = await getPricingForDisplay();
+  return (
+    <>
+      {stale && (
+        <p role="status" className="mx-auto max-w-2xl px-6 pt-24 text-center text-small text-amber-300">
+          We could not load our latest prices just now, so these may be out of date. You will always see the exact price before you pay.
+        </p>
+      )}
+      <PricingPageContent pricing={config} />
+    </>
+  );
 }

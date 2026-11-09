@@ -5,7 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
-import { WEEKLY_GOAL_MINUTES } from "@/lib/homeRules";
+import { WEEKLY_GOAL_MINUTES, joinReadiness } from "@/lib/homeRules";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import { formatCredits } from "@/lib/classCreditPricing";
 import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
@@ -196,7 +196,7 @@ export default async function HomePage() {
                 href="/lessons"
                 icon={<CalendarCheck />}
                 title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
-                detail={nextClass ? `Next class, ${untilLabel(nextClass.scheduledAt)}` : "Book your weekly class"}
+                detail={nextClass ? `${untilLabel(nextClass.scheduledAt)}. ${joinReadiness({ scheduledAt: nextClass.scheduledAt, inPerson: nextClass.inPerson, now: new Date() }).text}` : "Book your weekly class"}
               />
             </li>
           </HomeRows>

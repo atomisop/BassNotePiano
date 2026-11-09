@@ -1,0 +1,11 @@
+Commands run at ef5c6143 (production build of a clean checkout, throwaway DB bnp_rework_verify, Node 26.9)
+npm run typecheck
+exit status: 0
+npm run lint (warnings only)
+exit status: 0
+npm test (112 files, 654 tests; tests/piano.test.ts 14 tests for note math, MIDI parsing and scoring)
+exit status: 0
+scripts/rework/e2e-prod.sh e2e/rework/piano.spec.ts --project=desktop --project=mobile --project=narrow (8 scenarios x 3 viewports = 24 passed)
+exit status: 0
+scripts/rework/e2e-prod.sh e2e/rework/onboarding.spec.ts --project=mobile --project=narrow (18 onboarding checks incl. desktop run earlier, all passed)
+exit status: 0

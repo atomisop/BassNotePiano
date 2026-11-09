@@ -493,7 +493,7 @@ export function NewPlanForm({
         {isParent && (
           <div className="mb-3 space-y-2" role="group" aria-label="Whose weekly time">
             {holders.length === 0 ? (
-              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low">Add a child above, then pick a time for each person.</p>
+              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low"><Hint>Add a child above, then pick a time for each person.</Hint></p>
             ) : (
               holders.map((h) => {
                 const t = timeOf(h.key);
@@ -524,7 +524,7 @@ export function NewPlanForm({
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 && wait.taken.length === 0 ? (
-          <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low">No open weekly times right now.</p>
+          <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low"><Hint>No open weekly times right now.</Hint></p>
         ) : (
           <>
             {isParent && current && <p className="mb-2 text-small text-slate-400">Time for <span className="font-medium text-slate-100">{current.label}</span></p>}

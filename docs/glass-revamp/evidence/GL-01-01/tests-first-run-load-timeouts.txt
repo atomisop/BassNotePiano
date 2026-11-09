@@ -1,0 +1,192 @@
+$ npm run typecheck
+
+> bass-note-piano@0.1.0 typecheck
+> tsc --noEmit
+
+exit status: 0
+$ npm run lint
+
+> bass-note-piano@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+[@sentry/nextjs] Importing `withSentryConfig` from `@sentry/nextjs` is deprecated and will stop working in v11. Import it from `@sentry/nextjs/config` instead:
+  import { withSentryConfig } from '@sentry/nextjs/config';
+
+./src/components/stageshow/kit/controls/Button.tsx
+47:6  Warning: React Hook useLayoutEffect has missing dependencies: 'icon' and 'open'. Either include them or remove the dependency array. If 'setLast' needs the current value of 'icon', you can also switch to useReducer instead of useState and read 'icon' in the reducer.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Follow.tsx
+121:79  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/motion/Roll.tsx
+158:6  Warning: React Hook useLayoutEffect has a missing dependency: 'variant'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+158:26  Warning: React Hook useLayoutEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+./src/components/stageshow/kit/parts/Avatar.tsx
+43:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/BrandMark.tsx
+39:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/kit/parts/Pin.tsx
+36:55  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/AtomHandoff.tsx
+129:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/BookingHero.tsx
+116:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ParentPair.tsx
+99:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PhoneReminders.tsx
+71:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/PracticeStreak.tsx
+95:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/stageshow/scenes/ScaleUnlock.tsx
+95:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+exit status: 0
+$ npm test
+
+> bass-note-piano@0.1.0 test
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /Users/yisehakberhanu/Desktop/Music App
+
+ ❯ tests/quiz.test.ts (3 tests | 1 failed) 7367ms
+   ❯ exam (3)
+     × has 20 well formed questions for every scale 6766ms
+ ❯ tests/useServerExports.test.ts (4 tests | 1 failed) 10589ms
+   ❯ every use server file in the app (1)
+     × exports only async functions and types 10156ms
+ ❯ tests/passwordChangedEmail.test.ts (1 test | 1 failed) 5275ms
+   ❯ sendPasswordChangedEmail (1)
+     × sends the security notice from the noreply sender with a reset link 5236ms
+ ❯ tests/emailBody.test.ts (3 tests | 1 failed) 5428ms
+   ❯ dark mode (1)
+     × tags the card, text and panel colours and ships a dark media block 5066ms
+ ❯ tests/personalEmail.test.ts (2 tests | 1 failed) 6086ms
+   ❯ sendPersonalEmail (2)
+     × sends from the reply-able address, with a greeting and no template 5189ms
+ ❯ tests/classesInWindow.test.ts (6 tests | 1 failed) 106225ms
+   ❯ how many classes a paid month holds (6)
+     × agrees with a plain day-by-day count for every start date in a year and every weekday 103323ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/classesInWindow.test.ts > how many classes a paid month holds > agrees with a plain day-by-day count for every start date in a year and every weekday
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/classesInWindow.test.ts:29:3
+     27|   });
+     28|
+     29|   it("agrees with a plain day-by-day count for every start date in a y…
+       |   ^
+     30|     const addMonth = (from: Date, n: number) => {
+     31|       const y = from.getUTCFullYear() + Math.floor((from.getUTCMonth()…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  tests/emailBody.test.ts > dark mode > tags the card, text and panel colours and ships a dark media block
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/emailBody.test.ts:18:3
+     16|
+     17| describe("dark mode", () => {
+     18|   it("tags the card, text and panel colours and ships a dark media blo…
+       |   ^
+     19|     const sent: { html: string }[] = [];
+     20|     vi.resetModules();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  tests/passwordChangedEmail.test.ts > sendPasswordChangedEmail > sends the security notice from the noreply sender with a reset link
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/passwordChangedEmail.test.ts:14:3
+     12|
+     13| describe("sendPasswordChangedEmail", () => {
+     14|   it("sends the security notice from the noreply sender with a reset l…
+       |   ^
+     15|     send.mockResolvedValue({ data: { id: "1" }, error: null });
+     16|     const { sendPasswordChangedEmail } = email;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  tests/personalEmail.test.ts > sendPersonalEmail > sends from the reply-able address, with a greeting and no template
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/personalEmail.test.ts:14:3
+     12|
+     13| describe("sendPersonalEmail", () => {
+     14|   it("sends from the reply-able address, with a greeting and no templa…
+       |   ^
+     15|     send.mockResolvedValue({ data: { id: "1" }, error: null });
+     16|     const { sendPersonalEmail } = email;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  tests/quiz.test.ts > exam > has 20 well formed questions for every scale
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/quiz.test.ts:8:3
+      6|   const slugs = Object.keys(SCALE_CONTENT);
+      7|
+      8|   it("has 20 well formed questions for every scale", () => {
+       |   ^
+      9|     for (const slug of slugs) {
+     10|       for (const seed of [0, 1, 7, 12345]) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  tests/useServerExports.test.ts > every use server file in the app > exports only async functions and types
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/useServerExports.test.ts:55:3
+     53|
+     54| describe("every use server file in the app", () => {
+     55|   it("exports only async functions and types", () => {
+       |   ^
+     56|     const problems: string[] = [];
+     57|     for (const file of sourceFiles("src")) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  6 failed | 109 passed (115)
+      Tests  6 failed | 682 passed (688)
+   Start at  17:00:34
+   Duration  153.34s (tests 50%, import 38%, transform 6%, worker 5%)
+
+    Isolate  115 workers spawned · ~11.75s startup each (spawn + environment, per file)
+             at least ~78.31s faster with isolate: false — reuses workers across files instead of one per file
+
+exit status: 1
+$ npx vitest run (the 6 files that timed out under machine load, with --testTimeout 120000)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /Users/yisehakberhanu/Desktop/Music App
+
+
+ Test Files  6 passed (6)
+      Tests  19 passed (19)
+   Start at  17:03:53
+   Duration  18.17s (tests 70%, import 22%, transform 7%, worker 1%)
+
+exit status: 0

@@ -10,6 +10,7 @@ import type { NotesRosterRow } from "@/lib/studentNotes";
 import type { BookableStudent } from "@/lib/admin";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { Hint } from "@/components/ui/Hint";
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -112,7 +113,7 @@ export function StudentNotesPanel() {
                   {roster === null ? (
                     <PulsatingDots className="justify-start px-1" />
                   ) : roster.length === 0 ? (
-                    <p className="px-1 text-small text-slate-500">Nobody is booked today. Search for a student below.</p>
+                    <p className="px-1 text-small text-slate-500"><Hint>Nobody is booked today. Search for a student below.</Hint></p>
                   ) : (
                     roster.map((r) => (
                       <button key={r.studentId} type="button" onClick={() => setSelected({ id: r.studentId, name: r.name ?? r.email })} className={rowClass}>

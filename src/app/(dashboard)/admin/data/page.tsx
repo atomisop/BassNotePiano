@@ -6,6 +6,7 @@ import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { ChevronRight } from "@/components/ui/appIcons";
 import { getCollectedInventory, getInsightInputs, getPeopleRows, getScaleReport, type CellState, type PersonRow, type ScaleReportRow } from "@/lib/adminData";
 import { buildInsights, MIN_SAMPLE, STALL_DAYS, type Insight } from "@/lib/adminInsightsRules";
+import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Admin: Data" };
 
@@ -26,8 +27,7 @@ export default async function AdminDataPage(props: { searchParams: Promise<{ tab
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data</h1>
-        <p className="mt-2 text-small text-slate-500">Only the owner can see this.</p>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data<Hint className="ml-1.5">Only the owner can see this.</Hint></h1>
       </div>
     );
   }
@@ -36,8 +36,7 @@ export default async function AdminDataPage(props: { searchParams: Promise<{ tab
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Data</h1>
-      <p className="mt-2 max-w-2xl text-small text-slate-400">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</p>
+      <h1 data-page-title="" className="sr-only">Data<Hint className="ml-1.5">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</Hint></h1>
 
       <nav aria-label="Data views" className={`mt-5 ${TAB_TRACK}`}>
         {TABS.map((t) => (
@@ -77,8 +76,7 @@ async function ScalesView() {
 
       <section aria-labelledby="by-scale" className="grid gap-3">
         <div>
-          <h2 id="by-scale" className="text-title font-semibold text-slate-50">Progress by scale</h2>
-          <p className="mt-0.5 text-small text-slate-500">Each bar is a step of the scale&apos;s checklist, out of everyone who has the scale open.</p>
+          <h2 id="by-scale" className="text-title font-semibold text-slate-50">Progress by scale<Hint className="ml-1.5">Each bar is a step of the scale&apos;s checklist, out of everyone who has the scale open.</Hint></h2>
         </div>
         <div className="grid gap-3 lg:grid-cols-2">
           {report.scales.map((s) => (
@@ -89,8 +87,7 @@ async function ScalesView() {
 
       <section aria-labelledby="who-where" className="grid gap-3">
         <div>
-          <h2 id="who-where" className="text-title font-semibold text-slate-50">Who is where</h2>
-          <p className="mt-0.5 text-small text-slate-500">One row per student, one square per scale, most finished first.</p>
+          <h2 id="who-where" className="text-title font-semibold text-slate-50">Who is where<Hint className="ml-1.5">One row per student, one square per scale, most finished first.</Hint></h2>
         </div>
         <Legend />
         {report.grid.length === 0 ? (
@@ -154,7 +151,7 @@ function ScaleCard({ scale: s }: { scale: ScaleReportRow }) {
       </div>
 
       {s.unlocked === 0 ? (
-        <p className="text-small text-slate-500">Nobody has this scale open yet.</p>
+        <p className="text-small text-slate-500"><Hint>Nobody has this scale open yet.</Hint></p>
       ) : (
         <ul className="grid gap-2.5" aria-label={`${s.code} checklist`}>
           {steps.map((step, i) => (
@@ -209,7 +206,10 @@ function Cell({ state, label }: { state: CellState; label: string }) {
     open: "border border-slate-500",
     locked: "bg-neu-lift",
   };
-  return <span role="img" aria-label={label} title={label} className={`inline-block h-5 w-5 rounded-sm align-middle ${look[state]}`} />;
+  const box = `inline-block h-5 w-5 rounded-sm align-middle ${look[state]}`;
+  // The legend draws the same boxes next to their words, so there they are decoration, not pictures that need a label.
+  if (!label) return <span aria-hidden className={box} />;
+  return <span role="img" aria-label={label} title={label} className={box} />;
 }
 
 function Legend() {
@@ -377,9 +377,7 @@ async function CollectedView() {
   const groups = await getCollectedInventory();
   return (
     <div className="grid gap-6">
-      <p className="max-w-2xl text-small text-slate-400">
-        Every kind of record the app keeps about people, grouped, with how many there are right now.
-      </p>
+      <p className="max-w-2xl text-small text-slate-400"><Hint>Every kind of record the app keeps about people, grouped, with how many there are right now.</Hint></p>
       <div className="grid gap-4 lg:grid-cols-2">
         {groups.map((g) => (
           <Card key={g.title} className="grid content-start gap-3">

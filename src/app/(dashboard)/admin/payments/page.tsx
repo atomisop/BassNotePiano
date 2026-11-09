@@ -1,4 +1,5 @@
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { Hint } from "@/components/ui/Hint";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { getAdminPayments } from "@/lib/payments";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
@@ -160,10 +161,7 @@ async function EmailsTab() {
       <h1 className="sr-only">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} />
       <PaymentPipelineBanner health={health} />
-      <p className="mt-2 max-w-[70ch] text-small text-slate-500">
-        These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open
-        payment for the same amount, or dismiss it if it is not a studio payment.
-      </p>
+      <p className="mt-2 max-w-[70ch] text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, or dismiss it if it is not a studio payment.</Hint></p>
       <div className="mt-6">
         <UnmatchedEmailList
           rows={rows.map((r) => ({

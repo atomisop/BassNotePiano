@@ -995,6 +995,7 @@ model User {
   loginEvents        LoginEvent[]
   badges             UserBadge[]
   fingerPracticeDays FingerPracticeDay[]
+  pianoPracticeAttempts PianoPracticeAttempt[]
   mailMessages       MailMessage[]       @relation("MailRecipient")
   emailLogs          EmailLog[]
 
@@ -1924,6 +1925,23 @@ model AdminNotificationSetting {
 // One row per student per day (ET) of the daily 10-minute finger exercises.
 // seconds only grows through recordPracticeBeat, which adds the time the
 // server itself saw pass between heartbeats, never a number the browser sends.
+// One finished run of a piano exercise (/practice/piano). Only a COMPLETE run is stored (every note reached), and accuracy is worked out
+// on the server from attempts and correct, never taken from the browser. clientKey makes a retried save count once.
+model PianoPracticeAttempt {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId String
+  mode       String // "guided" | "memory"
+  attempts   Int // every note played, right or wrong
+  correct    Int // notes played correctly; equals the exercise length for a finished run
+  clientKey  String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, clientKey])
+  @@index([userId, exerciseId, createdAt])
+}
+
 model FingerPracticeDay {
   id          String    @id @default(cuid())
   userId      String

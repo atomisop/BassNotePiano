@@ -62,7 +62,7 @@ export default async function ParentPage() {
           </Link>
         </div>
         {children.length === 0 ? (
-          <p className="mt-3 rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No linked children yet. Add one with the form.</p>
+          <p className="mt-3 rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No linked children yet. Add one with the form.</Hint></p>
         ) : (
           <ul className="mt-3 grid gap-3 md:grid-cols-2">
             {children.map((c) => (

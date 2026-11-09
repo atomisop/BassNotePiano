@@ -9,6 +9,7 @@ import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { detectPlatform, shouldPromptAddToHome } from "@/lib/addToHome";
 import { AddToHomeSteps, isStandalone } from "./AddToHomeSteps";
+import { Hint } from "@/components/ui/Hint";
 
 const SEEN_KEY = "bnp-add-to-home-seen";
 const DELAY_MS = 2500;
@@ -118,8 +119,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
               <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Make it an app</p>
               <h2 id="a2hs-title" className="mt-1.5 text-title font-semibold text-slate-50">
                 Add Bass Note Piano to your Home Screen
-              </h2>
-              <p className="mt-2 text-small text-slate-400">It opens full screen with its own icon, just like an app from the store, and class reminders work better. It takes about 20 seconds.</p>
+              <Hint className="ml-1.5">It opens full screen with its own icon, just like an app from the store, and class reminders work better. It takes about 20 seconds.</Hint></h2>
               <div className="mt-4">
                 <AddToHomeSteps onInstalled={done} />
               </div>
@@ -131,7 +131,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
                   I added it
                 </button>
               </div>
-              <p className="mt-3 text-small text-slate-500">You can find these steps again any time in Settings, under Tutorials.</p>
+              <p className="mt-3 text-small text-slate-500"><Hint>You can find these steps again any time in Settings, under Tutorials.</Hint></p>
             </motion.div>
           </motion.div>
         )}

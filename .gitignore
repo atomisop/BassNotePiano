@@ -58,3 +58,10 @@ next-env.d.ts
 
 # macOS Finder duplicates ("name 2.ext"): never commit these; Netlify rejects function names with spaces
 * [0-9].*
+
+# Playwright
+/test-results/
+/playwright-report/
+
+# glass revamp local test sessions
+.auth/

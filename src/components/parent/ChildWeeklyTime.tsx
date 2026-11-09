@@ -8,6 +8,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { childWeeklyChoicesAction, parentEndChildPlanAction, parentMoveWeeklyTimeAction, type WeeklyChoice } from "@/app/(dashboard)/parent/actions";
+import { Hint } from "@/components/ui/Hint";
 
 /** Moves the child's whole plan to another weekly time: the standing day and hour and every class already booked on it. */
 export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; hasTime?: boolean }) {
@@ -56,7 +57,7 @@ export function ChildWeeklyTime({ childId, hasTime = true }: { childId: string; 
             <MorphingSquare size={20} />
           </div>
         ) : choices.length === 0 ? (
-          <p className="text-small text-slate-400">No free weekly time to move to.</p>
+          <p className="text-small text-slate-400"><Hint>No free weekly time to move to.</Hint></p>
         ) : (
           <>
             {current && <p className="mb-2 text-small text-slate-400">Now: {current}</p>}

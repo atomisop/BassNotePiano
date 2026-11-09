@@ -16,6 +16,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import type { DiscountCandidate, PricingFormValues } from "@/app/(dashboard)/admin/pricing/actions";
 import { toast } from "@/components/ui/Toaster";
+import { Hint } from "@/components/ui/Hint";
 
 export interface PricingDiscountRow {
   userId: string;
@@ -277,7 +278,7 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
           )}
         </div>
       </div>
-      {removing && <p className="mt-2 text-small text-slate-400">Their running plan goes back to the price it signed up at, from the next bill (an unpaid bill updates now), and they are told.</p>}
+      {removing && <p className="mt-2 text-small text-slate-400"><Hint>Their running plan goes back to the price it signed up at, from the next bill (an unpaid bill updates now), and they are told.</Hint></p>}
       {!valid && <p role="alert" className="mt-1 text-small text-red-400">Whole number, 1 to {MAX_PERSONAL_DISCOUNT_PERCENT}.</p>}
       {msg && <p role="status" className={`mt-1 text-small ${msg.ok ? "text-slate-200" : "text-red-400"}`}>{msg.text}</p>}
     </li>
@@ -348,7 +349,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
           ))}
         </ul>
       )}
-      {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500">Nobody found. Admins and banned accounts are left out.</p>}
+      {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500"><Hint>Nobody found. Admins and banned accounts are left out.</Hint></p>}
 
       {picked && (
         <div className="mt-3 rounded-xl bg-neu-base p-4 shadow-raised-low">

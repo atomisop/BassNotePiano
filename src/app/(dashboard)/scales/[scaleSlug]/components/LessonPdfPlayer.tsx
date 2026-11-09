@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "@/components/ui/appI
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { buttonVariants } from "@/components/ui/button";
+import { Hint } from "@/components/ui/Hint";
 
 // Vendored into public/ (verbatim copy of
 // node_modules/pdfjs-dist/build/pdf.worker.min.mjs for the pinned react-pdf
@@ -74,7 +75,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
   if (loadError) {
     return (
       <div className="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-2xl bg-neu-base shadow-pressed-low p-8 text-center">
-        <p className="text-small text-slate-400">Your browser can&apos;t preview this PDF inline.</p>
+        <p className="text-small text-slate-400"><Hint>Your browser can&apos;t preview this PDF inline.</Hint></p>
         <a href={src} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
           Open the PDF
         </a>

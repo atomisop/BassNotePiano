@@ -9,7 +9,7 @@ import { getNumberSetting } from "@/lib/siteSettings";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
-import { getPricingConfig } from "@/lib/pricing";
+import { getDisplayPricingConfig } from "@/lib/pricing";
 import { getPersonalDiscount } from "@/lib/accountDiscounts";
 import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
 import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
@@ -51,7 +51,7 @@ export default async function BillingPlansPage(
   const [activePlan, allPlans, pricing, personalDiscount] = await Promise.all([
     getActivePaymentPlan(session.user.id),
     getUserPaymentPlans(session.user.id),
-    getPricingConfig(),
+    getDisplayPricingConfig(),
     getPersonalDiscount(session.user.id),
   ]);
 
