@@ -1,0 +1,77 @@
+{
+  "note": "dev server, shared machine, compare only on the same machine",
+  "rows": [
+    {
+      "path": "/",
+      "size": "1440x900",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 2572,
+      "cls": 0,
+      "backdropElements": 2,
+      "svgFilters": 11,
+      "domNodes": 964,
+      "at": "2026-11-09T02:56:24.776Z"
+    },
+    {
+      "path": "/",
+      "size": "390x844",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 1844,
+      "cls": 0,
+      "backdropElements": 5,
+      "svgFilters": 9,
+      "domNodes": 949,
+      "at": "2026-11-09T02:56:29.308Z"
+    },
+    {
+      "path": "/pricing",
+      "size": "1440x900",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 964,
+      "cls": 0,
+      "backdropElements": 4,
+      "svgFilters": 5,
+      "domNodes": 1128,
+      "at": "2026-11-09T02:56:33.788Z"
+    },
+    {
+      "path": "/pricing",
+      "size": "390x844",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 904,
+      "cls": 0,
+      "backdropElements": 4,
+      "svgFilters": 4,
+      "domNodes": 1121,
+      "at": "2026-11-09T02:56:38.232Z"
+    },
+    {
+      "path": "/login",
+      "size": "1440x900",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 800,
+      "cls": 0,
+      "backdropElements": 0,
+      "svgFilters": 1,
+      "domNodes": 429,
+      "at": "2026-11-09T02:56:42.656Z"
+    },
+    {
+      "path": "/login",
+      "size": "390x844",
+      "role": "guest",
+      "solid": false,
+      "lcpMs": 152,
+      "cls": 0,
+      "backdropElements": 0,
+      "svgFilters": 1,
+      "domNodes": 429,
+      "at": "2026-11-09T02:56:47.047Z"
+    }
+  ]
+}

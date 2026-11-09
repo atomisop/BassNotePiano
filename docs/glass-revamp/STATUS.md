@@ -13,6 +13,7 @@ Done so far: GL-01-01 to GL-01-05 and GL-02-01 (owner chose the subtle direction
 | GL-01-04 accessibility sweep, 51 axe runs over student and admin routes | DONE: zero violations, no overflow | evidence/GL-01-04/ |
 | GL-01-05 Tailwind backdrop-blur panels (top banner, scrims, marketing nav) honor Solid and reduced transparency | DONE | evidence/GL-01-05/ |
 | GL-02-01 Solid surfaces on public pages, piano lesson, admin at phone width, WebKit and Firefox: 0 overflow, 0 axe findings | DONE | evidence/GL-02-01/ |
+| Production-build performance (glass vs Solid) | MEASURED (not a code task, no DONE claim): Solid cuts blurred elements to 0-1 per page with no LCP change; `/account` at 390 has a pre-existing 0.113 layout shift | PERFORMANCE-BASELINE.md, evidence/GL-00-01/perf-production/ |
 | Phone backdrop budget | CHECKED, no change needed: the 19 on phone home were 3 on screen (PERFORMANCE-BASELINE.md correction) | PERFORMANCE-BASELINE.md |
 | Phase 1 remaining (move class-name glass consumers to roles, toasts, skeletons) | NEXT | |
 | Phases 2 to 6 | NOT STARTED | |

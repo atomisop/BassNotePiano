@@ -1,0 +1,77 @@
+{
+  "note": "dev server, shared machine, compare only on the same machine",
+  "rows": [
+    {
+      "path": "/dashboard",
+      "size": "1440x900",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 1224,
+      "cls": 0.0087,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 1210,
+      "at": "2026-11-09T02:57:49.277Z"
+    },
+    {
+      "path": "/dashboard",
+      "size": "390x844",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 1112,
+      "cls": 0.0811,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 1210,
+      "at": "2026-11-09T02:57:53.850Z"
+    },
+    {
+      "path": "/lessons",
+      "size": "1440x900",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 224,
+      "cls": 0.0001,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 843,
+      "at": "2026-11-09T02:57:58.463Z"
+    },
+    {
+      "path": "/lessons",
+      "size": "390x844",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 808,
+      "cls": 0.0365,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 843,
+      "at": "2026-11-09T02:58:03.085Z"
+    },
+    {
+      "path": "/account",
+      "size": "1440x900",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 236,
+      "cls": 0.0001,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 1239,
+      "at": "2026-11-09T02:58:07.746Z"
+    },
+    {
+      "path": "/account",
+      "size": "390x844",
+      "role": "student",
+      "solid": true,
+      "lcpMs": 220,
+      "cls": 0.1133,
+      "backdropElements": 1,
+      "svgFilters": 1,
+      "domNodes": 1238,
+      "at": "2026-11-09T02:58:12.429Z"
+    }
+  ]
+}
