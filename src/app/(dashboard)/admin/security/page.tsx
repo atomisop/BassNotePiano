@@ -12,6 +12,7 @@ import { CardFoot } from "@/components/ui/CardKit";
 
 import { SectionPills } from "@/components/admin/SectionPills";
 import { ActivityView } from "../activity/_view";
+import { DataView } from "../data/_view";
 
 export const metadata = { title: "Admin: System" };
 
@@ -154,14 +155,14 @@ async function SystemView() {
   );
 }
 
-/** System and Activity are one page (2026-11-10): what the system is doing, and what people changed in it. */
-export default async function AdminSecurityPage(props: { searchParams: Promise<{ section?: string; q?: string; kind?: string; days?: string; user?: string; page?: string }> }) {
+/** System, Activity and Data are one page (2026-11-10): what the system is doing, what people changed in it, and the studio's numbers. */
+export default async function AdminSecurityPage(props: { searchParams: Promise<{ section?: string; q?: string; kind?: string; days?: string; user?: string; page?: string; tab?: string }> }) {
   const sp = await props.searchParams;
-  const section = sp.section === "activity" ? "activity" : null;
+  const section = sp.section === "activity" ? "activity" : sp.section === "data" ? "data" : null;
   return (
     <div>
-      <SectionPills base="/admin/security" label="System views" active={section} items={[{ label: "System", value: null }, { label: "Activity", value: "activity" }]} />
-      {section ? <ActivityView searchParams={Promise.resolve(sp)} /> : <SystemView />}
+      <SectionPills base="/admin/security" label="System views" active={section} items={[{ label: "System", value: null }, { label: "Activity", value: "activity" }, { label: "Data", value: "data" }]} />
+      {section === "activity" ? <ActivityView searchParams={Promise.resolve(sp)} /> : section === "data" ? <DataView searchParams={Promise.resolve(sp)} /> : <SystemView />}
     </div>
   );
 }

@@ -52,7 +52,8 @@ export async function SentView(props: { searchParams: Promise<{ q?: string; chan
     const merged: Record<string, string> = { q, channel, who, days, user: userId, view, page: "1", ...Object.fromEntries(Object.entries(over).map(([k, v]) => [k, v === null ? "" : String(v)])) };
     for (const [k, v] of Object.entries(merged)) if (v && !(k === "days" && v === "30") && !(k === "page" && v === "1") && !(k === "view" && v === "people") && !(k === "channel" && v === "all") && !(k === "who" && v === "all")) p.set(k, v);
     p.set("tab", "sent");
-    return `/admin/messages?${p}`;
+    p.set("section", "messages");
+    return `/admin/support?${p}`;
   };
   const filtered = Boolean(q || userId || days !== "30" || channel !== "all" || who !== "all");
 
@@ -76,7 +77,8 @@ export async function SentView(props: { searchParams: Promise<{ q?: string; chan
         ))}
       </div>
 
-      <form method="get" action="/admin/messages" className="mt-5 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]" role="search" aria-label="Filter what was sent">
+      <form method="get" action="/admin/support" className="mt-5 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]" role="search" aria-label="Filter what was sent">
+        <input type="hidden" name="section" value="messages" />
         <input type="hidden" name="tab" value="sent" />
         {userId && <input type="hidden" name="user" value={userId} />}
         {view === "messages" && <input type="hidden" name="view" value="messages" />}
@@ -111,7 +113,7 @@ export async function SentView(props: { searchParams: Promise<{ q?: string; chan
         </div>
         <div className="col-span-3 flex items-end gap-2 lg:col-span-1">
           <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "h-11 text-black" })}>Search</button>
-          {filtered && <Link href={view === "messages" ? "/admin/messages?tab=sent&view=messages" : "/admin/messages?tab=sent"} className={buttonVariants({ variant: "secondary", size: "sm", className: "h-11" })}>Clear</Link>}
+          {filtered && <Link href={view === "messages" ? "/admin/support?section=messages&tab=sent&view=messages" : "/admin/support?section=messages&tab=sent"} className={buttonVariants({ variant: "secondary", size: "sm", className: "h-11" })}>Clear</Link>}
         </div>
       </form>
 

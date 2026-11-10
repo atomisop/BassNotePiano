@@ -10,6 +10,7 @@ import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, r
 
 import { SectionPills } from "@/components/admin/SectionPills";
 import { RoadmapsView } from "../roadmaps/_view";
+import { DiscordView } from "../discord/_view";
 
 export const metadata = { title: "Admin: Lessons" };
 
@@ -79,14 +80,14 @@ async function LessonsView(props: { searchParams: Promise<{ scale?: string }> })
   );
 }
 
-/** Lessons and Roadmaps are one page (2026-11-10): the roadmaps hold the scales the lessons belong to. */
+/** Lessons, Roadmaps and Discord are one page (2026-11-10): the roadmaps hold the scales the lessons belong to, and class calls are in Discord. */
 export default async function AdminLessonsPage(props: { searchParams: Promise<{ scale?: string; section?: string }> }) {
   const sp = await props.searchParams;
-  const section = sp.section === "roadmaps" ? "roadmaps" : null;
+  const section = sp.section === "roadmaps" ? "roadmaps" : sp.section === "discord" ? "discord" : null;
   return (
     <div>
-      <SectionPills base="/admin/lessons" label="Lesson views" active={section} items={[{ label: "Lessons", value: null }, { label: "Roadmaps", value: "roadmaps" }]} />
-      {section ? <RoadmapsView /> : <LessonsView searchParams={Promise.resolve(sp)} />}
+      <SectionPills base="/admin/lessons" label="Lesson views" active={section} items={[{ label: "Lessons", value: null }, { label: "Roadmaps", value: "roadmaps" }, { label: "Discord", value: "discord" }]} />
+      {section === "roadmaps" ? <RoadmapsView /> : section === "discord" ? <DiscordView /> : <LessonsView searchParams={Promise.resolve(sp)} />}
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { SectionPills } from "@/components/admin/SectionPills";
+import { MessagesView } from "../messages/_view";
 
 const FILTERS: { label: string; value: SupportListFilter; param: string }[] = [
   { label: "Open", value: "OPEN", param: "open" },
@@ -20,7 +22,7 @@ const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = 
 
 export const metadata = { title: "Admin: Support chat" };
 
-export default async function AdminSupportPage(
+async function ChatsView(
   props: {
     searchParams: Promise<{ filter?: string; status?: string; source?: string; thread?: string }>;
   }
@@ -102,6 +104,18 @@ export default async function AdminSupportPage(
           }
         />
       </div>
+    </div>
+  );
+}
+
+/** Chats and Messages are one Inbox (2026-11-10): what people send the studio, and what the studio sends them. */
+export default async function AdminSupportPage(props: { searchParams: Promise<{ section?: string; filter?: string; status?: string; source?: string; thread?: string; tab?: string; to?: string | string[]; q?: string; channel?: string; who?: string; days?: string; user?: string; view?: string; page?: string }> }) {
+  const sp = await props.searchParams;
+  const section = sp.section === "messages" ? "messages" : null;
+  return (
+    <div>
+      <SectionPills base="/admin/support" label="Inbox views" active={section} items={[{ label: "Chats", value: null }, { label: "Messages", value: "messages" }]} />
+      {section ? <MessagesView searchParams={Promise.resolve(sp)} /> : <ChatsView searchParams={Promise.resolve(sp)} />}
     </div>
   );
 }

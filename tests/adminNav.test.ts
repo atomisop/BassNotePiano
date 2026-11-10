@@ -9,13 +9,13 @@ describe("admin menu", () => {
   it("lists every page once, so no page is missing and none is repeated", () => {
     const hrefs = allAdminPages().map((p) => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(hrefs).toHaveLength(15);
-    // The pages the menu has now (2026-11-10: seven pages became views of the page they belong with).
-    for (const href of ["/admin", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/users", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/settings", "/admin/security", "/admin/data"]) {
+    expect(hrefs).toHaveLength(9);
+    // The pages the menu has now (2026-11-10: twelve pages became views of the page they belong with, so the menu is under ten pages).
+    for (const href of ["/admin", "/admin/payments", "/admin/payment-plans", "/admin/users", "/admin/schedule", "/admin/lessons", "/admin/support", "/admin/settings", "/admin/security"]) {
       expect(hrefs).toContain(href);
     }
     // Their old addresses only redirect to the page that holds them.
-    for (const href of ["/admin/scholarships", "/admin/employees", "/admin/roadmaps", "/admin/activity", "/admin/sent"]) expect(hrefs).not.toContain(href);
+    for (const href of ["/admin/scholarships", "/admin/employees", "/admin/roadmaps", "/admin/activity", "/admin/sent", "/admin/pricing", "/admin/money-check", "/admin/today", "/admin/discord", "/admin/messages", "/admin/data"]) expect(hrefs).not.toContain(href);
     // Applicants and Contacts are gone as pages: their addresses only redirect to the class form list on People (2026-11-10).
     expect(hrefs).not.toContain("/admin/students");
     expect(hrefs).not.toContain("/admin/contacts");
@@ -38,7 +38,7 @@ describe("admin menu", () => {
 describe("locateAdminPage", () => {
   it("finds the hub and page for an address", () => {
     expect(locateAdminPage("/admin/payments")?.hub.id).toBe("billing");
-    expect(locateAdminPage("/admin/today")?.hub.id).toBe("classes");
+    expect(locateAdminPage("/admin/schedule")?.hub.id).toBe("classes");
     expect(locateAdminPage("/admin/security")?.hub.id).toBe("setup");
   });
   it("never reads Payment Plans as Payments, or the Overview as everything", () => {
@@ -73,7 +73,10 @@ describe("splitHubPages", () => {
       expect(tabs.length).toBeGreaterThan(0);
     }
   });
-  it("still locates a page that sits under More", () => {
-    expect(locateAdminPage("/admin/pricing")?.hub.id).toBe("billing");
+  it("puts a page marked more under More (no page needs it now: the menu is nine pages)", () => {
+    const hub = { id: "billing" as const, label: "Billing", pages: [{ href: "/a", label: "A" }, { href: "/b", label: "B", more: true }] };
+    const { tabs, more } = splitHubPages(hub);
+    expect(tabs.map((p) => p.href)).toEqual(["/a"]);
+    expect(more.map((p) => p.href)).toEqual(["/b"]);
   });
 });

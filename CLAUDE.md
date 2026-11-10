@@ -52,12 +52,13 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   `/billing/*`, `/friends`, `/messages` (1:1 + group), `/account`
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
-- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
-  Pricing, Check), People (People), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, System, Data).
-  **Related pages are views of one page (2026-11-10)**: Pricing holds Scholarships (`?section=scholarships`), Lessons holds Roadmaps (`?section=roadmaps`), System holds Activity (`?section=activity`), Messages holds Sent (`?tab=sent`), People holds Staff (`?filter=staff`) and the class form and added contacts. Each moved page keeps its code in a `_view.tsx` next to its old address, which only redirects (`intoParams`); `SectionPills` draws the pills. Merge the same way when two pages describe one job. `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
-  `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
-  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
-  across a 320px phone, checked in `tests/adminNav.test.ts`). Pages keep their own filter pills for statuses.
+- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices and NINE pages (2026-11-10, defined in `src/lib/adminNav.ts`, tested): Overview; Billing (Payments, Plans);
+  People (People); Classes (Schedule, Lessons); Inbox (Inbox); Setup (Settings, System). Every other page is a view of one of these, switched by pills (`SectionPills`, `?section=`) or the page's own
+  tabs: Payments holds Unmatched emails, Class credits and Check (`?tab=`); Plans holds Prices and Scholarships; People holds Class form, Added and Staff (`?filter=`) and has the Add person button;
+  Schedule holds Today (`?view=TODAY&day=`), Times, Requests, Attendance and Reserved; Lessons holds Roadmaps and Discord; Inbox holds Chats and Messages (Direct, Announcements, Sent); System holds Activity
+  and Data. A moved page keeps its code in a `_view.tsx` next to its old address, which only redirects (`intoParams`), so old links, emails and notifications still work. Merge the same way when two pages
+  describe one job; never add a tenth page. `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
+  `AdminSectionTabs` draws a section's pages as one underlined tab row above every page (hidden when the section has one page; a dot marks a tab with something waiting). Pages keep their own filter pills for statuses.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
