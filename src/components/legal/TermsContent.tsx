@@ -9,16 +9,16 @@ export const TERMS_LAST_UPDATED = "November 9, 2026";
 
 function TermsSection({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-6 last:border-b-0 last:pb-0">
-      <h2 className="font-serif text-title text-slate-50">{title}</h2>
-      <div className="mt-2 space-y-2 text-small leading-relaxed text-slate-400">{children}</div>
+    <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-8 last:border-b-0 last:pb-0">
+      <h2 className="text-title font-semibold text-slate-50">{title}</h2>
+      <div className="mt-3 space-y-3 text-small leading-relaxed text-slate-400">{children}</div>
     </div>
   );
 }
 
 export function TermsContent() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <TermsSection title="Your account">
         <p>
           One account per person. Don&apos;t share your login, and don&apos;t share purchased access (curriculum or

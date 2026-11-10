@@ -187,13 +187,10 @@ export function MarketingNav() {
                 to show from md and wrapped onto two lines beside the links. */}
           </Link>
 
-          {/* Classes/Pricing/Log in, real glass too, one tier down from the
-              primary CTA below: `glass-surface-subtle` (Level 1, the same
-              tier nav pills are documented for) rather than
-              `glass-surface-elevated` (Level 3, reserved for the one most
-              important element on screen, already spent on "Start
-              learning"). Using elevated glass on all four would flatten
-              that hierarchy back to "everything's equally important". */}
+          {/* Classes/Pricing/Shop/Log in are plain words, the page you are on
+              gets a soft fill, so the one solid orange "Get started" at the end
+              is the only thing in the bar that looks like a button. Raised
+              pills on all of them made five equal buttons. */}
           <div className="hidden items-center gap-2 md:flex lg:gap-3">
             {LINKS.map((link) => {
               const isActive = pathname === link.href;
@@ -204,8 +201,8 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "tap flex h-9 items-center !rounded-full bg-neu-base px-4 text-small font-medium text-slate-50 shadow-pressed-mid transition duration-200"
-                      : "neu-btn tap flex h-9 items-center !rounded-full px-4 text-small font-medium duration-200"
+                      ? "tap flex h-9 items-center rounded-full bg-slate-50/10 px-4 text-small font-medium text-slate-50 transition-colors duration-200"
+                      : "tap flex h-9 items-center rounded-full px-4 text-small font-medium text-slate-300 transition-colors duration-200 hover:text-slate-50"
                   }
                 >
                   {link.label}
@@ -217,7 +214,7 @@ export function MarketingNav() {
               <Link
                 href={secondary.href}
                 onClick={openLogin}
-                className="neu-btn tap flex h-9 items-center !rounded-full px-4 text-small font-medium duration-200"
+                className="tap flex h-9 items-center rounded-full px-4 text-small font-medium text-slate-300 transition-colors duration-200 hover:text-slate-50"
               >
                 {secondary.label}
               </Link>
@@ -231,7 +228,7 @@ export function MarketingNav() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Join our Discord"
-              className="neu-btn tap flex h-9 w-9 items-center justify-center !rounded-full duration-200"
+              className="tap flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 hover:bg-slate-50/8"
             >
               <DiscordIcon size={16} className="text-discord" />
             </a>
@@ -291,7 +288,7 @@ export function MarketingNav() {
                     <Link
                       href={secondary.href}
                       onClick={openLogin}
-                      className="neu-btn tap flex h-9 items-center rounded-full px-3 text-small font-semibold !text-slate-50"
+                      className="tap flex h-9 items-center rounded-full px-3 text-small font-medium text-slate-200 transition-colors hover:text-slate-50"
                     >
                       {secondary.label}
                     </Link>

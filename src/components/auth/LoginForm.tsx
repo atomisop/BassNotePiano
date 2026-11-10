@@ -213,7 +213,7 @@ export function LoginForm({
               <p className="text-small text-slate-400">
                 If <span className="text-slate-200">{email.trim()}</span> has an account, a code is on its way. Nothing
                 after a minute? Check spam, or{" "}
-                <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+                <Link href="/register" onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
                   create an account
                 </Link>
                 .
@@ -287,7 +287,7 @@ export function LoginForm({
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+          <Link href="/register" onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
             Create an account
           </Link>
         </p>
@@ -391,7 +391,7 @@ export function LoginForm({
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href="/register" onClick={onNavigateAway} className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+        <Link href="/register" onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
           Create an account
         </Link>
       </p>

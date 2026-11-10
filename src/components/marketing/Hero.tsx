@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { WordsPullUp } from "@/components/ui/words-pull-up";
+import Link from "next/link";
 import { PillCTA } from "@/components/ui/pill-cta";
+import { ChevronRight } from "@/components/ui/appIcons";
 import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
@@ -100,24 +102,33 @@ export function Hero() {
           <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-display text-cream">
             <WordsPullUp text="Bass Note Piano" className="justify-center" />
           </h1>
+          {/* What this is, in the first line people read under the name; the details after it are quieter and smaller. */}
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
-            className="mt-5 max-w-xl text-lg leading-snug text-cream/75 md:text-xl"
+            className="mt-5 max-w-xl text-pretty"
           >
-            Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
+            <span className="block text-xl font-medium leading-snug text-cream md:text-2xl">Ethiopian music, taught live.</span>{" "}
+            <span className="mt-2 block text-body leading-snug text-cream/70 md:text-lg">
+              Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
+            </span>
           </motion.p>
+          {/* One next step: the solid pill. Pricing is a quiet text link beside it, so the two never look equal. */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.7, ease: EASE_IOS }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-3"
           >
             <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
-            <PillCTA href="/pricing" secondary>
+            <Link
+              href="/pricing"
+              className="tap group inline-flex items-center gap-1 rounded-full px-3 py-2.5 text-body font-medium text-cream/80 transition-colors hover:text-cream"
+            >
               See pricing
-            </PillCTA>
+              <ChevronRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </motion.div>
         </div>
       </div>

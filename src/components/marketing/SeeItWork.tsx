@@ -27,7 +27,7 @@ export function SeeItWork() {
         {SCENES.map(({ id, title, Scene }) => (
           <figure key={id} className="m-0">
             <Scene />
-            <figcaption className="mt-3 text-center text-small text-slate-50/80">{title}</figcaption>
+            <figcaption className="mt-3 text-center text-small text-slate-300">{title}</figcaption>
           </figure>
         ))}
       </div>

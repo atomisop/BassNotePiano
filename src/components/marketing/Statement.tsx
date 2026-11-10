@@ -13,7 +13,7 @@ export function Statement() {
           ]}
         />
         <ScrollText
-          className="mx-auto mt-10 max-w-2xl text-[clamp(1.0625rem,1.8vw,1.375rem)] leading-[1.4] tracking-tight text-cream/75"
+          className="mx-auto mt-10 max-w-2xl text-pretty text-[clamp(1rem,1.5vw,1.25rem)] leading-[1.5] text-cream/65"
           text="Most music resources hand you a transcription of one specific piece. Learn it, and you can play that one song, in that one key. Try to play anything new, jam with someone, or transpose for a singer, and you're stuck: you memorized shapes, not the scale grammar underneath them. Bass Note Piano teaches the grammar, with a real teacher beside you."
         />
       </div></div>

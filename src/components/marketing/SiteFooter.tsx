@@ -66,11 +66,11 @@ export function SiteFooter() {
                 level on every one of them. h2 is correct on those and still
                 correct on the homepage, where the last content heading is
                 also an h2. Visual size is set by the classes, not the tag. */}
-            <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Explore</h2>
+            <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Explore</h2>
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="tap inline-flex items-center text-slate-500 transition hover:text-slate-50">
+                  <Link href={link.href} className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
                     {link.label}
                   </Link>
                 </li>
@@ -79,23 +79,23 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Account</h2>
+            <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Account</h2>
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {isLoggedIn ? (
                 <li>
-                  <Link href="/dashboard" className="tap inline-flex items-center text-slate-500 transition hover:text-slate-50">
+                  <Link href="/dashboard" className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
                     Dashboard
                   </Link>
                 </li>
               ) : (
                 <>
                   <li>
-                    <Link href="/login" className="tap inline-flex items-center text-slate-500 transition hover:text-slate-50">
+                    <Link href="/login" className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
                       Log in
                     </Link>
                   </li>
                   <li>
-                    <Link href="/register" className="tap inline-flex items-center text-slate-500 transition hover:text-slate-50">
+                    <Link href="/register" className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
                       Create account
                     </Link>
                   </li>
@@ -103,7 +103,7 @@ export function SiteFooter() {
               )}
               {LEGAL_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="tap inline-flex items-center text-slate-500 transition hover:text-slate-50">
+                  <Link href={link.href} className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
                     {link.label}
                   </Link>
                 </li>
