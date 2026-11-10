@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getAttentionItems, getOverviewStats, getRevenueSummary, getSubscriptionStats, type AttentionItem } from "@/lib/admin";
 import { NeedsYouList } from "@/components/admin/NeedsYouList";
+import { FollowUpMenu } from "@/components/admin/FollowUpList";
 import { easternDay, todayHref } from "@/lib/teachingDayRules";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { buildNeedsYou } from "@/lib/needsYou";
@@ -147,6 +148,9 @@ export default async function AdminOverviewPage() {
     <div>
       {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
       <h1 className="sr-only">Overview</h1>
+
+      {/* Follow up: one button that drops down everyone who needs a nudge, grouped by reason, each with a one-tap reminder. */}
+      <FollowUpMenu followUps={followUps} className="mb-5" />
 
       {/* Needs you: the jobs waiting right now. Each row leads with its count, so the owner reads "3" before reading what it is, and a
           row opens right here with its first few and their main action. Empty is a good day. */}

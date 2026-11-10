@@ -7,8 +7,7 @@ import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { buttonVariants } from "@/components/ui/button";
 import { getDoneLast7ByUser } from "@/lib/practiceActivity";
-import { ACCOUNT_FOLLOW_UP_FILTERS, getFollowUpPeople, getFollowUps, type AccountFollowUpFilter } from "@/lib/adminFollowUps";
-import { FollowUpList } from "@/components/admin/FollowUpList";
+import { ACCOUNT_FOLLOW_UP_FILTERS, getFollowUpPeople, type AccountFollowUpFilter } from "@/lib/adminFollowUps";
 import { sendAllFollowUpRemindersAction } from "../followup-actions";
 import { bulkReminderQuestion } from "@/lib/followUpRules";
 
@@ -31,11 +30,9 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const complimentary = searchParams.filter === "comped";
   const followUpFilter = (ACCOUNT_FOLLOW_UP_FILTERS as readonly string[]).includes(searchParams.filter ?? "") ? (searchParams.filter as AccountFollowUpFilter) : null;
   const followUpIds = followUpFilter ? (await getFollowUpPeople(followUpFilter)).map((p) => p.id) : undefined;
-  const showFollowUps = !query.trim() && !needsApproval && !notPracticing && !complimentary && !followUpFilter;
-  const [users, progress, followUps] = await Promise.all([
+  const [users, progress] = await Promise.all([
     searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds }),
     getAdminProgressOverview(query),
-    showFollowUps ? getFollowUps() : Promise.resolve([]),
   ]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
   // Practice is only expected from students with full access (not the admin, not a lapsed or never-paid account).
@@ -68,9 +65,6 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   return (
     <div>
       <h1 className="sr-only">Accounts</h1>
-
-      {/* Who needs a nudge, with one-tap reminders (moved here from the Overview). */}
-      <FollowUpList followUps={followUps} className="mt-6" />
 
       <div className="mt-6">
         <AdminFilterTabs
