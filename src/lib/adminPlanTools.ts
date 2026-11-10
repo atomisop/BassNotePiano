@@ -1,9 +1,9 @@
+import { countLivePlanHolders } from "@/lib/seatLoad";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered } from "@/lib/classCreditPricing";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
-import { livePaymentPlanConditions } from "@/lib/classSchedule";
 import { PaymentPlanError, bookReservedWindowForPlan } from "@/lib/paymentPlans";
 import { applyPlanInstallment } from "@/lib/payments";
 import { noticePlanUpdated } from "@/lib/studentNotices";
@@ -111,8 +111,9 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   await prisma.$transaction(
     async (tx) => {
       if (plan.reservedScheduleId && plan.reservedChunkIndex !== null) {
-        const holder = await tx.paymentPlan.findFirst({ where: { id: { not: plan.id }, reservedScheduleId: plan.reservedScheduleId, reservedChunkIndex: plan.reservedChunkIndex, OR: livePaymentPlanConditions() }, select: { id: true } });
-        keptTime = !holder;
+        // The time is kept while fewer other plans keep it than it has seats.
+        const window = await tx.classSchedule.findUnique({ where: { id: plan.reservedScheduleId }, select: { seats: true } });
+        keptTime = (await countLivePlanHolders(tx, plan.reservedScheduleId, plan.reservedChunkIndex, { planIds: [plan.id] })) < (window?.seats ?? 1);
       }
       const claimed = await tx.paymentPlan.updateMany({
         where: { id: plan.id, status: "CANCELED" },

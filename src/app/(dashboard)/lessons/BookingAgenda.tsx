@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check } from "@/components/ui/appIcons";
 import { dayKey } from "./BookingCalendar";
+import { seatsLeftNote } from "@/lib/seatRules";
 
 /**
  * The month as a list of days, like the reference's activity calendar: month tabs across the top, then one row per day with that
@@ -18,6 +19,8 @@ export interface AgendaRow {
   scheduledAt: string;
   durationMin: number;
   isBooked: boolean;
+  seats?: number;
+  seatsLeft?: number;
   reservedForYou?: boolean;
 }
 
@@ -145,6 +148,7 @@ export function BookingAgenda({
                         {picked && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-signal-fg" strokeWidth={2.5} />}
                         <span className={`text-small font-semibold leading-tight tabular-nums ${r.isBooked ? "line-through decoration-slate-600" : ""}`}>{timeLabel(r.scheduledAt)}</span>
                         {state && <span className="text-caption leading-tight opacity-80">{state}</span>}
+                        {!state && seatsLeftNote(r.seats ?? 1, r.seatsLeft) && <span className="text-caption leading-tight text-slate-500">{seatsLeftNote(r.seats ?? 1, r.seatsLeft)}</span>}
                         {!state && <span className="sr-only">Open, {r.durationMin} min</span>}
                       </button>
                     );

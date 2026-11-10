@@ -1,5 +1,8 @@
 import { noticeBookingConfirmed } from "@/lib/studentNotices";
 import { planHoldsOccurrence } from "@/lib/planHold";
+import { livePaymentPlanConditions } from "@/lib/planLive";
+import { loadSeatLoad } from "@/lib/seatLoad";
+import { countSeatUnits, holderUnit, seatsLeftOf, seatsNeededByParty } from "@/lib/seatRules";
 import { findOwnerReservation, OWNER_RESERVED_MESSAGE, reservationCovers, reservationIsFor } from "@/lib/ownerReservations";
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
@@ -227,15 +230,18 @@ export interface ClassOccurrence {
   creditCost: number;
   occurrenceDate: Date;
   scheduledAt: Date;
-  /** One booking party per chunk, solo or family, either way this exact
-      start time is gone once anyone has claimed it. A different chunk of
-      the same window (a different start time) is unaffected. */
+  /** True when every seat of this exact start time is taken (by classes, or by weekly plans keeping it). A different chunk of
+      the same window (a different start time) is unaffected. With one seat per slot this is "someone has claimed it". */
   isBooked: boolean;
+  /** Seats per slot of this window (1 unless the owner opened it to more students). */
+  seats: number;
+  /** Seats still free on this occurrence (0 when isBooked because of seats). */
+  seatsLeft: number;
   /** The owner is keeping this time for someone else (it also counts as booked). */
   reservedByOwner?: boolean;
   /** The owner is keeping this time for the person looking (see getUpcomingOccurrences' viewerId): open to them, taken for everyone else. */
   reservedForYou?: boolean;
-  /** Admin view only: whose weekly plan keeps this time while nobody has a class in it (a paused plan, or a week its class was canceled). */
+  /** Admin view only: whose weekly plans keep this time, set only when those plans are what make it full (a paused plan, or a week its class was canceled). */
   heldByPlan?: string;
   /** Student view: a live payment plan (not the viewer's) keeps this time, so it is shown as Reserved instead of Taken. */
   reservedByPlan?: boolean;
@@ -510,19 +516,21 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
     }
   }
 
-  // One grouped count query instead of one-per-candidate, grouped by the
-  // exact instant, not just the day, since that's what actually identifies
-  // one chunk now. Any count > 0 means that specific chunk's one booking
-  // party (solo or family) is claimed; a sibling chunk in the same window
-  // is a different scheduledAt and unaffected.
-  const bookedCounts = await prisma.classBooking.groupBy({
-    by: ["scheduleId", "occurrenceDate", "scheduledAt"],
+  // One query for every candidate's class rows. Each student is one seat, so the rows (not just a count) are kept:
+  // a weekly plan group's classes count as one seat, see countSeatUnits. Keyed on the exact instant, since that is
+  // what identifies one chunk; a sibling chunk in the same window is a different scheduledAt and unaffected.
+  const bookedRows = await prisma.classBooking.findMany({
     where: {
       status: "SCHEDULED",
       OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate, scheduledAt: c.scheduledAt })),
     },
-    _count: { _all: true },
+    select: { scheduleId: true, occurrenceDate: true, scheduledAt: true, studentId: true, familyBookingGroupId: true, reservedByPlanId: true },
   });
+  const rowsByInstant = new Map<string, typeof bookedRows>();
+  for (const r of bookedRows) {
+    const key = `${r.scheduleId}:${r.occurrenceDate.getTime()}:${r.scheduledAt.getTime()}`;
+    rowsByInstant.set(key, [...(rowsByInstant.get(key) ?? []), r]);
+  }
   const ownerReservations = await prisma.ownerReservation.findMany({
     where: { releasedAt: null, OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate })) },
   });
@@ -535,20 +543,15 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
   const oneOffStarts = (
     await prisma.classBooking.findMany({ where: { status: "SCHEDULED", scheduledAt: { gt: new Date(now) }, schedule: { label: ONE_OFF_LABEL } }, select: { scheduledAt: true } })
   ).map((b) => b.scheduledAt);
-  const bookedKeys = new Set(
-    bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
-  );
   // A weekly time another student's live plan keeps is not free even in a week with no class in it (a paused plan, a canceled week):
-  // bookClass and Reschedule refuse it, so students never see it as open. The admin sees it apart, with the holder's name.
+  // bookClass and Reschedule refuse it, so students never see it as open. The admin sees it apart, with the holders' names.
   const holdingPlans = await prisma.paymentPlan.findMany({
     where: { reservedScheduleId: { not: null }, reservedChunkIndex: { not: null }, ...(viewerId ? { userId: { not: viewerId } } : {}), OR: livePaymentPlanConditions() },
-    select: { reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } }, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+    select: { userId: true, familyGroupId: true, reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } }, reservedBookings: { select: { occurrenceDate: true, status: true } } },
   });
   // Same rule as the booking check (planHoldsOccurrence): no hold before the plan's first class or on a skipped or canceled week.
-  const holderOf = (scheduleId: string, chunkIndex: number, occurrenceDate: Date) => {
-    const plan = holdingPlans.find((p) => p.reservedScheduleId === scheduleId && p.reservedChunkIndex === chunkIndex && planHoldsOccurrence(p.reservedBookings, occurrenceDate));
-    return plan ? (plan.user.name ?? plan.user.email) : undefined;
-  };
+  const holdersOf = (scheduleId: string, chunkIndex: number, occurrenceDate: Date) =>
+    holdingPlans.filter((p) => p.reservedScheduleId === scheduleId && p.reservedChunkIndex === chunkIndex && planHoldsOccurrence(p.reservedBookings, occurrenceDate));
   const viewer =
     viewerId && ownerReservations.length + oneOffReservations.length > 0
       ? await prisma.user.findUnique({ where: { id: viewerId }, select: { email: true, emailVerified: true } })
@@ -565,7 +568,16 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
         ),
       ];
       const blocking = covering.filter((r) => !reservationIsFor(r.email, viewer));
-      const holder = holderOf(c.schedule.id, c.chunk.chunkIndex, c.occurrenceDate);
+      const rows = rowsByInstant.get(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) ?? [];
+      const holders = holdersOf(c.schedule.id, c.chunk.chunkIndex, c.occurrenceDate);
+      const load = countSeatUnits(rows, holders);
+      const seats = c.schedule.seats;
+      const fullByClasses = load.booked >= seats;
+      const fullWithPlans = load.taken >= seats;
+      // Holders that really use a seat (not already counted through their own class there).
+      const heldNames = holders
+        .filter((p) => !rows.some((r) => r.studentId === p.userId))
+        .map((p) => p.user.name ?? p.user.email);
       return {
         scheduleId: c.schedule.id,
         label: c.schedule.label,
@@ -575,14 +587,17 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
         creditCost: c.chunk.creditCost,
         occurrenceDate: c.occurrenceDate,
         scheduledAt: c.scheduledAt,
+        seats,
+        seatsLeft: seatsLeftOf(seats, options.forAdmin ? load.booked : load.taken),
         reservedByOwner: blocking.length > 0,
         reservedForYou: covering.length > 0 && blocking.length === 0,
-        heldByPlan: options.forAdmin ? holder : undefined,
-        reservedByPlan: !options.forAdmin && holder !== undefined && !bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) && blocking.length === 0,
+        heldByPlan: options.forAdmin && !fullByClasses && fullWithPlans ? Array.from(new Set(heldNames)).join(", ") : undefined,
+        reservedByPlan: !options.forAdmin && !fullByClasses && fullWithPlans && blocking.length === 0,
         isBooked:
-          bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) ||
+          fullByClasses ||
+          Boolean(viewerId && rows.some((r) => r.studentId === viewerId)) ||
           blocking.length > 0 ||
-          (holder !== undefined && !options.forAdmin) ||
+          (fullWithPlans && !options.forAdmin) ||
           oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
       };
     })
@@ -593,21 +608,7 @@ export async function getUpcomingOccurrences(viewerId?: string, options: { forAd
 // Booking
 // ---------------------------------------------------------------------------
 
-/**
- * Matches a PaymentPlan whose weekly reservation (reservedScheduleId/
- * reservedChunkIndex) is still "live", ACTIVE, or COMPLETED with a
- * not-yet-expired CreditGrant against it. The COMPLETED-with-a-live-grant
- * case matters because a plan finishing its final paid installment
- * shouldn't instantly lose its exclusivity and auto-booking the moment that
- * last payment clears, the credits from that last cycle are still good and
- * the student is still using the slot. Shared by every reservation-
- * exclusivity check in this file (and by paymentPlans.ts's own enrollment-
- * time check), so "what counts as a live reservation" can't drift between
- * them.
- */
-export function livePaymentPlanConditions(): Prisma.PaymentPlanWhereInput[] {
-  return [{ status: "ACTIVE" }, { status: "COMPLETED", creditGrants: { some: { expiresAt: { gt: new Date() }, expiredAt: null } } }];
-}
+export { livePaymentPlanConditions };
 
 /**
  * A student's own credit balance minus whatever's already reserved by their
@@ -776,8 +777,9 @@ export async function bookClass(
         // Keyed on the exact instant, not just the day, a sibling chunk of
         // the same admin-defined window (a different start time) is a
         // separate appointment slot and shouldn't block this one.
-        const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
-        if (takenByAnyone && takenByAnyone.studentId !== studentId) {
+        // Seats: other students' classes (and weekly plans keeping this time, below) use up the slot's seats; your own class does not.
+        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+        if (seatLoad.booked >= schedule.seats) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
         if (await oneOffOverlap(tx, scheduledAt, studentId)) throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
@@ -791,15 +793,10 @@ export async function bookClass(
         // slot show up as taken above, once its own ClassBooking rows
         // exist; this covers the gap between an enrollment and that job's
         // next run. The reservation holder booking their own slot is
-        // allowed through, only a *different* student is blocked. The studio
+        // allowed through, only a *different* student is blocked, and only
+        // once the plans keeping the time have used the last seat. The studio
         // can book over it on purpose (overridePlanHold, asked first on screen).
-        const reservedByOtherPlan = overridePlanHold
-          ? null
-          : await tx.paymentPlan.findFirst({
-              where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
-              select: { id: true },
-            });
-        if (reservedByOtherPlan) {
+        if (!overridePlanHold && seatLoad.booked + seatLoad.held >= schedule.seats) {
           throw new PlanHoldError();
         }
 
@@ -1335,24 +1332,18 @@ export async function bookFamilyClass(
   try {
     bookings = await prisma.$transaction(
       async (tx) => {
-        const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
-        if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
+        // Each student is one seat. A family needs a seat each, never more than the slot has (an empty one-seat slot still fits a family).
+        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt });
+        const needed = seatsNeededByParty(attendees.length, schedule.seats);
+        if (seatLoad.booked + needed > schedule.seats) throw new ClassBookingError("This time was just booked. Pick another slot.");
         if (await oneOffOverlap(tx, scheduledAt, "")) throw new ClassBookingError("This time was just booked. Pick another slot.");
         if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
         // A time the owner kept on a day off (a typed time) blocks an overlapping family class too.
         if (await oneOffReservationClash(tx, occurrenceDate, scheduledAt)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
-        // Same defense-in-depth as bookClass's own guard (see its comment),
-        // a family booking never coincides with a solo Payment Plan
-        // reservation on the same chunk, regardless of who's in the family
-        // group, since the reservation's own auto-booking is always a solo
-        // row for exactly one student.
-        const reservedPlans = await tx.paymentPlan.findMany({
-          where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, OR: livePaymentPlanConditions() },
-          select: { id: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
-        });
-        const reservedByPlan = reservedPlans.some((p) => planHoldsOccurrence(p.reservedBookings, occurrenceDate));
-        if (reservedByPlan) {
+        // Same defense-in-depth as bookClass's own guard (see its comment): weekly plans keeping this
+        // time use up seats before the family does.
+        if (seatLoad.booked + seatLoad.held + needed > schedule.seats) {
           throw new PlanHoldError();
         }
 
@@ -1443,6 +1434,9 @@ export interface ReservableSlot {
   chunkIndex: number;
   /** This chunk's own credit ceiling, always >= creditsPerWeek, the same meaning ClassOccurrence.creditCost has. */
   creditCost: number;
+  /** Plans that can share this weekly time, and how many more can still take it. */
+  seats: number;
+  seatsLeft: number;
 }
 
 /**
@@ -1462,49 +1456,53 @@ export async function getReservableSlots(creditsPerWeek: number): Promise<Reserv
     prisma.classSchedule.findMany({ where: { active: true }, orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] }),
     prisma.paymentPlan.findMany({
       where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
-      select: { reservedScheduleId: true, reservedChunkIndex: true },
+      select: { userId: true, familyGroupId: true, reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
     }),
   ]);
 
-  const reservedKeys = new Set(reservedPlans.map((p) => `${p.reservedScheduleId}:${p.reservedChunkIndex}`));
+  // A time stays on offer while fewer live plans keep it than it has seats.
+  const holdersByChunk = new Map<string, typeof reservedPlans>();
+  for (const p of reservedPlans) {
+    const key = `${p.reservedScheduleId}:${p.reservedChunkIndex}`;
+    holdersByChunk.set(key, [...(holdersByChunk.get(key) ?? []), p]);
+  }
 
   const candidates: { schedule: (typeof schedules)[number]; chunk: ScheduleChunk }[] = [];
   for (const schedule of schedules) {
     for (const chunk of chunksForSchedule(schedule)) {
       if (chunk.creditCost < creditsPerWeek) continue;
-      if (reservedKeys.has(`${schedule.id}:${chunk.chunkIndex}`)) continue;
+      if (new Set((holdersByChunk.get(`${schedule.id}:${chunk.chunkIndex}`) ?? []).map(holderUnit)).size >= schedule.seats) continue;
       candidates.push({ schedule, chunk });
     }
   }
   if (candidates.length === 0) return [];
 
   // One grouped query across every remaining candidate's own upcoming
-  // occurrences, same shape as getUpcomingOccurrences's own bookedKeys
-  // query, rather than one query per candidate.
+  // occurrences, rather than one query per candidate. A week that is already
+  // full (class rows plus the plans keeping it) would make the maintenance job
+  // skip that class, so the whole time is left off the list.
   const instants = candidates.flatMap(({ schedule, chunk }) =>
     nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT).map((occurrenceDate) => ({
       chunkKey: `${schedule.id}:${chunk.chunkIndex}`,
+      seats: schedule.seats,
       scheduleId: schedule.id,
       occurrenceDate,
       scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk),
     })),
   );
-  const bookedCounts = await prisma.classBooking.groupBy({
-    by: ["scheduleId", "occurrenceDate", "scheduledAt"],
+  const bookedRows = await prisma.classBooking.findMany({
     where: {
       status: "SCHEDULED",
       OR: instants.map((i) => ({ scheduleId: i.scheduleId, occurrenceDate: i.occurrenceDate, scheduledAt: i.scheduledAt })),
     },
-    _count: { _all: true },
+    select: { scheduleId: true, occurrenceDate: true, scheduledAt: true, studentId: true, familyBookingGroupId: true, reservedByPlanId: true },
   });
-  const bookedInstantKeys = new Set(
-    bookedCounts.filter((b) => b._count._all > 0).map((b) => `${b.scheduleId}:${b.occurrenceDate.getTime()}:${b.scheduledAt.getTime()}`),
-  );
-  const chunksWithConflict = new Set(
-    instants
-      .filter((i) => bookedInstantKeys.has(`${i.scheduleId}:${i.occurrenceDate.getTime()}:${i.scheduledAt.getTime()}`))
-      .map((i) => i.chunkKey),
-  );
+  const chunksWithConflict = new Set<string>();
+  for (const i of instants) {
+    const here = bookedRows.filter((b) => b.scheduleId === i.scheduleId && b.occurrenceDate.getTime() === i.occurrenceDate.getTime() && b.scheduledAt.getTime() === i.scheduledAt.getTime());
+    const holders = (holdersByChunk.get(i.chunkKey) ?? []).filter((p) => planHoldsOccurrence(p.reservedBookings, i.occurrenceDate));
+    if (countSeatUnits(here, holders).taken >= i.seats) chunksWithConflict.add(i.chunkKey);
+  }
 
   return candidates
     .filter(({ schedule, chunk }) => !chunksWithConflict.has(`${schedule.id}:${chunk.chunkIndex}`))
@@ -1517,6 +1515,8 @@ export async function getReservableSlots(creditsPerWeek: number): Promise<Reserv
       startTime: addMinutesToHHmm(schedule.startTime, chunk.offsetMin),
       chunkIndex: chunk.chunkIndex,
       creditCost: chunk.creditCost,
+      seats: schedule.seats,
+      seatsLeft: seatsLeftOf(schedule.seats, new Set((holdersByChunk.get(`${schedule.id}:${chunk.chunkIndex}`) ?? []).map(holderUnit)).size),
     }));
 }
 
@@ -1573,28 +1573,30 @@ export async function createReservedBookingIfAbsent(
   });
   if (sameDay) return null;
 
-  // Defense-in-depth against a different student somehow already holding
-  // this exact instant despite the enrollment-time conflict check
-  // (createPaymentPlan) and bookClass/bookFamilyClass's own reserved-slot
-  // guard, should be unreachable in practice, but this is what stops the
-  // maintenance job from ever creating a second, silently conflicting
-  // SCHEDULED row instead of just skipping and letting an admin notice.
-  const conflict = await db.classBooking.findFirst({
-    where: {
+  // Defense-in-depth against other students already filling every seat of this
+  // exact instant despite the enrollment-time check (createPaymentPlan) and
+  // bookClass/bookFamilyClass's own reserved-slot guard. Should be unreachable
+  // in practice, but this is what stops the maintenance job from ever creating
+  // a SCHEDULED row beyond the slot's seats and lets it skip instead so an
+  // admin notices. This plan's own seat (and its group's) is not counted
+  // against it; other plans keeping the time for this week still are.
+  {
+    const seatRow = await db.classSchedule.findUnique({ where: { id: scheduleId }, select: { seats: true } });
+    const load = await loadSeatLoad(db, {
       scheduleId,
+      chunkIndex: planRow?.reservedChunkIndex ?? -1,
       occurrenceDate,
       scheduledAt,
-      status: "SCHEDULED",
-      studentId: { not: studentId },
-      ...(familyGroupId ? { OR: [{ familyBookingGroupId: null }, { familyBookingGroupId: { not: familyGroupId } }] } : {}),
-    },
-    select: { id: true },
-  });
-  if (conflict) {
-    console.error(
-      `Reserved booking conflict: plan ${planId}'s student ${studentId} vs. existing booking ${conflict.id} at schedule ${scheduleId}, ${occurrenceDate.toISOString()}: skipped, needs admin attention.`,
-    );
-    return null;
+      ignoreStudentIds: [studentId],
+      ignorePlanIds: [planId],
+      ignoreGroupId: familyGroupId,
+    });
+    if (load.taken >= (seatRow?.seats ?? 1)) {
+      console.error(
+        `Reserved booking conflict: plan ${planId}'s student ${studentId} found no free seat at schedule ${scheduleId}, ${occurrenceDate.toISOString()}: skipped, needs admin attention.`,
+      );
+      return null;
+    }
   }
 
   const data = {
@@ -1650,11 +1652,17 @@ export async function bookExtraSessionOccurrence(
   if (extraChunk && (await findOwnerReservation(db, scheduleId, occurrenceDate, extraChunk.chunkIndex, studentId))) return false;
   if (await oneOffReservationClash(db, occurrenceDate, scheduledAt, studentId)) return false;
 
-  const conflict = await db.classBooking.findFirst({
-    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
-    select: { id: true },
-  });
-  if (conflict) return false;
+  // Seats: refused only when other students' classes have used every seat of this time.
+  if (extraSchedule && extraChunk) {
+    const load = await loadSeatLoad(db, { scheduleId, chunkIndex: extraChunk.chunkIndex, occurrenceDate, scheduledAt, ignoreStudentIds: [studentId] });
+    if (load.booked >= extraSchedule.seats) return false;
+  } else {
+    const conflict = await db.classBooking.findFirst({
+      where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
+      select: { id: true },
+    });
+    if (conflict) return false;
+  }
 
   // One class a day, same rule assertNoOtherBookingSameDay enforces for
   // bookClass/bookFamilyClass. getOrCreatePendingExtraSessionPayment already
@@ -1918,10 +1926,9 @@ export async function rescheduleClassBooking(
         if (custom) {
           await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id, overridePlanHold);
         } else {
-          const takenByAnyone = await tx.classBooking.findFirst({
-            where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
-          });
-          if (takenByAnyone && takenByAnyone.studentId !== studentId) {
+          // Seats, same rule as bookClass: other students' classes use seats; your own moving class does not.
+          const seatLoad = await loadSeatLoad(tx, { scheduleId: newScheduleId, chunkIndex: newChunkIndex, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+          if (seatLoad.booked >= newSchedule!.seats) {
             throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
           }
           if (await oneOffOverlap(tx, newScheduledAt, studentId, oldBooking.id)) {
@@ -1930,13 +1937,7 @@ export async function rescheduleClassBooking(
           if (await findOwnerReservation(tx, newScheduleId, newOccurrenceDate, newChunkIndex, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
           if (await oneOffReservationClash(tx, newOccurrenceDate, newScheduledAt, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
-          const reservedByOtherPlan = overridePlanHold
-            ? null
-            : await tx.paymentPlan.findFirst({
-            where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
-            select: { id: true },
-          });
-          if (reservedByOtherPlan) {
+          if (!overridePlanHold && seatLoad.booked + seatLoad.held >= newSchedule!.seats) {
             throw new PlanHoldError();
           }
         }

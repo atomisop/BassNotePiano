@@ -6,7 +6,10 @@ import { notifyAdmins } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
 import { chunksForSchedule, computeScheduledAt, livePaymentPlanConditions, ONE_OFF_LABEL } from "@/lib/classSchedule";
 import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
+import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { planHoldsOccurrence } from "@/lib/planHold";
+import { countSeatUnits, holderUnit, parseSeats } from "@/lib/seatRules";
 import { clockLabel, firstNameOf, fitRefusal, fitWeeklyTime, namesList, parseWeeklyTime, shortDay, type TypedWeeklyTime } from "@/lib/weeklyTimeRules";
 
 // ---------------------------------------------------------------------------
@@ -44,6 +47,16 @@ export interface ClassScheduleInput {
   /** "HH:mm", ET wall-clock, end of the window; durationMin/creditCost are derived from (end - start), never entered directly. Classes themselves are always 45 minutes (see chunksForSchedule), so creditCost here is only a display figure. */
   endTime: string;
   label: string | null;
+  /** Students who can share each hour-long class of this window (1 when left out on a new window; unchanged when left out on an edit). Whole number, 1 to 1000. */
+  seats?: number;
+}
+
+/** The seats an add or edit asks for, or a ClassScheduleError with a message meant to be shown as-is. */
+export function resolveSeats(raw: number | undefined, fallback: number): number {
+  if (raw === undefined) return fallback;
+  const parsed = parseSeats(raw);
+  if (!parsed.ok) throw new ClassScheduleError(parsed.message);
+  return parsed.seats;
 }
 
 function parseHHMM(value: string): number {
@@ -112,6 +125,7 @@ export async function createClassSchedule(input: ClassScheduleInput) {
       durationMin,
       creditCost: Math.ceil(durationMin / 30),
       label: input.label,
+      seats: resolveSeats(input.seats, 1),
     },
   });
 }
@@ -159,6 +173,8 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
   const durationMin = resolveDurationMin(input.startTime, input.endTime);
   const current = await prisma.classSchedule.findUnique({ where: { id: scheduleId } });
   if (!current) throw new ClassScheduleError("That weekly time was not found.");
+  const seats = resolveSeats(input.seats, current.seats);
+  if (seats < current.seats) await assertSeatsStillHoldEveryone(current, seats);
   const people = await windowPeople(scheduleId);
   if (people.plans.length > 0 || people.bookings.length > 0) {
     const used = new Set<number>(people.plans.map((p) => p.reservedChunkIndex ?? 0));
@@ -179,8 +195,45 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
       durationMin,
       creditCost: Math.ceil(durationMin / 30),
       label: input.label,
+      seats,
     },
   });
+}
+
+/**
+ * Lowering the seats is refused while any upcoming class of the window already has more people on it than the new number: students in
+ * it, plus weekly plans keeping the time (a plan counts once it has no class there yet). Names the slot and how many are on it.
+ */
+async function assertSeatsStillHoldEveryone(current: { id: string; dayOfWeek: number; startTime: string; durationMin: number }, seats: number): Promise<void> {
+  const people = await windowPeople(current.id);
+  const rows = await prisma.classBooking.findMany({
+    where: { scheduleId: current.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+    select: { studentId: true, familyBookingGroupId: true, reservedByPlanId: true, occurrenceDate: true, scheduledAt: true },
+  });
+  const plans = await prisma.paymentPlan.findMany({
+    where: { reservedScheduleId: current.id, OR: livePaymentPlanConditions() },
+    select: { userId: true, familyGroupId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+  });
+  let worst: { taken: number; label: string } | null = null;
+  const consider = (taken: number, label: string) => {
+    if (taken > seats && (!worst || taken > worst.taken)) worst = { taken, label };
+  };
+  const instants = new Map<number, typeof rows>();
+  for (const r of rows) instants.set(r.scheduledAt.getTime(), [...(instants.get(r.scheduledAt.getTime()) ?? []), r]);
+  for (const [at, here] of instants) {
+    const chunk = chunkIndexOf(current, here[0].occurrenceDate, here[0].scheduledAt);
+    const holders = plans.filter((p) => (p.reservedChunkIndex ?? 0) === chunk && planHoldsOccurrence(p.reservedBookings, here[0].occurrenceDate));
+    consider(countSeatUnits(here, holders).taken, formatEtDateTime(new Date(at)));
+  }
+  for (const chunk of new Set(plans.map((p) => p.reservedChunkIndex ?? 0))) {
+    const start = addMinutesToHHmm(current.startTime, chunksForSchedule(current)[chunk]?.offsetMin ?? 0);
+    consider(new Set(plans.filter((p) => (p.reservedChunkIndex ?? 0) === chunk).map(holderUnit)).size, `${DAY_NAMES_LONG[current.dayOfWeek]} ${clockLabel(start)} (weekly plans)`);
+  }
+  if (worst) {
+    const w = worst as { taken: number; label: string };
+    const who = describePeople(people);
+    throw new ClassScheduleError(`${w.label} already has ${w.taken} ${w.taken === 1 ? "person" : "people"} on it, so it cannot go down to ${seats} ${seats === 1 ? "seat" : "seats"}. Move or cancel the extra ${w.taken - seats === 1 ? "class" : "classes"} first.`, who.people);
+  }
 }
 
 /** Who keeps each class of these windows with a live plan, for the Times list (each name links to the person's page). */

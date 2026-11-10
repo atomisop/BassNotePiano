@@ -30,6 +30,7 @@ import { slotKey, startPlanWithTimePath } from "@/lib/inPlaceLinks";
 import { Meta } from "@/components/ui/CardKit";
 import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
+import { seatsLeftNote } from "@/lib/seatRules";
 
 /** A request the student sent (request mode), as the booking screen shows it. */
 export interface MyRequestRow {
@@ -214,7 +215,7 @@ export function ClassBookingClient({
   // The month agenda (wide screens): a tap picks the day, and in the plain just-me case also picks that time. In every other case
   // (family, moving a class, a weekly limit) it only opens the day, where the cards with their own buttons are.
   const agendaRows = useMemo<AgendaRow[]>(
-    () => rows.map((r) => ({ key: rowKey(r), occurrenceDateMs: r.occurrenceDateMs, scheduledAt: r.scheduledAt, durationMin: r.durationMin, isBooked: r.isBooked, reservedForYou: r.reservedForYou })),
+    () => rows.map((r) => ({ key: rowKey(r), occurrenceDateMs: r.occurrenceDateMs, scheduledAt: r.scheduledAt, durationMin: r.durationMin, isBooked: r.isBooked, seats: r.seats, seatsLeft: r.seatsLeft, reservedForYou: r.reservedForYou })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows],
   );
@@ -842,6 +843,9 @@ export function ClassBookingClient({
                         </span>
                         {row.reservedForYou && !row.isBooked && (
                           <span className="mt-0.5 block whitespace-nowrap text-caption font-medium text-signal-fg">Reserved for you</span>
+                        )}
+                        {!row.isBooked && seatsLeftNote(row.seats ?? 1, row.seatsLeft) && (
+                          <span className="block text-caption text-slate-500">{seatsLeftNote(row.seats ?? 1, row.seatsLeft)}</span>
                         )}
                       </span>
                     );

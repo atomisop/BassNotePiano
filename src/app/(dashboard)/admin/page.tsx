@@ -2,9 +2,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getAttentionItems, getOverviewStats, getRevenueSummary, getSubscriptionStats, type AttentionItem } from "@/lib/admin";
 import { NeedsYouList } from "@/components/admin/NeedsYouList";
-import { FollowUpMenu } from "@/components/admin/FollowUpList";
+import { FollowUpList } from "@/components/admin/FollowUpList";
+import { OverviewMenus } from "@/components/admin/OverviewMenus";
 import { easternDay, todayHref } from "@/lib/teachingDayRules";
-import { getFollowUps } from "@/lib/adminFollowUps";
+import { getFollowUps, type FollowUp } from "@/lib/adminFollowUps";
 import { buildNeedsYou } from "@/lib/needsYou";
 import { getDueWeek } from "@/lib/adminDue";
 import { getTeachingDay, getWeekSchedule } from "@/lib/teachingToday";
@@ -14,7 +15,6 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, ChevronDown, ChevronRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
-import { Hint } from "@/components/ui/Hint";
 import type { ReactNode } from "react";
 
 function formatUsd(cents: number) {
@@ -149,19 +149,15 @@ export default async function AdminOverviewPage() {
       {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
       <h1 className="sr-only">Overview</h1>
 
-      {/* Follow up: one button that drops down everyone who needs a nudge, grouped by reason, each with a one-tap reminder. */}
-      <FollowUpMenu followUps={followUps} className="mb-5" />
-
-      {/* Needs you: the jobs waiting right now. Each row leads with its count, so the owner reads "3" before reading what it is, and a
-          row opens right here with its first few and their main action. Empty is a good day. */}
-      <section aria-label="Needs you" className={needsYou.length > 0 ? "mb-8" : "mb-5"}>
-        {needsYou.length > 0 && <SectionHead title="Needs you" />}
-        {needsYou.length > 0 ? (
-          <NeedsYouList rows={needsYou} />
-        ) : (
-          <p className="text-small text-slate-400"><Hint>Nothing needs you right now.</Hint></p>
-        )}
-      </section>
+      {/* Needs you (the jobs waiting right now, each row leading with its count and opening in place) and Follow up (the people to nudge,
+          one-tap reminders): two alike buttons with an orange count, each dropping its list down. */}
+      <OverviewMenus
+        className="mb-6"
+        needsCount={needsYou.reduce((n, row) => n + row.count, 0)}
+        followCount={(followUps as FollowUp[]).reduce((n, f) => n + f.total, 0)}
+        needs={<NeedsYouList rows={needsYou} />}
+        follow={<FollowUpList followUps={followUps} />}
+      />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         {/* Schedule */}

@@ -18,16 +18,18 @@ import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
 import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
 import { buttonVariants } from "@/components/ui/button";
+import { Check, Clock, CreditCard, Eye, Hourglass, List, Mail, ShieldCheck, Ticket, Timer, Undo2, X } from "@/components/ui/appIcons";
 
-const FILTERS: { label: string; value: PaymentFilterValue }[] = [
-  { label: "Pending", value: "PENDING_REVIEW" },
-  { label: "Unchecked", value: "UNCHECKED" },
-  { label: "Verified", value: "VERIFIED" },
-  { label: "Rejected", value: "REJECTED" },
-  { label: "Refunded", value: "REFUNDED" },
-  { label: "Awaiting", value: "AWAITING_TRANSFER" },
-  { label: "Expired", value: "EXPIRED" },
-  { label: "All", value: "ALL" },
+// Each status is an icon (2026-11-10, the owner: icons, not page names); the chosen one also shows its word.
+const FILTERS: { label: string; value: PaymentFilterValue; icon: React.ReactNode }[] = [
+  { label: "Pending", value: "PENDING_REVIEW", icon: <Clock /> },
+  { label: "Unchecked", value: "UNCHECKED", icon: <Eye /> },
+  { label: "Verified", value: "VERIFIED", icon: <Check /> },
+  { label: "Rejected", value: "REJECTED", icon: <X /> },
+  { label: "Refunded", value: "REFUNDED", icon: <Undo2 /> },
+  { label: "Awaiting", value: "AWAITING_TRANSFER", icon: <Hourglass /> },
+  { label: "Expired", value: "EXPIRED", icon: <Timer /> },
+  { label: "All", value: "ALL", icon: <List /> },
 ];
 
 export const metadata = { title: "Admin: Payments" };
@@ -91,8 +93,10 @@ export default async function AdminPaymentsPage(
         <AdminFilterTabs
           label="Payment status"
           mobile="scroll"
+          iconOnly
           items={FILTERS.map((filter) => ({
             label: filter.label,
+            icon: filter.icon,
             href: hrefFor(filter.value),
             active: activeFilter === filter.value,
           }))}
@@ -180,12 +184,13 @@ function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" |
     <div className="mt-6">
       <AdminFilterTabs
         label="Payments section"
+        iconOnly
         items={[
-          { label: "Zelle payments", href: "/admin/payments", active: active === "payments" },
-          { label: unmatched > 0 ? `Unmatched emails (${unmatched})` : "Unmatched emails", href: "/admin/payments?tab=emails", active: active === "emails" },
-          { label: "Class credits", href: "/admin/payments?tab=credits", active: active === "credits" },
+          { label: "Zelle payments", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
+          { label: "Unmatched emails", icon: <Mail />, badge: unmatched, href: "/admin/payments?tab=emails", active: active === "emails" },
+          { label: "Class credits", icon: <Ticket />, href: "/admin/payments?tab=credits", active: active === "credits" },
           // The owner's money check lives here too (2026-11-10): what does not add up, with a fix for each.
-          ...(owner ? [{ label: "Check", href: "/admin/payments?tab=check", active: active === "check" }] : []),
+          ...(owner ? [{ label: "Check", icon: <ShieldCheck />, href: "/admin/payments?tab=check", active: active === "check" }] : []),
         ]}
       />
     </div>
