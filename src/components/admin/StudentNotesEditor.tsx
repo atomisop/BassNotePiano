@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
 import { toast } from "@/components/ui/Toaster";
 import { IconSwap } from "@/components/ui/IconSwap";
+import { Meta } from "@/components/ui/CardKit";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -126,76 +127,74 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
       </div>
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
 
-      <div className="mt-3 space-y-2">
+      {/* Notes as rows: the note itself is what you read, the date and who can see it one quiet line, the tools small on the right. */}
+      <div className="mt-3">
         {notes === null ? (
           <PulsatingDots className="justify-start" />
         ) : notes.length === 0 ? (
           <p className="text-small text-slate-500">No notes yet.</p>
         ) : (
-          notes.map((n) => (
-            <div key={n.id} className="rounded-xl bg-neu-base p-3 shadow-raised-low">
-              <p className="whitespace-pre-wrap text-body text-slate-100">{n.body}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="text-small text-slate-500">
-                  {when(n.createdAt)}
-                  {n.updatedAt !== n.createdAt && when(n.updatedAt) !== when(n.createdAt) ? `, edited ${when(n.updatedAt)}` : ""}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-small font-medium ${
-                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-signal/16 text-signal-fg"
-                  }`}
-                >
-                  {n.hiddenFromStudent ? "Private" : "Student can see"}
-                </span>
-                <span className="ml-auto flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => toggleHidden(n)}
-                    aria-label={n.hiddenFromStudent ? "Show to student" : "Hide from student"}
-                    title={n.hiddenFromStudent ? "Show to student" : "Hide from student"}
-                    className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
-                  >
-                    <IconSwap state={n.hiddenFromStudent}>{n.hiddenFromStudent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</IconSwap>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(n.id);
-                      setDraft(n.body);
-                      setHidden(n.hiddenFromStudent);
-                    }}
-                    aria-label="Edit note"
-                    title="Edit note"
-                    className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingDelete((cur) => (cur === n.id ? null : n.id))}
-                    aria-expanded={confirmingDelete === n.id}
-                    aria-label="Delete note"
-                    title="Delete note"
-                    className="tap flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </span>
+          <div className="divide-y divide-slate-50/6">
+            {notes.map((n) => (
+              <div key={n.id} className="py-3">
+                <p className="whitespace-pre-wrap text-body text-slate-100">{n.body}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Meta
+                    items={[
+                      `${when(n.createdAt)}${n.updatedAt !== n.createdAt && when(n.updatedAt) !== when(n.createdAt) ? `, edited ${when(n.updatedAt)}` : ""}`,
+                      n.hiddenFromStudent ? "Private" : "Student can see",
+                    ]}
+                  />
+                  <span className="ml-auto flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHidden(n)}
+                      aria-label={n.hiddenFromStudent ? "Show to student" : "Hide from student"}
+                      title={n.hiddenFromStudent ? "Show to student" : "Hide from student"}
+                      className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
+                    >
+                      <IconSwap state={n.hiddenFromStudent}>{n.hiddenFromStudent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</IconSwap>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(n.id);
+                        setDraft(n.body);
+                        setHidden(n.hiddenFromStudent);
+                      }}
+                      aria-label="Edit note"
+                      title="Edit note"
+                      className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDelete((cur) => (cur === n.id ? null : n.id))}
+                      aria-expanded={confirmingDelete === n.id}
+                      aria-label="Delete note"
+                      title="Delete note"
+                      className="tap flex h-8 w-8 items-center justify-center rounded-lg text-red-300/80 hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </span>
+                </div>
+                {confirmingDelete === n.id && (
+                  <InlineConfirm
+                    className="mt-3"
+                    danger
+                    question="Delete this note for good?"
+                    confirmLabel="Yes, delete it"
+                    busyLabel="Deleting…"
+                    busy={false}
+                    onCancel={() => setConfirmingDelete(null)}
+                    onConfirm={() => void remove(n.id)}
+                  />
+                )}
               </div>
-              {confirmingDelete === n.id && (
-                <InlineConfirm
-                  className="mt-3"
-                  danger
-                  question="Delete this note for good?"
-                  confirmLabel="Yes, delete it"
-                  busyLabel="Deleting…"
-                  busy={false}
-                  onCancel={() => setConfirmingDelete(null)}
-                  onConfirm={() => void remove(n.id)}
-                />
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

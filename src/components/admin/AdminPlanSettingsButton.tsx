@@ -65,7 +65,7 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm", className: props.compact ? "h-8 px-2.5" : "" })}
+        className={buttonVariants({ variant: "ghost", size: "sm", className: props.compact ? "h-8 px-2.5" : "" })}
       >
         <Settings aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan settings
@@ -85,7 +85,7 @@ export function AdminPlanSettingsButton(props: { planId: string; term: PaymentPl
                   aria-checked={term === t.term}
                   disabled={t.bills <= props.installmentsPaid && t.term !== props.term}
                   onClick={() => setTerm(t.term)}
-                  className={buttonVariants({ variant: term === t.term ? "primary" : "secondary", size: "sm" })}
+                  className={buttonVariants({ variant: term === t.term ? "secondary" : "ghost", size: "sm", className: term === t.term ? "text-signal-fg hover:text-signal-fg" : "" })}
                 >
                   {t.label}
                 </button>
@@ -158,7 +158,7 @@ export function AdminRestartPlanButton({ planId, label, compact = false }: { pla
       type="button"
       disabled={!!busy}
       onClick={() => (sure ? void run("restart", () => restartPlanAction(planId, notify)) : setSure(true))}
-      className={buttonVariants({ variant: sure ? "primary" : "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}
+      className={buttonVariants({ variant: sure ? "primary" : "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" })}
     >
       {busy ? <MorphingSquare size={12} className="mr-1.5 shrink-0" /> : <RotateCcw aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
       {sure ? `Restart the ${label} plan?` : "Restart canceled plan"}

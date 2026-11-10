@@ -25,7 +25,7 @@ const todayEt = () => new Date().toLocaleDateString("en-CA", { timeZone: "Americ
 
 const STATE: Record<TimelineClassState, { label: string; cls: string }> = {
   taught: { label: "taught", cls: "bg-emerald-400/15 text-emerald-300" },
-  booked: { label: "booked", cls: "bg-signal/16 text-signal-fg" },
+  booked: { label: "booked", cls: "bg-slate-50/8 text-slate-200" },
   missed: { label: "missed", cls: "bg-amber-400/15 text-amber-300" },
   unpaid: { label: "not paid yet", cls: "bg-neu-base text-slate-500 shadow-pressed-low" },
 };
@@ -141,7 +141,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5" })}>
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan builder
       </button>
@@ -246,7 +246,8 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                             setTerm(t.term);
                             setPaid((p) => Math.min(p, t.cycles));
                           }}
-                          className={`tap flex-1 rounded-lg px-2 py-2 text-small font-medium ${term === t.term ? "bg-signal text-slate-950" : "bg-neu-base text-slate-200 shadow-raised-low"}`}
+                          aria-pressed={term === t.term}
+                          className={buttonVariants({ variant: term === t.term ? "secondary" : "ghost", size: "sm", className: `flex-1 ${term === t.term ? "text-signal-fg hover:text-signal-fg" : ""}` })}
                         >
                           {t.cycles === 1 ? "1 mo" : `${t.cycles} mo`}
                         </button>

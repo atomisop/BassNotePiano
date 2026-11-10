@@ -1,4 +1,5 @@
 import { describeAge, type PaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
+import { Callout } from "@/components/ui/CardKit";
 
 /**
  * One line that says whether bank and Venmo emails are still arriving. It
@@ -10,13 +11,15 @@ export function PaymentPipelineBanner({ health }: { health: PaymentPipelineHealt
   if (health.status === "quiet") {
     const silence = health.hoursSinceEmail === null ? "has ever arrived" : `has arrived for ${Math.max(2, Math.floor(health.hoursSinceEmail / 24))} days`;
     return (
-      <div role="alert" className="mt-6 rounded-xl border border-amber-400/30 bg-neu-base shadow-pressed-low px-4 py-3 text-small text-amber-200">
-        <p className="font-semibold">Bank and Venmo emails may have stopped.</p>
-        <p className="mt-1">
-          No payment email {silence}, but {health.waitingPayments} payment{health.waitingPayments === 1 ? " is" : "s are"} waiting. The
-          Gmail script that reads them may have stopped. Open script.google.com, choose Triggers (the clock), and check that{" "}
-          <span className="font-mono">forwardPaymentEmails</span> is still running.
-        </p>
+      <div role="alert" className="mt-6">
+        <Callout tone="warning">
+          <p className="font-semibold">Bank and Venmo emails may have stopped.</p>
+          <p className="mt-1 opacity-90">
+            No payment email {silence}, but {health.waitingPayments} payment{health.waitingPayments === 1 ? " is" : "s are"} waiting. The
+            Gmail script that reads them may have stopped. Open script.google.com, choose Triggers (the clock), and check that{" "}
+            <span className="font-mono">forwardPaymentEmails</span> is still running.
+          </p>
+        </Callout>
       </div>
     );
   }

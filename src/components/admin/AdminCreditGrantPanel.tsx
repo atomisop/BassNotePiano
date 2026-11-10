@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Coins } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
+import { Meta } from "@/components/ui/CardKit";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -174,48 +175,58 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
 
-        <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
-          {searching && <p className="text-small text-slate-500">Searching…</p>}
-          {!searching && users.length === 0 && <p className="text-small text-slate-500">No students found.</p>}
-          {users.map((user) => {
-            const active = selected?.id === user.id;
-            return (
-              <button
-                key={user.id}
-                type="button"
-                onClick={() => selectUser(user)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                  active ? "border-slate-50/50 bg-slate-50/10" : "border-transparent bg-neu-base shadow-raised-low"
-                }`}
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-50/15 text-small font-medium text-slate-50">
-                  {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.image} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    initialsOf(user.name, user.email)
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-small text-slate-100">{user.name ?? "No name"}</p>
-                  <p className="truncate text-small text-slate-500">{user.email}</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-2.5 py-1 text-small font-medium text-slate-300">
-                  {formatCredits(storedToCredits(user.classCredits))} cr
-                </span>
-              </button>
-            );
-          })}
+        {/* People as rows in one box: the name first, the balance on the right, no chips. */}
+        <div className="mt-3 max-h-72 overflow-y-auto rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+          {searching && <p className="px-4 py-3 text-small text-slate-500">Searching…</p>}
+          {!searching && users.length === 0 && <p className="px-4 py-3 text-small text-slate-500">No students found.</p>}
+          <div className="divide-y divide-slate-50/6">
+            {users.map((user) => {
+              const active = selected?.id === user.id;
+              return (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => selectUser(user)}
+                  aria-pressed={active}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-slate-50/5 ${active ? "bg-slate-50/8" : ""}`}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-50/15 text-small font-medium text-slate-50">
+                    {user.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      initialsOf(user.name, user.email)
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`truncate text-body font-medium ${user.name ? "text-slate-50" : "text-slate-400"}`}>{user.name ?? "No name"}</p>
+                    <p className="truncate text-small text-slate-500">{user.email}</p>
+                  </div>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-body font-semibold tabular-nums text-slate-50">{formatCredits(storedToCredits(user.classCredits))}</span>
+                    <span className="block text-caption text-slate-500">credits</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {selected && (
-          <div className="glass-surface mt-5 p-5">
-            <p className="text-small text-slate-100">{selected.name ?? selected.email}</p>
-            <p className="mt-0.5 text-small text-slate-500">
-              Current balance: <span className="text-slate-300">{creditsLabelFromStored(selected.classCredits)}</span> (1 credit = 1 class, 45 minutes)
-            </p>
+          <div className="mt-5 rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+            {/* The balance is what you are about to change, so it is the loud thing; the name is the label for it. */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-title font-semibold text-slate-50">{selected.name ?? selected.email}</p>
+                {selected.name && <p className="mt-0.5 truncate text-small text-slate-500">{selected.email}</p>}
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-headline font-semibold tabular-nums text-slate-50">{formatCredits(storedToCredits(selected.classCredits))}</p>
+                <p className="text-caption text-slate-500">credits now</p>
+              </div>
+            </div>
 
-            <form onSubmit={handleReview} className="mt-4 space-y-3">
+            <form onSubmit={handleReview} className="mt-4 space-y-3 border-t border-slate-50/8 pt-4">
               <Tabs
                 label="Grant or revoke"
                 value={mode}
@@ -230,9 +241,20 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 ]}
               />
               <div>
-                <label htmlFor="credit-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
-                  Credits to {mode}
-                </label>
+                <div className="flex items-baseline justify-between gap-2">
+                  <label htmlFor="credit-amount" className="text-small font-medium text-slate-400">
+                    Credits to {mode}
+                  </label>
+                  {mode === "revoke" && selected.classCredits > 0 && !confirming && (
+                    <button
+                      type="button"
+                      onClick={() => setAmount(String(storedToCredits(selected.classCredits)))}
+                      className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    >
+                      Revoke all {formatCredits(storedToCredits(selected.classCredits))}
+                    </button>
+                  )}
+                </div>
                 <input
                   id="credit-amount"
                   type="number"
@@ -244,19 +266,11 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   placeholder={mode === "revoke" ? "e.g. 2" : "e.g. 4"}
                   className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
-                {mode === "revoke" && selected.classCredits > 0 && !confirming && (
-                  <button
-                    type="button"
-                    onClick={() => setAmount(String(storedToCredits(selected.classCredits)))}
-                    className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-1.5" })}
-                  >
-                    Revoke all {formatCredits(storedToCredits(selected.classCredits))}
-                  </button>
-                )}
+                <p className="mt-1 text-caption text-slate-500">1 credit is 1 class, 45 minutes.</p>
               </div>
               <div>
-                <label htmlFor="credit-reason" className="text-small font-medium uppercase tracking-wide text-slate-500">
-                  Reason (required, shown to nobody but admins)
+                <label htmlFor="credit-reason" className="text-small font-medium text-slate-400">
+                  Reason <span className="font-normal text-slate-500">(required, only admins see it)</span>
                 </label>
                 <textarea
                   id="credit-reason"
@@ -277,8 +291,8 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // click" shape as PaymentQueue/StudentQueue's own Approve
                 // confirm. The number itself, spelled out in words, is the
                 // part a typo hides right up until this step.
-                <div className="space-y-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low p-3">
-                  <p className="text-small text-slate-200">
+                <div className="space-y-3 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
+                  <p className="text-small text-slate-300">
                     {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?
                   </p>
@@ -288,7 +302,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={editAfterConfirm}
                       disabled={submitting}
-                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
                     >
                       Edit
                     </button>
@@ -304,62 +318,64 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   </div>
                 </div>
               ) : (
-                <button
-                  type="submit"
-                  className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}
-                >
-                  {mode === "grant" ? "Review grant" : "Review revoke"}
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}
+                  >
+                    {mode === "grant" ? "Review grant" : "Review revoke"}
+                  </button>
+                </div>
               )}
             </form>
 
-            <div className="mt-5">
-              <p className="text-small font-medium uppercase tracking-wide text-slate-500">History for this student</p>
-              <div className="mt-2 space-y-2">
+            <div className="mt-5 border-t border-slate-50/8 pt-4">
+              <p className="text-caption font-medium uppercase tracking-caps text-slate-500">History for this student</p>
+              <div className="mt-2">
                 {historyLoading && <PulsatingDots className="justify-start" />}
                 {!historyLoading && history.length === 0 && <p className="text-small text-slate-500">No adjustments yet.</p>}
-                {history.map((row) => (
-                  <div key={row.id} className="rounded-lg px-3 py-2 text-small bg-neu-base shadow-raised-low">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={row.amount > 0 ? "font-medium text-slate-100" : "font-medium text-red-300"}>
-                        {formatSigned(storedToCredits(row.amount))} credits
-                      </span>
-                      <span className="text-slate-500">{new Date(row.createdAt).toLocaleString()}</span>
-                    </div>
-                    <p className="mt-1 text-slate-400">{row.reasonNote}</p>
-                    <p className="mt-1 text-slate-500">by {row.adjustedBy.name ?? row.adjustedBy.email}</p>
-                  </div>
-                ))}
+                <ul className="divide-y divide-slate-50/6">
+                  {history.map((row) => (
+                    <li key={row.id} className="py-2.5">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="min-w-0 text-small text-slate-300">{row.reasonNote}</p>
+                        <span className={`shrink-0 text-body font-semibold tabular-nums ${row.amount > 0 ? "text-slate-50" : "text-red-300"}`}>
+                          {formatSigned(storedToCredits(row.amount))}
+                        </span>
+                      </div>
+                      <Meta className="mt-0.5" items={[new Date(row.createdAt).toLocaleString(), `by ${row.adjustedBy.name ?? row.adjustedBy.email}`]} />
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Right: global recent activity */}
+      {/* Right: global recent activity, as rows: who on the left, the change on the right, the reason and who did it quieter. */}
       <div>
-        <p className="text-small font-medium uppercase tracking-wide text-slate-500">Recent activity</p>
-        <div className="mt-2 space-y-2">
+        <p className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Recent activity</p>
+        <div className="mt-2">
           {recentAdjustments.length === 0 && (
             <EmptyState icon={<Coins />} title="No adjustments yet" description="Credits you add or take away by hand are listed here." />
           )}
-          {recentAdjustments.map((row) => (
-            <div key={row.id} className="glass-surface p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-small text-slate-100">{row.userName ?? row.userEmail}</p>
-                  <p className="mt-0.5 text-small text-slate-500">{new Date(row.createdAtMs).toLocaleString()}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium ${
-                  row.amount > 0 ? "bg-slate-50/15 text-slate-100" : "bg-red-400/15 text-red-300"
-                }`}>
-                  {formatSigned(storedToCredits(row.amount))}
-                </span>
-              </div>
-              <p className="mt-2 text-small text-slate-400">{row.reasonNote}</p>
-              <p className="mt-1 text-small text-slate-500">by {row.adjustedByName ?? row.adjustedByEmail}</p>
-            </div>
-          ))}
+          {recentAdjustments.length > 0 && (
+            <ul className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+              {recentAdjustments.map((row) => (
+                <li key={row.id} className="px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-body font-medium text-slate-50">{row.userName ?? row.userEmail}</p>
+                    <span className={`shrink-0 text-body font-semibold tabular-nums ${row.amount > 0 ? "text-slate-50" : "text-red-300"}`}>
+                      {formatSigned(storedToCredits(row.amount))}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-small text-slate-400">{row.reasonNote}</p>
+                  <Meta className="mt-0.5" items={[new Date(row.createdAtMs).toLocaleString(), `by ${row.adjustedByName ?? row.adjustedByEmail}`]} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

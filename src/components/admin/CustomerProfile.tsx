@@ -1,11 +1,11 @@
 "use client";
 
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
-import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
+import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CalendarPlus, ChevronDown, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { CalendarPlus, ChevronDown, ChevronRight, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
 import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
@@ -23,6 +23,7 @@ import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
 import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
 import { CardFoot, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -66,16 +67,48 @@ function formatDateTime(d: Date | string) {
   return formatEtShort(d, { weekday: false });
 }
 
+/**
+ * One card inside a section. Its name is a quiet eyebrow (the section bar above it is the heading people scan), so the first loud thing
+ * in the card is what it holds: the email, the balance, the last payment (DESIGN.md, Hierarchy rules 1 and 3).
+ */
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="glass-surface p-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
+    <div className="glass-surface p-4 md:p-5">
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>
         {action}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-3">{children}</div>
     </div>
   );
+}
+
+/** "Nov 3", with the year only when it is not this year: a date in a row speaks for itself. */
+function shortDate(d: Date | string) {
+  const date = new Date(d);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}
+
+/** A payment's purpose in plain words: "Payment plan installment". */
+function purposeLabel(purpose: string) {
+  const words = purpose.replace(/_/g, " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const PAYMENT_STATUS: Record<string, { label: string; tone: "warning" | "danger" | "neutral" }> = {
+  AWAITING_TRANSFER: { label: "Awaiting transfer", tone: "neutral" },
+  PENDING_REVIEW: { label: "Pending review", tone: "warning" },
+  REJECTED: { label: "Rejected", tone: "danger" },
+  EXPIRED: { label: "Expired", tone: "neutral" },
+  REFUNDED: { label: "Refunded", tone: "neutral" },
+};
+
+/** A payment's status as a dot and a word, only when it is news: a paid one shows its receipt instead. */
+function PaymentStatus({ status }: { status: string }) {
+  const s = PAYMENT_STATUS[status];
+  if (!s) return null;
+  return <StatusDot tone={s.tone}>{s.label}</StatusDot>;
 }
 
 /** Collapsed until the Notes button is pressed: the teacher's permanent notes on this student. */
@@ -91,7 +124,7 @@ function NotesSection({ studentId }: { studentId: string }) {
           aria-expanded={open}
           className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
-          {open ? "Close notes" : "Notes"}
+          {open ? "Close notes" : "Open notes"}
         </button>
       }
     >
@@ -111,17 +144,21 @@ function formatPracticeDay(day: string) {
   return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-/** Last 30 days of the daily 10-minute finger practice: a dot per day, oldest first. */
+/** Last 30 days of the daily 10-minute finger practice: this week's figure first, then a dot per day, oldest first. */
 function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"] }) {
+  const idle = practice.doneLast7 === 0;
   return (
     <div>
-      <p className="text-small text-slate-400">
-        <span className="tabular-nums text-slate-50">{practice.doneLast7}/7</span> days this week ·{" "}
-        <span className="tabular-nums text-slate-50">{practice.minutesLast7}</span> min · streak{" "}
-        <span className="tabular-nums text-slate-50">{practice.streak}</span> · last full day{" "}
-        <span className="text-slate-50">{practice.lastDoneDay ? formatPracticeDay(practice.lastDoneDay) : "never"}</span>
-      </p>
-      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Daily practice, last 30 days, oldest first">
+      <div className="flex items-baseline gap-2">
+        <p className={`text-headline font-semibold tabular-nums ${idle ? "text-amber-300" : "text-slate-50"}`}>{practice.doneLast7}/7</p>
+        <p className="text-small text-slate-400">days this week</p>
+      </div>
+      <Facts columns={3} className="mt-3">
+        <Fact label="This week" value={`${practice.minutesLast7} min`} tone={practice.minutesLast7 > 0 ? "default" : "muted"} />
+        <Fact label="Streak" value={`${practice.streak} ${practice.streak === 1 ? "day" : "days"}`} tone={practice.streak > 0 ? "default" : "muted"} />
+        <Fact label="Last full day" value={practice.lastDoneDay ? formatPracticeDay(practice.lastDoneDay) : "Never"} tone={practice.lastDoneDay ? "default" : "muted"} />
+      </Facts>
+      <ul className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-50/8 pt-4" aria-label="Daily practice, last 30 days, oldest first">
         {practice.strip.map((d) => (
           <li
             key={d.day}
@@ -134,7 +171,7 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-small text-slate-500">
+      <p className="mt-2 text-caption text-slate-500">
         {practice.doneLast30} of 30 days done. Green is the full 10 minutes, yellow is part of it, grey is none.
       </p>
     </div>
@@ -406,9 +443,7 @@ export function CustomerProfile({
 
   return (
     <div className="space-y-5">
-      {error && (
-        <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
-      )}
+      {error && <Callout tone="danger">{error}</Callout>}
 
       {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
@@ -689,38 +724,59 @@ export function CustomerProfile({
           </SectionCard>
 
           <SectionCard title="Curriculum">
-            <div className="space-y-2">
-              {profile.roadmap.map((scale) => (
-                <div key={scale.scaleGroup.id} className="flex items-center justify-between gap-3 rounded-xl p-3 bg-neu-base shadow-raised-low">
-                  <div className="min-w-0">
-                    <p className="text-small text-slate-100">
-                      {scale.scaleGroup.code} · {scale.scaleGroup.kinitName ?? scale.scaleGroup.title}
-                    </p>
-                    <p className="mt-0.5 text-small text-slate-500">
-                      {scale.status === "LOCKED"
-                        ? "Locked"
-                        : [
-                            scale.moduleRead ? "Module read" : "Module unread",
-                            scale.practiceCompleted ? "Practice logged" : "Practice pending",
-                            scale.quizPassed ? `Quiz passed${scale.quizScore !== null ? ` (${scale.quizScore})` : ""}` : "Quiz pending",
-                          ].join(" · ")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED", notify))}
-                    className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
-                      scale.status === "LOCKED"
-                        ? "border-slate-50/30 text-slate-50 hover:bg-slate-50/10"
-                        : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
-                    }`}
-                  >
-                    {scale.status === "LOCKED" ? "Unlock" : "Lock"}
-                  </button>
-                </div>
-              ))}
-            </div>
+            {(() => {
+              // The scales opened so far and the next one are shown; the locked ones after that are folded away (rule 9).
+              const lastOpen = profile.roadmap.reduce((last, scale, i) => (scale.status === "LOCKED" ? last : i), -1);
+              const shownCount = Math.min(profile.roadmap.length, lastOpen + 2);
+              const scaleRow = (scale: (typeof profile.roadmap)[number]) => {
+                const locked = scale.status === "LOCKED";
+                return (
+                  <li key={scale.scaleGroup.id} className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className={`truncate text-body font-medium ${locked ? "text-slate-400" : "text-slate-50"}`}>
+                        {scale.scaleGroup.code} · {scale.scaleGroup.kinitName ?? scale.scaleGroup.title}
+                      </p>
+                      <Meta
+                        className="mt-0.5"
+                        items={
+                          locked
+                            ? ["Locked"]
+                            : [
+                                scale.moduleRead ? "Module read" : "Module unread",
+                                scale.practiceCompleted ? "Practice logged" : "Practice pending",
+                                scale.quizPassed ? `Quiz passed${scale.quizScore !== null ? ` (${scale.quizScore})` : ""}` : "Quiz pending",
+                              ]
+                        }
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, locked, notify))}
+                      className={buttonVariants({ variant: locked ? "secondary" : "ghost", size: "sm", className: "shrink-0" })}
+                    >
+                      {locked ? "Unlock" : "Lock"}
+                    </button>
+                  </li>
+                );
+              };
+              const rest = profile.roadmap.slice(shownCount);
+              return (
+                <ul className="divide-y divide-slate-50/6">
+                  {profile.roadmap.slice(0, shownCount).map(scaleRow)}
+                  {rest.length > 0 && (
+                    <li>
+                      <details className="group/more">
+                        <summary className="tap flex cursor-pointer list-none items-center py-2.5 text-small font-medium text-slate-400 hover:text-slate-200 group-open/more:hidden [&::-webkit-details-marker]:hidden">
+                          Show {rest.length} more locked
+                        </summary>
+                        <ul className="divide-y divide-slate-50/6">{rest.map(scaleRow)}</ul>
+                      </details>
+                    </li>
+                  )}
+                </ul>
+              );
+            })()}
           </SectionCard>
 
           <NotesSection studentId={user.id} />
@@ -729,11 +785,17 @@ export function CustomerProfile({
 
         <SectionHeader id="classes" label="Classes" open={isOpen("classes")} onToggle={() => toggleSection("classes")} />
         <div hidden={!isOpen("classes")} className="space-y-5">
-          {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
-            <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
+          {/* Credits + bookings: the balance is the card's one loud figure, the form to change it sits under a hairline. */}
+          <SectionCard title="Class credits" action={creditTools}>
+            <div className="flex items-baseline gap-2">
+              <p className={`text-headline font-semibold tabular-nums ${user.classCredits > 0 ? "text-slate-50" : "text-slate-400"}`}>
+                {formatCredits(storedToCredits(user.classCredits))}
+              </p>
+              <p className="text-small text-slate-400">{storedToCredits(user.classCredits) === 1 ? "credit" : "credits"} available</p>
+            </div>
+            <form onSubmit={handleReviewCredits} className="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-50/8 pt-4">
               <div>
-                <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
+                <label htmlFor="cp-amount" className="text-small font-medium text-slate-400">
                   Amount
                 </label>
                 <input
@@ -747,8 +809,8 @@ export function CustomerProfile({
                   className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
-              <div className="flex-1">
-                <label htmlFor="cp-reason" className="text-small font-medium uppercase tracking-wide text-slate-500">
+              <div className="min-w-40 flex-1">
+                <label htmlFor="cp-reason" className="text-small font-medium text-slate-400">
                   Reason
                 </label>
                 <input
@@ -772,23 +834,25 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
-                {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
-                <span className="font-semibold text-slate-50">
-                  {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
-                </span>
-                ? Reason: &ldquo;{creditReason}&rdquo;
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-control bg-slate-50/5 px-3 py-2.5 text-small text-slate-300 ring-1 ring-inset ring-slate-50/10">
+                <p className="mr-auto min-w-0">
+                  {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
+                  <span className="font-semibold text-slate-50">
+                    {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
+                  </span>
+                  ? Reason: &ldquo;{creditReason}&rdquo;
+                </p>
+                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  Edit
+                </button>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  className={buttonVariants({ variant: "primary", size: "sm" })}
                 >
                   {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
-                </button>
-                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                  Edit
                 </button>
               </div>
             )}
@@ -804,43 +868,57 @@ export function CustomerProfile({
 
         <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
         <div hidden={!isOpen("money")} className="space-y-5">
-          {/* Payments */}
+          {/* Payments: the last one leads (amount, what for, when), the earlier ones are rows under it. */}
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
-            <div className="space-y-2">
-              <ViewMore items={profile.payments} initial={4}>
-              {(p) => (
-                <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
-                  <div>
-                    <p className="text-slate-100">
-                      {formatUsd(p.amountCents)} · {p.purpose.replace(/_/g, " ").toLowerCase()}
-                    </p>
-                    <p className="mt-0.5 text-small text-slate-500">
-                      {formatDate(p.createdAt)}
-                      {p.scaleGroup ? ` · ${p.scaleGroup.code}` : ""}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      p.status === "VERIFIED"
-                        ? "bg-slate-50/15 text-slate-100"
-                        : p.status === "REJECTED"
-                          ? "bg-red-400/15 text-red-400"
-                          : "bg-neu-base shadow-pressed-low text-slate-400"
-                    }`}
-                  >
-                    {p.status.replace(/_/g, " ").toLowerCase()}
-                  </span>
+            {(() => {
+              const [latest, ...earlier] = profile.payments;
+              if (!latest) return null;
+              const tools = (p: (typeof profile.payments)[number]) => (
+                <>
                   {p.status === "VERIFIED" && canEditPayments && <AdminEditPaymentButton paymentId={p.id} amountCents={p.amountCents} paidAt={p.reviewedAt ?? p.updatedAt} />}
                   {p.status === "VERIFIED" && (
-                    <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
+                    <Link href={`/billing/receipt/${p.id}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
                       Receipt
                     </Link>
                   )}
-                </div>
-              )}
-              </ViewMore>
-            </div>
+                </>
+              );
+              return (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(latest.amountCents)}</p>
+                      <Meta className="mt-0.5" items={[purposeLabel(latest.purpose), latest.scaleGroup?.code, formatDate(latest.createdAt)]} />
+                    </div>
+                    <div className="shrink-0 pt-1.5">
+                      <PaymentStatus status={latest.status} />
+                    </div>
+                  </div>
+                  {latest.status === "VERIFIED" && <div className="mt-2 flex flex-wrap items-center gap-1">{tools(latest)}</div>}
+                  {earlier.length > 0 && (
+                    <div className="mt-4 border-t border-slate-50/8 pt-2">
+                      <div className="divide-y divide-slate-50/6">
+                        <ViewMore items={earlier} initial={4}>
+                          {(p) => (
+                            <div key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-body font-semibold tabular-nums text-slate-50">{formatUsd(p.amountCents)}</p>
+                                <Meta className="mt-0.5" items={[purposeLabel(p.purpose), p.scaleGroup?.code, shortDate(p.createdAt)]} />
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <PaymentStatus status={p.status} />
+                                {tools(p)}
+                              </div>
+                            </div>
+                          )}
+                        </ViewMore>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </SectionCard>
 
           {/* Other names their payments arrive under */}
@@ -848,70 +926,66 @@ export function CustomerProfile({
             {profile.payerAliases.length === 0 && (
               <Empty>None. When you attach a bank email from a different name to this student&apos;s payment, that name is remembered here and clears their future payments by itself.</Empty>
             )}
-            <div className="space-y-2">
-              {profile.payerAliases.map((alias) => (
-                <div key={alias.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
-                  <span className="min-w-0 truncate text-slate-100">{alias.name}</span>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await onForgetPayerName(user.id, alias.id);
-                        router.refresh();
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    Forget
-                  </button>
-                </div>
-              ))}
-            </div>
+            {profile.payerAliases.length > 0 && (
+              <ul className="divide-y divide-slate-50/6">
+                {profile.payerAliases.map((alias) => (
+                  <li key={alias.id} className="flex min-h-12 items-center justify-between gap-3 py-2">
+                    <span className="min-w-0 truncate text-body font-medium text-slate-50">{alias.name}</span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          await onForgetPayerName(user.id, alias.id);
+                          router.refresh();
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
+                    >
+                      Forget
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
         </div>
 
         <SectionHeader id="support" label="Support" open={isOpen("support")} onToggle={() => toggleSection("support")} />
         <div hidden={!isOpen("support")} className="space-y-5">
-          {/* Support history */}
+          {/* Support history: each conversation is a row that opens it (chevron), the last message first, an open one marked. */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}
-            <div className="space-y-2">
-              {profile.supportThreads.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/admin/support/${t.id}?filter=all`}
-                  className="block rounded-xl p-3 transition bg-neu-base shadow-raised-low"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-slate-50/15 text-slate-50" : "bg-slate-50/15 text-slate-100"
-                      }`}
-                    >
-                      {t.status === "OPEN" ? "Open" : "Resolved"}
-                    </span>
-                  </div>
-                  {t.lastMessage && <p className="mt-1.5 truncate text-small text-slate-400">{t.lastMessage.body}</p>}
-                </Link>
-              ))}
-            </div>
+            {profile.supportThreads.length > 0 && (
+              <ul className="divide-y divide-slate-50/6">
+                {profile.supportThreads.map((t) => (
+                  <li key={t.id}>
+                    <Link href={`/admin/support/${t.id}?filter=all`} className="group flex items-center gap-3 rounded-sm py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body text-slate-100 group-hover:text-slate-50">{t.lastMessage?.body ?? "No messages"}</p>
+                        <p className="mt-0.5 text-small text-slate-500">{formatDate(t.createdAt)}</p>
+                      </div>
+                      {t.status === "OPEN" && <StatusDot tone="warning" className="shrink-0">Open</StatusDot>}
+                      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
 
           {/* Activity timeline */}
           <SectionCard title="Activity">
             {profile.timeline.length === 0 && <Empty>Nothing recorded yet.</Empty>}
-            <div className="space-y-3">
+            <div className="divide-y divide-slate-50/6">
               <ViewMore items={profile.timeline} initial={6}>
               {(event, i) => (
-                <div key={i} className="border-l-2 border-ink/10 pl-3">
-                  <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
-                  <p className="text-small text-slate-200">{event.label}</p>
-                  {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
+                <div key={i} className="py-2.5">
+                  <p className="text-small font-medium text-slate-100">{event.label}</p>
+                  <Meta className="mt-0.5" items={[event.detail, formatDateTime(event.at)]} />
                 </div>
               )}
               </ViewMore>

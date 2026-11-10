@@ -2,6 +2,8 @@ import type { PlanCancellationReason } from "@prisma/client";
 import type { PlanCancellationFeedback } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { Hint } from "@/components/ui/Hint";
+import { Meta } from "@/components/ui/CardKit";
+import Link from "next/link";
 
 // Matches ManageSubscriptions.tsx's own CANCELLATION_REASONS labels, kept
 // as its own small copy rather than a shared import, same "duplicated on
@@ -45,33 +47,30 @@ export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCance
     );
   }
 
+  // Why they left is the point, so the reason leads each row; their own words follow, and who, which plan and when are one quiet line.
   return (
-    <div className="mt-6 space-y-3">
+    <ul className="mt-6 divide-y divide-slate-50/6 overflow-hidden rounded-card bg-neu-base shadow-raised-mid">
       {feedback.map((plan) => (
-        <div key={plan.id} className="glass-surface p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p className="text-small font-medium text-slate-100">{plan.user.name ?? "Unnamed"}</p>
-              <p className="text-small text-slate-500">{plan.user.email}</p>
-            </div>
-            <p className="text-small text-slate-500">{plan.canceledAt ? formatDate(plan.canceledAt) : ""}</p>
-          </div>
-
-          <p className="mt-3 text-small text-slate-500">
-            {describePaymentPlan(plan.cadence, plan.term)} · {plan.installmentsPaid} of {plan.termMonths} installment
-            {plan.termMonths === 1 ? "" : "s"} paid
+        <li key={plan.id} className="px-4 py-3.5 md:px-5">
+          <p className={`text-body font-semibold ${plan.cancellationReason ? "text-slate-50" : "text-slate-400"}`}>
+            {plan.cancellationReason ? REASON_LABELS[plan.cancellationReason] : "No reason given"}
           </p>
-
-          <div className="mt-2 rounded-lg p-3 bg-neu-base shadow-raised-low">
-            <p className="text-small font-medium uppercase tracking-[0.1em] text-slate-50">
-              {plan.cancellationReason ? REASON_LABELS[plan.cancellationReason] : "No reason given"}
-            </p>
-            {plan.cancellationReasonNote && (
-              <p className="mt-1.5 whitespace-pre-wrap text-small text-slate-300">{plan.cancellationReasonNote}</p>
-            )}
-          </div>
-        </div>
+          {plan.cancellationReasonNote && (
+            <p className="mt-1 whitespace-pre-wrap text-small text-slate-300">&ldquo;{plan.cancellationReasonNote}&rdquo;</p>
+          )}
+          <Meta
+            className="mt-1.5"
+            items={[
+              <Link key="who" href={`/admin/users/${plan.user.id}`} className="rounded-sm font-medium text-slate-300 hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {plan.user.name ?? plan.user.email}
+              </Link>,
+              describePaymentPlan(plan.cadence, plan.term),
+              `${plan.installmentsPaid} of ${plan.termMonths} paid`,
+              plan.canceledAt ? formatDate(plan.canceledAt) : null,
+            ]}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

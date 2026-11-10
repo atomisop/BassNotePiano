@@ -64,7 +64,7 @@ export function AdminWeeklyTimeButton({ planId, compact = false }: { planId: str
 
   return (
     <>
-      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
+      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
         <Clock aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Weekly time
       </button>

@@ -41,7 +41,7 @@ export function AdminEditPaymentButton({ paymentId, amountCents, paidAt }: { pay
 
   return (
     <>
-      <button type="button" onClick={show} aria-haspopup="dialog" aria-label="Correct this payment" className="tap inline-flex shrink-0 items-center gap-1 text-small font-medium text-slate-300 hover:text-slate-100">
+      <button type="button" onClick={show} aria-haspopup="dialog" aria-label="Correct this payment" className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 gap-1" })}>
         <Pencil aria-hidden className="h-3.5 w-3.5" />
         Fix
       </button>

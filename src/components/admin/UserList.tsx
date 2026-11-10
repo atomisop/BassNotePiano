@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { PersonPeekPanel } from "@/components/admin/PersonPeekPanel";
+import { Meta } from "@/components/ui/CardKit";
 
 export interface UserListRow {
   id: string;
@@ -130,26 +131,33 @@ export function UserList({
                   setPeekId(row.id);
                 }}
                 aria-current={peekId === row.id ? "true" : undefined}
-                className={`tap flex min-w-0 flex-1 items-center gap-3 py-3.5 ${peekId === row.id ? "text-signal-fg" : ""}`}
+                className={`tap flex min-w-0 flex-1 items-center gap-3 py-3 ${peekId === row.id ? "text-signal-fg" : ""}`}
               >
-                {/* Name first with the room it needs; the facts about the account sit on their own line under it, so a badge never
-                    squeezes the name on a phone (Law of Proximity: each fact sits next to the person it is about). */}
+                {/* Name first and bright, every other fact in one quiet line under it (a role is a word there, not a badge). The one
+                    figure that matters, this week's practice, sits on the right, amber when it is a problem. */}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-slate-50">{row.name ?? row.email}</p>
-                  {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
-                  {(row.roleLabel || row.complimentary || row.practiceDays !== null || row.progress) && (
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-slate-500">
-                      {row.roleLabel && <span>{row.roleLabel}</span>}
-                      {row.complimentary && <span className="rounded-full bg-signal/12 px-2 py-0.5 font-medium text-signal-fg">Complimentary</span>}
-                      {row.practiceDays !== null && (
-                        <span title="Days this week with the full 10 minutes of practice" className={`tabular-nums ${row.practiceDays === 0 ? "text-amber-400" : ""}`}>
-                          {row.practiceDays}/7 practice
-                        </span>
-                      )}
-                      {row.progress && <span className="tabular-nums">{row.progress} scales</span>}
-                    </p>
-                  )}
+                  <p className={`truncate text-body font-semibold ${peekId === row.id ? "text-signal-fg" : "text-slate-50"}`}>{row.name ?? row.email}</p>
+                  <Meta
+                    className="truncate"
+                    items={[
+                      row.roleLabel ? <span className={row.roleLabel === "Banned" ? "text-red-300" : undefined}>{row.roleLabel}</span> : null,
+                      row.complimentary ? "Complimentary" : null,
+                      row.progress ? <span className="tabular-nums">{row.progress} scales</span> : null,
+                      // On a row with the Approve button the button takes the right side, so practice joins the quiet line.
+                      row.readyScale && row.practiceDays !== null ? (
+                        <span className={`tabular-nums ${row.practiceDays === 0 ? "text-amber-300" : ""}`}>{row.practiceDays}/7 practice</span>
+                      ) : null,
+                      // Last, so a long address is what gets cut short on a phone, never the facts before it.
+                      row.name ? row.email : null,
+                    ]}
+                  />
                 </div>
+                {!row.readyScale && row.practiceDays !== null && (
+                  <span className="shrink-0 text-right" title="Days this week with the full 10 minutes of practice">
+                    <span className={`block text-body font-semibold tabular-nums ${row.practiceDays === 0 ? "text-amber-300" : "text-slate-50"}`}>{row.practiceDays}/7</span>
+                    <span className="block text-caption text-slate-500">practice</span>
+                  </span>
+                )}
                 {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />}
               </Link>
               {row.readyScale && (
