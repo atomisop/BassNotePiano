@@ -133,14 +133,17 @@ async function requestFriendship(senderId: string, receiverId: string, via: "use
 
   // Requests an ask by email made are limited by the ask's own daily cap, and are left out here: counting them would let the hourly
   // cap tell the sender how many of their asks reached an account.
-  const askMade = (await prisma.friendEmailAsk.findMany({ where: { senderId, requestId: { not: null } }, select: { requestId: true } }))
-    .map((a) => a.requestId)
-    .filter((id): id is string => Boolean(id));
-  await assertRateLimit(
-    prisma.friendRequest.count,
-    { senderId, ...(askMade.length > 0 ? { id: { notIn: askMade } } : {}) },
-    { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast. Please wait a bit and try again." },
-  );
+  // An ask's own request is not capped here at all (the ask has its own daily cap), or a full hourly cap would change the ask's answer.
+  if (via === "username") {
+    const askMade = (await prisma.friendEmailAsk.findMany({ where: { senderId, requestId: { not: null } }, select: { requestId: true } }))
+      .map((a) => a.requestId)
+      .filter((id): id is string => Boolean(id));
+    await assertRateLimit(
+      prisma.friendRequest.count,
+      { senderId, ...(askMade.length > 0 ? { id: { notIn: askMade } } : {}) },
+      { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast. Please wait a bit and try again." },
+    );
+  }
 
   // They already sent us a pending request, accept theirs instead of creating a mirrored duplicate.
   const reverse = await prisma.friendRequest.findUnique({
@@ -220,8 +223,9 @@ async function makeAskRequest(askId: string, senderId: string, receiverId: strin
     prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId } }, select: { status: true } }),
     prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId: receiverId, receiverId: senderId } }, select: { status: true } }),
   ]);
-  const between = (r: { status: string } | null) => r?.status === "PENDING" || r?.status === "ACCEPTED";
-  if (between(mine) || between(theirs) || (await isBlockedEitherWay(senderId, receiverId))) return false;
+  // Any request row at all (waiting, accepted or declined) means they already have history the sender can see in their data export,
+  // so it is never reopened or hidden by an ask.
+  if (mine || theirs || (await isBlockedEitherWay(senderId, receiverId))) return false;
   const request = await requestFriendship(senderId, receiverId, "booking");
   await linkAskToRequest(askId, request.id);
   return true;
@@ -260,7 +264,9 @@ export async function withdrawEmailAsk(userId: string, askId: string): Promise<v
   if (!ask) return;
   await prisma.$transaction([
     prisma.friendEmailAsk.delete({ where: { id: ask.id } }),
-    ...(ask.requestId ? [prisma.friendRequest.deleteMany({ where: { id: ask.requestId, senderId: userId, status: "PENDING" } })] : []),
+    // The request the ask made goes with it unless it was accepted (then they are friends, which both of them can see). A declined one
+    // goes too: left behind it would show in the sender's data export and say whose email it was.
+    ...(ask.requestId ? [prisma.friendRequest.deleteMany({ where: { id: ask.requestId, senderId: userId, status: { not: "ACCEPTED" } } })] : []),
   ]);
 }
 

@@ -296,11 +296,12 @@ async function undoOpenedBills(plan: PaymentPlan, before: OpenBillRow[]): Promis
     await prisma.$transaction(
       async (tx) => {
         if (madeIds.length > 0) await tx.zellePayment.updateMany({ where: { bundleId: { in: madeIds }, submittedAt: null }, data: { bundleId: null } });
-        // An open only ever changes unsent bills (it bundles them, re-totals a combined bill, or closes a combined bill it dissolves).
+        // An open only changes unsent bills (it bundles them and re-totals a combined bill). Only a bill still unsent and open is put
+        // back, so one canceled, sent in or approved meanwhile is never reopened or rewritten.
         for (const r of before) {
           if (r.status !== "AWAITING_TRANSFER" || r.submittedAt !== null) continue;
           await tx.zellePayment.updateMany({
-            where: { id: r.id, submittedAt: null, status: { in: ["AWAITING_TRANSFER", "EXPIRED"] } },
+            where: { id: r.id, submittedAt: null, status: "AWAITING_TRANSFER" },
             data: { status: r.status, amountCents: r.amountCents, bundleId: r.bundleId },
           });
         }

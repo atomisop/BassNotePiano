@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 // The export route reads the session: the test signs in as whoever `signedIn` names.
 let signedIn: string | null = null;
 vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuthSession: async () => (signedIn ? { user: { id: signedIn } } : null), authOptions: {} }));
-import { askToBookTogether, getEmailAsksSent, getPendingRequestsSent, respondToFriendRequest, sendFriendRequest } from "@/lib/social";
+import { askToBookTogether, getEmailAsksSent, getPendingRequestsSent, respondToFriendRequest, sendFriendRequest, withdrawEmailAsk } from "@/lib/social";
 import { GET as exportMyData } from "@/app/api/account/export/route";
 import { makeUser, newTag, prisma } from "./helpers";
 
@@ -15,6 +15,12 @@ async function student(label: string) {
   return u;
 }
 const sentUsernames = async (userId: string) => (await getPendingRequestsSent(userId)).map((r) => r.receiver.username);
+async function exportOf(userId: string) {
+  signedIn = userId;
+  const file = await (await exportMyData()).json();
+  signedIn = null;
+  return file as { friends: { status: string; receiver: { username: string | null } }[]; askedToBookTogether: { email: string }[] };
+}
 
 afterAll(async () => {
   await prisma.notification.deleteMany({ where: { userId: { in: ids } } });
@@ -63,6 +69,39 @@ describe("asking to book together never tells whether an email has an account", 
     const others = await Promise.all(Array.from({ length: 20 }, (_, i) => student(`yfour${i}`)));
     for (const o of others) await sendFriendRequest(asker.id, o.username!);
     expect(await prisma.friendRequest.count({ where: { senderId: asker.id } })).toBe(23);
+  });
+
+  it("a request they declined earlier is never reopened or hidden by an ask, so the export does not change", async () => {
+    const asker = await student("six");
+    const x = await student("xsix");
+    const request = await sendFriendRequest(asker.id, x.username!);
+    await respondToFriendRequest(x.id, request.id, false);
+    const before = (await exportOf(asker.id)).friends;
+    expect(before.map((r) => [r.status, r.receiver.username])).toEqual([["REJECTED", x.username]]);
+    await askToBookTogether(asker.id, x.email);
+    expect((await exportOf(asker.id)).friends).toEqual(before);
+    expect((await prisma.friendRequest.findUniqueOrThrow({ where: { id: request.id } })).status).toBe("REJECTED");
+  });
+
+  it("withdrawing an ask whose request was declined leaves nothing behind in the export", async () => {
+    const asker = await student("seven");
+    const x = await student("xseven");
+    await askToBookTogether(asker.id, x.email);
+    const made = await prisma.friendRequest.findFirstOrThrow({ where: { senderId: asker.id, receiverId: x.id } });
+    await respondToFriendRequest(x.id, made.id, false);
+    const ask = (await getEmailAsksSent(asker.id))[0];
+    await withdrawEmailAsk(asker.id, ask.id);
+    expect((await exportOf(asker.id)).friends).toEqual([]);
+    expect(await prisma.friendRequest.findUnique({ where: { id: made.id } })).toBeNull();
+  });
+
+  it("a full hourly friend request allowance does not change an ask's answer", async () => {
+    const asker = await student("eight");
+    const others = await Promise.all(Array.from({ length: 20 }, (_, i) => student(`yeight${i}`)));
+    for (const o of others) await sendFriendRequest(asker.id, o.username!);
+    const x = await student("xeight");
+    await expect(askToBookTogether(asker.id, x.email)).resolves.toBe("asked");
+    await expect(askToBookTogether(asker.id, `${tag}-eight-nobody@example.com`)).resolves.toBe("asked");
   });
 
   it("the data export lists asks by the typed email, never the account a request went to, until it is accepted", async () => {
