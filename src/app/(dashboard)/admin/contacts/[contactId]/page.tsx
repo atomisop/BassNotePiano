@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getContact, getHoldChoices } from "@/lib/contacts";
+import { findContactAccount, getContact, getHoldChoices } from "@/lib/contacts";
 import { Card } from "@/components/ui/Card";
-import { BackToContacts, ContactForm, ContactHolds, ContactSessions, type HoldRow, type SessionRow } from "@/components/admin/ContactPanels";
-import { addHoldAction, addSessionAction, deleteContactAction, deleteSessionAction, releaseHoldAction, updateContactAction } from "../actions";
+import { BackToContacts, ContactAccountCard, ContactForm, ContactHolds, ContactSessions, type HoldRow, type SessionRow } from "@/components/admin/ContactPanels";
+import { addHoldAction, addSessionAction, deleteContactAction, deleteSessionAction, releaseHoldAction, sendContactSignUpAction, updateContactAction } from "../actions";
 import { DeleteContactButton } from "./DeleteContactButton";
 
 export const metadata = { title: "Admin: Contact" };
@@ -17,6 +17,7 @@ export default async function AdminContactPage(props: { params: Promise<{ contac
   const { contactId } = await props.params;
   const [contact, choices] = await Promise.all([getContact(contactId), getHoldChoices()]);
   if (!contact) notFound();
+  const account = await findContactAccount(contact.email);
 
   const labelFor = (scheduleId: string, chunkIndex: number, fallbackDay: number) =>
     choices.find((c) => c.scheduleId === scheduleId && c.chunkIndex === chunkIndex)?.label ?? `${DAY_NAMES[fallbackDay]} (time no longer offered)`;
@@ -29,12 +30,18 @@ export default async function AdminContactPage(props: { params: Promise<{ contac
     releasedAt: hold.releasedAt ? hold.releasedAt.toISOString() : null,
   }));
   const sessions: SessionRow[] = contact.sessions.map((s) => ({ id: s.id, day: utcDay(s.date), attended: s.attended, note: s.note }));
+  // The times still kept for them, still offered: each becomes "Set up plan with <time>" once they have an account.
+  const today = new Date(new Date().toISOString().slice(0, 10)).getTime();
+  const heldTimes = contact.holds
+    .filter((h) => !h.releasedAt && (!h.until || h.until.getTime() >= today) && choices.some((c) => c.scheduleId === h.scheduleId && c.chunkIndex === h.chunkIndex))
+    .map((h) => ({ key: `${h.scheduleId}:${h.chunkIndex}`, label: labelFor(h.scheduleId, h.chunkIndex, h.schedule.dayOfWeek) }));
 
   return (
     <div>
       <BackToContacts />
       <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{contact.name}</h1>
       <div className="mt-6 grid gap-4">
+        <ContactAccountCard contactId={contact.id} email={contact.email} account={account} heldTimes={heldTimes} onSendSignUp={sendContactSignUpAction} />
         <Card>
           <h2 className="mb-4 text-title font-semibold text-slate-50">Details</h2>
           <ContactForm

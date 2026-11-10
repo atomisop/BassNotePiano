@@ -4,7 +4,7 @@ import { ADMIN_NOTIFICATION_KINDS, getAdminNotificationSettings, isOwnerEmail } 
 import { EmployeesView } from "@/components/admin/EmployeesView";
 import { getAutomations } from "@/lib/appSettings";
 import { AUTOMATIONS } from "@/lib/automationKeys";
-import { revokeEmployeeAction, setAutomationAction, setEmployeeNotificationAction } from "./actions";
+import { addStaffAction, findStaffCandidateAction, revokeEmployeeAction, setAutomationAction, setEmployeeNotificationAction } from "./actions";
 
 export const metadata = { title: "Admin: Employees" };
 
@@ -33,6 +33,8 @@ export default async function AdminEmployeesPage() {
           onToggleNotification={setEmployeeNotificationAction}
           automations={isOwner && automations ? AUTOMATIONS.map(({ key, label }) => ({ key, label, enabled: automations[key] })) : null}
           onToggleAutomation={setAutomationAction}
+          onFindStaff={isOwner ? findStaffCandidateAction : undefined}
+          onAddStaff={isOwner ? addStaffAction : undefined}
         />
       </div>
     </div>

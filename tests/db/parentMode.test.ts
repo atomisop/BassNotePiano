@@ -48,6 +48,8 @@ const startPlan = (parentId: string, childEmails: string[], includeSelf: boolean
 };
 
 afterAll(async () => {
+  await prisma.parentLinkInvite.deleteMany({ where: { parentId: { in: userIds } } });
+  await prisma.auditLog.deleteMany({ where: { actorId: { in: userIds } } });
   await prisma.parentLink.deleteMany({ where: { OR: [{ parentId: { in: userIds } }, { childId: { in: userIds } }] } });
   await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: userIds } } });
@@ -80,9 +82,11 @@ describe("linking a child's account", () => {
     await expect(respondToParentLink(stranger.id, link.id, false)).rejects.toThrow(/no longer waiting/);
   });
 
-  it("uses the same account-exists check: no account, your own, and a missing name are refused with a plain reason", async () => {
+  it("uses the same account-exists check: your own and a missing name are refused with a plain reason; no account yet is remembered", async () => {
     const parent = await account("lx", "Parent Tester");
-    await expect(sendParentLink(parent.id, "nobody-here@example.test")).rejects.toThrow(/No account with this email/);
+    // No account: answered like any request (the email is kept for when they sign up, see parentInvites.test.ts).
+    expect(await sendParentLink(parent.id, `${tag}-nobody-here@example.test`)).toBe("PENDING");
+    expect(await prisma.parentLink.count({ where: { parentId: parent.id } })).toBe(0);
     await expect(sendParentLink(parent.id, parent.email)).rejects.toThrow(/your own account/);
     await expect(sendParentLink(parent.id, "nope")).rejects.toThrow(/does not look like an email/);
     const nameless = await prisma.user.create({ data: { email: `${tag}-nn@example.test`, name: "Cher", passwordHash: "x", emailCanonical: canonicalEmail(`${tag}-nn@example.test`) } });

@@ -6,6 +6,7 @@ const LABELS: Record<string, string> = {
   "scholarship.end": "Ended a claimed scholarship discount",
   "scholarship.revoke": "Revoked a scholarship code",
   "scholarship.claim": "Claimed a scholarship",
+  "scholarship.grant": "Gave a scholarship directly (no code to claim)",
   "user.ban": "Banned an account",
   "account.email-change": "Changed their sign-in email",
   "user.unban": "Lifted a ban",
@@ -40,6 +41,7 @@ const LABELS: Record<string, string> = {
   "booking.move-custom": "Moved a class to a custom date and time",
   "booking.move-over-plan-hold": "Moved a class into a time another plan keeps",
   "plan.build": "Built or re-anchored a plan from a start date",
+  "plan.setup": "Set up a plan (weekly time, first class, scholarship)",
   "plan.settle-late": "Settled a late payment (payment recorded, class charged, next bill 28 days out)",
   "reservation.create": "Reserved a time for a customer",
   "reservation.release": "Released a reservation",
@@ -71,6 +73,18 @@ const LABELS: Record<string, string> = {
   "pricing.discount.set": "Gave or changed a discount",
   "pricing.discount.clear": "Removed a discount",
   "security.csp.clear": "Cleared security reports",
+  "job.run-now": "Ran an automatic task now",
+  "booking.book": "Booked a class for a student",
+  "booking.book-custom": "Booked a class at a new one-time time",
+  "booking.walk-in": "Recorded a class already taught (marked Present)",
+  "booking.book-over-plan-hold": "Booked into a time another plan keeps",
+  "reservation.book": "Booked a customer into their reserved time",
+  "scale.release": "Released the next scale",
+  "payment.mark-paid": "Marked a bill paid (money came another way)",
+  "schedule.add-time": "Added a weekly time",
+  "schedule.move-window": "Moved a weekly time with everyone on it",
+  "studio.move-day": "Moved a closed day's classes to other times",
+  "invite.register": "Sent a sign-up invitation",
 };
 
 export function auditLabel(action: string): string {
@@ -95,6 +109,14 @@ export const AUDIT_KIND_LABEL: Record<string, string> = {
   email: "Email",
   pricing: "Pricing",
   security: "Security",
+  booking: "Classes",
+  reservation: "Reservations",
+  scale: "Scales",
+  scholarship: "Scholarships",
+  job: "Automatic tasks",
+  schedule: "Weekly times",
+  studio: "Studio days",
+  invite: "Invitations",
 };
 
 export const AUDIT_PAGE_SIZE = 50;

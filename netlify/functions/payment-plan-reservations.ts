@@ -53,7 +53,7 @@ export const runPaymentPlanReservations = () =>
           userId: plan.userId,
           type: "RESERVED_SLOT_UNAVAILABLE",
           title: "Your reserved class time isn't offered anymore",
-          body: "The weekly time your payment plan reserves was deactivated. Message us and we'll help you pick a new one.",
+          body: "The weekly time your payment plan reserves was deactivated. Pick a new one in Lessons and your classes move with it.",
           emailCategory: "payments",
         }).catch((err) => console.error(`RESERVED_SLOT_UNAVAILABLE notification failed for plan ${plan.id} (non-blocking):`, err));
         await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: now } });

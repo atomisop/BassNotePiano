@@ -6,6 +6,7 @@ import { X } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { personPeekAction, type PersonPeek } from "@/app/(dashboard)/admin/person-peek-actions";
 import { personActionHref } from "@/lib/commandRecents";
+import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Fact, Facts } from "@/components/ui/CardKit";
 
@@ -31,7 +32,8 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
   }, [userId]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // Escape inside the message sheet closes only the sheet, not this panel behind it.
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"]') && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -59,9 +61,11 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
               <Fact key={f.label} label={f.label} value={f.value} tone={f.warn ? "warning" : "default"} className={i === 0 ? "col-span-2" : undefined} />
             ))}
           </Facts>
-          {/* One way in (the full page), the everyday jobs as quiet text buttons beside it. */}
+          {/* One way in (the full page), Message under it, the other everyday jobs as quiet text buttons. */}
           <div className="mt-5 flex flex-col gap-2 border-t border-slate-50/8 pt-4">
             <Link href={`/admin/users/${data.id}`} className={buttonVariants({ size: "sm" })}>Open full page</Link>
+            {/* Written right here, beside the list: the same sheet as the Message button on their page. The one quiet button. */}
+            <QuickMessageButton userId={data.id} name={data.name ?? data.email} />
             <div className="flex flex-wrap justify-center gap-1">
               <Link href={personActionHref(data.id, "credits")} className={`${buttonVariants({ variant: "ghost", size: "sm" })} ${job}`}>Add credits</Link>
               <Link href={personActionHref(data.id, "book")} className={`${buttonVariants({ variant: "ghost", size: "sm" })} ${job}`}>Book a class</Link>

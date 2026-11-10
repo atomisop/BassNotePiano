@@ -32,7 +32,7 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
         "Every plan includes live classes with your teacher and all of the lessons. Pick a plan and your first scale opens right away.",
       ],
       primary: { label: "Choose a plan", href: "/billing/plans" },
-      secondary: { label: "Try a free class first", href: "/classes" },
+      secondary: { label: "Talk to an instructor", href: "/classes" },
       canAsk: false,
     };
   }
@@ -76,6 +76,8 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
 
 export interface GettingStartedInput {
   kind: "ADMIN" | "PAID" | "COMPED" | "TRIAL" | "NONE";
+  /** How many children this person manages in parent mode. A parent who only pays for children is not a new student. */
+  children?: number;
 }
 
 export interface GettingStartedStep {
@@ -92,6 +94,15 @@ export interface GettingStartedStep {
  */
 export function gettingStartedStep(input: GettingStartedInput): GettingStartedStep | null {
   if (input.kind !== "NONE") return null;
+  if ((input.children ?? 0) > 0) {
+    return {
+      action: input.children === 1 ? "Your child's classes" : "Your children's classes",
+      detail: "See their next class and practice, move a class, or pay for their plan. Want lessons for yourself too? Pick a plan any time.",
+      href: "/parent",
+      cta: "Open Parent mode",
+      secondary: { href: "/billing/plans", cta: "Lessons for me" },
+    };
+  }
   return {
     action: "Choose a class plan",
     detail: "Your lessons open as soon as your first payment is approved. Want to talk first? Send your details and an instructor will reach out.",

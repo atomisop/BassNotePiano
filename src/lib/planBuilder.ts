@@ -10,7 +10,10 @@ import { getDiscountPercent, getPersonalDiscount } from "@/lib/accountDiscounts"
 import { drawDownCredits } from "@/lib/creditLedger";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { groupNotStartedError } from "@/lib/planFixes";
 import { buildPlanTimeline, parseYmd, type PlanTimeline } from "@/lib/planTimeline";
+import { checkTypedWeeklyTime, clashRefusal, virtualWindow, weeklyWindowFor } from "@/lib/weeklyTimeOptions";
+import type { TypedWeeklyTime } from "@/lib/weeklyTimeRules";
 
 /**
  * The plan builder: one place to set up (or re-anchor) a student's payment plan from a start date that can be in the past. It holds
@@ -25,6 +28,8 @@ export interface PlanBuilderInput {
   term: PaymentPlanTerm;
   scheduleId: string;
   chunkIndex: number;
+  /** "Another time…": a typed day and start time. When it is not already a class of a window, a 45 minute window is made for it in the same step. */
+  newTime?: TypedWeeklyTime | null;
   /** Eastern date the first 28-day cycle began, YYYY-MM-DD. May be in the past. */
   startDate: string;
   /** Ignored for a student who already has a plan (it keeps what is recorded). */
@@ -62,7 +67,7 @@ export interface PlanBuilderContext {
 // Each person on a group or parent plan has their own plan (weekly time, bills, credits), so it is rebuilt on its own like a solo one. Only a
 // group whose combined first payment is still open is left alone: that one payment starts every plan in it at once.
 function assertGroupPlanStarted(plan: { familyGroupId: string | null; installmentsPaid: number } | null) {
-  if (plan?.familyGroupId && plan.installmentsPaid < 1) throw new PaymentPlanError("This group plan has not started yet. Approve its combined first payment on Billing > Payments first.");
+  if (plan?.familyGroupId && plan.installmentsPaid < 1) throw groupNotStartedError(plan.familyGroupId);
 }
 
 async function loadSlot(scheduleId: string, chunkIndex: number) {
@@ -118,12 +123,28 @@ interface Resolved {
   installmentsPaid: number;
   schedule: Awaited<ReturnType<typeof loadSlot>>["schedule"];
   chunk: Awaited<ReturnType<typeof loadSlot>>["chunk"];
+  /** "Another time…" with no window yet: one is made inside the transaction. */
+  newTime: TypedWeeklyTime | null;
+}
+
+/** The weekly time asked for: a listed one, or a typed one ("Another time…") that is an existing class or a window still to make. */
+async function resolveTime(input: PlanBuilderInput, planId: string | null) {
+  if (!input.newTime) return { ...(await loadSlot(input.scheduleId, input.chunkIndex)), newTime: null };
+  const option = await checkTypedWeeklyTime(input.newTime, { creditsPerWeek: PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE], ignoreUserIds: [input.userId], ignorePlanIds: planId ? [planId] : [] });
+  if (option.clashes.length > 0) throw new PaymentPlanError(clashRefusal(option.clashes, false));
+  if (option.scheduleId) {
+    input.scheduleId = option.scheduleId;
+    input.chunkIndex = option.chunkIndex;
+    return { ...(await loadSlot(option.scheduleId, option.chunkIndex)), newTime: null };
+  }
+  const schedule = virtualWindow(option.newTime!);
+  return { schedule, chunk: chunksForSchedule(schedule)[0], newTime: option.newTime };
 }
 
 async function resolve(input: PlanBuilderInput): Promise<Resolved> {
   const plan = await prisma.paymentPlan.findFirst({ where: { userId: input.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } });
   assertGroupPlanStarted(plan);
-  const { schedule, chunk } = await loadSlot(input.scheduleId, input.chunkIndex);
+  const { schedule, chunk, newTime } = await resolveTime(input, plan?.id ?? null);
   const start = parseYmd(input.startDate);
   if (!start) throw new PaymentPlanError("Pick a real start date.");
 
@@ -141,9 +162,9 @@ async function resolve(input: PlanBuilderInput): Promise<Resolved> {
     if (!Number.isInteger(installmentsPaid) || installmentsPaid < 1 || installmentsPaid > cycles) throw new PaymentPlanError(`Bills paid has to be from 1 to ${cycles}.`);
   }
 
-  // The slot must be free, or already this plan's own.
+  // The slot must be free, or already this plan's own. A typed time with no window yet was checked by resolveTime.
   const own = plan && plan.reservedScheduleId === input.scheduleId && plan.reservedChunkIndex === input.chunkIndex;
-  if (!own) {
+  if (!own && !newTime) {
     const free = await getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE]);
     if (!free.some((s) => s.scheduleId === input.scheduleId && s.chunkIndex === input.chunkIndex)) throw new PaymentPlanError("That weekly time is taken or has someone booked on it. Pick another.");
   }
@@ -158,7 +179,7 @@ async function resolve(input: PlanBuilderInput): Promise<Resolved> {
     if (date < start || date >= end) throw new PaymentPlanError(`${d} is outside the paid cycles that start on ${input.startDate}.`);
   }
   if (new Set(input.taughtDates).size !== input.taughtDates.length) throw new PaymentPlanError("The same day is listed twice.");
-  return { plan, term, cycles, installmentsPaid, schedule, chunk };
+  return { plan, term, cycles, installmentsPaid, schedule, chunk, newTime };
 }
 
 export interface PlanBuilderPreview {
@@ -212,11 +233,20 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
   const now = new Date();
   const charged: number[] = [];
 
+  let madeWindowId: string | null = null;
   const planId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // "Another time…": the window is made in the same step, so the time and the plan on it appear together or not at all.
+    if (r.newTime) {
+      const made = await weeklyWindowFor(tx, r.newTime);
+      input.scheduleId = made.scheduleId;
+      input.chunkIndex = made.chunkIndex;
+      if (made.created) madeWindowId = made.scheduleId;
+    }
     let id: string;
     if (r.plan) {
       id = r.plan.id;
-      await tx.paymentPlan.update({ where: { id }, data: { reservedScheduleId: input.scheduleId, reservedChunkIndex: input.chunkIndex, nextDueDate: nextDue } });
+      // Rebuilt from a day that has passed: classes run from now, so a later first class set by "Set up plan" no longer holds.
+      await tx.paymentPlan.update({ where: { id }, data: { reservedScheduleId: input.scheduleId, reservedChunkIndex: input.chunkIndex, nextDueDate: nextDue, startsAt: null } });
       const grant = await tx.creditGrant.findFirst({ where: { userId: input.userId, paymentPlanId: id, source: "PAYMENT_PLAN_INSTALLMENT", expiredAt: null }, orderBy: { createdAt: "desc" }, select: { id: true } });
       if (grant) await tx.creditGrant.update({ where: { id: grant.id }, data: { expiresAt: nextDue } });
     } else {
@@ -288,6 +318,7 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
     body: `The studio set up your weekly classes starting ${input.startDate}. Check Lessons for your schedule.`,
     emailCategory: "classes",
   }).catch(() => undefined);
+  if (madeWindowId) await logAudit({ actorId: adminId, action: "schedule.add-time", targetType: "ClassSchedule", targetId: madeWindowId, detail: "Added a weekly time with the plan builder" });
   await logAudit({ actorId: adminId, action: "plan.build", targetType: "PaymentPlan", targetId: planId, detail: `${r.plan ? "re-anchored" : "created"} start ${input.startDate}, ${r.installmentsPaid} paid, ${input.taughtDates.length} taught` });
   const balanceAfter = (await prisma.user.findUniqueOrThrow({ where: { id: input.userId }, select: { classCredits: true } })).classCredits;
   return { planId, created: !r.plan, charged: charged.reduce((n, q) => n + q, 0), alreadyMarked, balanceBefore, balanceAfter };

@@ -9,6 +9,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import { setPlanProgressAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 import { Hint } from "@/components/ui/Hint";
+import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
+import type { PlanFix } from "@/lib/planFixes";
 
 /**
  * Owner only, next to the bill date: sets how many bills are paid and the next bill date with no limits (any date, a past one too),
@@ -21,14 +23,19 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
   const [day, setDay] = useState(currentDay);
   const [busy, setBusy] = useState(false);
   const [notify, setNotify] = useNotifyStudent("student-changes");
+  const [refusal, setRefusal] = useState<{ error: string; fix: PlanFix } | null>(null);
 
   async function save() {
     setBusy(true);
-    const hold = await toast.held("Setting the plan progress", () => setPlanProgressAction(planId, paid, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", warning: null as string | null })), { mail: notify });
+    setRefusal(null);
+    const hold = await toast.held("Setting the plan progress", () => setPlanProgressAction(planId, paid, day, notify).catch(() => ({ ok: false, error: "Something went wrong. Try again.", warning: null as string | null, fix: null as PlanFix | null })), { mail: notify });
     setBusy(false);
     if (hold.undone) return;
     const result = hold.value;
-    if (!result.ok) return void toast.warning(result.error ?? "Could not save.");
+    if (!result.ok) {
+      if (result.fix) setRefusal({ error: result.error ?? "Could not save.", fix: result.fix });
+      return void toast.warning(result.error ?? "Could not save.");
+    }
     toast.success(`Plan set to ${paid} of ${termMonths} bills paid`, result.warning ? { description: result.warning } : undefined);
     setOpen(false);
     router.refresh();
@@ -36,7 +43,7 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
 
   return (
     <>
-      <button type="button" onClick={() => { setPaid(billsPaid); setDay(currentDay); setOpen(true); }} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
+      <button type="button" onClick={() => { setPaid(billsPaid); setDay(currentDay); setRefusal(null); setOpen(true); }} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Plan progress
       </button>
@@ -53,6 +60,12 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
         }
       >
         <div className="space-y-4">
+          {refusal && (
+            <div className="space-y-2">
+              <p role="alert" className="text-small text-red-400">{refusal.error}</p>
+              <PlanFixPanel fix={refusal.fix} notify={notify} onDone={() => setRefusal(null)} />
+            </div>
+          )}
           <p className="text-small text-slate-400"><Hint>Set what is true. Any date works, a past one too. Unpaid bills are closed and the next one is made fresh. Credits and booked classes are not changed.</Hint></p>
           <label className="block">
             <span className="mb-1 block text-small font-medium text-slate-200">Bills paid (0 to {termMonths})</span>

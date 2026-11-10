@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { FIRST_ROADMAP_ID, planScaleOrder, slugifyRoadmap, type RoadmapArtwork } from "@/lib/roadmapRules";
+import type { LessonScaleOption } from "@/lib/lessonScales";
 
 /**
  * Roadmaps in the database: the owner's admin screen (create, edit, reorder, add scales) and the list students see. The curriculum
@@ -71,6 +72,19 @@ export async function listRoadmapsForAdmin() {
   }));
 }
 
+/** Every scale for Admin > Classes > Lessons, in course order, hidden roadmaps included (their lessons go in before they are shown). */
+export async function listScalesForLessons(): Promise<LessonScaleOption[]> {
+  const [roadmaps, scales] = await Promise.all([
+    prisma.roadmap.findMany({ select: { id: true, name: true, visible: true } }),
+    prisma.scaleGroup.findMany({ orderBy: { order: "asc" }, select: { slug: true, code: true, title: true, roadmapId: true } }),
+  ]);
+  const byId = new Map(roadmaps.map((r) => [r.id, r]));
+  return scales.map((s) => {
+    const roadmap = byId.get(s.roadmapId ?? FIRST_ROADMAP_ID);
+    return { slug: s.slug, code: s.code, title: s.title, roadmapName: roadmap?.name ?? null, roadmapHidden: roadmap ? !roadmap.visible : false };
+  });
+}
+
 /** A new roadmap goes last and starts hidden, so students only see it once it has scales and the owner turns it on. */
 export async function createRoadmap(input: RoadmapInput) {
   return prisma.$transaction(async (tx) => {
@@ -103,7 +117,7 @@ export async function moveRoadmap(id: string, direction: "up" | "down") {
   });
 }
 
-/** A new scale goes at the end of its roadmap; its lessons are added on Admin > Classes > Lessons as for any scale. */
+/** A new scale goes at the end of its roadmap; its lessons are added on Admin > Classes > Lessons (the lesson count on Roadmaps links there). */
 export async function addScale(roadmapId: string, input: ScaleInput) {
   return prisma.$transaction(async (tx) => {
     const roadmap = await tx.roadmap.findUnique({ where: { id: roadmapId }, select: { id: true } });

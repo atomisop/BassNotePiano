@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ChevronRight } from "@/components/ui/appIcons";
 import { formatDateTime } from "@/lib/classScheduleLabels";
+import { addCreditLabel } from "@/lib/adminBookingRules";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { Callout, Meta } from "@/components/ui/CardKit";
 
 export interface RequestGroupView {
@@ -12,10 +15,10 @@ export interface RequestGroupView {
   scheduledAt: string;
   label: string | null;
   alreadyBooked: boolean;
-  requests: { id: string; studentName: string; email: string; createdAt: string }[];
+  requests: { id: string; studentId: string; studentName: string; email: string; createdAt: string }[];
 }
 
-type Result = { ok: true } | { ok: false; error: string };
+type Result = { ok: true } | { ok: false; error: string; shortBy?: number; canAddCredit?: boolean };
 
 function ago(iso: string): string {
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
@@ -26,7 +29,10 @@ function ago(iso: string): string {
   return `${Math.round(hours / 24)} days ago`;
 }
 
-/** The queue of times students asked for. The earliest request for an hour is first; confirming one books it and tells the others. */
+/**
+ * The queue of times students asked for. The earliest request for an hour is first; confirming one books it and tells the others.
+ * A student with no free credit is named in the answer, and the owner can add the credit and confirm right there.
+ */
 export function AdminBookingRequests({
   groups,
   requestMode,
@@ -37,23 +43,31 @@ export function AdminBookingRequests({
   groups: RequestGroupView[];
   requestMode: boolean;
   showSettingsLink: boolean;
-  onConfirm: (requestId: string) => Promise<Result>;
+  onConfirm: (requestId: string, opts?: { addCredit?: boolean; key?: string }) => Promise<Result>;
   onDecline: (requestId: string, reason?: string) => Promise<Result>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<{ id: string; text: string } | null>(null);
+  const [error, setError] = useState<{ id: string; text: string; shortBy?: number; canAdd?: boolean } | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  // One once-only key per confirm attempt, renewed after each success, so a double tap books once.
+  const [key, setKey] = useState(() => newIdempotencyKey());
 
   function run(id: string, work: () => Promise<Result>) {
     setBusyId(id);
     setError(null);
     start(async () => {
-      const result = await work();
+      let result: Result;
+      try {
+        result = await work();
+      } catch {
+        result = { ok: false, error: "Something went wrong. Try again." };
+      }
       setBusyId(null);
-      if (!result.ok) return setError({ id, text: result.error });
+      if (!result.ok) return setError({ id, text: result.error, shortBy: result.shortBy, canAdd: result.canAddCredit });
+      setKey(newIdempotencyKey());
       setDecliningId(null);
       setReason("");
       router.refresh();
@@ -101,9 +115,16 @@ export function AdminBookingRequests({
               <li key={request.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-body font-semibold text-slate-50">
-                      {first && group.requests.length > 1 && <span className="mr-2 text-small font-medium text-signal-fg">First</span>}
-                      {request.studentName}
+                    <p className="flex min-w-0 items-center text-body font-semibold text-slate-50">
+                      {first && group.requests.length > 1 && <span className="mr-2 shrink-0 text-small font-medium text-signal-fg">First</span>}
+                      {/* The name opens their page (credits, plan, classes) without leaving the job half done. */}
+                      <Link
+                        href={`/admin/users/${request.studentId}`}
+                        className="group inline-flex min-w-0 items-center gap-1.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="truncate">{request.studentName}</span>
+                        <ChevronRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                      </Link>
                     </p>
                     <p className="truncate text-small text-slate-500">
                       {request.email} · asked {ago(request.createdAt)}
@@ -115,7 +136,7 @@ export function AdminBookingRequests({
                       variant={first && !group.alreadyBooked ? "primary" : "secondary"}
                       disabled={group.alreadyBooked || (pending && busyId === request.id)}
                       loading={pending && busyId === request.id && decliningId !== request.id}
-                      onClick={() => run(request.id, () => onConfirm(request.id))}
+                      onClick={() => run(request.id, () => onConfirm(request.id, { key }))}
                     >
                       Confirm
                     </Button>
@@ -140,7 +161,16 @@ export function AdminBookingRequests({
                     </div>
                   </div>
                 )}
-                {error?.id === request.id && <p role="alert" className="mt-2 text-small text-red-400">{error.text}</p>}
+                {error?.id === request.id && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p role="alert" className="text-small text-red-400">{error.text}</p>
+                    {error.shortBy && error.canAdd && !group.alreadyBooked && (
+                      <Button size="sm" variant="secondary" disabled={pending && busyId === request.id} onClick={() => run(request.id, () => onConfirm(request.id, { addCredit: true, key }))}>
+                        {addCreditLabel(error.shortBy, "confirm")}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </li>
               );
             })}

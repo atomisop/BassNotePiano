@@ -58,6 +58,8 @@ export async function bookClassBundleAction(selections: BundleBookingSelection[]
 export async function requestClassTimesAction(selections: RequestSelection[]) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
+  // Same rule as booking: a child whose parent controls their schedule cannot ask for class times either.
+  if (await hasParentControl(session.user.id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
 
   try {
     const results = await createBookingRequests(session.user.id, selections);

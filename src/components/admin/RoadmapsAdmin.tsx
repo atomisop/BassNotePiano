@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Pencil, Plus } from "@/components/ui/appIcons";
 import { Button } from "@/components/ui/button";
@@ -129,9 +130,13 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
               <span className="block truncate text-small font-semibold text-slate-100">
                 <span className="font-medium text-slate-500">{s.code}</span> {s.title}
               </span>
-              <span className="block text-caption text-slate-500">
-                {s.lessons} lesson{s.lessons === 1 ? "" : "s"}
-              </span>
+              {/* One tap to this scale's lessons, to add the first ones or change them. */}
+              <Link
+                href={`/admin/lessons?scale=${s.slug}`}
+                className={`tap inline-flex items-center text-caption underline underline-offset-4 hover:text-slate-200 ${s.lessons === 0 ? "text-signal-fg" : "text-slate-500"}`}
+              >
+                {s.lessons === 0 ? "No lessons yet, add them" : `${s.lessons} lesson${s.lessons === 1 ? "" : "s"}`}
+              </Link>
             </span>
             <IconButton label={`Move ${s.title} up`} disabled={i === 0 || pending} onClick={() => run(() => moveScaleAction(s.id, "up"))}>
               <ArrowUp className="h-4 w-4" />

@@ -39,6 +39,8 @@ export interface NoticeRow {
   read: boolean;
   /** Emails only: what happened to it, and why it was not sent or failed. */
   delivery?: { status: EmailStatus; label: string; detail: string | null; openedAt: Date | null };
+  /** Mail only: they answered, and their reply opened this Support Chat case. */
+  supportCaseId?: string | null;
 }
 
 export interface NoticeGroup {
@@ -111,7 +113,7 @@ export async function listSentNotices(f: NoticeFilter): Promise<{ rows: NoticeRo
   ]);
   const rows: NoticeRow[] = [
     ...bell.map((n) => ({ id: n.id, channel: "bell" as const, at: n.createdAt, userId: n.userId, name: n.user.name, email: n.user.email, isAdmin: n.user.role === "ADMIN", kind: kindLabel(n.type), title: n.title, body: n.body, read: n.readAt !== null })),
-    ...mail.map((m) => ({ id: m.id, channel: "mail" as const, at: m.createdAt, userId: m.userId, name: m.user.name, email: m.user.email, isAdmin: m.user.role === "ADMIN", kind: kindLabel(m.kind), title: m.title, body: m.body, read: m.readAt !== null })),
+    ...mail.map((m) => ({ id: m.id, channel: "mail" as const, at: m.createdAt, userId: m.userId, name: m.user.name, email: m.user.email, isAdmin: m.user.role === "ADMIN", kind: kindLabel(m.kind), title: m.title, body: m.body, read: m.readAt !== null, supportCaseId: m.supportCaseId })),
     ...emails.map((e) => ({
       id: e.id,
       channel: "email" as const,

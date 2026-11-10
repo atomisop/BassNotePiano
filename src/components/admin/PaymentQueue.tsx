@@ -4,7 +4,7 @@ import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle"
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -19,6 +19,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
+import { Hint } from "@/components/ui/Hint";
+import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
+import { adminPaymentsHref, type PaymentFilterValue } from "@/lib/adminPaymentLinks";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { CardFoot, Callout, Meta } from "@/components/ui/CardKit";
@@ -29,14 +33,26 @@ export interface PaymentQueueProps {
   onApprove: (paymentId: string, notify?: boolean) => Promise<void>;
   onReject: (paymentId: string, reason: string, notify?: boolean) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
-  /** Owner only. Marks a verified payment refunded, optionally taking back its credits and ending its plan. */
-  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
+  /** Owner only. Marks a verified payment refunded, optionally taking back its credits, ending its plan and canceling their upcoming classes. */
+  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean, notify?: boolean, cancelClasses?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
   /** Owner only: put a refunded payment back as paid. */
   onUndoRefund?: (paymentId: string, restoreCredits: boolean, reactivatePlan: boolean, notify?: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only: close a bill nobody paid, keeping the record as expired. */
   onCancelBill?: (paymentId: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** Owner only: the money for an unpaid bill came another way (cash, an email that never arrived). Records it and approves it. */
+  onMarkPaid?: (paymentId: string, notify?: boolean, key?: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** Owner only: correct an approved payment's amount or day (Fix). */
+  canFix?: boolean;
+  /** Each person's classes booked from now on, for the refund panel's "also cancel their classes". */
+  upcomingClasses?: Record<string, number>;
+  /** A link to one payment: it is marked and scrolled to. */
+  highlightId?: string | null;
+  /** On the person's own page: their name is not a link and the list starts shorter. */
+  personView?: boolean;
+  /** Billing > Payments: the view the page shows, so a search can reach every page, not only the one loaded. */
+  listView?: { status: PaymentFilterValue; user: string | null; morePages: boolean };
   emptyMessage?: string;
 }
 
@@ -144,10 +160,17 @@ export function PaymentQueue({
   onRefund,
   onUndoRefund,
   onCancelBill,
+  onMarkPaid,
+  canFix = false,
+  upcomingClasses = {},
+  highlightId = null,
+  personView = false,
+  listView,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
-  // On by default here: a student who paid is waiting for the answer (and the receipt).
+  // On by default here: a student who paid is waiting for the answer (and the receipt). That holds on the person's own page too (the
+  // student page's own switch defaults off), so the person view shows its own switch, right where the buttons are.
   const [notify, setNotify] = useNotifyStudent("payments", true);
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
@@ -182,19 +205,33 @@ export function PaymentQueue({
   const [refundNote, setRefundNote] = useState("");
   const [refundCredits, setRefundCredits] = useState(true);
   const [refundPlan, setRefundPlan] = useState(true);
+  const [refundClasses, setRefundClasses] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  // One key per attempt: a double tap on "Yes, mark paid" records the money once.
+  const [markKey, setMarkKey] = useState(() => newIdempotencyKey());
+  // A link to one payment opens with it marked, on screen.
+  useEffect(() => {
+    if (!highlightId) return;
+    const t = window.setTimeout(() => document.getElementById(`pay-${highlightId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 200);
+    return () => window.clearTimeout(t);
+  }, [highlightId]);
   // A status is news only when the list mixes them: on a tab filtered to one status (Pending, Verified...) the tab already says it.
   const mixedStatuses = new Set(payments.map((p) => p.status)).size > 1;
 
   /** Opens one confirm step on a payment and closes any other, so a card never shows two at once. */
-  function openStep(step: "approve" | "reject" | "refund" | "undo" | "cancel" | "delete", id: string) {
+  function openStep(step: "approve" | "reject" | "markPaid" | "refund" | "undo" | "cancel" | "delete", id: string) {
     setApprovingId(step === "approve" ? id : null);
     setRejectingId(step === "reject" ? id : null);
+    setMarkingId(step === "markPaid" ? id : null);
     setRefundingId(step === "refund" ? id : null);
     setUndoingId(step === "undo" ? id : null);
     setCancelingId(step === "cancel" ? id : null);
     setDeletingId(step === "delete" ? id : null);
-    if (step === "refund") setRefundError(null);
+    if (step === "refund") {
+      setRefundError(null);
+      setRefundClasses(false);
+    }
   }
 
   /** "Jordan Alemu, $55.00": who and how much, for the toast, so the admin can tell which row it was. */
@@ -227,7 +264,7 @@ export function PaymentQueue({
     setBusyId(id);
     setRefundError(null);
     try {
-      const h = await toast.held("Refunding payment", () => onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify), { mail: notify });
+      const h = await toast.held("Refunding payment", () => onRefund(id, refundNote.trim(), refundCredits, refundPlan, notify, refundClasses), { mail: notify });
       if (h.undone) return;
       const result = h.value;
       if (!result.ok) {
@@ -237,6 +274,7 @@ export function PaymentQueue({
       }
       setRefundingId(null);
       setRefundNote("");
+      setRefundClasses(false);
       router.refresh();
       // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now,
       // and keep the toast up until it is dismissed.
@@ -281,6 +319,25 @@ export function PaymentQueue({
     }
   }
 
+  async function handleMarkPaid(id: string) {
+    if (!onMarkPaid) return;
+    setBusyId(id);
+    try {
+      const h = await toast.held("Marking the bill paid", () => onMarkPaid(id, notify, markKey), { mail: notify });
+      if (h.undone) return;
+      const result = h.value;
+      if (!result.ok) return void toast.warning(result.error ?? "Could not mark the bill paid.");
+      toast.success("Marked paid", { description: whoAndHow(id) });
+      setMarkingId(null);
+      setMarkKey(newIdempotencyKey());
+      router.refresh();
+    } catch (err) {
+      toast.error("Couldn't mark that bill paid", { description: failureText(err) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!onDelete) return;
     setBusyId(id);
@@ -316,14 +373,25 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description="New payments show up here as soon as they come in." />
+      <EmptyState icon={<CheckCheck />} title={emptyMessage.replace(/\.$/, "")} description={personView ? "Their bills and payments show up here." : "New payments show up here as soon as they come in."} />
     );
   }
 
+  const firstShown = personView ? 4 : 8;
+  const highlightAt = highlightId ? shown.findIndex((p) => p.id === highlightId) : -1;
+
   return (
     <div className="space-y-3">
-      <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />
+      {(!personView || payments.length > firstShown) && (
+        <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
+      )}
+      {listView?.morePages && query.trim() && (
+        // The box above only searches this page; this one searches every payment.
+        <Link href={adminPaymentsHref({ status: listView.status, user: listView.user, q: query.trim() })} className="tap -mt-2 inline-flex items-center text-small font-medium text-signal-fg underline underline-offset-4">
+          Search every page for &ldquo;{query.trim()}&rdquo;
+        </Link>
+      )}
+      <NotifyToggle on={notify} onChange={setNotify} label={personView ? "Tell them about payment results" : "Notify the student"} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {shown.filter(canTick).length > 1 && (
         <label className="tap flex items-center gap-2 text-small text-slate-400">
@@ -353,7 +421,7 @@ export function PaymentQueue({
         ]}
         extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
       />
-      <ViewMore items={shown} initial={8} animateRemovals>
+      <ViewMore key={highlightId ?? "list"} items={shown} initial={Math.max(firstShown, highlightAt + 1)} animateRemovals>
       {(payment) => {
         const { eyebrow, title } = describePayment(payment);
         const name = payment.user.name ?? payment.user.email;
@@ -363,18 +431,25 @@ export function PaymentQueue({
         const step =
           rejectingId === payment.id ? "reject"
           : approvingId === payment.id ? "approve"
+          : markingId === payment.id ? "markPaid"
           : refundingId === payment.id ? "refund"
           : undoingId === payment.id ? "undo"
           : cancelingId === payment.id ? "cancel"
           : deletingId === payment.id ? "delete"
           : null;
         // The rare tools live in one "More" menu, the destructive ones last and in red; each opens its own confirm under the card.
+        const canFixPayment = canFix && payment.status === "VERIFIED";
         const canRefund = !!onRefund && payment.status === "VERIFIED";
         const canUndo = !!onUndoRefund && payment.status === "REFUNDED";
         const canCancelBill = !!onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED");
-        const hasMenu = canRefund || canUndo || canCancelBill || !!onDelete;
+        // Money for an unpaid bill that came another way (cash, a bank email that never arrived): a quiet button beside the receipt-less bill.
+        const canMarkPaid = !!onMarkPaid && payment.status === "AWAITING_TRANSFER";
+        const hasMenu = canFixPayment || canRefund || canUndo || canCancelBill || !!onDelete;
         const pending = payment.status === "PENDING_REVIEW";
-        const hasFoot = pending || payment.status === "VERIFIED" || hasMenu;
+        const hasFoot = pending || payment.status === "VERIFIED" || canMarkPaid || hasMenu;
+        // Canceled before the credits are taken back, so the credits those classes held come back too.
+        const groupBill = payment.purpose === "FAMILY_PLAN_INSTALLMENT" || payment.purpose === "FAMILY_PLAN_START";
+        const upcomingCount = upcomingClasses[payment.user.id] ?? 0;
         return (
         // A row that leaves the list (approved, rejected or deleted, once the page refreshes) folds away in 200ms instead of vanishing,
         // so the rows below slide up into its place rather than jump. A row that stays (its status just changed) does not move.
@@ -382,7 +457,8 @@ export function PaymentQueue({
           key={payment.id}
           exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-          className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5"
+          id={`pay-${payment.id}`}
+          className={`scroll-mt-28 rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5 ${highlightId === payment.id ? "ring-2 ring-signal" : ""}`}
         >
           {/* The focal point: who paid and how much. What it was for is one quieter line, how it arrived one quieter still. */}
           <div className="flex items-start gap-1">
@@ -394,15 +470,21 @@ export function PaymentQueue({
             <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="truncate text-title font-semibold text-slate-50">
-                  <Link href={`/admin/users/${payment.user.id}`} className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    {name}
-                  </Link>
+                  {/* On the person's own page their name would only link back to where you are. */}
+                  {personView ? (
+                    name
+                  ) : (
+                    <Link href={`/admin/users/${payment.user.id}`} className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      {name}
+                    </Link>
+                  )}
                 </h2>
                 <p className="mt-0.5 truncate text-small text-slate-400">{title === name ? eyebrow : `${eyebrow} · ${title}`}</p>
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(payment.amountCents)}</p>
-                {mixedStatuses && (
+                {/* A person's page lists every status with no tab naming it, so each payment says its own. */}
+                {(mixedStatuses || personView) && (
                   <StatusDot tone={STATUS_TONE[payment.status]} className="mt-1">
                     {STATUS_LABEL[payment.status]}
                   </StatusDot>
@@ -519,6 +601,22 @@ export function PaymentQueue({
                 </button>
               </div>
             </div>
+          ) : step === "markPaid" ? (
+            <div className="mt-4 space-y-2 border-t border-slate-50/8 pt-3">
+              <p className="text-small text-slate-300">
+                Record {formatUsd(payment.amountCents)} as received from {name}? Use this when the money came another way, like cash or a bank email that never arrived.
+                It is approved now, exactly as if they had sent it in.
+              </p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setMarkingId(null)} disabled={busy} className={QUIET}>
+                  Back
+                </button>
+                <button type="button" onClick={() => handleMarkPaid(payment.id)} disabled={busy} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+                  {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                  {busy ? "Recording…" : "Yes, mark paid"}
+                </button>
+              </div>
+            </div>
           ) : step === "refund" ? (
             <div className="mt-4 space-y-3 border-t border-slate-50/8 pt-3">
               <p className="text-small text-slate-300">
@@ -540,6 +638,15 @@ export function PaymentQueue({
                   <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                   Cancel the plan too
                 </label>
+              )}
+              {(groupBill || upcomingCount > 0) && (
+                <div className="flex items-center gap-1.5">
+                  <label className="flex items-center gap-2 text-small text-slate-300">
+                    <input type="checkbox" checked={refundClasses} onChange={(e) => setRefundClasses(e.target.checked)} className="h-4 w-4 accent-slate-50" />
+                    {groupBill ? "Also cancel everyone's upcoming classes on it" : `Also cancel their ${upcomingCount} upcoming class${upcomingCount === 1 ? "" : "es"}`}
+                  </label>
+                  <Hint>Canceled first, so the credits those classes held come back too.</Hint>
+                </div>
               )}
               {refundError && <p className="text-small text-red-400">{refundError}</p>}
               <div className="flex gap-2">
@@ -605,7 +712,9 @@ export function PaymentQueue({
             // One primary (Approve) on a payment waiting for you, Reject quiet beside it, everything rare in More.
             <CardFoot>
               {hasMenu && (
-                <ActionMenu label="More" align={pending ? "left" : "right"} className={pending ? "mr-auto" : undefined}>
+                <ActionMenu label="More" align={pending || canMarkPaid ? "left" : "right"} className={pending || canMarkPaid ? "mr-auto" : undefined}>
+                  {/* Fix opens its own dialog, which stays open when this menu closes. */}
+                  {canFixPayment && <AdminEditPaymentButton paymentId={payment.id} amountCents={payment.amountCents} paidAt={payment.reviewedAt ?? payment.updatedAt} />}
                   {canUndo && (
                     <button type="button" onClick={() => openStep("undo", payment.id)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                       Undo refund
@@ -637,6 +746,11 @@ export function PaymentQueue({
                 <Link href={`/billing/receipt/${payment.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                   Receipt
                 </Link>
+              )}
+              {canMarkPaid && (
+                <button type="button" onClick={() => openStep("markPaid", payment.id)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  Mark paid
+                </button>
               )}
               {pending && (
                 <>

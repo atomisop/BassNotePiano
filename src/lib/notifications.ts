@@ -52,6 +52,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/roadmap"), kind: "default" },
   PARENT_LINK_REQUEST: { label: "Answer the request", url: getAppUrl("/account?tab=account#parent-mode"), kind: "default" },
   PARENT_LINK_ACCEPTED: { label: "Open Parent mode", url: getAppUrl("/parent"), kind: "default" },
+  PARENT_CLASS_ASK: { label: "Move or skip it", url: getAppUrl("/parent"), kind: "default" },
+  GROUP_INVITE: { label: "Accept or decline", url: getAppUrl("/billing/plans"), kind: "default" },
   BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
   BANNER_DISCORD: { label: "Connect Discord", url: getAppUrl("/api/discord/connect"), kind: "default" },
   BANNER_PRACTICE: { label: "Start practice", url: getAppUrl("/practice"), kind: "default" },
@@ -78,7 +80,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // booking a makeup class, not reviewing plan/payment status.
   CLASS_REMINDER: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
   CREDITS_EXPIRING_SOON: { label: "Book a class", url: getAppUrl("/lessons"), kind: "notice" },
-  RESERVED_SLOT_UNAVAILABLE: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
+  // Straight to the weekly-time picker on Lessons, open, so a new time is picked where the classes are.
+  RESERVED_SLOT_UNAVAILABLE: { label: "Pick a new time", url: getAppUrl("/lessons?changeTime="), kind: "notice" },
   PLAN_CANCELLATION_FEEDBACK: { label: "Read feedback", url: getAppUrl("/admin/payment-plans?status=FEEDBACK"), kind: "default" },
   // /dashboard, not PAYMENT_APPROVED's own /billing/history: a curriculum
   // family bundle recipient never paid anything themselves, so their own
@@ -92,7 +95,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PAYMENT_RECEIVED: { label: "View your payments", url: getAppUrl("/billing/history"), kind: "default" },
   TRIAL_ENDING: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
   PAYMENT_PLAN_UPDATED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
-  SLOT_WAITLIST_OPENED: { label: "Pick your time", url: getAppUrl("/billing/plans"), kind: "default" },
+  // The call site adds the time itself (slotWaitlist.ts); Lessons opens the picker with it, or the plan form when there is no plan.
+  SLOT_WAITLIST_OPENED: { label: "Pick your time", url: getAppUrl("/lessons?changeTime="), kind: "default" },
   BOOKING_REQUEST_RECEIVED: { label: "See your request", url: getAppUrl("/lessons?tab=upcoming"), kind: "default" },
   BOOKING_REQUEST_DECLINED: { label: "Pick another time", url: getAppUrl("/lessons"), kind: "default" },
 };

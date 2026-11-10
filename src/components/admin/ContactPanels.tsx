@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageBack } from "@/components/ui/BackLink";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Mail, MessageSquare, Phone } from "@/components/ui/appIcons";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { CalendarPlus, Mail, MessageSquare, Phone, Send } from "@/components/ui/appIcons";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/Card";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import type { ContactInput, HoldChoice } from "@/lib/contacts";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
+import { DAY_NAMES } from "@/lib/weeklyTimeRules";
+import { personActionHref } from "@/lib/commandRecents";
 import { Fact, Facts, Meta } from "@/components/ui/CardKit";
 
 const STATUS_LABEL: Record<string, string> = { INTERESTED: "Interested", TRIAL: "Trial", ACTIVE: "Active", PAUSED: "Paused" };
@@ -148,21 +151,26 @@ export function ContactHolds({
   contactId: string;
   holds: HoldRow[];
   choices: HoldChoice[];
-  onAdd: (contactId: string, scheduleId: string, chunkIndex: number, until: string | null, note: string | null) => Promise<Result>;
+  onAdd: (contactId: string, scheduleId: string, chunkIndex: number, until: string | null, note: string | null, newTime?: { dayOfWeek: number; startTime: string } | null) => Promise<Result>;
   onRelease: (holdId: string) => Promise<Result>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // "Another time…": a day and start time with no window yet. A 45 minute window is made for it with the hold.
+  const [slot, setSlot] = useState("");
+  const typing = slot === "__another";
   const active = holds.filter((hold) => !hold.releasedAt);
   const past = holds.filter((hold) => hold.releasedAt);
 
   function add(form: FormData) {
     const [scheduleId, chunk] = String(form.get("slot") ?? "").split(":");
+    const newTime = typing ? { dayOfWeek: Number(form.get("newDay") ?? 1), startTime: String(form.get("newStart") ?? "") } : null;
     setError(null);
     start(async () => {
-      const result = await onAdd(contactId, scheduleId, Number(chunk), String(form.get("until") ?? "") || null, String(form.get("note") ?? "") || null);
+      const result = await onAdd(contactId, typing ? "" : scheduleId, typing ? 0 : Number(chunk), String(form.get("until") ?? "") || null, String(form.get("note") ?? "") || null, newTime);
       if (!result.ok) return setError(result.error);
+      setSlot("");
       router.refresh();
     });
   }
@@ -197,13 +205,29 @@ export function ContactHolds({
       )}
       <form action={add} className="mt-5 grid gap-3 border-t border-(--neu-edge) pt-4">
         <Field label="Weekly time">
-          <select name="slot" required defaultValue="" className={selectClass}>
+          <select name="slot" required value={slot} onChange={(e) => setSlot(e.target.value)} className={selectClass}>
             <option value="" disabled>Choose a day and time</option>
             {choices.map((choice) => (
               <option key={`${choice.scheduleId}:${choice.chunkIndex}`} value={`${choice.scheduleId}:${choice.chunkIndex}`}>{choice.label}</option>
             ))}
+            <option value="__another">Another time…</option>
           </select>
         </Field>
+        {typing && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Day">
+              <select name="newDay" defaultValue="1" className={selectClass}>
+                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                  <option key={d} value={d}>{DAY_NAMES[d]}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Starts at">
+              <Input name="newStart" type="time" step={300} defaultValue="16:00" required />
+            </Field>
+            <p className="text-small text-slate-400 sm:col-span-2">A new 45 minute weekly time is made for it, unless that time is already a class.</p>
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Keep it until (optional)">
             <Input name="until" type="date" />
@@ -217,6 +241,89 @@ export function ContactHolds({
           <Button type="submit" size="sm" loading={pending}>Reserve this time</Button>
         </div>
       </form>
+    </Card>
+  );
+}
+
+/** Set up plan on their page with a kept time ("scheduleId:chunkIndex") already chosen. */
+function setupHref(userId: string, slotKey: string): string {
+  const [scheduleId, chunk] = slotKey.split(":");
+  return personActionHref(userId, "setup", { slot: { scheduleId, chunkIndex: Number(chunk) } });
+}
+
+/**
+ * Where a contact stands with an account: once one with their email exists, links to it and to Set up plan with each time kept for them;
+ * until then, "Send sign-up link" emails them an invitation to make one with that email.
+ */
+export function ContactAccountCard({
+  contactId,
+  email,
+  account,
+  heldTimes,
+  onSendSignUp,
+}: {
+  contactId: string;
+  email: string | null;
+  account: { id: string; name: string } | null;
+  heldTimes: { key: string; label: string }[];
+  onSendSignUp: (contactId: string) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
+}) {
+  const [pending, start] = useTransition();
+  const [sent, setSent] = useState<string | null>(null);
+
+  function send() {
+    start(async () => {
+      const result = await onSendSignUp(contactId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+      if (!result.ok) return void toast.warning(result.error);
+      setSent(result.message);
+      toast.success(result.message);
+    });
+  }
+
+  return (
+    <Card>
+      <h2 className="text-title font-semibold text-slate-50">Account</h2>
+      {account ? (
+        <div className="mt-2 grid gap-3">
+          <p className="text-small text-slate-300">
+            They have an account:{" "}
+            <Link href={`/admin/users/${account.id}`} className="hit-slop font-medium text-slate-100 underline underline-offset-4">
+              {account.name}
+            </Link>
+            .
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {/* One primary: the first kept time. Any other kept time is a quiet choice beside it. */}
+            {heldTimes.map((t, i) => (
+              <Link key={t.key} href={setupHref(account.id, t.key)} className={buttonVariants({ variant: i === 0 ? "primary" : "secondary", size: "sm" })}>
+                <CalendarPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                Set up plan with {t.label}
+              </Link>
+            ))}
+            {heldTimes.length === 0 && (
+              <Link href={personActionHref(account.id, "setup")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                <CalendarPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                Set up their plan
+              </Link>
+            )}
+          </div>
+          {heldTimes.length > 0 && <p className="text-small text-slate-400">Setting up the plan on a kept time releases it here.</p>}
+        </div>
+      ) : (
+        <div className="mt-2 grid gap-3">
+          <p className="text-small text-slate-400">
+            {email ? `No account with ${email} yet. Send them a link to make one with that email, then set up their plan here.` : "Add their email in Details to send them a sign-up link."}
+          </p>
+          {email && (
+            <div>
+              <Button type="button" size="sm" variant="secondary" loading={pending} disabled={pending || Boolean(sent)} onClick={send}>
+                <Send aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                {sent ? "Sign-up link sent" : "Send sign-up link"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
@@ -316,7 +423,8 @@ export function ContactSessions({
 
 /**
  * One person who sent the public class form (there is no review step): what they typed and one tap to call, text or email them
- * outside the app. Remove takes the entry off the list, with a few seconds to undo.
+ * outside the app. More holds the in-app next steps: the studio's sign-up link and keeping a time for them (Schedule > Reserved,
+ * filled in with their details). Remove takes the entry off the list, with a few seconds to undo.
  */
 export function ClassFormEntry({
   id,
@@ -328,6 +436,7 @@ export function ClassFormEntry({
   notes,
   sent,
   onRemove,
+  onSendSignUp,
 }: {
   id: string;
   name: string;
@@ -338,12 +447,30 @@ export function ClassFormEntry({
   notes: string | null;
   sent: string;
   onRemove: (registrationId: string) => Promise<Result>;
+  /** "Send sign-up link": the studio's own invitation to make an account with the address on the form. */
+  onSendSignUp?: (registrationId: string) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [sending, startSending] = useTransition();
+  const [linkSent, setLinkSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dial = phone.replace(/[^\d+]/g, "");
   const action = buttonVariants({ variant: "secondary", size: "sm", className: "tap gap-1.5" });
+  const menuItem = buttonVariants({ variant: "ghost", size: "sm", className: "justify-start gap-1.5" });
+  // Schedule > Reserved with a new reservation already filled in for them.
+  const holdHref = `/admin/schedule?${new URLSearchParams({ view: "RESERVED", name, email, phone }).toString()}`;
+
+  function sendSignUp() {
+    if (!onSendSignUp) return;
+    setError(null);
+    startSending(async () => {
+      const result = await onSendSignUp(id).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+      if (!result.ok) return void toast.warning(result.error);
+      setLinkSent(true);
+      toast.success(result.message);
+    });
+  }
 
   function remove() {
     setError(null);
@@ -379,6 +506,16 @@ export function ClassFormEntry({
         <a href={`mailto:${email}?subject=${encodeURIComponent("Your Bass Note Piano classes")}`} className={action}>
           <Mail className="h-4 w-4" aria-hidden /> Email
         </a>
+        <ActionMenu label="More">
+          {onSendSignUp && (
+            <button type="button" className={menuItem} onClick={sendSignUp} disabled={sending || linkSent}>
+              <Send className="h-4 w-4" aria-hidden /> {linkSent ? "Sign-up link sent" : sending ? "Sending…" : "Send sign-up link"}
+            </button>
+          )}
+          <Link href={holdHref} className={menuItem}>
+            <CalendarPlus className="h-4 w-4" aria-hidden /> Hold a time
+          </Link>
+        </ActionMenu>
         <Button type="button" size="sm" variant="ghost" className="tap ml-auto" onClick={remove} disabled={pending} aria-label={`Remove ${name}`}>
           Remove
         </Button>

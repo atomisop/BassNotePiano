@@ -86,12 +86,21 @@ export function NewPlanForm({
   checkMember,
   inviteApi,
   parent,
+  initialSlotKey = null,
+  initialMembers,
+  onClaimScholarship,
 }: {
   pricing: PricingConfig;
   personalDiscountPercent?: number;
   scholarshipPercent?: number;
   initialTerm?: PaymentPlanTerm;
   initialAudience?: Audience;
+  /** A weekly time already picked elsewhere ("scheduleId:chunkIndex", ?slot=): chosen as soon as the open times load. */
+  initialSlotKey?: string | null;
+  /** People already on the form (?child= from Parent mode). */
+  initialMembers?: string[];
+  /** Claims a scholarship code right here (the 6 Month card). Leave out to hide "Have a scholarship code?". */
+  onClaimScholarship?: (code: string) => Promise<{ ok: true; percent: number } | { ok: false; error: string }>;
   loadSlots: () => Promise<ReservableSlot[]>;
   onStart: (input: StartPlanInput) => Promise<StartPlanResult>;
   /** Times other students hold, and the ones this person is waiting for. Leave both out to hide waiting for a time. */
@@ -113,7 +122,10 @@ export function NewPlanForm({
   // The parent learns too unless they take themselves out (or already have a plan of their own).
   const [includeSelf, setIncludeSelf] = useState(Boolean(parent?.canIncludeSelf));
   const [term, setTerm] = useState<PaymentPlanTerm>(initialTerm ?? "TERM_6");
-  const [memberRows, setMemberRows] = useState<string[]>([""]);
+  const [memberRows, setMemberRows] = useState<string[]>(initialMembers && initialMembers.length > 0 ? initialMembers : [""]);
+  // A scholarship claimed here prices the 6 Month plan at once (the server already saved it).
+  const [scholarship, setScholarship] = useState(scholarshipPercent);
+  useEffect(() => setScholarship(scholarshipPercent), [scholarshipPercent]);
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slot, setSlot] = useState<ReservableSlot | null>(null);
@@ -129,12 +141,22 @@ export function NewPlanForm({
   const [waitBusy, setWaitBusy] = useState<string | null>(null);
   const [waitError, setWaitError] = useState<string | null>(null);
   const rowRefs = useRef<(HTMLInputElement | null)[]>([]);
+  // ?slot= asked for a time that is no longer open: say so above the times instead of quietly picking nothing.
+  const [slotGone, setSlotGone] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     loadSlots()
       .then((result) => {
-        if (!cancelled) setSlots(result);
+        if (cancelled) return;
+        setSlots(result);
+        if (!initialSlotKey) return;
+        // The time picked elsewhere (Lessons, a "your time is open" notice) is chosen here too, so it is not picked twice.
+        const picked = result.find((s) => `${s.scheduleId}:${s.chunkIndex}` === initialSlotKey);
+        if (!picked) return setSlotGone(true);
+        const firstChild = initialMembers?.[0]?.trim().toLowerCase();
+        if (parent?.only && firstChild) setPersonTimes({ [firstChild]: picked });
+        else setSlot(picked);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -176,7 +198,7 @@ export function NewPlanForm({
   // Each typed email is looked up once it stops changing; answers are kept so retyping the same one is instant.
   const [lookups, setLookups] = useState<Record<string, CheckState>>({});
   const asked = useRef(new Set<string>());
-  const groupInvites = useFamilyInvites(inviteApi, audience === "FAMILY" && !parentMode);
+  const groupInvites = useFamilyInvites(inviteApi, audience === "FAMILY" && !parentMode, term);
   const parentInvites = useFamilyInvites(parent?.inviteApi, audience === "FAMILY" && parentMode);
   const invites = parentMode && parent ? parentInvites : groupInvites;
   const gated = parentMode && parent ? true : Boolean(inviteApi);
@@ -235,11 +257,11 @@ export function NewPlanForm({
   const people = isParent ? parentHeadcount(memberRows, includeSelf) : headcount(memberRows);
   const parentTotals = isParent ? { includeSelf } : undefined;
   // The discount the chosen length actually gets (a scholarship only counts on the 6 Month plan).
-  const termDiscount = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
+  const termDiscount = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent: scholarship }, term);
   const totals = useMemo(
-    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals }),
+    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent: scholarship, parent: parentTotals }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, isParent, includeSelf],
+    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarship, isParent, includeSelf],
   );
   const rowStates = isFamily ? memberRows.map((_, i) => stateFor(i)) : [];
   const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
@@ -329,8 +351,8 @@ export function NewPlanForm({
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
-            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals });
-            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent, parent: parentTotals }).perPaymentCents) * 100);
+            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent: scholarship, parent: parentTotals });
+            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent: scholarship, parent: parentTotals }).perPaymentCents) * 100);
             const look = tierLook(option.value);
             const who = audience === "FAMILY" ? look.family : look.solo;
             return (
@@ -360,6 +382,16 @@ export function NewPlanForm({
             );
           })}
         </div>
+        {/* A scholarship only prices the 6 Month plan, so its code is entered right under that card and the price changes here. */}
+        {onClaimScholarship && !isFamily && scholarship === 0 && (
+          <ScholarshipClaim
+            onClaim={onClaimScholarship}
+            onClaimed={(percent) => {
+              setScholarship(percent);
+              setTerm("TERM_6");
+            }}
+          />
+        )}
       </div>
 
       {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
@@ -490,6 +522,11 @@ export function NewPlanForm({
 
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        {slotGone && (
+          <p role="status" className="mb-2 text-small text-amber-300">
+            The time you picked was just taken. Pick another one below.
+          </p>
+        )}
         {isParent && (
           <div className="mb-3 space-y-2" role="group" aria-label="Whose weekly time">
             {holders.length === 0 ? (
@@ -642,6 +679,71 @@ export function NewPlanForm({
         )}
       </Dialog>
     </div>
+  );
+}
+
+/** "Have a scholarship code?" under the 6 Month card: claims it right here, and the shown price follows. */
+function ScholarshipClaim({
+  onClaim,
+  onClaimed,
+}: {
+  onClaim: (code: string) => Promise<{ ok: true; percent: number } | { ok: false; error: string }>;
+  onClaimed: (percent: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [raw, setRaw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const digits = raw.replace(/\D/g, "").slice(0, 16);
+
+  async function claim(e: React.FormEvent) {
+    e.preventDefault();
+    if (digits.length !== 16) return setError("Enter all 16 digits.");
+    setBusy(true);
+    setError(null);
+    const result = await onClaim(digits).catch(() => ({ ok: false as const, error: "Something went wrong. Please try again." }));
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    toast.success("Scholarship claimed", { description: `${result.percent}% off the 6 Month plan.` });
+    onClaimed(result.percent);
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-2 flex justify-end">
+        <button type="button" onClick={() => setOpen(true)} className="tap inline-flex items-center text-small font-medium text-slate-300 underline underline-offset-4 hover:text-slate-50">
+          Have a scholarship code?
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={claim} className="mt-3 rounded-control bg-neu-base p-3 shadow-raised-low">
+      <label htmlFor="plan-scholarship-code" className="text-small font-medium text-slate-200">
+        Scholarship code <span className="font-normal text-slate-500">· 6 Month plan only</span>
+      </label>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="plan-scholarship-code"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="0000 0000 0000 0000"
+          value={digits.replace(/(\d{4})(?=\d)/g, "$1 ")}
+          onChange={(e) => setRaw(e.target.value)}
+          maxLength={19}
+          className={cn(field, "font-mono tracking-wider")}
+        />
+        <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "h-11 shrink-0" })}>
+          {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+          {busy ? "Checking…" : "Claim"}
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-2 text-small text-red-400">
+          {error}
+        </p>
+      )}
+    </form>
   );
 }
 

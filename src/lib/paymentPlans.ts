@@ -27,6 +27,7 @@ import {
 import { createNotification } from "@/lib/notifications";
 import { grantCredits } from "@/lib/creditLedger";
 import { adminPauseBlockedReason, INDEFINITE_PAUSE_MS, isPausedNow, PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
+import { pauseMovesSentence } from "@/lib/planSetupRules";
 import { logAudit } from "@/lib/audit";
 import { billDateBlockedReason, movedDueDate } from "@/lib/billDateRules";
 import { etDayKey } from "@/lib/fingerPractice";
@@ -66,7 +67,7 @@ async function assertNotHoardingTimes(userId: string) {
  * live plan, and no one outside these students already has a booking on its coming weeks. Throws PaymentPlanError otherwise.
  * Shared by a solo plan (one student) and a family plan (all members share the one time).
  */
-async function assertSlotReservable(
+export async function assertSlotReservable(
   tx: Prisma.TransactionClient,
   scheduleId: string,
   chunkIndex: number,
@@ -218,7 +219,8 @@ export async function createPaymentPlan(
     // A free plan (100% scholarship): the first bill is $0, so it settles at once and the plan starts without a payment step.
     if (installmentCents === 0) {
       const { settleFreeBill } = await import("@/lib/freeBills");
-      await settleFreeBill(created.installmentPayments[0].id);
+      // Quiet: the "Your plan is set up" notice below is the one thing the student is told.
+      await settleFreeBill(created.installmentPayments[0].id, { quiet: true });
       await prisma.user.update({ where: { id: userId }, data: { notifyEmailReminders: true } });
       await noticePlanUpdated({ userId, title: "Your plan is set up", body: `${describePaymentPlan(cadence, term)} is set up and your scholarship covers it. Your classes are booked.` });
       return prisma.paymentPlan.findUniqueOrThrow({ where: { id: created.id }, include: { installmentPayments: true } });
@@ -628,7 +630,10 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
   await noticePlanUpdated({
     userId,
     title: "Your plan term changed",
-    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(newInstallmentCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
+    body:
+      newInstallmentCents === 0
+        ? `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your scholarship covers it, so there is nothing to pay.`
+        : `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(newInstallmentCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
   });
 }
 
@@ -906,15 +911,17 @@ export async function pausePaymentPlan(userId: string, weeks: number): Promise<{
     userId,
     type: "PAYMENT_PLAN_CANCELED",
     title: "Plan paused",
-    body: `Your plan is paused for ${weeks} week${weeks === 1 ? "" : "s"}. Your weekly time is still yours and classes start again on ${resumesOn.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}. Your next payment moved back by the same time.`,
+    body: `Your plan is paused for ${weeks} week${weeks === 1 ? "" : "s"}. Your weekly time is still yours and classes start again on ${resumesOn.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}. ${plan.installmentAmountCents === 0 ? "Your plan dates and credits" : "Your next payment"} moved back by the same time.`,
     emailCategory: "payments",
   }).catch((err) => console.error("Pause notice failed (non-blocking):", err));
+  // Names the student and opens their page, so the alert is about someone, not a trip to the whole plans list.
+  const pauser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }).catch(() => null);
   await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
     type: "ADMIN_ALERT",
-    title: "A student paused their plan",
+    title: `${pauser?.name ?? pauser?.email ?? "A student"} paused their plan`,
     body: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}. Their slot is held and the next payment moved back.`,
     emailCategory: "social",
-    cta: { label: "See the plans", path: "/admin/payment-plans" },
+    cta: { label: "Open their account", path: `/admin/users/${userId}` },
   }).catch((err) => console.error("Pause admin alert failed (non-blocking):", err));
   return { resumesOn };
 }
@@ -964,7 +971,7 @@ export async function adminPausePlan(planId: string, adminId: string, until: Dat
     userId: plan.userId,
     type: "PAYMENT_PLAN_UPDATED",
     title: "Your plan is paused",
-    body: `Your plan is paused ${when}. Your weekly time is still yours, classes stop for now, and your next payment and credits move back by the same time.`,
+    body: `Your plan is paused ${when}. Your weekly time is still yours, classes stop for now, and ${pauseMovesSentence(plan.installmentAmountCents)}.`,
     emailCategory: "payments",
   }).catch((err) => console.error("Studio pause notice failed (non-blocking):", err));
   return { resumesOn: until };
@@ -999,7 +1006,10 @@ export async function adminResumePlan(planId: string, adminId: string): Promise<
     userId: plan.userId,
     type: "PAYMENT_PLAN_UPDATED",
     title: "Your plan is back on",
-    body: "Your plan is running again. Your weekly classes are back on the calendar and your next payment is due on the new date.",
+    body:
+      plan.installmentAmountCents === 0
+        ? "Your plan is running again. Your weekly classes are back on the calendar and your scholarship still covers it."
+        : "Your plan is running again. Your weekly classes are back on the calendar and your next payment is due on the new date.",
     emailCategory: "payments",
   }).catch((err) => console.error("Studio resume notice failed (non-blocking):", err));
 }
@@ -1032,7 +1042,10 @@ export async function changePlanBillDate(planId: string, adminId: string, newDay
     userId: plan.userId,
     type: "PAYMENT_PLAN_UPDATED",
     title: "Your next payment date changed",
-    body: `Your next payment is now due on ${label(to)}. Your classes and credits are unchanged.`,
+    body:
+      plan.installmentAmountCents === 0
+        ? `Your next 28 days now start on ${label(to)}, covered by your scholarship. Your classes and credits are unchanged.`
+        : `Your next payment is now due on ${label(to)}. Your classes and credits are unchanged.`,
     emailCategory: "payments",
   }).catch((err) => console.error("Bill date notice failed (non-blocking):", err));
   return { from: plan.nextDueDate, to };
@@ -1512,31 +1525,33 @@ export async function recordPlanPaymentReceived(planId: string, adminId: string)
 /**
  * Sends the bill for a plan's open installment again, e.g. when a student says
  * they never got it. Needs a bill to already be open (they open a few days
- * before the due date).
+ * before the due date). On a group or parent plan it goes to the person who
+ * pays (planBillTarget), for the group's combined bill when the member's bill
+ * is held in one, never to a member who cannot pay it.
  */
 export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted-out"> {
   const { sendPaymentPlanInvoiceEmail, getAppUrl } = await import("@/lib/email");
-  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, include: { user: { select: { email: true, notifyEmailPayments: true } } } });
+  const { planBillTarget } = await import("@/lib/planBillPayer");
+  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
   if (plan.status !== "ACTIVE") throw new Error("Only an active plan has a bill to send.");
-  const payment = await prisma.zellePayment.findFirst({
-    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!payment) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
-  if (!plan.user.notifyEmailPayments) return "opted-out";
+  const target = await planBillTarget(planId);
+  const bill = target.bill;
+  if (!bill) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
+  if (!target.payer.notifyEmailPayments) return "opted-out";
 
   const now = Date.now();
   const overdueDays = plan.nextDueDate.getTime() < now ? Math.max(1, Math.floor((now - plan.nextDueDate.getTime()) / 86_400_000)) : undefined;
-  await sendPaymentPlanInvoiceEmail(plan.user.email, {
-    planLabel: describePaymentPlan(plan.cadence, plan.term),
-    installmentLabel: `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
-    amountCents: payment.amountCents,
+  const planName = describePaymentPlan(plan.cadence, plan.term);
+  await sendPaymentPlanInvoiceEmail(target.payer.email, {
+    planLabel: bill.combined ? `Combined bill for ${bill.people} people` : target.paysForSomeoneElse ? `${planName} for ${target.member.name}` : planName,
+    installmentLabel: bill.combined ? "One payment covers everyone" : `Installment ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
+    amountCents: bill.amountCents,
     dueDate: plan.nextDueDate,
     cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),
-    zelleHandle: payment.zelleHandle,
-    cta: { label: "Pay bill", url: getAppUrl("/billing/plans") },
+    zelleHandle: bill.zelleHandle,
+    cta: { label: "Pay bill", url: getAppUrl(target.payPath) },
     overdueDays,
-    unsubscribe: { userId: plan.userId, category: "payments" },
+    unsubscribe: { userId: target.payer.id, category: "payments" },
   });
   return "sent";
 }

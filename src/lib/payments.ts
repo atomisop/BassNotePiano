@@ -22,6 +22,7 @@ import { addBillingCycles } from "@/lib/billingCycle";
 import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { sendPaymentReceipt } from "@/lib/paymentReceipt";
+import { groupBillPath, payAgainPath, receiptPath } from "@/lib/inPlaceLinks";
 import { reportError } from "@/lib/reportError";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -531,7 +532,7 @@ export async function notifyAutoApproved(paymentId: string) {
     title: "Payment approved automatically",
     body: `${payment.user.name ?? payment.user.email} paid ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
     emailCategory: "payments",
-    cta: { label: "Check the payment", path: "/admin/payments?status=VERIFIED" },
+    cta: { label: "Check the payment", path: `/admin/payments?id=${paymentId}` },
   });
 }
 
@@ -599,14 +600,52 @@ export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeo
  */
 export const ADMIN_PAYMENTS_PAGE_SIZE = 25;
 
+/** Narrows the payments list: to one person (their own payments and the group bills that hold theirs), or to a search typed on the page. */
+export interface AdminPaymentsFilter {
+  userId?: string;
+  query?: string;
+}
+
+/** The payments that are about one person: theirs, a group's combined bill that holds one of theirs, and a group start that covers them. */
+function personPaymentsWhere(userId: string): Prisma.ZellePaymentWhereInput {
+  return { OR: [{ userId }, { bundled: { some: { userId } } }, { familyGroup: { plans: { some: { userId } } } }] };
+}
+
+/** A search over every page, not just the one loaded: name, email, the sender's name, a note, or the BNP code. */
+function paymentSearchWhere(query: string): Prisma.ZellePaymentWhereInput | null {
+  const q = query.trim().slice(0, 80);
+  if (!q) return null;
+  const code = /^bnp-?([a-z0-9]{5})$/i.exec(q.replace(/\s+/g, ""));
+  const or: Prisma.ZellePaymentWhereInput[] = [
+    { user: { name: { contains: q, mode: "insensitive" } } },
+    { user: { email: { contains: q, mode: "insensitive" } } },
+    { senderName: { contains: q, mode: "insensitive" } },
+    { note: { contains: q, mode: "insensitive" } },
+    { referenceCode: { contains: q, mode: "insensitive" } },
+  ];
+  // The BNP code is the last five characters of the payment's id (ids are lower case).
+  if (code) or.push({ id: { endsWith: code[1].toLowerCase() } });
+  return { OR: or };
+}
+
+function adminPaymentsWhere(status: ZellePaymentStatus | "UNCHECKED" | undefined, filter: AdminPaymentsFilter): Prisma.ZellePaymentWhereInput {
+  // A member's bill held inside a group's combined bill is listed once, as the combined bill.
+  const base: Prisma.ZellePaymentWhereInput = status === "UNCHECKED" ? { autoApproved: true, checkedAt: null, bundleId: null } : status ? { status, bundleId: null } : { bundleId: null };
+  const and: Prisma.ZellePaymentWhereInput[] = [base];
+  if (filter.userId) and.push(personPaymentsWhere(filter.userId));
+  const search = filter.query ? paymentSearchWhere(filter.query) : null;
+  if (search) and.push(search);
+  return and.length === 1 ? base : { AND: and };
+}
+
 /** One page of the payments list (newest first) with the total, so a long list is not one endless page. */
 export async function getAdminPayments(
   status?: ZellePaymentStatus | "UNCHECKED",
   page = 1,
+  filter: AdminPaymentsFilter = {},
 ): Promise<{ payments: PendingZellePayment[]; total: number; page: number; pageCount: number }> {
   await expireStalePendingPayments();
-  // A member's bill held inside a group's combined bill is listed once, as the combined bill.
-  const where = status === "UNCHECKED" ? { autoApproved: true, checkedAt: null, bundleId: null } : status ? { status, bundleId: null } : { bundleId: null };
+  const where = adminPaymentsWhere(status, filter);
   const total = await prisma.zellePayment.count({ where });
   const pageCount = Math.max(1, Math.ceil(total / ADMIN_PAYMENTS_PAGE_SIZE));
   const safePage = Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
@@ -621,13 +660,105 @@ export async function getAdminPayments(
 }
 
 /**
+ * Where one payment sits in the payments list, so a link to it opens the right status tab and page: a member's bill held in a group's
+ * combined bill is shown as the combined bill. Null when it does not exist.
+ */
+export async function locateAdminPayment(
+  paymentId: string,
+  filter: AdminPaymentsFilter = {},
+  /** The tab the page is on; left out, the payment's own status tab. */
+  inView?: ZellePaymentStatus | "UNCHECKED" | "ALL",
+): Promise<{ id: string; status: ZellePaymentStatus; page: number } | null> {
+  const row = await prisma.zellePayment.findUnique({ where: { id: paymentId }, select: { id: true, bundleId: true } });
+  if (!row) return null;
+  const shown = await prisma.zellePayment.findUnique({ where: { id: row.bundleId ?? row.id }, select: { id: true, status: true, createdAt: true } });
+  if (!shown) return null;
+  const tab = inView === undefined ? shown.status : inView === "ALL" ? undefined : inView;
+  const newer = await prisma.zellePayment.count({ where: { AND: [adminPaymentsWhere(tab, filter), { createdAt: { gt: shown.createdAt } }] } });
+  return { id: shown.id, status: shown.status, page: Math.floor(newer / ADMIN_PAYMENTS_PAGE_SIZE) + 1 };
+}
+
+/** Every payment about one person, newest first, with what the admin list shows: their page's Money section acts on these. */
+export async function getPersonPayments(userId: string, take = 60): Promise<PendingZellePayment[]> {
+  await expireStalePendingPayments();
+  return prisma.zellePayment.findMany({ where: adminPaymentsWhere(undefined, { userId }), orderBy: { createdAt: "desc" }, include: pendingPaymentInclude, take });
+}
+
+/** How many classes each person has booked from now on, for the refund panel's "also cancel their classes". */
+export async function countUpcomingClasses(userIds: string[]): Promise<Record<string, number>> {
+  const ids = Array.from(new Set(userIds));
+  if (ids.length === 0) return {};
+  const rows = await prisma.classBooking.groupBy({ by: ["studentId"], where: { studentId: { in: ids }, status: "SCHEDULED", scheduledAt: { gt: new Date() } }, _count: { _all: true } });
+  return Object.fromEntries(rows.map((r) => [r.studentId, r._count._all]));
+}
+
+/** A short line about one payment, for a dialog that shows the payment it is waiting on. */
+export interface PaymentSummary {
+  id: string;
+  status: ZellePaymentStatus;
+  amountCents: number;
+  who: string;
+  what: string;
+}
+
+export async function getPaymentSummary(paymentId: string): Promise<PaymentSummary | null> {
+  const p = await prisma.zellePayment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, status: true, amountCents: true, purpose: true, installmentNumber: true, user: { select: { name: true, email: true } }, paymentPlan: { select: { cadence: true, term: true, termMonths: true } } },
+  });
+  if (!p) return null;
+  const what =
+    p.purpose === "FAMILY_PLAN_START"
+      ? "Combined first payment for the group"
+      : p.purpose === "FAMILY_PLAN_INSTALLMENT"
+        ? "Combined 28-day group bill"
+        : p.purpose === "PAYMENT_PLAN_INSTALLMENT" && p.paymentPlan
+          ? `${describePaymentPlan(p.paymentPlan.cadence, p.paymentPlan.term)}, bill ${p.installmentNumber ?? "?"} of ${p.paymentPlan.termMonths}`
+          : p.purpose === "CLASS_CREDITS"
+            ? "Extra classes"
+            : p.purpose.replace(/_/g, " ").toLowerCase();
+  return { id: p.id, status: p.status, amountCents: p.amountCents, who: p.user.name ?? p.user.email, what };
+}
+
+/** The kinds of bill "Mark paid" can record: plan bills and extra classes (the approval does the rest, as for a sent-in payment). */
+const MARKABLE_PURPOSES: PaymentPurpose[] = ["PAYMENT_PLAN_INSTALLMENT", "FAMILY_PLAN_START", "FAMILY_PLAN_INSTALLMENT", "CLASS_CREDITS"];
+
+/**
+ * Owner: money for an unpaid bill arrived another way (cash, a bank email that never came). Records it as sent now and approves it,
+ * exactly as if the student had sent it in and it was approved: the plan moves on, credits and classes arrive, a receipt goes out.
+ * Only a bill still waiting for the transfer; one already sent in is approved as usual. A member's bill inside a group's combined
+ * bill is paid through the combined bill.
+ */
+export async function markBillPaid(paymentId: string, admin: { id: string; email: string | null }): Promise<void> {
+  const payment = await prisma.zellePayment.findUnique({ where: { id: paymentId }, select: { id: true, status: true, purpose: true, bundleId: true, amountCents: true, user: { select: { email: true } } } });
+  if (!payment) throw new Error("That bill no longer exists.");
+  if (payment.bundleId) throw new Error("This bill is part of a combined group bill. Mark the combined bill paid instead.");
+  if (payment.status === "PENDING_REVIEW") throw new Error("This payment was already sent in. Approve it instead.");
+  if (payment.status !== "AWAITING_TRANSFER") throw new Error("Only an unpaid bill can be marked paid.");
+  if (!MARKABLE_PURPOSES.includes(payment.purpose)) throw new Error("This kind of payment cannot be marked paid.");
+  const now = new Date();
+  const flipped = await prisma.zellePayment.updateMany({ where: { id: paymentId, status: "AWAITING_TRANSFER", bundleId: null }, data: { status: "PENDING_REVIEW", submittedAt: now } });
+  if (flipped.count !== 1) throw new Error("This bill just changed. Refresh and try again.");
+  try {
+    await approveZellePayment(paymentId, admin.id);
+  } catch (err) {
+    // Not approved: put the bill back as it was, so it can be paid or marked again.
+    await prisma.zellePayment.updateMany({ where: { id: paymentId, status: "PENDING_REVIEW", submittedAt: now }, data: { status: "AWAITING_TRANSFER", submittedAt: null } });
+    throw err;
+  }
+  // The owner says the money is here, so there is nothing left to check.
+  await prisma.zellePayment.updateMany({ where: { id: paymentId, status: "VERIFIED" }, data: { checkedAt: new Date() } });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "payment.mark-paid", targetType: "ZellePayment", targetId: paymentId, detail: `${formatUsdCents(payment.amountCents)} bill for ${payment.user.email} marked paid (money arrived another way)` });
+}
+
+/**
  * Approves a pending payment and applies its real-world effect, granting
  * curriculum access, adding lesson credits, or (for a legacy grandfathered
  * row) unlocking the one scale it was for. Both the status flip and the
  * entitlement grant happen here so the two can never drift apart (a
  * VERIFIED payment that never actually unlocked anything).
  */
-export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean; requireNoUncheckedAuto?: boolean }) {
+export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean; skipReceipt?: boolean; requireNoUncheckedAuto?: boolean; skipStudentNotice?: boolean }) {
   // STEP 19: the status flip and the entitlement grant used to be two (or
   // three, counting the legacy-scale read) separate, un-transacted writes.
   // The docstring above already says the point is that they "can never
@@ -834,7 +965,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
           title: "New subscriber",
           body: `${student?.name ?? student?.email ?? "A student"} is on the ${plan ? describePaymentPlan(plan.cadence, plan.term) : "plan"}${slot ? `, ${slot}` : ""}.`,
           emailCategory: "social",
-          cta: { label: "See the subscriber", path: "/admin/payment-plans" },
+          cta: { label: "See the subscriber", path: `/admin/users/${payment.userId}` },
         });
       } catch (err) {
         console.error("New subscriber notification failed (non-blocking):", err);
@@ -903,9 +1034,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
     const ordinal = payment.installmentNumber ?? plan?.installmentsPaid ?? 1;
     const creditsNote = `${creditsLabelFromStored(payment.lessonQuantity)} ${payment.lessonQuantity === CREDITS_PER_CLASS ? "is" : "are"} on your account`;
-    notificationBody = plan
-      ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
-      : `Your payment plan installment was verified. ${creditsNote}.`;
+    notificationBody =
+      payment.amountCents === 0
+        ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified.
+          `Your scholarship covers ${plan ? `payment ${ordinal} of ${plan.termMonths}` : "this bill"}. ${creditsNote}. Nothing to pay.`
+        : plan
+          ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
+          : `Your payment plan installment was verified. ${creditsNote}.`;
     // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
     fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
     if (fifthClass) notificationBody += ` ${fifthClass.text}`;
@@ -916,13 +1051,17 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 
   // The bell notice only: the email that goes with an approval is the receipt below (the old plain "Payment approved" email,
   // which had no amount, date or receipt number, would have been a second email about the same payment).
-  await createNotification({
-    userId: payment.userId,
-    type: "PAYMENT_APPROVED",
-    title: "Payment approved",
-    body: notificationBody,
-    ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
-  });
+  // Skipped only when the caller tells the student itself in one notice (the owner's "Set up plan", planSetup.ts).
+  if (!opts?.skipStudentNotice) {
+    await createNotification({
+      userId: payment.userId,
+      type: "PAYMENT_APPROVED",
+      title: payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.amountCents === 0 ? "Covered by your scholarship" : "Payment approved",
+      body: notificationBody,
+      // The button opens this payment's own receipt, not the whole history list.
+      cta: fifthClass?.offerPath ? { label: "Add the fifth class", path: fifthClass.offerPath } : { label: "View your receipt", path: receiptPath(payment.id) },
+    });
+  }
   if (!opts?.skipReceipt) await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
 
   // A completed plan is a distinct milestone worth its own bell entry, on
@@ -1002,7 +1141,10 @@ export async function applyPlanInstallment(
   const plan = await tx.paymentPlan.findUnique({ where: { id: args.paymentPlanId } });
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
-  const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+  let cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+  // A plan the studio set up to start on a later day (planSetup.ts): its first cycle begins on that first class, so all four of the
+  // cycle's classes fall inside it and the credits last until 28 days after it.
+  if (plan && plan.installmentsPaid === 0 && plan.startsAt && cycleStart && plan.startsAt > cycleStart) cycleStart = plan.startsAt;
   const cycleEnd = plan && cycleStart ? addBillingCycles(cycleStart, 1) : null;
 
   // Quantity is snapshotted onto the payment row at installment-creation
@@ -1066,7 +1208,7 @@ function formatUsdCents(cents: number): string {
 export async function refundZellePayment(
   paymentId: string,
   admin: { id: string; email: string | null },
-  opts: { note: string; removeCredits: boolean; cancelPlan: boolean },
+  opts: { note: string; removeCredits: boolean; cancelPlan: boolean; cancelClasses?: boolean },
 ): Promise<{ warnings: string[] }> {
   const warnings: string[] = [];
   const note = opts.note.trim();
@@ -1095,6 +1237,20 @@ export async function refundZellePayment(
     data: { status: "REFUNDED", refundedAt: new Date(), refundNote: note },
   });
   if (flipped.count === 0) throw new Error("Only a verified payment can be refunded.");
+
+  // Cancel the classes first: a booked class holds its credits, so canceling it lets the take-back below reach the whole amount.
+  let canceledClasses = 0;
+  if (opts.cancelClasses) {
+    const students =
+      payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId
+        ? (await prisma.paymentPlan.findMany({ where: { familyGroupId: payment.familyGroupId }, select: { userId: true } })).map((p) => p.userId)
+        : [payment.userId];
+    const { cancelUpcomingClasses } = await import("@/lib/adminClassTools");
+    for (const studentId of Array.from(new Set(students))) {
+      // None booked is not a problem here.
+      canceledClasses += await cancelUpcomingClasses(admin.id, studentId, `Refund: ${note}`).catch(() => 0);
+    }
+  }
 
   if (opts.removeCredits && payment.lessonQuantity) {
     // Credits promised to classes the student has already booked are not
@@ -1165,7 +1321,7 @@ export async function refundZellePayment(
     action: "payment.refund",
     targetType: "ZellePayment",
     targetId: paymentId,
-    detail: `${formatUsdCents(payment.amountCents)} to ${payment.user.email}${opts.removeCredits ? ", credits removed" : ""}${opts.cancelPlan ? ", plan canceled" : ""}. ${note}${warnings.length ? ` (${warnings.join(" ")})` : ""}`,
+    detail: `${formatUsdCents(payment.amountCents)} to ${payment.user.email}${opts.removeCredits ? ", credits removed" : ""}${opts.cancelPlan ? ", plan canceled" : ""}${canceledClasses ? `, ${canceledClasses} upcoming class${canceledClasses === 1 ? "" : "es"} canceled` : ""}. ${note}${warnings.length ? ` (${warnings.join(" ")})` : ""}`,
   });
   return { warnings };
 }
@@ -1246,13 +1402,34 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: reviewerId, rejectionReason: reason },
   });
 
+  // A group or parent plan's bill is sent in by whoever pays it (a member, a child, cannot), so the payer is the one told, and sent to
+  // where they pay it: the Parent page or Billing > Plans. Everyone else's bill goes back to them, with its pay sheet open.
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
+    const { planBillTarget } = await import("@/lib/planBillPayer");
+    const target = await planBillTarget(payment.paymentPlanId).catch(() => null);
+    if (target?.paysForSomeoneElse) {
+      await createNotification({
+        userId: target.payer.id,
+        type: "PAYMENT_REJECTED",
+        title: "Payment rejected",
+        body: `The payment for ${target.member.name}'s plan couldn't be verified: ${reason}. Tap Resubmit to send it again.`,
+        emailCategory: "payments",
+        alwaysEmail: true,
+        cta: { label: "Resubmit", path: groupBillPath(target.groupKind) },
+      });
+      return;
+    }
+  }
+
   await createNotification({
     userId: payment.userId,
     type: "PAYMENT_REJECTED",
     title: "Payment rejected",
-    body: `Your payment couldn't be verified: ${reason}. You can resubmit it from your billing page.`,
+    body: `Your payment couldn't be verified: ${reason}. Tap Resubmit to send it again.`,
     emailCategory: "payments",
     alwaysEmail: true,
+    // Opens Payment history with this payment's pay sheet already open.
+    cta: { label: "Resubmit", path: payAgainPath(paymentId) },
   });
 }
 

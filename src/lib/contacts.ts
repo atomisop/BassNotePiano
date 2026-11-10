@@ -1,8 +1,10 @@
-import type { ContactStatus, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import type { ContactStatus, PrimaryInstrument, Prisma, SkillLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { chunksForSchedule } from "@/lib/classSchedule";
-import { parseDay } from "@/lib/slotHolds";
+import { parseDay, sameInboxEmail } from "@/lib/slotHolds";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
+import { ClassScheduleError, ensureWeeklyWindow } from "@/lib/classScheduleManage";
+import { parseWeeklyTime, type TypedWeeklyTime } from "@/lib/weeklyTimeRules";
 
 /** People the teacher keeps track of who do not have an account, plus soft holds on weekly times and a log of days they took a class. */
 
@@ -113,21 +115,56 @@ export async function getContact(contactId: string) {
   });
 }
 
-export async function addHold(contactId: string, scheduleId: string, chunkIndex: number, untilRaw: string | null, note: string | null) {
-  const [contact, schedule] = await Promise.all([
-    prisma.contact.findUnique({ where: { id: contactId }, select: { id: true } }),
-    prisma.classSchedule.findUnique({ where: { id: scheduleId }, select: { id: true, durationMin: true, active: true } }),
-  ]);
-  if (!contact) throw new ContactError("That person was not found.");
-  if (!schedule || !schedule.active) throw new ContactError("That weekly time is not available.");
-  if (!Number.isInteger(chunkIndex) || !chunksForSchedule(schedule)[chunkIndex]) throw new ContactError("Pick one of the hours in that window.");
+/**
+ * Keeps a weekly time for a contact. `newTime` is "Another time…": a day and start time with no window yet, made as a 45 minute window in
+ * the same step as the hold (or the existing class at that time, when there is one). A hold is a reminder; it never blocks a booking.
+ */
+export async function addHold(contactId: string, scheduleId: string, chunkIndex: number, untilRaw: string | null, note: string | null, newTime?: TypedWeeklyTime | null) {
   let until: Date | null = null;
   if (untilRaw && untilRaw.trim()) {
     until = parseDay(untilRaw.trim());
     if (!until) throw new ContactError("Enter the last date as a real date.");
     if (until.getTime() < todayUtc().getTime()) throw new ContactError("The last date is already past.");
   }
-  return prisma.slotHold.create({ data: { contactId, scheduleId, chunkIndex, until, note: clean(note, 300, "The note") } });
+  const contact = await prisma.contact.findUnique({ where: { id: contactId }, select: { id: true } });
+  if (!contact) throw new ContactError("That person was not found.");
+  const noteText = clean(note, 300, "The note");
+
+  if (newTime) {
+    const time = parseWeeklyTime(newTime);
+    if ("error" in time) throw new ContactError(time.error);
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const made = await ensureWeeklyWindow(tx, time);
+        const hold = await tx.slotHold.create({ data: { contactId, scheduleId: made.scheduleId, chunkIndex: made.chunkIndex, until, note: noteText } });
+        return { ...hold, createdWindowId: made.created ? made.scheduleId : null };
+      });
+    } catch (err) {
+      if (err instanceof ClassScheduleError) throw new ContactError(err.message);
+      throw err;
+    }
+  }
+
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: scheduleId }, select: { id: true, durationMin: true, active: true } });
+  if (!schedule || !schedule.active) throw new ContactError("That weekly time is not available.");
+  if (!Number.isInteger(chunkIndex) || !chunksForSchedule(schedule)[chunkIndex]) throw new ContactError("Pick one of the hours in that window.");
+  return { ...(await prisma.slotHold.create({ data: { contactId, scheduleId, chunkIndex, until, note: noteText } })), createdWindowId: null as string | null };
+}
+
+/** Releases the holds kept on this weekly time for contacts with this email (the person now has a plan on it). Inside the caller's transaction. */
+export async function releaseHoldsFor(db: Prisma.TransactionClient | typeof prisma, email: string, scheduleId: string, chunkIndex: number): Promise<number> {
+  const res = await db.slotHold.updateMany({
+    where: { releasedAt: null, scheduleId, chunkIndex, contact: { email: { equals: email.trim(), mode: "insensitive" } } },
+    data: { releasedAt: new Date() },
+  });
+  return res.count;
+}
+
+/** The account a contact has made since (same email), so the contact page can link to it and set up their plan. */
+export async function findContactAccount(email: string | null): Promise<{ id: string; name: string } | null> {
+  if (!email) return null;
+  const user = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" }, role: "STUDENT" }, select: { id: true, name: true, email: true } });
+  return user ? { id: user.id, name: user.name ?? user.email } : null;
 }
 
 export async function releaseHold(holdId: string): Promise<void> {
@@ -306,6 +343,13 @@ export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"
   if (kind === "ALL" || kind === "ADDED") {
     const added = await listContacts(q);
     for (const c of added) {
+      // A person added by hand who has since made an account is listed once, as that account, carrying what was kept for them.
+      const account = kind === "ALL" && c.email ? rows.find((r) => r.kind === "ACCOUNT" && sameInboxEmail(r.email, c.email)) : undefined;
+      if (account) {
+        account.detail ??= c.instrument;
+        if (!account.reserved && c.activeHolds > 0) account.reserved = `${c.activeHolds} kept for them`;
+        continue;
+      }
       rows.push({
         key: `added:${c.id}`,
         kind: "ADDED",

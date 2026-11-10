@@ -317,7 +317,7 @@ export function PracticeClient({
   const doneAndIdle = status.completedToday && !running;
   const continueLink = (primary: boolean) => (
     <a
-      href={nextHref ?? "/dashboard"}
+      href={nextHref ?? "/roadmap"}
       className={buttonVariants({ variant: primary ? "primary" : "secondary", size: "lg", className: "min-h-12 w-full sm:w-auto sm:px-8" })}
     >
       {nextHref ? "Continue to your lesson" : "Go to scales"}

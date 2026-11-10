@@ -23,7 +23,9 @@ import { ScheduleClient } from "./ScheduleClient";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
-import { discordChannelUrl } from "@/lib/discord";
+import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
+import { parseSlotKey, slotKey, startPlanWithTimePath } from "@/lib/inPlaceLinks";
+import { OpenClassCallOnArrival } from "@/components/lessons/JoinClassButton";
 import { getDisplayPricingConfig } from "@/lib/pricing";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
@@ -38,7 +40,7 @@ import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
  */
 export const metadata = { title: "Online lessons" };
 
-export default async function LessonsPage(props: { searchParams: Promise<{ tab?: string; discord?: string }> }) {
+export default async function LessonsPage(props: { searchParams: Promise<{ tab?: string; discord?: string; changeTime?: string; join?: string }> }) {
   const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
@@ -47,6 +49,20 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
   // this covers anyone who somehow already holds credits without it too.
 
   const activePlan = await getActivePaymentPlan(session.user.id);
+  // ?changeTime= (from a "your weekly time is open" or "time not offered" notice) opens the weekly-time picker. Someone with no
+  // plan has no weekly time to change, so they go to the plan form with that time already picked.
+  const wantsTimeChange = searchParams.changeTime !== undefined;
+  if (wantsTimeChange && !activePlan) redirect(startPlanWithTimePath(searchParams.changeTime));
+
+  // Who can move this plan's weekly time: the student (a solo or parent-paid plan), or only the teacher (a group plan, so everyone
+  // stays together; the server refuses it). A group member with no weekly time of their own books each class with credits, so
+  // Lessons opens on the booking calendar for them, called "Book a class".
+  const groupKind = activePlan?.familyGroupId
+    ? ((await prisma.familyPlanGroup.findUnique({ where: { id: activePlan.familyGroupId }, select: { kind: true } }))?.kind ?? "FAMILY")
+    : null;
+  const timeChange: "self" | "team" = groupKind === "FAMILY" ? "team" : "self";
+  const booksOwnClasses = Boolean(activePlan && !activePlan.reservedScheduleId && timeChange === "team");
+
   const [cancelCutoffHours, canCancel, canReschedule] = await Promise.all([
     getNumberSetting("cancel.cutoffHours"),
     getBoolSetting("cancel.studentCanCancel"),
@@ -78,6 +94,8 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
       myRequests={myRequests.map((r) => ({ id: r.id, label: r.label, scheduledAt: r.scheduledAt.toISOString(), status: r.status, ahead: r.ahead }))}
       requestHints={requestHints}
       extraMode={Boolean(activePlan)}
+      heading={booksOwnClasses ? "Book a class" : undefined}
+      startPlanWithTime={!activePlan}
       weeklyLimited={weeklyLimited}
       initialCredits={credits}
       zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
@@ -118,7 +136,29 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
   );
 
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true, discordUsername: true } });
-  const card = <DiscordConnectCard link={discordLinkState({ discordId: me?.discordId ?? null, discordUsername: me?.discordUsername ?? null })} flag={searchParams.discord} />;
+  // Back from "Connect Discord and join" (?join=<class id> or "next"): open that class call, if it is on now (half an hour
+  // before it starts to an hour after) and Discord really is connected.
+  const join = typeof searchParams.join === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(searchParams.join) ? searchParams.join : null;
+  const joinClass =
+    join && me?.discordId
+      ? await prisma.classBooking.findFirst({
+          where: {
+            studentId: session.user.id,
+            status: "SCHEDULED",
+            inPerson: false,
+            scheduledAt: { gt: new Date(Date.now() - 60 * 60_000), lt: new Date(Date.now() + 30 * 60_000) },
+            ...(join === "next" ? {} : { id: join }),
+          },
+          orderBy: { scheduledAt: "asc" },
+          select: { discordChannelId: true },
+        })
+      : null;
+  const card = (
+    <>
+      <DiscordConnectCard link={discordLinkState({ discordId: me?.discordId ?? null, discordUsername: me?.discordUsername ?? null })} flag={searchParams.discord} />
+      {searchParams.join && <OpenClassCallOnArrival url={joinClass ? (joinClass.discordChannelId ? discordChannelUrl(joinClass.discordChannelId) : DISCORD_INVITE_URL) : null} />}
+    </>
+  );
 
   // One title at the top of Lessons, pinned like every page's heading, above the Discord card and the plan (it used to sit halfway down).
   // Not wrapped in a layout box: a pinned heading only stays pinned while its parent is the whole page.
@@ -145,6 +185,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
       : null,
   ]);
 
+  const pickedTime = parseSlotKey(searchParams.changeTime);
   const now = Date.now();
   const upcomingBookings = bookings
     .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
@@ -157,9 +198,14 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
       <MyPlanSummary userId={session.user.id} variant="row" />
     <ParentLockedArea locked={parentControlled}>
     <LessonsHub
-      initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
+      initialTab={searchParams.tab === "extra" || (booksOwnClasses && !wantsTimeChange && searchParams.tab !== "weekly") ? "extra" : "weekly"}
+      weeklyLabel={booksOwnClasses ? "My classes" : "My weekly class"}
+      extraLabel={booksOwnClasses ? "Book a class" : "Extra sessions"}
       weekly={
         <ScheduleClient
+          timeChange={timeChange}
+          openTimePicker={wantsTimeChange && timeChange === "self"}
+          initialTimeKey={pickedTime ? slotKey(pickedTime.scheduleId, pickedTime.chunkIndex) : null}
           cancellationCutoffHours={cancelCutoffHours}
           canCancel={canCancel}
           canReschedule={canReschedule}

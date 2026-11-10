@@ -3,11 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, Trash2 } from "@/components/ui/appIcons";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
-import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction } from "@/app/(dashboard)/admin/schedule/actions";
-import type { ReservableHour, ReservationGroup } from "@/lib/ownerReservationsAdmin";
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction, bookReservationAction } from "@/app/(dashboard)/admin/schedule/actions";
+import type { ReservableHour, ReservationGroup, ReservedHour } from "@/lib/ownerReservationsAdmin";
+import { addCreditLabel, offDayQuestion } from "@/lib/adminBookingRules";
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { Hint } from "@/components/ui/Hint";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Meta } from "@/components/ui/CardKit";
@@ -15,19 +20,45 @@ import { Meta } from "@/components/ui/CardKit";
 const field =
   "h-11 w-full min-w-0 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
-/** Keep a day, or some hours of it, for a customer so nobody can book it; and the list of what is being kept. */
-export function AdminReservations({ hours, reservations }: { hours: ReservableHour[]; reservations: ReservationGroup[] }) {
+/**
+ * Keep a day, or some hours of it, for a customer so nobody can book it; and the list of what is being kept. A day the studio does not
+ * usually teach can still be kept (after a yes) at a typed start time. A kept time whose customer has a verified account can be booked
+ * for them right here ("Book it"). `initial` fills in the customer (from /admin/schedule?view=RESERVED&name=&email=&phone=).
+ */
+export function AdminReservations({
+  hours,
+  reservations,
+  initial,
+}: {
+  hours: ReservableHour[];
+  reservations: ReservationGroup[];
+  initial?: { name?: string; email?: string; phone?: string };
+}) {
   const router = useRouter();
   const [date, setDate] = useState("");
   const [whole, setWhole] = useState(true);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [releasing, setReleasing] = useState<string | null>(null);
   const [sure, setSure] = useState<string | null>(null);
+  // A day with no weekly times: the owner said yes to using it, and the start time typed for it.
+  const [offDayOk, setOffDayOk] = useState(false);
+  const [offTime, setOffTime] = useState("");
+  const [booking, setBooking] = useState<ReservationGroup | null>(null);
+  useEffect(() => {
+    setOffDayOk(false);
+    setOffTime("");
+  }, [date]);
+  // A new link (?name=&email=&phone=) while this view is already open fills the customer in again.
+  useEffect(() => {
+    if (initial?.name) setName(initial.name);
+    if (initial?.email) setEmail(initial.email);
+    if (initial?.phone) setPhone(initial.phone);
+  }, [initial?.name, initial?.email, initial?.phone]);
 
   // The page's copy can be old (the browser keeps a visited page for a while), so a slot added a moment ago on the Times tab
   // could be missing. Asking the server again whenever a day is picked, or "Some hours" is chosen, always shows what is offered now.
@@ -50,17 +81,21 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
   }, [date, hours, live]);
   const key = (h: ReservableHour) => `${h.scheduleId}:${h.chunkIndex}`;
 
+  const offDay = Boolean(date && dayHours.length === 0);
+
   async function reserve(e: React.FormEvent) {
     e.preventDefault();
     if (!date) return toast.warning("Pick a day.");
-    if (dayHours.length === 0) return toast.warning("There are no classes that day.");
+    if (offDay && !offDayOk) return toast.warning(offDayQuestion(date));
+    if (offDay && !offTime) return toast.warning("Type a start time.");
     setBusy(true);
     const hold = await toast.held(
       "Reserving for the customer",
       () =>
         reserveForCustomerAction({
           date,
-          hours: whole ? null : dayHours.filter((h) => picked.has(key(h))).map((h) => ({ scheduleId: h.scheduleId, chunkIndex: h.chunkIndex })),
+          hours: offDay || whole ? null : dayHours.filter((h) => picked.has(key(h))).map((h) => ({ scheduleId: h.scheduleId, chunkIndex: h.chunkIndex })),
+          ...(offDay ? { time: offTime } : {}),
           name,
           email,
           phone,
@@ -112,8 +147,26 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
 
         {date && (
           <div>
-            {dayHours.length === 0 ? (
-              <p className="text-small text-slate-500"><Hint>There are no classes that day.</Hint></p>
+            {offDay ? (
+              offDayOk ? (
+                <label className="block text-small text-slate-400">
+                  Start time (Eastern)
+                  <input
+                    type="time"
+                    step={300}
+                    value={offTime}
+                    onChange={(e) => setOffTime(e.target.value)}
+                    className="mt-1.5 block h-11 w-40 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </label>
+              ) : (
+                <div className="rounded-control bg-amber-300/10 p-4 ring-1 ring-inset ring-amber-300/20">
+                  <p className="text-small text-slate-200">{offDayQuestion(date)}</p>
+                  <button type="button" onClick={() => setOffDayOk(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+                    Yes, use it
+                  </button>
+                </div>
+              )
             ) : (
               <>
                 <div className="flex gap-2" role="group" aria-label="What to keep">
@@ -208,23 +261,125 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                     {state.text}
                   </StatusDot>
                 </div>
-                {/* Release frees the time for anyone, so it is quiet red text that asks "Sure?" on the first tap. */}
-                <button
-                  type="button"
-                  onClick={() => void release(r.groupId)}
-                  disabled={releasing === r.groupId}
-                  aria-label={sure === r.groupId ? "Tap again to release" : `Release ${r.dayLabel}`}
-                  className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
-                >
-                  {releasing === r.groupId ? <MorphingSquare size={12} className="mr-1.5" /> : <Trash2 aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
-                  {sure === r.groupId ? "Sure?" : "Release"}
-                </button>
+                {/* Book it is the one thing to do next; Release frees the time for anyone, so it is quiet red text that asks "Sure?" first. */}
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  {r.accountId && !r.booked && r.hours.length > 0 && (
+                    <button type="button" onClick={() => setBooking(r)} aria-haspopup="dialog" className={buttonVariants({ variant: "primary", size: "sm" })}>
+                      <CalendarCheck aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                      Book it
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void release(r.groupId)}
+                    disabled={releasing === r.groupId}
+                    aria-label={sure === r.groupId ? "Tap again to release" : `Release ${r.dayLabel}`}
+                    className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                  >
+                    {releasing === r.groupId ? <MorphingSquare size={12} className="mr-1.5" /> : <Trash2 aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
+                    {sure === r.groupId ? "Sure?" : "Release"}
+                  </button>
+                </div>
               </li>
               );
             })}
           </ul>
         )}
       </section>
+
+      <BookReservedDialog group={booking} onClose={() => setBooking(null)} onBooked={() => router.refresh()} />
     </div>
+  );
+}
+
+/**
+ * "Book it": books the customer's own account into one hour kept for them (the same rules as any studio booking) and releases the
+ * reservation. A whole day or several hours asks which one. No free credit? The owner adds it and books in one tap.
+ */
+function BookReservedDialog({ group, onClose, onBooked }: { group: ReservationGroup | null; onClose: () => void; onBooked: () => void }) {
+  const [notify, setNotify] = useNotifyStudent("reserved-booking");
+  const [hour, setHour] = useState<ReservedHour | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [short, setShort] = useState<{ shortBy: number; canAdd: boolean } | null>(null);
+  const [key, setKey] = useState(() => newIdempotencyKey());
+  const first = (group?.name ?? "").trim().split(/\s+/)[0] || "the customer";
+  useEffect(() => {
+    setHour(group && group.hours.length === 1 ? group.hours[0] : null);
+    setError(null);
+    setShort(null);
+  }, [group]);
+
+  async function book(addCredit = false) {
+    if (!group || !hour) return;
+    setBusy(true);
+    setError(null);
+    const result = await bookReservationAction(group.groupId, hour.scheduleId, hour.chunkIndex, { addCredit, key }, notify).catch(() => ({
+      ok: false as const,
+      error: "Something went wrong. Try again.",
+      shortBy: undefined,
+      canAddCredit: undefined,
+    }));
+    setBusy(false);
+    if (!result.ok) {
+      setShort(result.shortBy ? { shortBy: result.shortBy, canAdd: Boolean(result.canAddCredit) } : null);
+      return setError(result.error);
+    }
+    toast.success(`${first} is booked.${result.creditsAdded > 0 ? ` ${creditsLabelFromStored(result.creditsAdded)} added.` : ""}`);
+    setKey(newIdempotencyKey());
+    onClose();
+    onBooked();
+  }
+
+  return (
+    <Dialog
+      open={group !== null}
+      onOpenChange={(open) => !open && !busy && onClose()}
+      title={`Book ${first} into their time`}
+      description={group ? `${group.dayLabel}. The reservation is released once the class is booked. It uses one class credit.` : undefined}
+      footer={
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
+            Never mind
+          </Button>
+          {short?.canAdd ? (
+            <Button type="button" disabled={busy || !hour} loading={busy} onClick={() => void book(true)}>
+              {addCreditLabel(short.shortBy)}
+            </Button>
+          ) : (
+            <Button type="button" disabled={busy || !hour} loading={busy} onClick={() => void book()}>
+              {hour ? `Book ${hour.time}` : "Pick a time"}
+            </Button>
+          )}
+        </div>
+      }
+    >
+      <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${first}`} className="mb-3" />
+      {group && group.hours.length > 1 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Which hour">
+          {group.hours.map((h) => {
+            const on = hour?.scheduleId === h.scheduleId && hour.chunkIndex === h.chunkIndex;
+            return (
+              <button
+                key={`${h.scheduleId}:${h.chunkIndex}`}
+                type="button"
+                data-no-lens=""
+                aria-pressed={on}
+                onClick={() => {
+                  setHour(h);
+                  setShort(null);
+                  setError(null);
+                }}
+                className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-slate-50/6 text-slate-300 hover:text-slate-50"}`}
+              >
+                {h.time}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {group && group.hours.length === 1 && <p className="text-small text-slate-300">{group.hours[0].time}</p>}
+      {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
+    </Dialog>
   );
 }

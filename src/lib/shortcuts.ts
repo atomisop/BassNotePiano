@@ -20,6 +20,8 @@ export const GO_SHORTCUTS: GoShortcut[] = [
   { key: "a", href: "/admin", label: "Admin overview", adminOnly: true },
   { key: "y", href: "/admin/payments", label: "Payments", adminOnly: true },
   { key: "c", href: "/admin/schedule?view=ATTENDANCE", label: "Class attendance", adminOnly: true },
+  { key: "t", href: "/admin/today", label: "Today's classes", adminOnly: true },
+  { key: "i", href: "/admin/support", label: "Inbox", adminOnly: true },
 ];
 
 export interface ActionShortcut {

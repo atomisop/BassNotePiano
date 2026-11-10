@@ -13,7 +13,10 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
-import { useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { adminBookAtSlotAction, adminBookClassAtTimeAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { addCreditLabel, etTodayKey, nextBookingAsk, offDayQuestion, typedTimeLabel, type BookingAsk } from "@/lib/adminBookingRules";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 
 export interface SchedulerSlot {
   scheduleId: string;
@@ -24,6 +27,10 @@ export interface SchedulerSlot {
   creditCost: number;
   /** Another student's weekly plan keeps this time (free this week, but moving here needs a yes). */
   heldBy?: string;
+  /** The owner kept this time for this student. */
+  reservedForThem?: boolean;
+  /** A contact's soft hold on this weekly time (their name): booking over it needs a yes. */
+  heldFor?: string;
 }
 
 export interface SchedulerBooking {
@@ -37,6 +44,7 @@ export interface SchedulerBooking {
 }
 
 type Result = { ok: true } | { ok: false; error: string; planHold?: boolean };
+type OpenTimes = { open: SchedulerSlot[]; held?: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] };
 
 export interface StudentSchedulerProps {
   studentId: string;
@@ -44,11 +52,13 @@ export interface StudentSchedulerProps {
   bookings: SchedulerBooking[];
   /** The plan's own controls (pause, move the weekly time), drawn by the page. */
   planControls?: React.ReactNode;
-  loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; held?: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
+  /** The times to pick from, read as this student sees them (their own reserved time is open to them). */
+  loadOpenSlots: (studentId?: string) => Promise<OpenTimes>;
   onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, notify?: boolean, overridePlanHold?: boolean) => Promise<Result>;
   onMoveToTime: (bookingId: string, date: string, time: string, notify?: boolean, overridePlanHold?: boolean) => Promise<Result>;
   onCancel: (bookingId: string, reason?: string, notify?: boolean) => Promise<Result>;
-  onBook: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number, notify?: boolean) => Promise<Result>;
+  /** No longer used: Book runs through adminBookAtSlotAction and adminBookClassAtTimeAction (any time, walk-ins, adding a credit). */
+  onBook?: (studentId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number, credits: number, notify?: boolean) => Promise<Result>;
   onMark: (bookingId: string, attendance: "PRESENT" | "NO_SHOW", notify?: boolean) => Promise<void>;
   onUndo: (bookingId: string, notify?: boolean) => Promise<Result>;
   onSetInPerson: (bookingId: string, inPerson: boolean, notify?: boolean) => Promise<Result>;
@@ -56,33 +66,51 @@ export interface StudentSchedulerProps {
 
 const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 
+/** One question before a booking or a move runs (see nextBookingAsk). */
+function AskCard({ title, warn = false, children }: { title: string; warn?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`rounded-control p-4 ring-1 ring-inset ${warn ? "bg-amber-300/10 ring-amber-300/20" : "bg-slate-50/5 ring-slate-50/10"}`}>
+      <p className="text-body font-semibold text-slate-50">{title}</p>
+      <p className="mt-1 text-small text-slate-300">{children}</p>
+    </div>
+  );
+}
+
 /**
  * One student's whole schedule on one screen: their classes (attendance, reschedule, cancel), a new booking, and the plan's weekly time.
  * Reschedule (the arrows) is on every class not yet marked Present or No-show, past ones too, and can put it on a past day: a class
  * booked on the wrong day is moved to the right one and marked there, with no refund and re-charge. Undo a mark first to move a marked class.
+ * Book a class works the same way: any weekly time (a plan's or a held one after a yes), or any day and typed start time, made on the
+ * spot. A past day records a class already taught and marks it Present. No free credit? The owner adds one and books in one tap.
  */
 export function StudentScheduler(props: StudentSchedulerProps) {
-  const { studentId, studentName, bookings, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
+  const { studentId, studentName, bookings, loadOpenSlots, onMove, onMoveToTime, onCancel, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
+  const first = studentName.split(" ")[0] || studentName;
   // One "Notify student" switch for everything on this card (reschedule, cancel, book, attendance); off by default.
   const [notify, setNotify] = useNotifyStudent("student-changes");
-  const [times, setTimes] = useState<{ open: SchedulerSlot[]; held?: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
+  const [times, setTimes] = useState<OpenTimes | null>(null);
   const [slotsBusy, setSlotsBusy] = useState(false);
   const [moving, setMoving] = useState<SchedulerBooking | null>(null);
   const [picked, setPicked] = useState<SchedulerSlot | null>(null);
   const [day, setDay] = useState<string | null>(null);
   const [ownTime, setOwnTime] = useState("");
-  const [bookDay, setBookDay] = useState<string | null>(null);
-  // A typed time is not one of the weekly times, so moving there creates a new one-off time: ask first.
-  const [confirmNew, setConfirmNew] = useState(false);
-  // The time chosen is kept by another student's weekly plan: ask once, then move over it. Holds the holder's name (or a generic line for a typed time).
-  const [planHold, setPlanHold] = useState<string | null>(null);
+  // Questions answered yes for the current Reschedule choice, and the one being asked now.
+  const [moveAcks, setMoveAcks] = useState<Set<BookingAsk>>(new Set());
+  const [moveAsk, setMoveAsk] = useState<BookingAsk | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canceling, setCanceling] = useState<SchedulerBooking | null>(null);
   const [reason, setReason] = useState("");
-  const [booking, setBooking] = useState<SchedulerSlot | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
+  const [booking, setBooking] = useState<SchedulerSlot | null>(null);
+  const [bookDay, setBookDay] = useState<string | null>(null);
+  const [bookTime, setBookTime] = useState("");
+  const [bookAcks, setBookAcks] = useState<Set<BookingAsk>>(new Set());
+  const [bookAsk, setBookAsk] = useState<BookingAsk | null>(null);
+  // The student has no free credit: how much they are short, and whether this admin (the owner) can add it here.
+  const [short, setShort] = useState<{ shortBy: number; canAdd: boolean } | null>(null);
+  const [bookKey, setBookKey] = useState(() => newIdempotencyKey());
   const now = Date.now();
   const time = (b: SchedulerBooking) => new Date(b.scheduledAt).getTime();
   const active = bookings.filter((b) => b.status === "SCHEDULED");
@@ -90,11 +118,22 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const upcoming = active.filter((b) => time(b) > now).sort((a, b) => time(a) - time(b));
   const history = bookings.filter((b) => !(b.status === "SCHEDULED" && (time(b) > now || !b.attendance))).sort((a, b) => time(b) - time(a));
 
+  // A new choice of day or time starts its questions over.
+  useEffect(() => {
+    setMoveAcks(new Set());
+    setMoveAsk(null);
+  }, [day, picked, ownTime]);
+  useEffect(() => {
+    setBookAcks(new Set());
+    setBookAsk(null);
+    setShort(null);
+  }, [bookDay, booking, bookTime]);
+
   async function ensureSlots() {
     if (times || slotsBusy) return;
     setSlotsBusy(true);
     try {
-      setTimes(await loadOpenSlots());
+      setTimes(await loadOpenSlots(studentId));
     } catch {
       toast.error("Could not load the open times.");
     } finally {
@@ -126,23 +165,18 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setPicked(null);
     setDay(null);
     setOwnTime("");
-    setConfirmNew(false);
-    setPlanHold(null);
+    setMoveAsk(null);
     setError(null);
   }
 
+  const weekdays = times?.weekdays ?? [];
   const useOwn = Boolean(day && ownTime && !picked);
 
-  async function doMove(overridePlanHold = false) {
+  async function doMove(acks: Set<BookingAsk>) {
     if (!moving || (!useOwn && !picked)) return;
-    if (useOwn && !confirmNew) {
-      setConfirmNew(true);
-      return;
-    }
-    if (!useOwn && picked?.heldBy && !overridePlanHold) {
-      setPlanHold(picked.heldBy);
-      return;
-    }
+    const ask = nextBookingAsk(acks, { typed: useOwn, day, time: ownTime, weekdays, heldBy: picked?.heldBy, heldFor: picked?.heldFor, recordPast: false });
+    if (ask) return setMoveAsk(ask);
+    const overridePlanHold = acks.has("plan");
     setBusy(true);
     setError(null);
     const result = useOwn
@@ -151,10 +185,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setBusy(false);
     if (!result.ok) {
       // A typed time that lands on a plan's weekly time is only found out by the server: ask the same question, then try again.
-      if (result.planHold && !overridePlanHold) {
-        setPlanHold("another student");
-        return;
-      }
+      if (result.planHold && !overridePlanHold) return setMoveAsk("plan");
       return setError(result.error);
     }
     toast.success("Class rescheduled.");
@@ -162,10 +193,17 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setPicked(null);
     setDay(null);
     setOwnTime("");
-    setConfirmNew(false);
-    setPlanHold(null);
+    setMoveAsk(null);
     setTimes(null);
     router.refresh();
+  }
+
+  function answerMove() {
+    if (!moveAsk) return;
+    const next = new Set(moveAcks).add(moveAsk);
+    setMoveAcks(next);
+    setMoveAsk(null);
+    void doMove(next);
   }
 
   async function doCancel() {
@@ -184,19 +222,58 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     router.refresh();
   }
 
-  async function doBook() {
-    if (!booking) return;
-    setBusy(true);
-    setError(null);
-    const result = await onBook(studentId, booking.scheduleId, booking.occurrenceDateMs, booking.chunkIndex, booking.creditCost, notify);
-    setBusy(false);
-    if (!result.ok) return setError(result.error);
-    toast.success("Class booked.");
+  const bookTyped = Boolean(bookDay && bookTime && !booking);
+  const bookPastDay = Boolean(bookDay && bookDay < etTodayKey());
+
+  function closeBook() {
+    if (busy) return;
+    setBookOpen(false);
     setBooking(null);
     setBookDay(null);
+    setBookTime("");
+    setBookAsk(null);
+    setShort(null);
+    setError(null);
+  }
+
+  async function doBook(acks: Set<BookingAsk>, addCredit = false) {
+    if (!bookTyped && !booking) return;
+    const ask = nextBookingAsk(acks, { typed: bookTyped, day: bookDay, time: bookTime, weekdays, heldBy: booking?.heldBy, heldFor: booking?.heldFor, recordPast: true });
+    if (ask) return setBookAsk(ask);
+    const opts = { overridePlanHold: acks.has("plan"), addCredit, key: bookKey };
+    setBusy(true);
+    setError(null);
+    let result: Awaited<ReturnType<typeof adminBookAtSlotAction>>;
+    try {
+      result = bookTyped
+        ? await adminBookClassAtTimeAction(studentId, bookDay!, bookTime, opts, notify)
+        : await adminBookAtSlotAction(studentId, { scheduleId: booking!.scheduleId, occurrenceDateMs: booking!.occurrenceDateMs, chunkIndex: booking!.chunkIndex }, opts, notify);
+    } catch {
+      result = { ok: false, error: "Something went wrong. Try again." };
+    }
+    setBusy(false);
+    if (!result.ok) {
+      if (result.planHold && !acks.has("plan")) return setBookAsk("plan");
+      setShort(result.shortBy ? { shortBy: result.shortBy, canAdd: Boolean(result.canAddCredit) } : null);
+      return setError(result.error);
+    }
+    const added = result.creditsAdded > 0 ? ` ${creditsLabelFromStored(result.creditsAdded)} added.` : "";
+    toast.success(`${result.walkIn ? "Class recorded and marked Present." : "Class booked."}${added}`);
+    setBookKey(newIdempotencyKey());
     setBookOpen(false);
+    setBooking(null);
+    setBookDay(null);
+    setBookTime("");
     setTimes(null);
     router.refresh();
+  }
+
+  function answerBook() {
+    if (!bookAsk) return;
+    const next = new Set(bookAcks).add(bookAsk);
+    setBookAcks(next);
+    setBookAsk(null);
+    void doBook(next);
   }
 
   // Each class is a row (date first and bright, credits and label quiet, the tools on the right), not a pile of equal boxes.
@@ -245,6 +322,40 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const slotsReady = times?.open ?? [];
   const heldReady = times?.held ?? [];
   const bookedReady = (times?.booked ?? []).filter((b) => b.id !== moving?.id);
+  const planName = (slot: SchedulerSlot | null) => (slot?.heldBy ? `${slot.heldBy}'s` : "Another student's");
+
+  // The question being asked, worded for Reschedule or Book.
+  const askCard = (ask: BookingAsk, mode: "move" | "book") => {
+    const slot = mode === "move" ? picked : booking;
+    const d = (mode === "move" ? day : bookDay) ?? "";
+    const t = mode === "move" ? ownTime : bookTime;
+    const verb = mode === "move" ? `move ${first}'s class` : `book ${first}`;
+    if (ask === "offday") return <AskCard title="Not a usual teaching day" warn>{offDayQuestion(d)}</AskCard>;
+    if (ask === "past")
+      return (
+        <AskCard title="This time has passed">
+          Record a class {first} already took on {typedTimeLabel(d, t)}? It is booked and marked Present, which uses 1 credit.
+        </AskCard>
+      );
+    if (ask === "new")
+      return (
+        <AskCard title="This time does not exist yet">
+          {typedTimeLabel(d, t)} is not one of your weekly times. Create it as a one-time slot and {verb} there?
+        </AskCard>
+      );
+    if (ask === "plan")
+      return (
+        <AskCard title={slot?.heldBy ? `This is ${slot.heldBy}'s weekly time` : "This time belongs to a weekly plan"} warn>
+          {planName(slot)} plan keeps this time, though nobody has a class in it that week. {mode === "move" ? `Move ${first}'s class here anyway?` : `Book ${first} anyway?`} Their plan keeps the time for its other weeks.
+        </AskCard>
+      );
+    return (
+      <AskCard title={`Held for ${slot?.heldFor ?? "a contact"}`} warn>
+        You are holding this time for {slot?.heldFor ?? "a contact"}. {mode === "move" ? `Move ${first}'s class here anyway?` : `Book ${first} anyway?`} The hold stays.
+      </AskCard>
+    );
+  };
+  const askYes: Record<BookingAsk, string> = { offday: "Yes, use it", past: "Yes, record it", new: "Yes, create it", plan: "Yes, use it anyway", contact: "Yes, use it anyway" };
   const next = upcoming[0];
   const groupTitle = "flex items-center gap-1.5 text-caption font-medium uppercase tracking-caps";
   const countPill = "min-w-6 rounded-full bg-slate-50/8 px-1.5 py-0.5 text-center text-caption font-semibold tabular-nums text-slate-200";
@@ -303,22 +414,13 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         description={moving ? `Now: ${formatEtShort(moving.scheduledAt)}` : undefined}
         footer={
           <div className="flex flex-wrap justify-end gap-2">
-            {planHold ? (
+            {moveAsk ? (
               <>
-                <Button type="button" variant="secondary" disabled={busy} onClick={() => setPlanHold(null)}>
+                <Button type="button" variant="secondary" disabled={busy} onClick={() => setMoveAsk(null)}>
                   Back
                 </Button>
-                <Button type="button" disabled={busy} loading={busy} onClick={() => void doMove(true)}>
-                  Yes, move it here
-                </Button>
-              </>
-            ) : confirmNew ? (
-              <>
-                <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmNew(false)}>
-                  Back
-                </Button>
-                <Button type="button" disabled={busy} loading={busy} onClick={() => void doMove()}>
-                  Yes, create it and reschedule
+                <Button type="button" disabled={busy} loading={busy} onClick={answerMove}>
+                  {askYes[moveAsk]}
                 </Button>
               </>
             ) : (
@@ -326,32 +428,21 @@ export function StudentScheduler(props: StudentSchedulerProps) {
                 <Button type="button" variant="secondary" disabled={busy} onClick={closeMove}>
                   Never mind
                 </Button>
-                <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={() => void doMove()}>
-                  {useOwn ? `Reschedule to ${day} at ${ownTime}` : picked ? `Reschedule to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
+                <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={() => void doMove(moveAcks)}>
+                  {useOwn ? `Reschedule to ${typedTimeLabel(day!, ownTime)}` : picked ? `Reschedule to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
                 </Button>
               </>
             )}
           </div>
         }
       >
-        {planHold ? (
-          <div className="rounded-control bg-amber-300/10 p-4 ring-1 ring-inset ring-amber-300/20">
-            <p className="text-body font-semibold text-slate-50">This time belongs to a weekly plan</p>
-            <p className="mt-1 text-small text-slate-300">
-              {planHold === "another student" ? "Another student's" : `${planHold}'s`} plan keeps this weekly time, though nobody has a class in it this week. Move {studentName}&apos;s class here anyway? Their plan keeps the time for its other weeks.
-            </p>
-          </div>
-        ) : confirmNew ? (
-          <div className="rounded-control bg-slate-50/5 p-4 ring-1 ring-inset ring-slate-50/10">
-            <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
-            <p className="mt-1 text-small text-slate-300">
-              {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and reschedule {studentName} there?
-            </p>
-          </div>
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${first}`} className="mb-3" />
+        {moveAsk ? (
+          askCard(moveAsk, "move")
         ) : times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay allowPast held={heldReady} day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
+          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={weekdays} allowAnyDay allDays namedHolds allowPast held={heldReady} day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>
@@ -359,30 +450,66 @@ export function StudentScheduler(props: StudentSchedulerProps) {
       <Dialog
         open={bookOpen}
         onOpenChange={(open) => {
-          if (!open && !busy) {
-            setBookOpen(false);
-            setBooking(null);
-            setBookDay(null);
-            setError(null);
-          }
+          if (!open) closeBook();
         }}
         title={`Book a class for ${studentName}`}
-        description="Pick an open weekly time. It uses one class credit."
+        description="Pick a time, or tap any day and type a start time. It uses one class credit."
         footer={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => { setBookOpen(false); setBooking(null); }}>
-              Never mind
-            </Button>
-            <Button type="button" disabled={!booking || busy} loading={busy} onClick={doBook}>
-              {booking ? `Book ${formatEtShort(booking.scheduledAt)}` : "Pick a time"}
-            </Button>
+            {bookAsk ? (
+              <>
+                <Button type="button" variant="secondary" disabled={busy} onClick={() => setBookAsk(null)}>
+                  Back
+                </Button>
+                <Button type="button" disabled={busy} loading={busy} onClick={answerBook}>
+                  {askYes[bookAsk]}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="secondary" disabled={busy} onClick={closeBook}>
+                  Never mind
+                </Button>
+                {short?.canAdd ? (
+                  // The owner fixes the cause here: the credit is added (audited, like Add credits) and the class booked in one tap.
+                  <Button type="button" disabled={busy} loading={busy} onClick={() => void doBook(bookAcks, true)}>
+                    {addCreditLabel(short.shortBy, bookTyped && bookPastDay ? "record" : "book")}
+                  </Button>
+                ) : (
+                  <Button type="button" disabled={(!bookTyped && !booking) || busy} loading={busy} onClick={() => void doBook(bookAcks)}>
+                    {booking ? `Book ${formatEtShort(booking.scheduledAt)}` : bookTyped ? `${bookPastDay ? "Record" : "Book"} ${typedTimeLabel(bookDay!, bookTime)}` : "Pick a time"}
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         }
       >
-        {times === null ? (
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${first}`} className="mb-3" />
+        {bookAsk ? (
+          askCard(bookAsk, "book")
+        ) : times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={[]} weekdays={[]} allowAnyDay={false} day={bookDay} onDay={setBookDay} picked={booking} onPick={setBooking} ownTime="" onOwnTime={() => {}} />
+          <>
+            <SlotCalendarPicker
+              slots={slotsReady}
+              booked={times.booked}
+              weekdays={weekdays}
+              allowAnyDay
+              allDays
+              allowPast
+              namedHolds
+              held={heldReady}
+              day={bookDay}
+              onDay={setBookDay}
+              picked={booking}
+              onPick={setBooking}
+              ownTime={bookTime}
+              onOwnTime={setBookTime}
+            />
+            {bookPastDay && <p className="mt-2 text-small text-slate-400">A past day records a class {first} already took. It is marked Present.</p>}
+          </>
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>

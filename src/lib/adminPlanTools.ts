@@ -8,6 +8,8 @@ import { PaymentPlanError, bookReservedWindowForPlan } from "@/lib/paymentPlans"
 import { applyPlanInstallment } from "@/lib/payments";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
+import { nextBillSentence } from "@/lib/planSetupRules";
+import { PlanFixError, refuseWhileInReview } from "@/lib/planFixes";
 
 /**
  * The studio's plan fixes, for any one person's plan (a person on a group or parent plan included): change its length, set an exact
@@ -26,8 +28,7 @@ async function runningPlan(planId: string) {
 
 /** An unpaid bill is closed (the next one is made at the new amount); a payment already sent in has to be settled first. */
 async function closeUnpaidBill(planId: string) {
-  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, status: "PENDING_REVIEW" }, select: { id: true } });
-  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it on Billing > Payments first.");
+  await refuseWhileInReview(planId);
   await prisma.zellePayment.updateMany({ where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
 }
 
@@ -47,7 +48,7 @@ export async function setPlanLength(adminId: string, planId: string, term: Payme
   });
   const label = describePaymentPlan(plan.cadence, term);
   await logAudit({ actorId: adminId, action: "plan.length", targetType: "PaymentPlan", targetId: plan.id, detail: `Length ${describePaymentPlan(plan.cadence, plan.term)} to ${label}, ${usd(price)} a bill` }).catch(() => undefined);
-  await noticePlanUpdated({ userId: plan.userId, title: "Your plan length changed", body: `Your plan is now ${label}, ${usd(price)} every 28 days. ${plan.installmentsPaid} of ${rate.termMonths} bills are paid.` });
+  await noticePlanUpdated({ userId: plan.userId, title: "Your plan length changed", body: `Your plan is now ${label}, ${price === 0 ? "covered by your scholarship" : `${usd(price)} every 28 days`}. ${plan.installmentsPaid} of ${rate.termMonths} bills are ${price === 0 ? "done" : "paid"}.` });
   return `${label}, ${usd(price)} a bill`;
 }
 
@@ -56,7 +57,7 @@ export async function setPlanPrice(adminId: string, planId: string, cents: numbe
   const plan = await runningPlan(planId);
   if (!Number.isInteger(cents) || cents < 100 || cents > 100_000) throw new PaymentPlanError("Pick a price from $1 to $1,000.");
   if (cents === plan.installmentAmountCents) throw new PaymentPlanError("That is already the price.");
-  if ((await getDiscountPercent(plan.userId, plan.term)) > 0) throw new PaymentPlanError("This account has a personal discount. Remove it on Billing > Pricing first, then set the price.");
+  if ((await getDiscountPercent(plan.userId, plan.term)) > 0) throw new PaymentPlanError("This account has a personal discount, which sets the price. Remove the discount above first, then set the price.");
   await closeUnpaidBill(plan.id);
   await prisma.paymentPlan.update({ where: { id: plan.id }, data: { installmentAmountCents: cents, listAmountCents: null } });
   await logAudit({ actorId: adminId, action: "plan.price", targetType: "PaymentPlan", targetId: plan.id, detail: `Price per bill ${usd(plan.installmentAmountCents)} to ${usd(cents)}` }).catch(() => undefined);
@@ -70,7 +71,7 @@ export async function setPlanPrice(adminId: string, planId: string, cents: numbe
  */
 export async function waiveNextBill(adminId: string, planId: string): Promise<Date | null> {
   const plan = await runningPlan(planId);
-  if (plan.installmentsPaid < 1) throw new PaymentPlanError("The first payment has not been made yet. Use Record payment for that one.");
+  if (plan.installmentsPaid < 1) throw new PlanFixError("The first payment has not been made yet. Record it below first, then the next bill can be waived.", { kind: "record-payment", planId: plan.id });
   await closeUnpaidBill(plan.id);
   const now = new Date();
   await prisma.$transaction(async (tx) => {
@@ -100,7 +101,7 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   // A group or parent plan's bills belong to its payer and its group rate, which may be gone by now; start a fresh solo plan instead.
   if (plan.familyGroupId) throw new PaymentPlanError("This plan was part of a group or parent plan. Start a new plan with the plan builder instead.");
   const other = await prisma.paymentPlan.findFirst({ where: { userId: plan.userId, status: "ACTIVE" }, select: { id: true } });
-  if (other) throw new PaymentPlanError("This student already has a running plan. Cancel it first.");
+  if (other) throw new PlanFixError("This student already has a running plan. Cancel it below first, then restart this one.", { kind: "cancel-plan", planId: other.id });
   const user = await prisma.user.findUnique({ where: { id: plan.userId }, select: { bannedAt: true } });
   if (user?.bannedAt) throw new PaymentPlanError("This account is banned. Lift the ban first.");
 
@@ -123,7 +124,7 @@ export async function restartPlan(adminId: string, planId: string): Promise<{ ke
   );
   if (keptTime) await bookReservedWindowForPlan(plan.id);
   await logAudit({ actorId: adminId, action: "plan.restart", targetType: "PaymentPlan", targetId: plan.id, detail: `Restarted the plan, next bill ${day(nextDue)}${keptTime ? "" : ", its weekly time was taken"}` }).catch(() => undefined);
-  await noticePlanUpdated({ userId: plan.userId, title: "Your plan is back on", body: `The studio restarted your ${describePaymentPlan(plan.cadence, plan.term)} plan. Your next payment is due ${day(nextDue)}.` });
+  await noticePlanUpdated({ userId: plan.userId, title: "Your plan is back on", body: `The studio restarted your ${describePaymentPlan(plan.cadence, plan.term)} plan. ${nextBillSentence(plan.installmentAmountCents, day(nextDue))}` });
   return { keptTime, nextDue };
 }
 
@@ -139,8 +140,7 @@ export async function setPlanProgress(adminId: string, planId: string, input: { 
   const billsPaid = Math.floor(Number(input.billsPaid));
   if (!Number.isFinite(billsPaid) || billsPaid < 0 || billsPaid > plan.termMonths) throw new PaymentPlanError(`Bills paid must be from 0 to ${plan.termMonths}.`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.nextBillDay)) throw new PaymentPlanError("Pick the next bill date.");
-  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, status: "PENDING_REVIEW" }, select: { id: true } });
-  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it on Billing > Payments first.");
+  await refuseWhileInReview(planId);
 
   const currentKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(plan.nextDueDate);
   const shift = Math.round((Date.parse(`${input.nextBillDay}T12:00:00Z`) - Date.parse(`${currentKey}T12:00:00Z`)) / 86_400_000);
@@ -160,7 +160,7 @@ export async function setPlanProgress(adminId: string, planId: string, input: { 
   await noticePlanUpdated({
     userId: plan.userId,
     title: "Your plan was updated",
-    body: `Your plan now shows ${billsPaid} of ${plan.termMonths} bills paid. Your next payment is due ${day(nextDueDate)}.`,
+    body: `Your plan now shows ${billsPaid} of ${plan.termMonths} bills ${plan.installmentAmountCents === 0 ? "done" : "paid"}. ${nextBillSentence(plan.installmentAmountCents, day(nextDueDate))}`,
   }).catch((err) => console.error("Plan progress notice failed (non-blocking):", err));
   return { warnings: ["Credits and booked classes were not changed. Adjust them under Credits if they should change too."] };
 }

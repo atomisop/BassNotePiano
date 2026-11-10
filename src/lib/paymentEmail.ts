@@ -464,8 +464,8 @@ export async function holdUnverifiedPaymentEmail(input: { messageId: string; fro
             await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
               type: "ADMIN_ALERT",
               title: "A payment is waiting for your check",
-              body: `A forwarded email from ${parsed.name} for ${money} carries a payment's code, but it could not be verified (${input.reason}). That payment is waiting in Admin > Payments. Check your bank app, then approve it.`,
-              cta: { label: "Open payments", path: "/admin/payments" },
+              body: `A forwarded email from ${parsed.name} for ${money} carries a payment's code, but it could not be verified (${input.reason}). Check your bank app, then approve the payment.`,
+              cta: { label: "Open the payment", path: `/admin/payments?id=${hit.id}` },
             }).catch((err) => console.error("Held payment alert failed (non-blocking):", err));
           }
           return "held";

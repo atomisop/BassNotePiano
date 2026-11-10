@@ -6,7 +6,7 @@ import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { Card } from "@/components/ui/Card";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { ClassFormEntry, ContactForm } from "@/components/admin/ContactPanels";
-import { createContactAction, removeClassFormAction } from "./actions";
+import { createContactAction, removeClassFormAction, sendClassFormSignUpAction } from "./actions";
 
 export const metadata = { title: "Admin: Contacts" };
 
@@ -102,6 +102,7 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
               notes={run.people[0].form!.notes}
               sent={day(run.people[0].form!.sentAt)}
               onRemove={removeClassFormAction}
+              onSendSignUp={sendClassFormSignUpAction}
             />
           ) : (
             <ul key={run.people[0].key} className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-neu-base shadow-raised-low">

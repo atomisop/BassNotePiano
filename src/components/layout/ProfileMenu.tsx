@@ -7,7 +7,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, ClipboardCheck, NotebookPen, Users } from "@/components/ui/appIcons";
+import { Bell, ClipboardCheck, NotebookPen, ShieldCheck, Users } from "@/components/ui/appIcons";
+import { useLinkedChildren } from "@/components/parent/useLinkedChildren";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import { SignOut } from "@/components/ui/appIcons";
 
@@ -55,6 +56,8 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
   useEffect(() => (appExtras ? listen(UNREAD_COUNT, setUnread) : undefined), [appExtras]);
   useEffect(() => (appExtras && isOwner ? listen(ATTENDANCE_READY_COUNT, setActiveBookings) : undefined), [appExtras, isOwner]);
   const phoneBadge = unread + (isOwner ? activeBookings : 0);
+  // Inside the app only: the public pages' menu never asks.
+  const kids = useLinkedChildren(Boolean(appExtras) && !appExtras?.isAdmin);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -160,6 +163,14 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             <>
               <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
               <div className="my-1.5 border-t border-ink/10 md:hidden" />
+            </>
+          )}
+
+          {/* A parent reaches their children here at every width (the dock has no room for it; the sidebar lists it on computers too). */}
+          {kids.length > 0 && (
+            <>
+              <MenuLink href="/parent" icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.5} />} label="Parent mode" onNavigate={() => setOpen(false)} />
+              <div className="my-1.5 border-t border-ink/10" />
             </>
           )}
 

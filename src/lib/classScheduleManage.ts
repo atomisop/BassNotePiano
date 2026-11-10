@@ -1,10 +1,13 @@
 // The admin screens that add, edit and retire the recurring weekly slots. Split out of
 // classSchedule.ts, which keeps booking and the shared time and slot rules.
 
+import type { Prisma } from "@prisma/client";
 import { notifyAdmins } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
-import { livePaymentPlanConditions, ONE_OFF_LABEL } from "@/lib/classSchedule";
+import { chunksForSchedule, computeScheduledAt, livePaymentPlanConditions, ONE_OFF_LABEL } from "@/lib/classSchedule";
 import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
+import { CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { clockLabel, firstNameOf, fitRefusal, fitWeeklyTime, namesList, parseWeeklyTime, shortDay, type TypedWeeklyTime } from "@/lib/weeklyTimeRules";
 
 // ---------------------------------------------------------------------------
 // Admin: weekly schedule management
@@ -22,7 +25,15 @@ import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
 // script.
 // ---------------------------------------------------------------------------
 
-export class ClassScheduleError extends Error {}
+/** A refusal to show as it is. `people` names the students it is about, so the screen can link each one. */
+export class ClassScheduleError extends Error {
+  constructor(
+    message: string,
+    readonly people: { userId: string; name: string }[] = [],
+  ) {
+    super(message);
+  }
+}
 
 const DAY_NAMES_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -64,6 +75,34 @@ export async function getAllClassSchedules() {
   return prisma.classSchedule.findMany({ where: { OR: [{ label: null }, { label: { not: ONE_OFF_LABEL } }] }, orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] });
 }
 
+/**
+ * "Another time…": the window for one typed weekly time, inside the caller's transaction. A time that is already one of a window's classes
+ * is that class; a time that runs into another class is refused (two weekly classes never overlap); anything else gets a new 45 minute
+ * window, a normal window like any other (the plan or hold that asked for it keeps it, so students see it as taken).
+ * `ignoreWindowIds` leaves out windows about to be retired.
+ */
+export async function ensureWeeklyWindow(
+  tx: Prisma.TransactionClient,
+  time: TypedWeeklyTime,
+  options: { ignoreWindowIds?: string[] } = {},
+): Promise<{ scheduleId: string; chunkIndex: number; created: boolean }> {
+  const parsed = parseWeeklyTime(time);
+  if ("error" in parsed) throw new ClassScheduleError(parsed.error);
+  const rows = await tx.classSchedule.findMany({ where: { active: true, dayOfWeek: parsed.dayOfWeek } });
+  const fit = fitWeeklyTime(
+    rows.map((s) => ({ id: s.id, dayOfWeek: s.dayOfWeek, startTime: s.startTime, chunkOffsets: chunksForSchedule(s).map((c) => c.offsetMin) })),
+    parsed,
+    options.ignoreWindowIds,
+  );
+  if (fit.kind === "existing") return { scheduleId: fit.scheduleId, chunkIndex: fit.chunkIndex, created: false };
+  const refusal = fitRefusal(fit, parsed.dayOfWeek);
+  if (refusal) throw new ClassScheduleError(refusal);
+  const created = await tx.classSchedule.create({
+    data: { dayOfWeek: parsed.dayOfWeek, startTime: parsed.startTime, durationMin: CLASS_MINUTES, creditCost: Math.ceil(CLASS_MINUTES / 30), label: null },
+  });
+  return { scheduleId: created.id, chunkIndex: 0, created: true };
+}
+
 export async function createClassSchedule(input: ClassScheduleInput) {
   const durationMin = resolveDurationMin(input.startTime, input.endTime);
   return prisma.classSchedule.create({
@@ -77,32 +116,61 @@ export async function createClassSchedule(input: ClassScheduleInput) {
   });
 }
 
+/** Which class of a window a booking is (the one starting at its time on its day), 0 when none matches exactly. */
+export function chunkIndexOf(schedule: { startTime: string; durationMin: number }, occurrenceDate: Date, scheduledAt: Date): number {
+  const i = chunksForSchedule(schedule).findIndex((c) => computeScheduledAt(schedule, occurrenceDate, c).getTime() === scheduledAt.getTime());
+  return i < 0 ? 0 : i;
+}
+
+/** Who is on a weekly window: the live plans that keep one of its classes, and every class still to come on it. */
+export async function windowPeople(scheduleId: string) {
+  const [plans, bookings] = await Promise.all([
+    prisma.paymentPlan.findMany({
+      where: { reservedScheduleId: scheduleId, OR: livePaymentPlanConditions() },
+      select: { id: true, status: true, userId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } } },
+    }),
+    prisma.classBooking.findMany({
+      where: { scheduleId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+      orderBy: { scheduledAt: "asc" },
+      select: { id: true, studentId: true, occurrenceDate: true, scheduledAt: true, reservedByPlanId: true, student: { select: { name: true, email: true } } },
+    }),
+  ]);
+  return { plans, bookings };
+}
+
+/** "Sam (weekly plan) and Ann (Dec 2)", with each person once, for a refusal that names who is on a window. */
+function describePeople(people: Awaited<ReturnType<typeof windowPeople>>): { text: string; people: { userId: string; name: string }[] } {
+  const seen = new Map<string, { name: string; what: string }>();
+  for (const p of people.plans) seen.set(p.userId, { name: p.user.name ?? p.user.email, what: "weekly plan" });
+  for (const b of people.bookings) {
+    if (seen.has(b.studentId)) continue;
+    seen.set(b.studentId, { name: b.student.name ?? b.student.email, what: shortDay(b.occurrenceDate.toISOString().slice(0, 10)) });
+  }
+  const list = [...seen.entries()].map(([userId, v]) => ({ userId, name: v.name, label: `${firstNameOf(v.name, v.name)} (${v.what})` }));
+  return { text: namesList(list.map((p) => p.label), 4), people: list.map(({ userId, name }) => ({ userId, name })) };
+}
+
 /**
- * Blocks a day/time/duration edit while any ACTIVE Payment Plan reserves
- * this schedule (any chunk within it), an edit here would silently move or
- * shrink a slot a student is actively paying to hold. Deliberately not
- * checked in setClassScheduleActive (deactivation): the daily reservation
- * job's own notify-once-and-skip handling is the intended path for that
- * case, not a blocked action here, see PaymentPlan.reservedSlotInactiveNotifiedAt.
+ * Changes a window's day, times or label. An edit that moves nobody goes straight through: a new label, or a longer or shorter window that
+ * keeps the same day and start and still holds every class someone is on. Anything that would move a student's class or weekly time is
+ * refused with their names, so the screen can offer "Move everyone with it" (weeklyWindowMove.ts) instead of a silent change.
  */
 export async function updateClassSchedule(scheduleId: string, input: ClassScheduleInput) {
-  const upcoming = await countUpcomingBookingsBySchedule([scheduleId]);
-  if ((upcoming.get(scheduleId) ?? 0) > 0) {
-    const n = upcoming.get(scheduleId)!;
-    throw new ClassScheduleError(
-      `${n} upcoming booking${n === 1 ? " is" : "s are"} on this time. Cancel ${n === 1 ? "it" : "them"} first (Bookings tab), or turn the slot off and add a new one, so no student's class moves without them knowing.`,
-    );
-  }
-  const reservationCount = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, status: "ACTIVE" } });
-  if (reservationCount > 0) {
-    throw new ClassScheduleError(
-      `${reservationCount} active payment plan${reservationCount === 1 ? "" : "s"} reserve${reservationCount === 1 ? "s" : ""} this schedule. Cancel ${
-        reservationCount === 1 ? "it" : "them"
-      } or wait for ${reservationCount === 1 ? "it" : "them"} to complete before changing its time.`,
-    );
+  const durationMin = resolveDurationMin(input.startTime, input.endTime);
+  const current = await prisma.classSchedule.findUnique({ where: { id: scheduleId } });
+  if (!current) throw new ClassScheduleError("That weekly time was not found.");
+  const people = await windowPeople(scheduleId);
+  if (people.plans.length > 0 || people.bookings.length > 0) {
+    const used = new Set<number>(people.plans.map((p) => p.reservedChunkIndex ?? 0));
+    for (const b of people.bookings) used.add(chunkIndexOf(current, b.occurrenceDate, b.scheduledAt));
+    const sameStart = input.dayOfWeek === current.dayOfWeek && input.startTime === current.startTime;
+    const keepsEveryone = sameStart && Math.max(...used) < chunksForSchedule({ durationMin }).length;
+    if (!keepsEveryone) {
+      const who = describePeople(people);
+      throw new ClassScheduleError(`${who.text} ${who.people.length === 1 ? "is" : "are"} on this time, so it cannot just be changed. Move everyone with it, or turn it off and add a new one.`, who.people);
+    }
   }
 
-  const durationMin = resolveDurationMin(input.startTime, input.endTime);
   return prisma.classSchedule.update({
     where: { id: scheduleId },
     data: {
@@ -113,6 +181,19 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
       label: input.label,
     },
   });
+}
+
+/** Who keeps each class of these windows with a live plan, for the Times list (each name links to the person's page). */
+export async function getWindowHolders(scheduleIds: string[]): Promise<Map<string, { userId: string; name: string; chunkIndex: number }[]>> {
+  const rows = scheduleIds.length
+    ? await prisma.paymentPlan.findMany({
+        where: { reservedScheduleId: { in: scheduleIds }, OR: livePaymentPlanConditions() },
+        select: { userId: true, reservedScheduleId: true, reservedChunkIndex: true, user: { select: { name: true, email: true } } },
+      })
+    : [];
+  const out = new Map<string, { userId: string; name: string; chunkIndex: number }[]>();
+  for (const r of rows) out.set(r.reservedScheduleId!, [...(out.get(r.reservedScheduleId!) ?? []), { userId: r.userId, name: r.user.name ?? r.user.email, chunkIndex: r.reservedChunkIndex ?? 0 }]);
+  return out;
 }
 
 /** Future SCHEDULED bookings per schedule, for warning the admin before a slot is turned off or edited. */
@@ -137,14 +218,20 @@ export async function setClassScheduleActive(scheduleId: string, active: boolean
   if (!active) {
     // Subscribers who hold this weekly time stop being booked (the daily job
     // tells each of them once), so make sure an admin knows who to move.
-    const holders = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, OR: livePaymentPlanConditions() } });
-    if (holders > 0) {
+    const holders = await prisma.paymentPlan.findMany({
+      where: { reservedScheduleId: scheduleId, OR: livePaymentPlanConditions() },
+      select: { userId: true, user: { select: { name: true, email: true } } },
+    });
+    if (holders.length > 0) {
+      const names = holders.map((h) => h.user.name ?? h.user.email);
+      const one = holders.length === 1;
       await notifyAdmins("SLOT_PROBLEM", {
         type: "ADMIN_ALERT",
         title: "A reserved weekly time was turned off",
-        body: `${holders} subscriber${holders === 1 ? " holds" : "s hold"} the ${DAY_NAMES_LONG[schedule.dayOfWeek]} ${schedule.startTime} time you just turned off. They will not be booked until you pick them a new time.`,
+        body: `${namesList(names, 4)} ${one ? "holds" : "hold"} the ${DAY_NAMES_LONG[schedule.dayOfWeek]} ${clockLabel(schedule.startTime)} time you just turned off. Nobody is booked there until you pick ${one ? "them" : "each of them"} a new time (Weekly time on ${one ? "their" : "each"} page).`,
         emailCategory: "classes",
-        cta: { label: "See subscribers", path: "/admin/payment-plans" },
+        // One holder: straight to their page. Several: the Times list, which names each holder with a link to their page.
+        cta: one ? { label: `Open ${firstNameOf(holders[0].user.name, holders[0].user.email)}`, path: `/admin/users/${holders[0].userId}` } : { label: "See who holds it", path: "/admin/schedule" },
       }).catch((err) => console.error("Slot-off alert failed (non-blocking):", err));
     }
   }

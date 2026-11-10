@@ -46,3 +46,16 @@ describe("gettingStartedStep", () => {
     for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind })).toBeNull();
   });
 });
+
+describe("Home for a parent", () => {
+  it("never pitches a free trial to a parent who only manages children: it opens Parent mode", () => {
+    const one = gettingStartedStep({ kind: "NONE", children: 1 });
+    expect(one?.href).toBe("/parent");
+    expect(one?.action).toBe("Your child's classes");
+    expect(`${one?.cta} ${one?.detail}`).not.toMatch(/trial/i);
+    expect(gettingStartedStep({ kind: "NONE", children: 2 })?.action).toBe("Your children's classes");
+  });
+  it("a parent learning too (with access) is not given the parent step", () => {
+    expect(gettingStartedStep({ kind: "PAID", children: 2 })).toBeNull();
+  });
+});

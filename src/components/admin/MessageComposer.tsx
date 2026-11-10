@@ -3,6 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, X } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +28,8 @@ interface SentRow {
   read: boolean;
   readAt: string | null;
   createdAt: string;
+  /** They answered: the Support Chat case their reply opened. */
+  supportCaseId: string | null;
 }
 
 function relativeTime(iso: string): string {
@@ -45,12 +48,19 @@ const EMAIL_NOTE = {
   failed: "Delivered to their Mail. The email could not be sent.",
 } as const;
 
-export function MessageComposer({ sent }: { sent: SentRow[] }) {
+/** `prefill`: people picked on another screen (`/admin/messages?to=...`), already in the To list. */
+export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefill?: MessageRecipient[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MessageRecipient[]>([]);
   const [searching, setSearching] = useState(false);
-  const [recipients, setRecipients] = useState<MessageRecipient[]>([]);
+  const [recipients, setRecipients] = useState<MessageRecipient[]>(prefill);
+  const titleRef = useRef<HTMLInputElement>(null);
+  // Arriving with people filled in, the next thing to type is the title.
+  useEffect(() => {
+    if (prefill.length > 0) titleRef.current?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [openId, setOpenId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -195,6 +205,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
           </div>
 
           <input
+            ref={titleRef}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -238,7 +249,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
       </div>
 
       {/* History as rows, newest first: the title is the line to read, who it went to and when are quiet under it, and whether
-          it was read is one small word at the right. The first few show; the rest fold behind "View more". */}
+          it was read (or answered, linking to the reply) is one small word at the right. The first few show; the rest fold behind "View more". */}
       <section aria-label="History">
         <h2 className="flex items-baseline justify-between gap-3 px-1 text-title font-semibold text-slate-50">
           History
@@ -252,24 +263,33 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             {(m) => {
               const open = openId === m.id;
               return (
-                <div key={m.id}>
+                <div key={m.id} className="relative">
                   <button
                     type="button"
                     onClick={() => setOpenId(open ? null : m.id)}
                     aria-expanded={open}
-                    className="tap block w-full px-4 py-3 text-left transition hover:bg-slate-50/5"
+                    className="tap block w-full py-3 pl-4 pr-24 text-left transition hover:bg-slate-50/5"
                   >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="min-w-0 truncate text-body font-semibold text-slate-50">{m.title}</p>
-                      <StatusDot tone={m.read ? "success" : "neutral"} className="shrink-0 text-caption text-slate-400">
-                        {m.read ? "Read" : "Unread"}
-                      </StatusDot>
-                    </div>
+                    <p className="min-w-0 truncate text-body font-semibold text-slate-50">{m.title}</p>
                     <Meta
                       className="mt-0.5 truncate"
                       items={[`To ${m.recipientName ?? m.recipientEmail}`, m.supportCta ? "with contact support" : null, relativeTime(m.createdAt)]}
                     />
                   </button>
+                  {/* Read or unread is one small word at the right. A reply opens a Support Chat case, so "Replied" goes straight to it.
+                      Kept outside the row's button (no link inside a button). */}
+                  {m.supportCaseId ? (
+                    <Link
+                      href={`/admin/support/${m.supportCaseId}?filter=all`}
+                      className="tap absolute right-4 top-3 inline-flex items-center rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <StatusDot tone="accent" className="text-caption text-signal-fg">Replied</StatusDot>
+                    </Link>
+                  ) : (
+                    <StatusDot tone={m.read ? "success" : "neutral"} className="pointer-events-none absolute right-4 top-3.5 text-caption text-slate-400">
+                      {m.read ? "Read" : "Unread"}
+                    </StatusDot>
+                  )}
                   <Collapse open={open}>
                     <div className="border-t border-slate-50/8 px-4 pb-4 pt-3">
                       <p className="whitespace-pre-wrap text-body text-slate-200">{m.body}</p>

@@ -1,7 +1,8 @@
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { Hint } from "@/components/ui/Hint";
-import type { ZellePaymentStatus } from "@prisma/client";
-import { getAdminPayments } from "@/lib/payments";
+import { countUpcomingClasses, getAdminPayments, locateAdminPayment } from "@/lib/payments";
+import { adminPaymentsHref, readAdminPaymentsParams, type PaymentFilterValue } from "@/lib/adminPaymentLinks";
+import { prisma } from "@/lib/prisma";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
@@ -10,14 +11,14 @@ import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel"
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import Link from "next/link";
-import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, ignoreSenderAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction, undoRefundPaymentAction, cancelBillAction } from "./actions";
+import { approvePaymentAction, attachReceiptToStudentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, ignoreSenderAction, markBillPaidAction, matchReceiptAction, previewReceiptForStudentAction, refundPaymentAction, rejectPaymentAction, undoRefundPaymentAction, cancelBillAction } from "./actions";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
 import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
 import { buttonVariants } from "@/components/ui/button";
 
-const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
+const FILTERS: { label: string; value: PaymentFilterValue }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
   { label: "Unchecked", value: "UNCHECKED" },
   { label: "Verified", value: "VERIFIED" },
@@ -31,27 +32,58 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" 
 export const metadata = { title: "Admin: Payments" };
 
 export default async function AdminPaymentsPage(
-  props: { searchParams: Promise<{ status?: string; tab?: string; page?: string }> }
+  props: { searchParams: Promise<{ status?: string; tab?: string; page?: string; user?: string; q?: string; id?: string }> }
 ) {
   const searchParams = await props.searchParams;
   if (searchParams.tab === "credits") return <CreditsTab />;
   if (searchParams.tab === "emails") return <EmailsTab />;
-  const requested = searchParams.status?.toUpperCase();
-  const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING_REVIEW";
-  const [{ payments, total, page, pageCount }, health, unmatched] = await Promise.all([
-    getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter, Number(searchParams.page) || 1),
+  // ?user= narrows the list to one person (every status), ?q= searches every page, ?id= opens the tab and page one payment is on.
+  const view = readAdminPaymentsParams(searchParams);
+  const filter = { userId: view.user ?? undefined, query: view.q ?? undefined };
+  const located = view.id ? await locateAdminPayment(view.id, filter, view.statusGiven ? view.status : undefined) : null;
+  const activeFilter: PaymentFilterValue = located && !view.statusGiven ? located.status : view.status;
+  const [{ payments, total, page, pageCount }, health, unmatched, person] = await Promise.all([
+    getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter, located ? located.page : view.page, filter),
     getPaymentPipelineHealth(),
     countUnmatchedReceipts(),
+    view.user ? prisma.user.findUnique({ where: { id: view.user }, select: { id: true, name: true, email: true } }) : null,
   ]);
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
+  const upcoming = isOwner ? await countUpcomingClasses(payments.filter((p) => p.status === "VERIFIED").map((p) => p.user.id)) : {};
+  const hrefFor = (status: PaymentFilterValue, toPage = 1) => adminPaymentsHref({ status, page: toPage, user: view.user, q: view.q });
 
   return (
     <div>
       <h1 className="sr-only">Payments</h1>
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
+      {(person || view.q) && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {person && (
+            <p className="inline-flex flex-wrap items-center gap-2 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-raised-low">
+              Showing
+              <Link href={`/admin/users/${person.id}`} className="font-medium text-slate-50 underline underline-offset-4">
+                {person.name ?? person.email}
+              </Link>
+              <span aria-hidden>·</span>
+              <Link href={adminPaymentsHref({ q: view.q })} className="tap inline-flex items-center font-medium text-signal-fg">
+                Clear
+              </Link>
+            </p>
+          )}
+          {view.q && (
+            <p className="inline-flex flex-wrap items-center gap-2 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-raised-low">
+              Search: <span className="font-medium text-slate-50">&ldquo;{view.q}&rdquo;</span>
+              <span aria-hidden>·</span>
+              <Link href={adminPaymentsHref({ user: view.user })} className="tap inline-flex items-center font-medium text-signal-fg">
+                Clear
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-6">
         <AdminFilterTabs
@@ -59,7 +91,7 @@ export default async function AdminPaymentsPage(
           mobile="scroll"
           items={FILTERS.map((filter) => ({
             label: filter.label,
-            href: filter.value === "PENDING_REVIEW" ? "/admin/payments" : `/admin/payments?status=${filter.value}`,
+            href: hrefFor(filter.value),
             active: activeFilter === filter.value,
           }))}
         />
@@ -105,6 +137,11 @@ export default async function AdminPaymentsPage(
           onRefund={isOwner ? refundPaymentAction : undefined}
           onUndoRefund={isOwner ? undoRefundPaymentAction : undefined}
           onCancelBill={isOwner ? cancelBillAction : undefined}
+          onMarkPaid={isOwner ? markBillPaidAction : undefined}
+          canFix={isOwner}
+          upcomingClasses={upcoming}
+          highlightId={located?.id ?? null}
+          listView={{ status: activeFilter, user: view.user, morePages: pageCount > 1 }}
           emptyMessage={
             activeFilter === "PENDING_REVIEW" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} payments.`
           }
@@ -114,7 +151,7 @@ export default async function AdminPaymentsPage(
       {pageCount > 1 && (
         <nav aria-label="Pages" className="mt-6 flex items-center justify-between gap-3 text-small">
           {page > 1 ? (
-            <Link href={pageHref(activeFilter, page - 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Link href={hrefFor(activeFilter, page - 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Newer
             </Link>
           ) : (
@@ -124,7 +161,7 @@ export default async function AdminPaymentsPage(
             Page {page} of {pageCount}
           </span>
           {page < pageCount ? (
-            <Link href={pageHref(activeFilter, page + 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <Link href={hrefFor(activeFilter, page + 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Older
             </Link>
           ) : (
@@ -134,14 +171,6 @@ export default async function AdminPaymentsPage(
       )}
     </div>
   );
-}
-
-function pageHref(filter: string, page: number) {
-  const params = new URLSearchParams();
-  if (filter !== "PENDING_REVIEW") params.set("status", filter);
-  if (page > 1) params.set("page", String(page));
-  const q = params.toString();
-  return q ? `/admin/payments?${q}` : "/admin/payments";
 }
 
 function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credits"; unmatched: number }) {
@@ -168,7 +197,7 @@ async function EmailsTab() {
       <h1 className="sr-only">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} />
       <PaymentPipelineBanner health={health} />
-      <p className="mt-2 max-w-[70ch] text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, or dismiss it if it is not a studio payment.</Hint></p>
+      <p className="mt-2 max-w-[70ch] text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</Hint></p>
       <div className="mt-6">
         <UnmatchedEmailList
           rows={rows.map((r) => ({
@@ -194,6 +223,9 @@ async function EmailsTab() {
           onMatch={matchReceiptAction}
           onDismiss={dismissReceiptAction}
           onIgnoreSender={isOwner ? ignoreSenderAction : undefined}
+          onFindStudents={isOwner ? searchUsersForCreditsAction : undefined}
+          onPreviewStudent={isOwner ? previewReceiptForStudentAction : undefined}
+          onAttachToStudent={isOwner ? attachReceiptToStudentAction : undefined}
         />
       </div>
     </div>

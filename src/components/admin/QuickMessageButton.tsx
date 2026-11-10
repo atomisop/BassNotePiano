@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { MessageSquare } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { sendMessageAction } from "@/app/(dashboard)/admin/messages/actions";
+
+/** A window event (detail `{ userId }`) that opens the message sheet for that person. */
+export const OPEN_QUICK_MESSAGE_EVENT = "bnp-open-quick-message";
 
 const field =
   "w-full rounded-control bg-neu-base px-3.5 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -17,6 +20,14 @@ const field =
  */
 export function QuickMessageButton({ userId, name }: { userId: string; name: string }) {
   const [open, setOpen] = useState(false);
+  // The student page's `?do=message` opens this sheet for the person it is about (detail.userId).
+  useEffect(() => {
+    const show = (e: Event) => {
+      if ((e as CustomEvent<{ userId?: string }>).detail?.userId === userId) setOpen(true);
+    };
+    window.addEventListener(OPEN_QUICK_MESSAGE_EVENT, show);
+    return () => window.removeEventListener(OPEN_QUICK_MESSAGE_EVENT, show);
+  }, [userId]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sendEmail, setSendEmail] = useState(true);

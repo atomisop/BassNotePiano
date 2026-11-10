@@ -5,7 +5,8 @@ import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "@/components/ui/appIcons";
+import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "@/components/ui/appIcons";
+import { ClassMoveCancelButtons } from "@/components/admin/ClassRowActions";
 import { getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { Collapse } from "@/components/ui/Collapse";
@@ -87,6 +88,9 @@ export function AdminAttendanceQuickPanel() {
   // The panel is portaled to document.body, so it is never a DOM descendant of
   // wrapperRef; the outside-click handler has to check both.
   const panelRef = useRef<HTMLDivElement>(null);
+  // A Reschedule or Cancel box opened from a row lives outside the panel (in a portal): while it is up, a tap in it or Escape belongs to
+  // it, and must not close the panel (which would close the box with it).
+  const childDialogRef = useRef(false);
   useDialogFocus<HTMLDivElement>(open, undefined, { trap: false, ref: panelRef });
 
   useEffect(() => setMounted(true), []);
@@ -137,9 +141,10 @@ export function AdminAttendanceQuickPanel() {
     setLoading(true);
     refresh().finally(() => setLoading(false));
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape" && !childDialogRef.current) setOpen(false);
     }
     function handleClickOutside(e: MouseEvent) {
+      if (childDialogRef.current) return;
       const target = e.target as Node;
       if (wrapperRef.current?.contains(target)) return;
       if (panelRef.current?.contains(target)) return;
@@ -311,14 +316,15 @@ export function AdminAttendanceQuickPanel() {
                             const busy = busyId === r.bookingId;
                             return (
                               <div key={r.bookingId} className="px-3 py-2.5">
-                                <div className="flex items-center gap-2">
-                                  <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <div className="min-w-[8rem] flex-1">
                                     <p className="truncate text-small font-semibold text-slate-50">{r.studentName ?? r.studentEmail}</p>
                                     <p className="truncate text-small tabular-nums text-slate-500">
                                       {timeOf(r.scheduledAt)}
                                       {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""}
                                     </p>
                                   </div>
+                                  <div className="flex items-center gap-2">
                                   <button
                                     type="button"
                                     disabled={!ready || busy}
@@ -339,15 +345,16 @@ export function AdminAttendanceQuickPanel() {
                                     {busy ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                                     Absent
                                   </button>
-                                  <Link
-                                    href={`/admin/users/${r.studentId}#scheduler`}
-                                    onClick={() => setOpen(false)}
-                                    aria-label={`Open ${r.studentName ?? r.studentEmail}'s scheduler to move or cancel`}
-                                    title="Move or cancel in this student's Scheduler"
-                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50/6 hover:text-slate-200"
-                                  >
-                                    <CalendarDays className="h-4 w-4" strokeWidth={2} />
-                                  </Link>
+                                  {/* Reschedule and Cancel right in the panel; it stays open while their box is up. */}
+                                  <ClassMoveCancelButtons
+                                    notifyPlace="attendance"
+                                    onDialogChange={(isOpen) => {
+                                      childDialogRef.current = isOpen;
+                                    }}
+                                    onDone={() => void refresh()}
+                                    row={{ bookingId: r.bookingId, studentId: r.studentId, name: r.studentName ?? r.studentEmail, scheduledAt: r.scheduledAt, active: true }}
+                                  />
+                                  </div>
                                 </div>
                               </div>
                             );

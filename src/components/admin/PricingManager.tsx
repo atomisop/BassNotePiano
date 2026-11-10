@@ -3,6 +3,7 @@
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
@@ -233,7 +234,9 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
       {/* Who on the left (bright), what it does to their price quiet under it, the percent on the right as the row's one figure. */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <p className="truncate text-body font-semibold text-slate-50">{row.name ?? row.email}</p>
+          <p className="truncate text-body font-semibold text-slate-50">
+            <Link href={`/admin/users/${row.userId}`} className="hover:underline hover:underline-offset-4">{row.name ?? row.email}</Link>
+          </p>
           <Meta className="truncate" items={[row.name ? row.email : null, row.note]} />
           <p className="mt-0.5 text-small">
             <PlanLine plan={row.plan} percent={valid ? percent : row.percent} />

@@ -5,6 +5,8 @@ import type { EmployeeRow } from "@/lib/admin";
 import type { AutomationKey } from "@/lib/automationKeys";
 import { ADMIN_NOTIFICATION_GROUPS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 import { EmployeeList } from "@/components/admin/EmployeeList";
+import { AddStaffPanel } from "@/components/admin/AddStaffPanel";
+import type { StaffLookup } from "@/lib/staffAdd";
 import { Switch } from "@/components/ui/switch";
 import { Tabs } from "@/components/ui/Tabs";
 
@@ -34,10 +36,15 @@ interface EmployeesViewProps {
   automations: AutomationRow[] | null;
   onToggleAutomation: (key: AutomationKey, enabled: boolean) => Promise<{ ok: boolean; error: string | null }>;
   onToggleNotification: (kind: AdminNotificationKind, who: "owner" | "employees", enabled: boolean) => Promise<{ ok: boolean; error: string | null }>;
+  /** Owner only ("Add staff"); absent for everyone else. */
+  onFindStaff?: (email: string) => Promise<StaffLookup>;
+  onAddStaff?: (userId: string, idempotencyKey?: string) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
 }
 
-export function EmployeesView({ employees, currentUserId, onRevoke, notifications, onToggleNotification, automations, onToggleAutomation }: EmployeesViewProps) {
+export function EmployeesView({ employees, currentUserId, onRevoke, notifications, onToggleNotification, automations, onToggleAutomation, onFindStaff, onAddStaff }: EmployeesViewProps) {
   const [tab, setTab] = useState<"ADMINS" | "NOTIFICATIONS" | "AUTOMATION">("ADMINS");
+  // The person just added: their row shows the staff alerts open, so the owner sets them without going to another tab.
+  const [addedId, setAddedId] = useState<string | null>(null);
   const [autoValues, setAutoValues] = useState<Record<string, boolean>>(Object.fromEntries((automations ?? []).map((a) => [a.key, a.enabled])));
   const toKey = (kind: string, who: "owner" | "employees") => `${kind}:${who}`;
   const initialValues = () =>
@@ -101,7 +108,40 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
           ))}
         </div>
       ) : tab === "ADMINS" || !notifications ? (
-        <EmployeeList employees={employees} currentUserId={currentUserId} canRevoke={notifications !== null} onRevoke={onRevoke} />
+        <div className="space-y-3">
+          {notifications && onFindStaff && onAddStaff && <AddStaffPanel onFind={onFindStaff} onAdd={onAddStaff} onAdded={setAddedId} />}
+          <EmployeeList
+            employees={employees}
+            currentUserId={currentUserId}
+            canRevoke={notifications !== null}
+            onRevoke={onRevoke}
+            openId={addedId}
+            settings={
+              notifications && (
+                <div className="rounded-xl bg-neu-lift p-2">
+                  <div className="flex items-center justify-between gap-3 px-3 pb-1 pt-2">
+                    <h3 className="text-small font-semibold text-slate-100">Their alerts</h3>
+                    <button type="button" onClick={() => setAddedId(null)} className="tap inline-flex items-center text-small text-slate-400 hover:text-slate-100">
+                      Done
+                    </button>
+                  </div>
+                  <p className="px-3 text-caption text-slate-500">Everyone on staff shares these.</p>
+                  {error && <p className="px-3 py-2 text-small text-red-400">{error}</p>}
+                  <div className="divide-y divide-slate-50/8">
+                    {notifications
+                      .filter((row) => !row.ownerOnly)
+                      .map((row) => (
+                        <div key={row.kind} className="flex items-center justify-between gap-4 px-3 py-3">
+                          <p className="text-small text-slate-200">{row.label}</p>
+                          <Switch checked={values[toKey(row.kind, "employees")]} onCheckedChange={(v) => handleToggle(row.kind, "employees", v)} aria-label={`${row.label}, for staff`} />
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )
+            }
+          />
+        </div>
       ) : (
         <div className="space-y-5">
           {error && <p className="text-small text-red-400">{error}</p>}

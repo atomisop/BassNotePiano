@@ -15,7 +15,7 @@ export async function GET() {
   if (!session?.user?.id) return new NextResponse("Not signed in", { status: 401 });
   const userId = session.user.id;
 
-  const [account, bookings, payments, plans, quizAttempts, lessonProgress, badges, notes, supportThreads, atomChats, practiceDays, notifications, friendRequests] = await Promise.all([
+  const [account, bookings, payments, plans, quizAttempts, lessonProgress, badges, notes, supportThreads, atomChats, practiceDays, notifications, friendRequestRows, bookTogetherAsks] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -40,10 +40,15 @@ export async function GET() {
     prisma.assistantConversationMessage.findMany({ where: { userId }, select: { role: true, content: true, createdAt: true }, orderBy: { createdAt: "asc" } }),
     prisma.fingerPracticeDay.findMany({ where: { userId }, select: { day: true, seconds: true, completedAt: true }, orderBy: { day: "desc" } }),
     prisma.notification.findMany({ where: { userId }, select: { type: true, title: true, body: true, readAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 500 }),
-    prisma.friendRequest.findMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] }, select: { status: true, createdAt: true, sender: { select: { username: true } }, receiver: { select: { username: true } } } }),
+    prisma.friendRequest.findMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] }, select: { id: true, status: true, createdAt: true, sender: { select: { username: true } }, receiver: { select: { username: true } } } }),
+    prisma.friendEmailAsk.findMany({ where: { senderId: userId }, select: { email: true, createdAt: true, requestId: true }, orderBy: { createdAt: "desc" } }),
   ]);
+  // A request that an "ask to book together" by email made is theirs only as the email they typed, until the other person accepts it
+  // (the same as the Friends page), so the export never says whose account an email belongs to.
+  const askMade = new Set(bookTogetherAsks.map((a) => a.requestId).filter((id): id is string => Boolean(id)));
+  const friendRequests = friendRequestRows.filter((r) => !askMade.has(r.id) || r.status === "ACCEPTED").map(({ id: _id, ...rest }) => rest);
 
-  const file = { exportedAt: new Date().toISOString(), account, classBookings: bookings, payments, paymentPlans: plans, quizAttempts, lessonProgress, badges, notesFromYourTeacher: notes, supportConversations: supportThreads, atomChats, practiceDays, notifications, friends: friendRequests };
+  const file = { exportedAt: new Date().toISOString(), account, classBookings: bookings, payments, paymentPlans: plans, quizAttempts, lessonProgress, badges, notesFromYourTeacher: notes, supportConversations: supportThreads, atomChats, practiceDays, notifications, friends: friendRequests, askedToBookTogether: bookTogetherAsks.map(({ email, createdAt }) => ({ email, createdAt })) };
   return new NextResponse(JSON.stringify(file, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",

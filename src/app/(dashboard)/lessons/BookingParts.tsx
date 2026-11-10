@@ -8,10 +8,10 @@ import { CLASS_MINUTES, CREDITS_PER_CLASS, creditsLabelFromStored } from "@/lib/
 import { weekRangeForOccurrence } from "@/lib/bookingRules";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
-import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
+import { AskTogetherButton } from "@/components/lessons/AskTogetherButton";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
-import { DiscordLink } from "@/components/ui/DiscordLink";
+import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { ChevronDown } from "@/components/ui/appIcons";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Meta } from "@/components/ui/CardKit";
@@ -223,14 +223,8 @@ export function BookingCard({
           {/* Status only when it is news: a canceled class says so; a healthy one needs no word. */}
           {b.status === "CANCELED" && <StatusDot tone="neutral">{STATUS_LABEL[b.status]}</StatusDot>}
           {scheduled && hoursUntil > -1 && hoursUntil <= 0.5 && !b.inPerson && (
-            <DiscordLink
-              href={b.discordUrl ?? DISCORD_INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonVariants({ variant: "primary", size: "sm" })}
-            >
-              Join on Discord
-            </DiscordLink>
+            // With Discord not connected it reads "Connect Discord and join" and opens this class's call once connected.
+            <JoinClassButton href={b.discordUrl ?? DISCORD_INVITE_URL} bookingId={b.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
           )}
           {scheduled && hoursUntil > -1 && !(cancelEligible && confirmingCancel) && (
             <ActionMenu label="More" align="right">
@@ -379,41 +373,47 @@ export function AttendeeEmailRow({
   removable: boolean;
   status?: { checking: boolean; found: boolean; verified: boolean; name: string | null };
 }) {
+  const typed = value.trim();
+  // Not a friend (or no account, which looks the same): they are asked in place, and the class books once they say yes.
+  const notFriend = typed !== "" && Boolean(status) && !status?.checking && !status?.verified && !status?.found;
   return (
-    <div className="flex items-center gap-2">
-      <input
-        type="email"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="student@email.com"
-        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
-      />
-      <span className="shrink-0 text-small">
-        {value.trim() === "" ? null : status?.checking ? (
-          <span className="text-slate-500">Checking…</span>
-        ) : status?.verified ? (
-          <span className="flex items-center gap-1 text-slate-50">
-            <CheckIcon size={11} />
-            {status.name ?? "Verified"}
-          </span>
-        ) : status?.found ? (
-          <span className="text-red-400">Not verified</span>
-        ) : status ? (
-          <span className="flex items-center gap-1.5 text-red-400">
-            Not your friend yet
-            <InviteToRegisterButton email={value.trim()} />
-          </span>
-        ) : null}
-      </span>
-      {removable && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Remove this student"
-          className={buttonVariants({ variant: "secondary", size: "sm", className: "flex shrink-0" })}
-        >
-          <XIcon size={12} />
-        </button>
+    <div>
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="student@email.com"
+          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
+        />
+        <span className="shrink-0 text-small">
+          {typed === "" ? null : status?.checking ? (
+            <span className="text-slate-500">Checking…</span>
+          ) : status?.verified ? (
+            <span className="flex items-center gap-1 text-slate-50">
+              <CheckIcon size={11} />
+              {status.name ?? "Verified"}
+            </span>
+          ) : status?.found ? (
+            <span className="text-red-400">Not verified</span>
+          ) : null}
+        </span>
+        {removable && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Remove this student"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "flex shrink-0" })}
+          >
+            <XIcon size={12} />
+          </button>
+        )}
+      </div>
+      {notFriend && (
+        <p className="mt-1.5 flex flex-wrap items-center gap-2 pl-1 text-small text-red-400">
+          Not your friend yet
+          <AskTogetherButton key={typed.toLowerCase()} email={typed} />
+        </p>
       )}
     </div>
   );

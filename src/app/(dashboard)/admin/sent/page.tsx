@@ -164,6 +164,16 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                         <span>{r.kind}</span>
                         <span aria-hidden>·</span>
                         <span className={r.read ? "text-slate-500" : "text-slate-400"}>{r.read ? "Read" : "Not read yet"}</span>
+                        {r.supportCaseId && (
+                          <>
+                            <span aria-hidden>·</span>
+                            {/* They answered: the one bit of news on the row, so it keeps the accent and goes straight to the reply. */}
+                            <Link href={`/admin/support/${r.supportCaseId}?filter=all`} className="tap inline-flex items-center gap-0.5 font-medium text-signal-fg hover:underline">
+                              Replied
+                              <ChevronRight aria-hidden className="h-3 w-3" />
+                            </Link>
+                          </>
+                        )}
                       </>
                     )}
                     {r.userId && (

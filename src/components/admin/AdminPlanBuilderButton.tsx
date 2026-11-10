@@ -13,6 +13,11 @@ import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { planBuilderApplyAction, planBuilderContextAction, planBuilderPreviewAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 import type { PlanBuilderContext, PlanBuilderPreview } from "@/lib/planBuilder";
 import type { TimelineClassState } from "@/lib/planTimeline";
+import type { PlanFix } from "@/lib/planFixes";
+import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
+import { planBuilderTypedTimeAction, type TypedBuilderChoice } from "@/app/(dashboard)/admin/schedule/weeklyTimeActions";
+import { ANOTHER_TIME, AnotherTimeFields } from "@/components/admin/WeeklyTimeParts";
+import type { TypedWeeklyTime } from "@/lib/weeklyTimeRules";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -56,14 +61,41 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(() => newIdempotencyKey());
+  // The group has not started (its combined first payment is waiting): show that payment here instead of closing.
+  const [fix, setFix] = useState<PlanFix | null>(null);
+  // "Another time…": times typed in this dialog (a new one gets its 45 minute window when the plan is applied).
+  const [typed, setTyped] = useState<TypedBuilderChoice[]>([]);
+  const [asking, setAsking] = useState(false);
+  const [typingBusy, setTypingBusy] = useState(false);
+
+  async function pickTyped(time: TypedWeeklyTime) {
+    setTypingBusy(true);
+    const result = await planBuilderTypedTimeAction(userId, time).catch(() => ({ ok: false as const, error: "Could not check that time." }));
+    setTypingBusy(false);
+    if (!result.ok) return void toast.warning(result.error);
+    setTyped((list) => [...list.filter((x) => x.key !== result.choice.key), result.choice]);
+    setAsking(false);
+    setSlotKey(result.choice.key);
+  }
+
+  function chooseTime(next: string) {
+    if (next === ANOTHER_TIME) return setAsking(true);
+    setAsking(false);
+    setSlotKey(next);
+  }
 
   async function openBox() {
     setOpen(true);
     setCtx(null);
     setPreview(null);
     setError(null);
-    const result = await planBuilderContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load." }));
+    setFix(null);
+    const result = await planBuilderContextAction(userId).catch(() => ({ ok: false as const, error: "Could not load.", fix: null }));
     if (!result.ok) {
+      if (result.fix) {
+        setError(result.error);
+        return setFix(result.fix);
+      }
       toast.warning(result.error);
       return setOpen(false);
     }
@@ -79,17 +111,22 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     setCharge(true);
     const first = c.slot ?? c.choices[0];
     setSlotKey(first ? `${first.scheduleId}:${first.chunkIndex}` : "");
+    setTyped([]);
+    setAsking(false);
   }
 
   const input = useMemo(() => {
-    const [scheduleId, chunk] = slotKey.split(":");
-    if (!scheduleId || chunk === undefined) return null;
+    // A typed time with no window yet travels as `newTime`; the window is made when the plan is applied.
+    const typedPick = typed.find((t) => t.key === slotKey && t.newTime);
+    const [scheduleId, chunk] = typedPick ? ["", "0"] : slotKey.split(":");
+    if (asking || (!typedPick && (!scheduleId || chunk === undefined))) return null;
+    const time = { scheduleId, chunkIndex: Number(chunk), newTime: typedPick?.newTime ?? null };
     if (ctx?.mode === "existing") {
       if (!taughtOne) return null;
-      return { userId, term, scheduleId, chunkIndex: Number(chunk), startDate: cycleStart && cycleStart <= taughtOne ? cycleStart : taughtOne, installmentsPaid: paid, taughtDates: [taughtOne], chargeTaught: charge, recordPayment: recordPay };
+      return { userId, term, ...time, startDate: cycleStart && cycleStart <= taughtOne ? cycleStart : taughtOne, installmentsPaid: paid, taughtDates: [taughtOne], chargeTaught: charge, recordPayment: recordPay };
     }
-    return { userId, term, scheduleId, chunkIndex: Number(chunk), startDate, installmentsPaid: paid, taughtDates: taught, chargeTaught: charge };
-  }, [ctx, userId, term, slotKey, startDate, paid, taught, charge, taughtOne, cycleStart, recordPay]);
+    return { userId, term, ...time, startDate, installmentsPaid: paid, taughtDates: taught, chargeTaught: charge };
+  }, [ctx, userId, term, slotKey, startDate, paid, taught, charge, taughtOne, cycleStart, recordPay, typed, asking]);
 
   // The timeline follows the form, a moment after the last change.
   useEffect(() => {
@@ -139,6 +176,27 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
 
   const field = "min-h-11 min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-body text-slate-100 shadow-pressed-low";
 
+  // Listed times, then any typed ones. A typed time that is already a class shows once, under its listed key.
+  const timeChoices = [
+    ...(ctx?.choices ?? []).map((c) => ({ key: `${c.scheduleId}:${c.chunkIndex}`, dayOfWeek: c.dayOfWeek, startTime: c.startTime, isNew: false })),
+    ...typed.filter((t) => !(ctx?.choices ?? []).some((c) => `${c.scheduleId}:${c.chunkIndex}` === t.key)).map((t) => ({ key: t.key, dayOfWeek: t.dayOfWeek, startTime: t.startTime, isNew: Boolean(t.newTime) })),
+  ];
+  const timeSelect = (
+    <>
+      <select value={asking ? ANOTHER_TIME : slotKey} onChange={(e) => chooseTime(e.target.value)} className={`${field} w-full`}>
+        {timeChoices.length === 0 && <option value="">No weekly time yet</option>}
+        {timeChoices.map((c) => (
+          <option key={c.key} value={c.key}>
+            {DAYS[c.dayOfWeek]} {timeLabel(c.startTime)}
+            {c.isNew ? " (new)" : ""}
+          </option>
+        ))}
+        <option value={ANOTHER_TIME}>Another time…</option>
+      </select>
+      {(asking || timeChoices.length === 0) && <AnotherTimeFields onUse={(t) => void pickTyped(t)} busy={typingBusy} />}
+    </>
+  );
+
   return (
     <>
       <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5" })}>
@@ -161,7 +219,12 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
           </div>
         }
       >
-        {!ctx ? (
+        {!ctx && fix ? (
+          <div className="space-y-2">
+            {error && <p role="alert" className="text-small text-red-400">{error}</p>}
+            <PlanFixPanel fix={fix} notify={notify} onDone={() => void openBox()} />
+          </div>
+        ) : !ctx ? (
           <p className="text-small text-slate-500">Loading…</p>
         ) : (
           <div className="space-y-4">
@@ -184,16 +247,10 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   </span>
                   <input type="date" value={cycleStart || taughtOne} min={taughtOne ? new Date(new Date(`${taughtOne}T12:00:00Z`).getTime() - 27 * 86_400_000).toISOString().slice(0, 10) : undefined} max={taughtOne || todayEt()} disabled={!taughtOne} onChange={(e) => setCycleStart(e.target.value)} className={`${field} w-full disabled:opacity-50`} />
                 </label>
-                <label className="block">
+                <div className="block">
                   <span className="mb-1 block text-small font-medium text-slate-200">Weekly time (every week after)</span>
-                  <select value={slotKey} onChange={(e) => setSlotKey(e.target.value)} className={`${field} w-full`}>
-                    {ctx.choices.map((c) => (
-                      <option key={`${c.scheduleId}:${c.chunkIndex}`} value={`${c.scheduleId}:${c.chunkIndex}`}>
-                        {DAYS[c.dayOfWeek]} {timeLabel(c.startTime)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  {timeSelect}
+                </div>
                 <div className="space-y-1.5 rounded-xl bg-neu-base p-3 shadow-pressed-low">
                   <label className="flex items-center gap-2 text-small text-slate-200">
                     <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-signal" />
@@ -223,16 +280,10 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                     <span className="mb-1 block text-small font-medium text-slate-200">Cycle 1 started on</span>
                     <input type="date" value={startDate} max={todayEt()} onChange={(e) => setStartDate(e.target.value)} className={`${field} w-full`} />
                   </label>
-                  <label className="block">
+                  <div className="block">
                     <span className="mb-1 block text-small font-medium text-slate-200">Weekly time</span>
-                    <select value={slotKey} onChange={(e) => setSlotKey(e.target.value)} className={`${field} w-full`}>
-                      {ctx.choices.map((c) => (
-                        <option key={`${c.scheduleId}:${c.chunkIndex}`} value={`${c.scheduleId}:${c.chunkIndex}`}>
-                          {DAYS[c.dayOfWeek]} {timeLabel(c.startTime)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                    {timeSelect}
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>

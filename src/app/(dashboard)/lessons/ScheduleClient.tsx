@@ -1,9 +1,8 @@
 "use client";
 
-import { OpenSupportLink } from "@/components/notifications/OpenSupportLink";
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
@@ -16,7 +15,7 @@ import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
 import { buttonVariants } from "@/components/ui/button";
-import { DiscordLink } from "@/components/ui/DiscordLink";
+import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
@@ -80,6 +79,12 @@ interface ScheduleClientProps {
       replaces (a silent, unexplained "0 of 2 credits" with no next step). */
   weeklyTime: WeeklyTime | null;
   upcomingBookings: UpcomingBooking[];
+  /** "self": the student moves their own weekly time here. "team": a group plan's time is moved by the teacher (the server refuses it). */
+  timeChange?: "self" | "team";
+  /** Opened from a notice (?changeTime=): the picker is open on arrival. */
+  openTimePicker?: boolean;
+  /** "scheduleId:chunkIndex" to have chosen in the picker on arrival, when that time is open. */
+  initialTimeKey?: string | null;
 }
 
 export function ScheduleClient({
@@ -89,6 +94,9 @@ export function ScheduleClient({
   hasClassThisWeek,
   weeklyTime,
   upcomingBookings,
+  timeChange = "self",
+  openTimePicker = false,
+  initialTimeKey = null,
 }: ScheduleClientProps) {
   const router = useRouter();
   // Skipping one class (24+ hours ahead): two taps, then it is gone and its
@@ -137,10 +145,21 @@ export function ScheduleClient({
     setChangeSuccess(false);
     if (reservableSlots !== null) return; // already loaded once this visit
     setLoadingSlots(true);
-    const slots = await getReservableSlotsForChangeAction();
+    const slots = await getReservableSlotsForChangeAction().catch(() => [] as ReservableSlot[]);
     setLoadingSlots(false);
     setReservableSlots(slots);
   }
+
+  // Arriving from a notice about a weekly time: the picker opens right away, scrolled into view, with that time chosen.
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const openedOnArrival = useRef(false);
+  useEffect(() => {
+    if (!openTimePicker || timeChange !== "self" || openedOnArrival.current) return;
+    openedOnArrival.current = true;
+    void openChangeTime().then(() => pickerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTimePicker, timeChange]);
 
   async function handleChangeTime(slot: ReservableSlot) {
     const key = `${slot.scheduleId}:${slot.chunkIndex}`;
@@ -232,9 +251,7 @@ export function ScheduleClient({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {c.joinNow && (
-              <DiscordLink href={booking.discordUrl ?? DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
-                Join
-              </DiscordLink>
+              <JoinClassButton href={booking.discordUrl ?? DISCORD_INVITE_URL} bookingId={booking.id} label="Join" className={buttonVariants({ variant: "primary", size: "sm" })} />
             )}
             {!c.confirming && (
               <ActionMenu label="More" align="right">
@@ -330,9 +347,7 @@ export function ScheduleClient({
                     </a>
                   )}
                   {nextState.joinNow && (
-                    <DiscordLink href={next.discordUrl ?? DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
-                      Join on Discord
-                    </DiscordLink>
+                    <JoinClassButton href={next.discordUrl ?? DISCORD_INVITE_URL} bookingId={next.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
                   )}
                 </div>
                 {supportError?.id === next.id && <p role="alert" className="basis-full text-right text-small text-red-400">{supportError.message}</p>}
@@ -345,9 +360,11 @@ export function ScheduleClient({
             <p className="mt-1 text-headline font-semibold text-balance text-slate-50">{weeklyLine ?? "Nothing booked yet"}</p>
             {weeklyLine ? (
               <Meta className="mt-1.5" items={[hasClassThisWeek ? "This week is booked" : "Your weekly time", "Nothing else booked yet"]} />
+            ) : timeChange === "team" ? (
+              <p className="mt-1.5 text-small text-slate-500">You book each class yourself with your credits, under Book a class.</p>
             ) : (
-              <Callout tone="neutral" className="mt-3" action={<OpenSupportLink className={buttonVariants({ variant: "secondary", size: "sm" })} />}>
-                No weekly time set.
+              <Callout tone="neutral" className="mt-3">
+                No weekly time yet. Pick one below and every class in your plan is booked.
               </Callout>
             )}
           </>
@@ -394,8 +411,23 @@ export function ScheduleClient({
           </p>
         )}
 
-        {changingTime ? (
-          <div className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
+        {timeChange === "team" ? (
+          // A group plan's weekly time is moved by the teacher so everyone stays together: ask for it here, in one tap.
+          weeklyTime && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50/8 pt-3">
+              <div className="min-w-0">
+                <p className="truncate text-body font-medium text-slate-100">{weeklyLine}</p>
+                <p className="text-caption text-slate-500">Weekly time · the teacher moves a group plan&apos;s time</p>
+              </div>
+              <MessageSupportButton
+                problem={`I would like to move my group plan's weekly time (now ${DAY_LABELS[weeklyTime.dayOfWeek]}s at ${formatTimeLabel(weeklyTime.startTime)}).`}
+                label="Ask to move it"
+                className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}
+              />
+            </div>
+          )
+        ) : changingTime ? (
+          <div ref={pickerRef} className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
             <div className="flex items-center justify-between gap-3">
               <p className="text-small font-medium text-slate-300"><Hint>Pick a new weekly time</Hint></p>
               <button
@@ -415,7 +447,7 @@ export function ScheduleClient({
               </p>
             ) : (
               <div className="mt-3">
-                <WeeklyTimePicker slots={reservableSlots} busyKey={changingSlotKey} onConfirm={handleChangeTime} />
+                <WeeklyTimePicker slots={reservableSlots} busyKey={changingSlotKey} onConfirm={handleChangeTime} initialKey={initialTimeKey} />
               </div>
             )}
           </div>
@@ -425,8 +457,13 @@ export function ScheduleClient({
               <p className="truncate text-body font-medium text-slate-100">{weeklyLine ?? "No weekly time"}</p>
               <p className="text-caption text-slate-500">Weekly time</p>
             </div>
-            <button type="button" onClick={openChangeTime} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
-              Change
+            {/* With no weekly time yet, picking one is the thing to do next, so it is the one raised button; otherwise a quiet Change. */}
+            <button
+              type="button"
+              onClick={openChangeTime}
+              className={buttonVariants({ variant: weeklyTime ? "ghost" : "primary", size: "sm", className: "shrink-0" })}
+            >
+              {weeklyTime ? "Change" : "Pick a time"}
             </button>
           </div>
         )}

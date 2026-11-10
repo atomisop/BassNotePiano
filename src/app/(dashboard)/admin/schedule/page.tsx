@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getUpcomingOccurrences } from "@/lib/classSchedule";
 import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
-import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
+import { getAllClassSchedules, countUpcomingBookingsBySchedule, getWindowHolders } from "@/lib/classScheduleManage";
+import { getWaitlistByWindow, setupLinkFor } from "@/lib/slotWaitlist";
+import { editWeeklyWindowAction, moveWindowWithEveryoneAction, previewWindowMoveAction } from "./weeklyTimeActions";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { currentTeacherCalendarVersion, teacherCalendarToken } from "@/lib/teacherCalendar";
@@ -13,7 +15,6 @@ import { AdminBookingRequests } from "@/components/admin/AdminBookingRequests";
 import { getBoolSetting } from "@/lib/siteSettings";
 import {
   createClassScheduleAction,
-  updateClassScheduleAction,
   setClassScheduleActiveAction,
   markAttendanceAction,
   undoAttendanceAction,
@@ -45,7 +46,7 @@ const VIEWS: { label: string; value: ViewValue }[] = [
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string }> }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; name?: string; email?: string; phone?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
@@ -79,7 +80,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
               scheduledAt: g.scheduledAt.toISOString(),
               label: g.label,
               alreadyBooked: g.alreadyBooked,
-              requests: g.requests.map((r) => ({ id: r.id, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
+              requests: g.requests.map((r) => ({ id: r.id, studentId: r.studentId, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
             }))}
             requestMode={requestMode}
             showSettingsLink={isOwnerEmail(session?.user?.email)}
@@ -100,12 +101,17 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
         {viewSwitcher}
 
         <div className="mt-6">
-          <AdminReservations hours={hours} reservations={reservations} />
+          {/* ?name=&email=&phone= (from People and elsewhere) fills in the customer, so keeping a time for them is one step. */}
+          <AdminReservations
+            hours={hours}
+            reservations={reservations}
+            initial={{ name: (searchParams.name ?? "").slice(0, 120), email: (searchParams.email ?? "").slice(0, 200), phone: (searchParams.phone ?? "").slice(0, 40) }}
+          />
         </div>
 
-        {/* Closing a day cancels every class on it, so it sits quietly at the end, behind its own confirm, not above the list. */}
+        {/* Closing a day cancels (or moves) every class on it, so it sits quietly at the end, behind its own confirm, not above the list. */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50/8 pt-4">
-          <p className="text-small text-slate-500"><Hint>A holiday or a sick day: close it and every class that day is canceled.</Hint></p>
+          <p className="text-small text-slate-500"><Hint>A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</Hint></p>
           <AdminCloseDay />
         </div>
       </div>
@@ -141,7 +147,11 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
   }
 
   const schedules = await getAllClassSchedules();
-  const upcomingCounts = await countUpcomingBookingsBySchedule(schedules.map((s) => s.id));
+  const [upcomingCounts, holders, waiting] = await Promise.all([
+    countUpcomingBookingsBySchedule(schedules.map((s) => s.id)),
+    getWindowHolders(schedules.map((s) => s.id)),
+    getWaitlistByWindow(schedules.map((s) => s.id)),
+  ]);
   const viewer = await getServerAuthSession();
   const viewerIsOwner = Boolean(viewer?.user && isOwnerEmail(viewer.user.email));
   const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
@@ -164,10 +174,14 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             label: s.label,
             active: s.active,
             upcomingBookings: upcomingCounts.get(s.id) ?? 0,
+            holders: holders.get(s.id) ?? [],
+            waiting: (waiting.get(s.id) ?? []).map((w) => ({ ...w, setupHref: setupLinkFor(w.userId, s.id, w.chunkIndex) })),
           }))}
           onCreate={createClassScheduleAction}
-          onUpdate={updateClassScheduleAction}
+          onUpdate={editWeeklyWindowAction}
           onSetActive={setClassScheduleActiveAction}
+          onPreviewMove={previewWindowMoveAction}
+          onMoveEveryone={moveWindowWithEveryoneAction}
         />
       </div>
 

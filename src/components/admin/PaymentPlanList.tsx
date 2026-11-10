@@ -17,12 +17,16 @@ import { CreditCard } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { CardFoot, CardHead, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { toast } from "@/components/ui/Toaster";
+import { RemindButton } from "@/components/admin/RemindButton";
+import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
+import type { PlanFix } from "@/lib/planFixes";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
   onCancel: (planId: string, note: string, notify?: boolean) => Promise<void>;
   /** Owner only: records money that was received but is not showing in revenue. */
-  onRecordPayment?: (planId: string, notify?: boolean) => Promise<{ ok: boolean; error: string | null }>;
+  onRecordPayment?: (planId: string, notify?: boolean, key?: string) => Promise<{ ok: boolean; error: string | null; fix?: PlanFix | null }>;
   /** Sends the open bill to the student again. */
   onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
   /** Days a plan's weekly time stays held while its first payment is missing (Settings > Payments). */
@@ -75,6 +79,11 @@ function needsPaymentRecord(plan: AdminPaymentPlan): boolean {
   return verified === 0 || verified < plan.installmentsPaid;
 }
 
+/** The bill open on this plan now (sent in or not): money that arrived another way can be recorded against it. */
+function openBill(plan: AdminPaymentPlan) {
+  return plan.installmentPayments.find((p) => p.status === "AWAITING_TRANSFER" || p.status === "PENDING_REVIEW") ?? null;
+}
+
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** Same small "HH:mm" -> "H:MM AM/PM" formatter AdminScheduleManager.tsx already has, duplicated on purpose rather than shared, same convention this codebase already uses for small per-boundary formatting helpers. */
@@ -101,21 +110,26 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   const [note, setNote] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordError, setRecordError] = useState<string | null>(null);
+  const [recordFix, setRecordFix] = useState<{ planId: string; fix: PlanFix } | null>(null);
+  const [recordKey, setRecordKey] = useState(() => newIdempotencyKey());
   const [billNote, setBillNote] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
   async function handleRecord(id: string) {
     if (!onRecordPayment) return;
     setBusyId(id);
     setRecordError(null);
+    setRecordFix(null);
     try {
-      const h = await toast.held("Recording the payment", () => onRecordPayment(id, notify), { mail: notify });
+      const h = await toast.held("Recording the payment", () => onRecordPayment(id, notify, recordKey), { mail: notify });
       if (h.undone) return;
       const result = h.value;
       if (!result.ok) {
         setRecordError(result.error);
+        if (result.fix) setRecordFix({ planId: id, fix: result.fix });
         return;
       }
       setRecordingId(null);
+      setRecordKey(newIdempotencyKey());
       router.refresh();
     } finally {
       setBusyId(null);
@@ -173,6 +187,13 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
           <StatusDot tone={badge.tone}>{badge.label}</StatusDot>
         ) : null;
         const slot = plan.reservedSchedule ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}` : null;
+        // Only a full scholarship makes a bill $0; a later first class is set by "Set up plan".
+        const free = plan.installmentAmountCents === 0;
+        const startsLater = plan.startsAt && new Date(plan.startsAt).getTime() > Date.now() ? new Date(plan.startsAt) : null;
+        const bill = openBill(plan);
+        const noRecord = needsPaymentRecord(plan);
+        // Money that arrived another way can be recorded whenever a bill is open, not only when the plan shows nothing paid.
+        const canRecord = !!onRecordPayment && plan.status === "ACTIVE" && (noRecord || !!bill);
         return (
         <article key={plan.id} className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
           <CardHead
@@ -193,24 +214,47 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               tone={plan.isOverdue ? "danger" : "default"}
             />
             <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />
-            <Fact label="Every 28 days" value={formatUsd(plan.installmentAmountCents)} />
+            <Fact label={free ? "Scholarship" : "Every 28 days"} value={free ? "Free" : formatUsd(plan.installmentAmountCents)} tone={free ? "success" : "default"} />
             <Fact label={plan.reservedSchedule?.label ?? "Weekly class"} value={slot ?? "None"} tone={slot ? "default" : "muted"} />
           </Facts>
 
-          <Meta className="mt-3" items={[`Started ${shortDate(plan.createdAt)}`, `Received ${formatUsd(receivedCents(plan))}`]} />
+          <Meta
+            className="mt-3"
+            items={[
+              startsLater ? (
+                <span className="text-signal-fg">First class {startsLater.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</span>
+              ) : null,
+              `Started ${shortDate(plan.createdAt)}`,
+              `Received ${formatUsd(receivedCents(plan))}`,
+              plan.status === "ACTIVE" && bill && !noRecord ? `Bill of ${formatUsd(bill.amountCents)} ${bill.status === "PENDING_REVIEW" ? "sent in for review" : "open, not paid yet"}` : null,
+            ]}
+          />
 
           {plan.status === "CANCELED" && plan.cancellationNote && (
             <Callout tone="neutral" className="mt-3">Canceled: {plan.cancellationNote}</Callout>
           )}
 
-          {onRecordPayment && plan.status === "ACTIVE" && needsPaymentRecord(plan) && (
+          {canRecord && (recordingId === plan.id || noRecord) && (
             <div className="mt-3">
               {recordingId === plan.id ? (
                 <Callout tone="warning">
                   <p>
-                    Record {formatUsd(plan.installmentAmountCents)} as received from {name}? This counts it in revenue
-                    {plan.installmentsPaid === 0 ? ", opens their access, grants their credits and books their weekly time" : ""}.
+                    Record {formatUsd(bill?.amountCents ?? plan.installmentAmountCents)} as received from {name}? This counts it in revenue
+                    {plan.installmentsPaid === 0 ? ", opens their access, grants their credits and books their weekly time" : ", adds this cycle's credits and moves the next bill on"}.
                   </p>
+                  {recordFix?.planId === plan.id && (
+                    <div className="mt-2">
+                      <PlanFixPanel
+                        fix={recordFix.fix}
+                        notify={notify}
+                        onDone={() => {
+                          setRecordFix(null);
+                          setRecordError(null);
+                          setRecordingId(null);
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="mt-2 flex gap-2">
                     <button
                       type="button"
@@ -239,6 +283,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => {
                         setRecordError(null);
+                        setRecordFix(null);
                         setRecordingId(plan.id);
                       }}
                       className={buttonVariants({ variant: "secondary", size: "sm" })}
@@ -298,9 +343,24 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                   Cancel plan
                 </button>
                 <div className="flex flex-wrap items-center justify-end gap-2">
+                  {/* The fixed "your payment is overdue" notice, once a day at most, right from the row. */}
+                  {plan.isOverdue && <RemindButton kind="overdue" userId={plan.user.id} name={name.split(" ")[0]} />}
                   <Link href={`/admin/users/${plan.user.id}#scheduler`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                     Schedule
                   </Link>
+                  {canRecord && !noRecord && recordingId !== plan.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRecordError(null);
+                        setRecordFix(null);
+                        setRecordingId(plan.id);
+                      }}
+                      className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    >
+                      Record payment
+                    </button>
+                  )}
                   {onResendBill && (
                     <button
                       type="button"

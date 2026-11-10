@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Link2Off, Send, X } from "@/components/ui/appIcons";
+import { ArrowRight, Check, Link2Off, Mail, Send, X } from "@/components/ui/appIcons";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
 import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -107,13 +107,13 @@ export function ParentLinksPanel() {
       <div>
         <div className="flex items-center gap-1 text-small font-medium text-slate-300">
           Add your child&apos;s account
-          <Hint>Type the email their account uses. They get a request and have to accept. Then you can see their progress, change their class times and pay for their plan, and you can still learn yourself.</Hint>
+          <Hint>Type the email their account uses (or will use: with no account yet they get an invitation to make one). They get a request and have to accept. Then you can see their progress, change their class times and pay for their plan, and you can still learn yourself.</Hint>
         </div>
         <div className="mt-2 flex gap-2">
           <input type="email" inputMode="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their account email" aria-label="Child's account email" className={field} />
           <button
             type="button"
-            disabled={check !== "ready" || busy === "send"}
+            disabled={(check !== "ready" && check !== "no_account") || busy === "send"}
             onClick={() => void send()}
             aria-label="Send request"
             className={buttonVariants({ variant: "primary", size: "sm", className: "h-11 shrink-0 px-4" })}
@@ -122,7 +122,15 @@ export function ParentLinksPanel() {
             <span className="ml-2 hidden sm:inline">Send request</span>
           </button>
         </div>
-        <AccountCheckLine state={check} email={email.trim()} />
+        {check === "no_account" ? (
+          // No account yet: the request is kept for this email and they get an invitation, so nobody has to come back and ask again.
+          <p className="mt-1.5 flex min-h-5 items-start gap-2 pl-1 text-small text-slate-400" role="status" aria-live="polite">
+            <Mail aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-signal-fg" />
+            <span>No account yet. Send the request and we email them an invitation. When they sign up with this email, they are asked to accept.</span>
+          </p>
+        ) : (
+          <AccountCheckLine state={check} email={email.trim()} />
+        )}
       </div>
 
       {state === null ? (
@@ -148,9 +156,9 @@ export function ParentLinksPanel() {
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-control bg-neu-base px-4 py-3 shadow-pressed-low">
                       <span className="min-w-0">
                         <span className="block truncate text-small font-medium text-slate-300">{c.name}</span>
-                        <span className="block truncate text-small text-slate-500">Waiting for them to accept · {c.email}</span>
+                        <span className="block truncate text-small text-slate-500">{c.awaitingAccount ? "Waiting for them to create an account" : `Waiting for them to accept · ${c.email}`}</span>
                       </span>
-                      <button type="button" disabled={busy === `cancel:${c.childId}`} onClick={() => void run(`cancel:${c.childId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
+                      <button type="button" disabled={busy === `cancel:${c.linkId}`} onClick={() => void run(`cancel:${c.linkId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
                         Withdraw
                       </button>
                     </div>
@@ -211,6 +219,6 @@ export function ParentLinksPanel() {
 /** What the line under the box says: an account that exists, minus one already asked or linked. */
 function stateFor(email: string, answer: Exclude<CheckState, "checking" | "duplicate" | "failed">, state: ParentModeState | null): CheckState {
   const existing = state?.children.find((c) => c.email === email);
-  if (answer === "ready" && existing) return existing.status === "ACCEPTED" ? "accepted" : "waiting";
+  if ((answer === "ready" || answer === "no_account") && existing) return existing.status === "ACCEPTED" ? "accepted" : "waiting";
   return answer;
 }

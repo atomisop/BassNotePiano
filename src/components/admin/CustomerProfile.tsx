@@ -6,7 +6,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CalendarPlus, ChevronDown, ChevronRight, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
-import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
+import { OPEN_QUICK_MESSAGE_EVENT, QuickMessageButton } from "@/components/admin/QuickMessageButton";
+import { notifyDiscordAction } from "@/app/(dashboard)/admin/discord/actions";
+import { parseSlotParam } from "@/lib/commandRecents";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -39,6 +41,8 @@ export interface CustomerProfileProps {
   creditTools?: React.ReactNode;
   /** The owner can correct an approved payment's amount or day. */
   canEditPayments?: boolean;
+  /** The Money section's payment list with the same actions as Billing > Payments (approve, mark paid, refund...), built by the page. */
+  paymentsPanel?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean, notify?: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean, notify?: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -55,6 +59,9 @@ export interface CustomerProfileProps {
   onLiftPaymentLock: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
+/** Opens the Notes editor on this page (the command menu's "Write a note"). */
+const OPEN_NOTES_EVENT = "bnp-open-notes";
+
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
@@ -69,11 +76,12 @@ function formatDateTime(d: Date | string) {
 
 /**
  * One card inside a section. Its name is a quiet eyebrow (the section bar above it is the heading people scan), so the first loud thing
- * in the card is what it holds: the email, the balance, the last payment (DESIGN.md, Hierarchy rules 1 and 3).
+ * in the card is what it holds: the email, the balance, the last payment (DESIGN.md, Hierarchy rules 1 and 3). `id` lets a `?do=` job
+ * scroll to it.
  */
-function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function SectionCard({ id, title, action, children }: { id?: string; title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="glass-surface p-4 md:p-5">
+    <div id={id} className="glass-surface scroll-mt-28 p-4 md:p-5">
       <div className="flex min-h-8 items-center justify-between gap-3">
         <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>
         {action}
@@ -114,8 +122,21 @@ function PaymentStatus({ status }: { status: string }) {
 /** Collapsed until the Notes button is pressed: the teacher's permanent notes on this student. */
 function NotesSection({ studentId }: { studentId: string }) {
   const [open, setOpen] = useState(false);
+  // `?do=note` (the command menu) opens the editor and puts the cursor in it.
+  useEffect(() => {
+    const show = () => {
+      setOpen(true);
+      window.setTimeout(() => {
+        document.getElementById("cp-notes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelector<HTMLTextAreaElement>("#cp-notes textarea")?.focus({ preventScroll: true });
+      }, 120);
+    };
+    window.addEventListener(OPEN_NOTES_EVENT, show);
+    return () => window.removeEventListener(OPEN_NOTES_EVENT, show);
+  }, []);
   return (
     <SectionCard
+      id="cp-notes"
       title="Notes"
       action={
         <button
@@ -212,6 +233,7 @@ export function CustomerProfile({
   accountTools,
   creditTools,
   canEditPayments = false,
+  paymentsPanel,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -279,17 +301,76 @@ export function CustomerProfile({
     return () => window.removeEventListener("hashchange", fromAddress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // `?do=` (from the command menu) opens the account with one job ready: credits, a class, the plan tools, or payments.
-  // Read from the address so a pick that lands on the page already open (the same person) works too, not only a fresh visit.
-  const doJob = useSearchParams().get("do");
+  // `?do=` (from the command menu and links on other admin screens) opens the account with one job ready: credits, a class, the plan
+  // tools, payments, Set up plan (with `?slot=<scheduleId>:<chunkIndex>`), a message, a note, the next scale, their support chat,
+  // or the Discord steps. Read from the address so a pick that lands on the page already open (the same person) works too.
+  const searchParams = useSearchParams();
+  const doJob = searchParams.get("do");
+  const doSlot = searchParams.get("slot");
+  // The job runs a moment after the page opens: read the Notify switch as it is then, not as it was on the first render.
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
+  const setNotifyRef = useRef(setNotify);
+  setNotifyRef.current = setNotify;
   useEffect(() => {
     const job = doJob;
     if (!job) return;
+    const firstName = (user.name ?? user.email).split(" ")[0];
+    const sendDiscordSteps = () =>
+      void toast
+        .held(`Sending the Discord steps to ${firstName}`, () => notifyDiscordAction(user.id), { mail: true })
+        .then((h) => {
+          if (h.undone) return;
+          if (!h.value.ok) toast.error(h.value.message);
+          else toast.success(h.value.message === "Sent." ? `Discord steps sent to ${firstName}` : h.value.message);
+        })
+        .catch(() => toast.error("Could not send the Discord steps."));
     // The address is cleaned only when the job runs: in development React mounts the page twice, and cleaning it on the first
     // pass left the second one with nothing to do.
     const t = window.setTimeout(() => {
       window.history.replaceState(null, "", window.location.pathname + window.location.hash);
-      if (job === "credits") {
+      if (job === "setup") {
+        // Set up plan lives in the Plan menu (owner only); it opens itself on this event, with the weekly time if one was given.
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.dispatchEvent(new CustomEvent("bnp-open-plan-setup", { detail: { slot: parseSlotParam(doSlot) } }));
+      } else if (job === "message") {
+        window.dispatchEvent(new CustomEvent(OPEN_QUICK_MESSAGE_EVENT, { detail: { userId: user.id } }));
+      } else if (job === "note") {
+        chooseTab("learning");
+        window.dispatchEvent(new Event(OPEN_NOTES_EVENT));
+      } else if (job === "scale") {
+        chooseTab("learning");
+        window.setTimeout(() => {
+          const card = document.getElementById("cp-curriculum");
+          const unlock = Array.from(card?.querySelectorAll("button") ?? []).find((b) => b.textContent?.trim() === "Unlock");
+          (unlock ?? card)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (unlock) unlock.focus({ preventScroll: true });
+          else toast.info(`Every scale is already open for ${firstName}.`);
+        }, 160);
+      } else if (job === "support") {
+        const at = (s: CustomerProfileData["supportThreads"][number]) => new Date(s.lastMessage?.createdAt ?? s.createdAt).getTime();
+        const latest = [...profile.supportThreads].sort((a, b) => at(b) - at(a))[0];
+        if (latest) router.push(`/admin/support/${latest.id}?filter=all`);
+        else {
+          chooseTab("support");
+          toast.info(`${firstName} has no support chats yet.`);
+        }
+      } else if (job === "discord") {
+        chooseTab("overview");
+        // Sending the steps is a notice, so the Notify switch decides. Off, nothing goes out unless the switch is turned on here.
+        if (notifyRef.current) sendDiscordSteps();
+        else
+          toast.warning(`Notify is off, so nothing was sent to ${firstName}.`, {
+            description: "Turn it on to send the Discord steps to their Mail and email.",
+            action: {
+              label: "Turn on and send",
+              onClick: () => {
+                setNotifyRef.current(true);
+                sendDiscordSteps();
+              },
+            },
+          });
+      } else if (job === "credits") {
         chooseTab("classes");
         window.setTimeout(() => {
           const input = document.getElementById("cp-amount");
@@ -308,7 +389,7 @@ export function CustomerProfile({
     }, 150);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doJob]);
+  }, [doJob, doSlot]);
   // Scroll-spy: the index highlights the section nearest the top of the screen.
   useEffect(() => {
     const els = PROFILE_TABS.map((t) => document.getElementById(`sec-${t.id}`)).filter((e): e is HTMLElement => !!e);
@@ -723,7 +804,7 @@ export function CustomerProfile({
             <PracticeStrip practice={profile.practice} />
           </SectionCard>
 
-          <SectionCard title="Curriculum">
+          <SectionCard id="cp-curriculum" title="Curriculum">
             {(() => {
               // The scales opened so far and the next one are shown; the locked ones after that are folded away (rule 9).
               const lastOpen = profile.roadmap.reduce((last, scale, i) => (scale.status === "LOCKED" ? last : i), -1);
@@ -868,7 +949,21 @@ export function CustomerProfile({
 
         <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
         <div hidden={!isOpen("money")} className="space-y-5">
-          {/* Payments: the last one leads (amount, what for, when), the earlier ones are rows under it. */}
+          {/* Payments: acted on right here when the page passes the full list (approve, mark paid, refund, cancel bill, fix). Without it,
+              the last one leads (amount, what for, when) and the earlier ones are rows under it. */}
+          {paymentsPanel ? (
+            <SectionCard
+              title="Payments"
+              action={
+                <Link href={`/admin/payments?user=${user.id}`} className="tap inline-flex shrink-0 items-center gap-1 rounded-sm text-small font-medium text-slate-400 hover:text-slate-200">
+                  In Billing
+                  <ChevronRight aria-hidden className="h-3.5 w-3.5" />
+                </Link>
+              }
+            >
+              {paymentsPanel}
+            </SectionCard>
+          ) : (
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             {(() => {
@@ -920,6 +1015,7 @@ export function CustomerProfile({
               );
             })()}
           </SectionCard>
+          )}
 
           {/* Other names their payments arrive under */}
           <SectionCard title="Other payer names">

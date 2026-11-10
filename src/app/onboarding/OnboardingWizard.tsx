@@ -8,6 +8,7 @@ import type { LearningGoal, PrimaryInstrument, SkillLevel } from "@prisma/client
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { safeCallbackPath } from "@/lib/safeRedirect";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
 import { GuardedButton } from "@/components/ui/GuardedButton";
@@ -162,7 +163,8 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
     }
 
     await update();
-    router.push("/dashboard");
+    // Back to where they were going before the wizard (?next=, set by the middleware), else Home. Only a plain in-app path.
+    router.push(safeCallbackPath(new URLSearchParams(window.location.search).get("next"), "/dashboard"));
     router.refresh();
   }
 

@@ -5,8 +5,19 @@ import { getServerAuthSession } from "@/lib/auth";
 import { claimScholarshipCode, ScholarshipError } from "@/lib/scholarships";
 import { RateLimitError } from "@/lib/rateLimit";
 import { describePaymentPlan, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
+import { getActivePaymentPlan } from "@/lib/paymentPlans";
+import { scholarshipNextStep } from "@/lib/inPlaceLinks";
 
-export type ClaimResult = { ok: true; message: string } | { ok: false; error: string };
+export type ClaimResult =
+  | {
+      ok: true;
+      message: string;
+      /** The percent off the 6 Month plan, so the plan form can show the new price at once. */
+      percent: number;
+      /** What is left to do: start the 6 Month plan, switch a running plan to it, or nothing. */
+      next: "start" | "switch" | null;
+    }
+  | { ok: false; error: string };
 
 /** Claims a scholarship code for the signed-in account. The server checks the code, the email it was made for and that it is unclaimed. */
 export async function claimScholarshipAction(code: string): Promise<ClaimResult> {
@@ -17,7 +28,8 @@ export async function claimScholarshipAction(code: string): Promise<ClaimResult>
     revalidatePath("/", "layout");
     const plan = describePaymentPlan(OFFERED_PLAN_CADENCE, "TERM_6");
     const price = planChange && planChange.fromCents !== planChange.toCents ? ` Your running plan is now ${(planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} per payment.` : "";
-    return { ok: true, message: `Scholarship claimed: ${percent}% off the 6 Month plan (${plan}). It only applies to the 6 Month plan.${price}` };
+    const next = scholarshipNextStep(await getActivePaymentPlan(session.user.id));
+    return { ok: true, message: `Scholarship claimed: ${percent}% off the 6 Month plan (${plan}). It only applies to the 6 Month plan.${price}`, percent, next };
   } catch (err) {
     if (err instanceof ScholarshipError || err instanceof RateLimitError) return { ok: false, error: err.message };
     console.error("Scholarship claim failed:", err);

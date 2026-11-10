@@ -51,9 +51,25 @@ export async function joinWaitlist(userId: string, scheduleId: string, chunkInde
   if (!already) await tellOwnerSomeoneIsWaiting(userId, slot);
 }
 
+/** Where the owner sets up a plan for this student with this weekly time already picked (Set up plan opens on their page). */
+export function setupLinkFor(userId: string, scheduleId: string, chunkIndex: number): string {
+  return `/admin/users/${userId}?do=setup&slot=${slotKey(scheduleId, chunkIndex)}`;
+}
+
+/** Who is waiting for each class of these windows, oldest first, for the Times list on Classes > Schedule. */
+export async function getWaitlistByWindow(scheduleIds: string[]): Promise<Map<string, { userId: string; name: string; chunkIndex: number }[]>> {
+  const rows = scheduleIds.length
+    ? await prisma.slotWaitlist.findMany({ where: { scheduleId: { in: scheduleIds } }, orderBy: { createdAt: "asc" }, select: { scheduleId: true, chunkIndex: true, user: { select: { id: true, name: true, email: true } } } })
+    : [];
+  const out = new Map<string, { userId: string; name: string; chunkIndex: number }[]>();
+  for (const r of rows) out.set(r.scheduleId, [...(out.get(r.scheduleId) ?? []), { userId: r.user.id, name: r.user.name ?? r.user.email, chunkIndex: r.chunkIndex }]);
+  return out;
+}
+
 /**
  * Tells the owner, and only the owner, that a student is waiting for a taken weekly time: "Jordan is looking forward to Tuesdays at
- * 6:00 PM becoming available." A bell notice with a link to the schedule; no email, and never to other admins. Never fails the join.
+ * 6:00 PM becoming available." A bell notice that opens Set up plan on the student's page with that time picked (it says whose time it
+ * is while it is taken); no email, and never to other admins. Never fails the join.
  */
 async function tellOwnerSomeoneIsWaiting(userId: string, slot: ReservableSlot): Promise<void> {
   try {
@@ -67,7 +83,7 @@ async function tellOwnerSomeoneIsWaiting(userId: string, slot: ReservableSlot): 
       type: "ADMIN_ALERT",
       title: "Someone is waiting for a weekly time",
       body: `${student.name ?? student.email} is looking forward to ${DAY_NAMES[slot.dayOfWeek]}s at ${formatTimeLabel(slot.startTime)} becoming available.`,
-      cta: { label: "Open schedule", path: "/admin/schedule" },
+      cta: { label: "Set up their plan", path: setupLinkFor(userId, slot.scheduleId, slot.chunkIndex) },
     });
   } catch (err) {
     console.error("Waitlist owner notice failed (non-blocking):", err);
@@ -126,6 +142,8 @@ export async function notifyOpenedSlots(now: Date = new Date()): Promise<{ notif
       title: "Your weekly time is open",
       body: `${day} ${next.schedule.label ? `(${next.schedule.label}) ` : ""}just opened up. Times go to whoever picks them first, so start your plan soon if you want it.`,
       emailCategory: "classes",
+      // Opens the weekly-time picker with this time chosen (or the plan form with it, for someone with no plan yet).
+      cta: { label: "Pick your time", path: `/lessons?changeTime=${encodeURIComponent(slotKey(next.scheduleId, next.chunkIndex))}` },
     }).catch((err) => console.error("Waitlist notice failed (non-blocking):", err));
     notified += 1;
   }

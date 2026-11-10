@@ -54,6 +54,8 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   BANNER_DISCORD: "/lessons",
   BANNER_PRACTICE: "/practice",
   FRIEND_NUDGE: "/practice",
+  PARENT_CLASS_ASK: "/parent",
+  GROUP_INVITE: "/billing/plans",
 };
 
 /** Only an in-app path is ever followed: a stored or passed link that is empty, absolute or protocol-relative is ignored. */

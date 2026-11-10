@@ -22,6 +22,13 @@ describe("keyboard shortcuts", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.every((k) => k.length === 1)).toBe(true);
   });
+  it("G T opens today's classes and G I the inbox, for admins only", () => {
+    expect(nextShortcutStep("t", true, true)).toEqual({ kind: "go", href: "/admin/today" });
+    expect(nextShortcutStep("i", true, true)).toEqual({ kind: "go", href: "/admin/support" });
+    expect(nextShortcutStep("t", true, false)).toEqual({ kind: "none" });
+    expect(nextShortcutStep("i", true, false)).toEqual({ kind: "none" });
+    expect(goKeysFor("/admin/today")).toEqual(["G", "T"]);
+  });
   it("names the keys for a destination, or none", () => {
     expect(goKeysFor("/friends")).toEqual(["G", "F"]);
     expect(goKeysFor("/nowhere")).toBeNull();

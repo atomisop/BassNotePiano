@@ -6,6 +6,7 @@ import { markAttendance } from "@/lib/classScheduleAdmin";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { groupNotStartedError } from "@/lib/planFixes";
 
 /**
  * A late payer: the student was taught (or is being taught) before paying, then pays after their time has passed. Done by hand
@@ -36,7 +37,7 @@ async function loadPlan(planId: string) {
   });
   if (!plan) throw new PaymentPlanError("That plan was not found.");
   if (plan.status !== "ACTIVE") throw new PaymentPlanError("Only an active plan can be settled.");
-  if (plan.familyGroupId && plan.installmentsPaid < 1) throw new PaymentPlanError("This group plan has not started yet. Approve its combined first payment on Billing > Payments first.");
+  if (plan.familyGroupId && plan.installmentsPaid < 1) throw groupNotStartedError(plan.familyGroupId);
   return plan;
 }
 

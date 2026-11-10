@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { buildStrictCsp, isProtectedPath, newNonce } from "@/lib/csp";
 import { isWrongRecipient, RECIPIENT_HINT_PARAM, RECIPIENT_PARAM } from "@/lib/recipientTag";
+import { onboardingRedirect } from "@/lib/inPlaceLinks";
 
 // Edge middleware can't hit Postgres directly, so it only handles what the
 // NextAuth JWT can answer on its own: signed in, onboarded, admin or not.
@@ -70,7 +71,8 @@ export async function middleware(req: NextRequest) {
   // here until it's done. Checked before role/entitlement gating below so an
   // unonboarded admin still lands on the wizard rather than /admin.
   if (!token.onboarded && pathname !== "/onboarding") {
-    return NextResponse.redirect(new URL("/onboarding", req.url));
+    // Keep where they were going (a plan picked on /pricing, say) as ?next=, so the wizard ends there instead of on Home.
+    return NextResponse.redirect(new URL(onboardingRedirect(pathname, req.nextUrl.search), req.url));
   }
 
   if (pathname.startsWith("/admin")) {

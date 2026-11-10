@@ -14,6 +14,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { PersonPeekPanel } from "@/components/admin/PersonPeekPanel";
+import { MessageSquare } from "@/components/ui/appIcons";
+import { MAX_MESSAGE_RECIPIENTS, messageComposeHref } from "@/lib/commandRecents";
 import { Meta } from "@/components/ui/CardKit";
 
 export interface UserListRow {
@@ -104,13 +106,26 @@ export function UserList({
             : []),
         ]}
         extra={
-          <button
-            type="button"
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-            onClick={() => void navigator.clipboard?.writeText(pickedList.map((id) => rows.find((r) => r.id === id)?.email).filter(Boolean).join(", "))}
-          >
-            Copy emails
-          </button>
+          <>
+            {/* Write to everyone picked without retyping their names: Inbox > Messages opens with them filled in. */}
+            <Link
+              href={messageComposeHref(pickedList)}
+              onClick={() => {
+                if (pickedList.length > MAX_MESSAGE_RECIPIENTS) toast.warning(`Messages go to ${MAX_MESSAGE_RECIPIENTS} people at a time. The first ${MAX_MESSAGE_RECIPIENTS} are filled in.`);
+              }}
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+            >
+              <MessageSquare aria-hidden className="h-4 w-4" />
+              Message
+            </Link>
+            <button
+              type="button"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+              onClick={() => void navigator.clipboard?.writeText(pickedList.map((id) => rows.find((r) => r.id === id)?.email).filter(Boolean).join(", "))}
+            >
+              Copy emails
+            </button>
+          </>
         }
       />
 

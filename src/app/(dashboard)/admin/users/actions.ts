@@ -11,7 +11,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
 import { clearPersistedHistory } from "@/lib/assistant";
-import { approveNextScale, ScaleApprovalError } from "@/lib/scaleApproval";
+import { approveNextScale, ScaleApprovalError, sendScaleUnlockedNotice } from "@/lib/scaleApproval";
 import { getAdminProgressOverview } from "@/lib/admin";
 
 // Same pattern as admin/payments/actions.ts, the admin layout's redirect
@@ -69,7 +69,10 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
   return withStudentNotice(notify, async () => {
     await requireAdmin();
     if (unlock) {
+      // Opening a scale by hand tells the student the same way a teacher approval does (only when it was not open already).
+      const wasOpen = await prisma.scaleProgress.findFirst({ where: { userId: targetUserId, scaleGroup: { slug: scaleSlug }, unlockedAt: { not: null } }, select: { id: true } });
       await unlockScaleForUser(targetUserId, scaleSlug);
+      if (!wasOpen) await sendScaleUnlockedNotice(targetUserId, scaleSlug);
     } else {
       await lockScaleForUser(targetUserId, scaleSlug);
     }

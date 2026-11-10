@@ -21,7 +21,7 @@ function dayLabel(day: string) {
 }
 
 /** One linked child, in four tabs: how far they have got, how they have practiced, their classes, and their plan. */
-export function ChildView({ view }: { view: ChildViewData }) {
+export function ChildView({ view, openMoveFor }: { view: ChildViewData; openMoveFor?: string | null }) {
   const [tab, setTab] = useState<TabId>("classes");
   const open = view.scales.filter((s) => !s.locked);
   return (
@@ -121,7 +121,7 @@ export function ChildView({ view }: { view: ChildViewData }) {
         </section>
       )}
 
-      {tab === "classes" && <ChildClasses childId={view.id} upcoming={view.upcoming} recent={view.recent} creditsLabel={view.creditsLabel} />}
+      {tab === "classes" && <ChildClasses childId={view.id} upcoming={view.upcoming} recent={view.recent} creditsLabel={view.creditsLabel} openMoveFor={openMoveFor} />}
 
       {tab === "plan" && (
         <section className="tab-in mt-6 space-y-4" aria-label="Plan">
