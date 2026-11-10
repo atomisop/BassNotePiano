@@ -6,13 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ArrowRight, CalendarPlus } from "@/components/ui/appIcons";
+import { ArrowRight } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import type { WindowMovePreview } from "@/lib/weeklyWindowMove";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { Dialog } from "@/components/ui/Dialog";
+import { cn } from "@/lib/utils";
 import { Meta } from "@/components/ui/CardKit";
 
 interface ScheduleRow {
@@ -282,6 +283,8 @@ function ScheduleForm({
 export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActive, onPreviewMove, onMoveEveryone }: AdminScheduleManagerProps) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
+  // The weekday whose window is open (Sunday is 0), or null when the week strip is all that shows.
+  const [openDay, setOpenDay] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -299,8 +302,9 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
     setMovePreview({ scheduleId, input, preview: result.preview });
   }
 
-  const byDay = DAY_LABELS.map((_, day) => schedules.filter((s) => s.dayOfWeek === day)).flat();
-  const grouped = DAY_LABELS.map((label, day) => ({ day, label, rows: schedules.filter((s) => s.dayOfWeek === day) }));
+  // The week reads Monday first, the way the studio thinks of it.
+  const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+  const rowsOf = (day: number) => schedules.filter((s) => s.dayOfWeek === day);
 
   async function handleCreate(input: ScheduleInput) {
     setFormError(null);
@@ -350,165 +354,219 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
     router.refresh();
   }
 
+  const rows = openDay === null ? [] : rowsOf(openDay);
+
+  function openWindow(day: number) {
+    stopEditing();
+    setAdding(false);
+    setConfirmOffId(null);
+    setOpenDay(day);
+  }
+
+  function closeWindow() {
+    stopEditing();
+    setAdding(false);
+    setConfirmOffId(null);
+    setOpenDay(null);
+  }
+
   return (
-    <div className="space-y-6">
-      {byDay.length === 0 && (
-        <EmptyState icon={<CalendarPlus />} title="No weekly times yet" description="Add the days and hours you teach, and students can book them." />
-      )}
+    <div className="space-y-4">
+      {/* The week as seven days: tap one to open its window, where its times are turned off, edited or added. */}
+      <ul className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        {WEEK_ORDER.map((day) => {
+          const dayRows = rowsOf(day);
+          const live = dayRows.filter((r) => r.active).length;
+          const booked = dayRows.reduce((n, r) => n + r.upcomingBookings, 0);
+          return (
+            <li key={day}>
+              <button
+                type="button"
+                onClick={() => openWindow(day)}
+                aria-label={`${DAY_LABELS[day]}: ${live} ${live === 1 ? "time" : "times"}${booked > 0 ? `, ${booked} booked` : ""}. Open`}
+                className={cn(
+                  "tap flex w-full flex-col items-center gap-1.5 rounded-control py-3 ring-1 ring-inset transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  live > 0 ? "bg-signal/10 ring-signal/25 hover:bg-signal/16" : "bg-slate-50/4 ring-slate-50/8 hover:bg-slate-50/7",
+                )}
+              >
+                <span className={cn("text-caption font-medium", live > 0 ? "text-signal-fg" : "text-slate-500")}>{DAY_LABELS[day].slice(0, 3)}</span>
+                <span className={cn("text-title font-semibold tabular-nums", live > 0 ? "text-slate-50" : "text-slate-600")}>{live}</span>
+                <span aria-hidden className="flex h-1.5 items-center gap-0.5">
+                  {live === 0 ? (
+                    <span className="h-1 w-1 rounded-full bg-slate-50/15" />
+                  ) : (
+                    Array.from({ length: Math.min(live, 4) }, (_, k) => <span key={k} className="h-1.5 w-1.5 rounded-full bg-signal" />)
+                  )}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="px-1 text-small text-slate-500">Tap a day to see its times, turn one off, edit it or add a weekly time.</p>
 
-      {grouped
-        .filter((g) => g.rows.length > 0)
-        .map((group) => (
-          <section key={group.day} aria-label={group.label}>
-            {/* The day is a quiet group title; each time inside it is the thing to read. */}
-            <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{group.label}</h2>
-            <ul className="mt-2 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-mid">
-              {group.rows.map((row) =>
-                editingId === row.id ? (
-                  <li key={row.id} className="p-4">
-                    <ScheduleForm
-                      initial={{
-                        dayOfWeek: row.dayOfWeek,
-                        startTime: row.startTime,
-                        endTime: endTimeFromDuration(row.startTime, row.durationMin),
-                        label: row.label,
-                      }}
-                      submitting={submitting}
-                      error={formError}
-                      onSubmit={(input) => handleUpdate(row.id, input)}
-                      onCancel={stopEditing}
-                    />
-                    {refused?.scheduleId === row.id && !movePreview && (
-                      <div className="mt-3 grid gap-2 text-small text-slate-300">
-                        <p>
-                          On this time: <PeopleLinks people={refused.people.map((p) => ({ key: p.userId, name: p.name, href: `/admin/users/${p.userId}` }))} />.
-                        </p>
-                        <div>
-                          <Button type="button" size="sm" loading={previewing} onClick={() => void previewMove(row.id, refused.input)}>
-                            Move everyone with it
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {movePreview?.scheduleId === row.id && (
-                      <WindowMovePanel scheduleId={row.id} input={movePreview.input} preview={movePreview.preview} onMoveEveryone={onMoveEveryone} onClose={stopEditing} />
-                    )}
-                  </li>
-                ) : (
-                  <li key={row.id} className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                    <div className={row.active ? "min-w-0" : "min-w-0 opacity-60"}>
-                      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <span className="text-title font-semibold tabular-nums text-slate-50">
-                          {formatTimeLabel(row.startTime)} to {formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
-                        </span>
-                        {/* Open is the normal state, so it gets no badge; Off is the news. */}
-                        {!row.active && <StatusDot tone="neutral">Off</StatusDot>}
+      <Dialog
+        open={openDay !== null}
+        onOpenChange={(o) => {
+          if (!o) closeWindow();
+        }}
+        title={openDay === null ? "Times" : `${DAY_LABELS[openDay]} times`}
+        description="Turn a time off, edit it, or add a new weekly time."
+      >
+        {openDay !== null && (
+          <div className="space-y-4">
+            {rows.length === 0 && !adding && <p className="text-small text-slate-400">No times on {DAY_LABELS[openDay]} yet.</p>}
+          <ul className="divide-y divide-slate-50/8">
+            {rows.map((row) =>
+              editingId === row.id ? (
+                <li key={row.id} className="py-4">
+                  <ScheduleForm
+                    initial={{
+                      dayOfWeek: row.dayOfWeek,
+                      startTime: row.startTime,
+                      endTime: endTimeFromDuration(row.startTime, row.durationMin),
+                      label: row.label,
+                    }}
+                    submitting={submitting}
+                    error={formError}
+                    onSubmit={(input) => handleUpdate(row.id, input)}
+                    onCancel={stopEditing}
+                  />
+                  {refused?.scheduleId === row.id && !movePreview && (
+                    <div className="mt-3 grid gap-2 text-small text-slate-300">
+                      <p>
+                        On this time: <PeopleLinks people={refused.people.map((p) => ({ key: p.userId, name: p.name, href: `/admin/users/${p.userId}` }))} />.
                       </p>
-                      <Meta
-                        className="mt-0.5"
-                        items={[
-                          row.label,
-                          `${row.durationMin} min`,
-                          `${classesInWindow(row.durationMin)} ${classesInWindow(row.durationMin) === 1 ? "slot" : "slots"}`,
-                          row.upcomingBookings > 0 ? <span className="text-slate-300">{row.upcomingBookings} booked</span> : null,
-                        ]}
-                      />
-                      {row.holders.length > 0 && (
-                        <p className="mt-0.5 text-small text-slate-400">
-                          Weekly plans:{" "}
-                          <PeopleLinks people={row.holders.map((h) => ({ key: `${h.userId}:${h.chunkIndex}`, name: h.name, href: `/admin/users/${h.userId}`, extra: classStart(row.startTime, h.chunkIndex) }))} />
-                        </p>
-                      )}
-                      {row.waiting.length > 0 && (
-                        <p className="mt-0.5 text-small text-slate-400">
-                          {row.waiting.length} waiting:{" "}
-                          <PeopleLinks people={row.waiting.map((w) => ({ key: `${w.userId}:${w.chunkIndex}`, name: w.name, href: w.setupHref, extra: classStart(row.startTime, w.chunkIndex) }))} />
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => (row.active && (row.upcomingBookings > 0 || row.holders.length > 0) ? setConfirmOffId(row.id) : handleToggleActive(row))}
-                        disabled={busyId === row.id}
-                        className={buttonVariants({
-                          variant: row.active ? "ghost" : "secondary",
-                          size: "sm",
-                          className: row.active ? "text-red-300 hover:text-red-200" : undefined,
-                        })}
-                      >
-                        {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          stopEditing();
-                          setEditingId(row.id);
-                        }}
-                        className={buttonVariants({ variant: "secondary", size: "sm" })}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                    {confirmOffId === row.id && (
-                      <div className="w-full rounded-control bg-red-400/10 p-3 text-small text-slate-300 ring-1 ring-inset ring-red-400/20 sm:basis-full">
-                        {row.holders.length > 0 && (
-                          <p className="mb-1.5">
-                            <PeopleLinks people={row.holders.map((h) => ({ key: `${h.userId}:${h.chunkIndex}`, name: h.name, href: `/admin/users/${h.userId}` }))} />{" "}
-                            {row.holders.length === 1 ? "keeps" : "keep"} this time with a weekly plan. Turned off, nobody is booked here until you give each a new time.
-                            To keep them together, use Edit and Move everyone with it instead.
-                          </p>
-                        )}
-                        <p>
-                          {row.upcomingBookings > 0
-                            ? `${row.upcomingBookings} upcoming class${row.upcomingBookings === 1 ? " is" : "es are"} booked on this time. Turning it off stops new bookings only. What should happen to the booked classes?`
-                            : "Turning it off stops new bookings."}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {row.upcomingBookings > 0 && (
-                            <button type="button" onClick={() => handleToggleActive(row, true)} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                              Cancel them and tell the students
-                            </button>
-                          )}
-                          <button type="button" onClick={() => handleToggleActive(row, false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                            {row.upcomingBookings > 0 ? "Keep them, turn off new bookings" : "Turn it off"}
-                          </button>
-                          <button type="button" onClick={() => setConfirmOffId(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                            Back
-                          </button>
-                        </div>
+                      <div>
+                        <Button type="button" size="sm" loading={previewing} onClick={() => void previewMove(row.id, refused.input)}>
+                          Move everyone with it
+                        </Button>
                       </div>
+                    </div>
+                  )}
+                  {movePreview?.scheduleId === row.id && (
+                    <WindowMovePanel scheduleId={row.id} input={movePreview.input} preview={movePreview.preview} onMoveEveryone={onMoveEveryone} onClose={stopEditing} />
+                  )}
+                </li>
+              ) : (
+                <li key={row.id} className="flex flex-col gap-3 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <div className={row.active ? "min-w-0" : "min-w-0 opacity-60"}>
+                    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="text-title font-semibold tabular-nums text-slate-50">
+                        {formatTimeLabel(row.startTime)} to {formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
+                      </span>
+                      {/* Open is the normal state, so it gets no badge; Off is the news. */}
+                      {!row.active && <StatusDot tone="neutral">Off</StatusDot>}
+                    </p>
+                    <Meta
+                      className="mt-0.5"
+                      items={[
+                        row.label,
+                        `${row.durationMin} min`,
+                        `${classesInWindow(row.durationMin)} ${classesInWindow(row.durationMin) === 1 ? "slot" : "slots"}`,
+                        row.upcomingBookings > 0 ? <span className="text-slate-300">{row.upcomingBookings} booked</span> : null,
+                      ]}
+                    />
+                    {row.holders.length > 0 && (
+                      <p className="mt-0.5 text-small text-slate-400">
+                        Weekly plans:{" "}
+                        <PeopleLinks people={row.holders.map((h) => ({ key: `${h.userId}:${h.chunkIndex}`, name: h.name, href: `/admin/users/${h.userId}`, extra: classStart(row.startTime, h.chunkIndex) }))} />
+                      </p>
                     )}
-                  </li>
-                ),
-              )}
-            </ul>
-          </section>
-        ))}
+                    {row.waiting.length > 0 && (
+                      <p className="mt-0.5 text-small text-slate-400">
+                        {row.waiting.length} waiting:{" "}
+                        <PeopleLinks people={row.waiting.map((w) => ({ key: `${w.userId}:${w.chunkIndex}`, name: w.name, href: w.setupHref, extra: classStart(row.startTime, w.chunkIndex) }))} />
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => (row.active && (row.upcomingBookings > 0 || row.holders.length > 0) ? setConfirmOffId(row.id) : handleToggleActive(row))}
+                      disabled={busyId === row.id}
+                      className={buttonVariants({
+                        variant: row.active ? "ghost" : "secondary",
+                        size: "sm",
+                        className: row.active ? "text-red-300 hover:text-red-200" : undefined,
+                      })}
+                    >
+                      {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopEditing();
+                        setEditingId(row.id);
+                      }}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  {confirmOffId === row.id && (
+                    <div className="w-full rounded-control bg-red-400/10 p-3 text-small text-slate-300 ring-1 ring-inset ring-red-400/20 sm:basis-full">
+                      {row.holders.length > 0 && (
+                        <p className="mb-1.5">
+                          <PeopleLinks people={row.holders.map((h) => ({ key: `${h.userId}:${h.chunkIndex}`, name: h.name, href: `/admin/users/${h.userId}` }))} />{" "}
+                          {row.holders.length === 1 ? "keeps" : "keep"} this time with a weekly plan. Turned off, nobody is booked here until you give each a new time.
+                          To keep them together, use Edit and Move everyone with it instead.
+                        </p>
+                      )}
+                      <p>
+                        {row.upcomingBookings > 0
+                          ? `${row.upcomingBookings} upcoming class${row.upcomingBookings === 1 ? " is" : "es are"} booked on this time. Turning it off stops new bookings only. What should happen to the booked classes?`
+                          : "Turning it off stops new bookings."}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {row.upcomingBookings > 0 && (
+                          <button type="button" onClick={() => handleToggleActive(row, true)} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                            Cancel them and tell the students
+                          </button>
+                        )}
+                        <button type="button" onClick={() => handleToggleActive(row, false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                          {row.upcomingBookings > 0 ? "Keep them, turn off new bookings" : "Turn it off"}
+                        </button>
+                        <button type="button" onClick={() => setConfirmOffId(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                          Back
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ),
+            )}
+          </ul>
 
-      {adding ? (
-        <div className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
-          <h2 className="mb-3 text-title text-slate-50 font-semibold">New weekly slot</h2>
-          <ScheduleForm
-            initial={{ dayOfWeek: 1, startTime: "11:00", endTime: "13:00", label: null }}
-            submitting={submitting}
-            error={formError}
-            onSubmit={handleCreate}
-            onCancel={() => {
-              setAdding(false);
-              setFormError(null);
-            }}
-          />
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-slate-50/40 hover:text-slate-50 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-        >
-          + Add a weekly slot
-        </button>
-      )}
+            {adding ? (
+              <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
+                <h3 className="mb-3 text-body font-semibold text-slate-50">New weekly time</h3>
+                <ScheduleForm
+                  initial={{ dayOfWeek: openDay, startTime: "16:00", endTime: "16:45", label: null }}
+                  submitting={submitting}
+                  error={formError}
+                  onSubmit={handleCreate}
+                  onCancel={() => {
+                    setAdding(false);
+                    setFormError(null);
+                  }}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  stopEditing();
+                  setAdding(true);
+                }}
+                className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}
+              >
+                + Add a time on {DAY_LABELS[openDay]}
+              </button>
+            )}
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }
