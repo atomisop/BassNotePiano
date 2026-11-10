@@ -115,6 +115,8 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         occurrenceDateMs: o.occurrenceDate.getTime(),
         scheduledAt: o.scheduledAt.toISOString(),
         isBooked: o.isBooked,
+        seats: o.seats,
+        seatsLeft: o.seatsLeft,
         reservedForYou: o.reservedForYou,
         heldByPlan: o.reservedByPlan === true,
       }))}

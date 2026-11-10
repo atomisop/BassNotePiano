@@ -194,6 +194,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             durationMin: s.durationMin,
             creditCost: s.creditCost,
             label: s.label,
+            seats: s.seats,
             active: s.active,
             upcomingBookings: upcomingCounts.get(s.id) ?? 0,
             holders: holders.get(s.id) ?? [],

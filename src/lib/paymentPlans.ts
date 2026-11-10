@@ -1,4 +1,5 @@
 import { lockForNonPayment } from "@/lib/paymentLock";
+import { countLivePlanHolders, findFullInstant } from "@/lib/seatLoad";
 import { addBillingCycles } from "@/lib/billingCycle";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
@@ -83,34 +84,28 @@ export async function assertSlotReservable(
     throw new PaymentPlanError("That time slot is too short for this cadence.");
   }
 
-  const reservedByAnother = await tx.paymentPlan.findFirst({
-    where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, id: { notIn: ignorePlanIds }, OR: livePaymentPlanConditions() },
-    select: { id: true },
-  });
-  if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
+  // Up to `seats` live plans can keep the same weekly time (1 seat = one plan, as always).
+  if ((await countLivePlanHolders(tx, scheduleId, chunkIndex, { planIds: ignorePlanIds })) >= schedule.seats) throw new PaymentPlanError("That slot was just taken. Try again.");
 
-  // A chunk with no other PaymentPlan reservation can still have a
-  // pre-existing ordinary ClassBooking (from the self-serve bookClass/
-  // bookFamilyClass flow, made before this reservation existed) on
-  // one of its own upcoming OCCURRENCES_PER_SLOT occurrences,
-  // reserving over that would let the daily maintenance job silently
-  // create a second, conflicting booking for that same instant the
-  // next time it runs. Checked against the exact same rolling window
-  // the job itself maintains; excludes this same student's own
-  // pre-existing booking (nothing wrong with reserving over your own
-  // booking, the job's own existing-row check already handles that
-  // cleanly).
+  // A chunk with room for another plan can still have pre-existing ordinary
+  // ClassBookings (from the self-serve bookClass/bookFamilyClass flow, made
+  // before this reservation existed) on one of its own upcoming
+  // OCCURRENCES_PER_SLOT occurrences. Reserving over a week that is already
+  // full would let the daily maintenance job silently skip that class, so a
+  // week that other students and plans already fill is refused. Checked against
+  // the exact same rolling window the job itself maintains; excludes this same
+  // student's own pre-existing booking (nothing wrong with reserving over your
+  // own booking, the job's own existing-row check already handles that cleanly).
   const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
-  const conflictingBooking = await tx.classBooking.findFirst({
-    where: {
-      scheduleId: scheduleId,
-      status: "SCHEDULED",
-      studentId: { notIn: memberIds },
-      OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
-    },
-    select: { id: true },
+  const full = await findFullInstant(tx, {
+    scheduleId,
+    chunkIndex,
+    seats: schedule.seats,
+    instants: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
+    ignoreStudentIds: memberIds,
+    ignorePlanIds,
   });
-  if (conflictingBooking) {
+  if (full) {
     throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
   }
 }
@@ -684,23 +679,17 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         throw new PaymentPlanError("That time slot is too short for this cadence.");
       }
 
-      const reservedByAnother = await tx.paymentPlan.findFirst({
-        where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: userId }, OR: livePaymentPlanConditions() },
-        select: { id: true },
-      });
-      if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
+      if ((await countLivePlanHolders(tx, newScheduleId, newChunkIndex, { userIds: [userId] })) >= schedule.seats) throw new PaymentPlanError("That slot was just taken. Try again.");
 
       const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
-      const conflictingBooking = await tx.classBooking.findFirst({
-        where: {
-          scheduleId: newScheduleId,
-          status: "SCHEDULED",
-          studentId: { not: userId },
-          OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
-        },
-        select: { id: true },
+      const full = await findFullInstant(tx, {
+        scheduleId: newScheduleId,
+        chunkIndex: newChunkIndex,
+        seats: schedule.seats,
+        instants: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
+        ignoreStudentIds: [userId],
       });
-      if (conflictingBooking) {
+      if (full) {
         throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
       }
 

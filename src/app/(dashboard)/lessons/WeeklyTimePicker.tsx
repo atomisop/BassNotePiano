@@ -8,6 +8,7 @@ import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
+import { seatsLeftNote } from "@/lib/seatRules";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -115,6 +116,7 @@ export function WeeklyTimePicker({
               >
                 <span className={`text-body font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
                 <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${CLASS_MINUTES} min`}</span>
+                {seatsLeftNote(slot.seats, slot.seatsLeft) && <span className="text-caption text-slate-500">{seatsLeftNote(slot.seats, slot.seatsLeft)}</span>}
               </button>
             );
           })}

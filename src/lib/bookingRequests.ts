@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { loadSeatLoad } from "@/lib/seatLoad";
 import { getBoolSetting } from "@/lib/siteSettings";
 import { createNotification } from "@/lib/notifications";
 import { getAppUrl, sendNotificationEmailWithCta } from "@/lib/email";
 import { OWNER_EMAIL } from "@/lib/adminNotifications";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
-import { adminBookClass, ClassBookingError, getEffectiveClassCredits, livePaymentPlanConditions, resolveRequestedHour } from "@/lib/classSchedule";
+import { adminBookClass, ClassBookingError, getEffectiveClassCredits, resolveRequestedHour } from "@/lib/classSchedule";
 
 /**
  * Booking by request. With Settings > Booking > "Students request times, I confirm" on, a student cannot book a time;
@@ -58,15 +59,16 @@ export async function createBookingRequests(studentId: string, selections: Reque
     try {
       const hour = await resolveRequestedHour(selection.scheduleId, selection.occurrenceDateMs, selection.chunkIndex);
 
-      const [already, taken, heldByPlan, credits] = await Promise.all([
+      const seatArgs = { scheduleId: hour.schedule.id, chunkIndex: selection.chunkIndex, occurrenceDate: hour.occurrenceDate, scheduledAt: hour.scheduledAt, strictHolders: true };
+      const [already, everyone, others, credits] = await Promise.all([
         prisma.bookingRequest.findFirst({ where: { studentId, scheduleId: hour.schedule.id, scheduledAt: hour.scheduledAt, status: "PENDING" }, select: { id: true } }),
-        prisma.classBooking.findFirst({ where: { scheduleId: hour.schedule.id, scheduledAt: hour.scheduledAt, status: "SCHEDULED" }, select: { id: true } }),
-        prisma.paymentPlan.findFirst({
-          where: { reservedScheduleId: hour.schedule.id, reservedChunkIndex: selection.chunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
-          select: { id: true },
-        }),
+        loadSeatLoad(prisma, seatArgs),
+        loadSeatLoad(prisma, { ...seatArgs, ignoreStudentIds: [studentId] }),
         getEffectiveClassCredits(studentId),
       ]);
+      // Seats: the time is gone when every seat is used by classes, or kept by other students' weekly plans.
+      const taken = everyone.booked >= hour.schedule.seats;
+      const heldByPlan = others.booked + others.held >= hour.schedule.seats;
       if (already) throw new ClassBookingError("You already asked for that time.");
       if (taken) throw new ClassBookingError("That time was just booked by someone else.");
       if (heldByPlan) throw new ClassBookingError("That time is reserved for another student's plan.");
@@ -186,19 +188,24 @@ export async function getAdminBookingRequests(): Promise<AdminRequestGroup[]> {
   const rows = await prisma.bookingRequest.findMany({
     where: { status: "PENDING" },
     orderBy: [{ scheduledAt: "asc" }, { createdAt: "asc" }],
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true, seats: true } } },
   });
+  const firstRow = new Map<string, (typeof rows)[number]>();
   const groups = new Map<string, AdminRequestGroup>();
   for (const row of rows) {
     const key = `${row.scheduleId}:${row.scheduledAt.getTime()}`;
     const group = groups.get(key) ?? { key, scheduleId: row.scheduleId, scheduledAt: row.scheduledAt, label: row.schedule.label, alreadyBooked: false, requests: [] };
     group.requests.push({ id: row.id, studentId: row.studentId, studentName: row.student.name ?? row.student.email, email: row.student.email, createdAt: row.createdAt });
     groups.set(key, group);
+    if (!firstRow.has(key)) firstRow.set(key, row);
   }
   const list = Array.from(groups.values());
   await Promise.all(
     list.map(async (group) => {
-      group.alreadyBooked = Boolean(await prisma.classBooking.findFirst({ where: { scheduleId: group.scheduleId, scheduledAt: group.scheduledAt, status: "SCHEDULED" }, select: { id: true } }));
+      // With several seats an hour is only "already booked" once every seat has a class in it.
+      const row = firstRow.get(group.key)!;
+      const load = await loadSeatLoad(prisma, { scheduleId: group.scheduleId, chunkIndex: row.chunkIndex, occurrenceDate: row.occurrenceDate, scheduledAt: group.scheduledAt, strictHolders: true });
+      group.alreadyBooked = load.booked >= row.schedule.seats;
     }),
   );
   return list;
@@ -236,6 +243,9 @@ export async function confirmBookingRequest(requestId: string, adminId: string):
   const decided = await prisma.bookingRequest.updateMany({ where: { id: request.id, status: "PENDING" }, data: { status: "CONFIRMED", decidedAt: new Date(), decidedById: adminId } });
   if (decided.count === 0) return;
 
+  // The others are answered only once the last seat is gone; with seats left they stay open for the studio to confirm too.
+  const afterBooking = await loadSeatLoad(prisma, { scheduleId: request.scheduleId, chunkIndex: request.chunkIndex, occurrenceDate: request.occurrenceDate, scheduledAt: request.scheduledAt, strictHolders: true });
+  if (afterBooking.booked < request.schedule.seats) return;
   const others = await prisma.bookingRequest.findMany({
     where: { scheduleId: request.scheduleId, scheduledAt: request.scheduledAt, status: "PENDING", id: { not: request.id } },
     include: { schedule: { select: { label: true } } },

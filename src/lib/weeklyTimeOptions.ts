@@ -5,6 +5,8 @@ import { chunksForSchedule, computeScheduledAt, livePaymentPlanConditions, ONE_O
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { ClassScheduleError, ensureWeeklyWindow } from "@/lib/classScheduleManage";
 import { PaymentPlanError } from "@/lib/paymentPlans";
+import { planHoldsOccurrence } from "@/lib/planHold";
+import { countSeatUnits, holderUnit, type SeatHolder } from "@/lib/seatRules";
 import {
   clashSummary,
   firstNameOf,
@@ -83,6 +85,8 @@ interface FutureBooking {
   schedule: { label: string | null };
   occurrenceDate: Date;
   scheduledAt: Date;
+  familyBookingGroupId: string | null;
+  reservedByPlanId: string | null;
   student: { name: string | null; email: string };
 }
 
@@ -91,7 +95,7 @@ async function futureBookings(db: Db, from: Date): Promise<FutureBooking[]> {
   const after = new Date(Math.max(Date.now(), from.getTime() - CLASS_MINUTES * 60_000));
   return db.classBooking.findMany({
     where: { status: "SCHEDULED", scheduledAt: { gt: after } },
-    select: { id: true, studentId: true, scheduleId: true, schedule: { select: { label: true } }, occurrenceDate: true, scheduledAt: true, student: { select: { name: true, email: true } } },
+    select: { id: true, studentId: true, scheduleId: true, schedule: { select: { label: true } }, occurrenceDate: true, scheduledAt: true, familyBookingGroupId: true, reservedByPlanId: true, student: { select: { name: true, email: true } } },
     orderBy: { scheduledAt: "asc" },
   });
 }
@@ -103,10 +107,21 @@ export interface ClashTime {
   startTime: string;
 }
 
-/** The classes in `bookings` that sit on this weekly time's class on their own day, from `from` on, leaving out `ignoreUserIds`. */
-function clashesWith(time: ClashTime, bookings: FutureBooking[], ignoreUserIds: string[], from: Date): TimeClash[] {
+/** How full the weekly time is allowed to get before a class on it is a clash: its seats and the other live plans keeping it (with their weeks). */
+export interface SeatContext {
+  seats: number;
+  holders: (SeatHolder & { reservedBookings: { occurrenceDate: Date; status: string }[] })[];
+}
+
+/**
+ * The classes in `bookings` that sit on this weekly time's class on their own day, from `from` on, leaving out `ignoreUserIds`.
+ * With several seats a class is only a clash on a week that is already full (classes there plus other plans keeping the time);
+ * a class on a one-off time that overlaps it always is. Without `seat` the time has one seat.
+ */
+function clashesWith(time: ClashTime, bookings: FutureBooking[], ignoreUserIds: string[], from: Date, seat: SeatContext = { seats: 1, holders: [] }): TimeClash[] {
   const span = CLASS_MINUTES * 60_000;
   const out: TimeClash[] = [];
+  const sameWindowByInstant = new Map<number, FutureBooking[]>();
   for (const b of bookings) {
     if (ignoreUserIds.includes(b.studentId) || b.occurrenceDate.getUTCDay() !== time.dayOfWeek) continue;
     const weekly = computeScheduledAt({ startTime: time.startTime }, b.occurrenceDate, ONE_CHUNK);
@@ -114,20 +129,47 @@ function clashesWith(time: ClashTime, bookings: FutureBooking[], ignoreUserIds: 
     const sameWindow = b.scheduleId === time.scheduleId && b.scheduledAt.getTime() === weekly.getTime();
     const oneOff = b.schedule.label === ONE_OFF_LABEL && Math.abs(b.scheduledAt.getTime() - weekly.getTime()) < span;
     if (!sameWindow && !oneOff) continue;
-    out.push({ bookingId: b.id, studentId: b.studentId, name: b.student.name ?? b.student.email, firstName: firstNameOf(b.student.name, b.student.email), date: etYmd(b.scheduledAt), at: b.scheduledAt.toISOString() });
+    if (sameWindow && !oneOff) {
+      sameWindowByInstant.set(b.scheduledAt.getTime(), [...(sameWindowByInstant.get(b.scheduledAt.getTime()) ?? []), b]);
+      continue;
+    }
+    out.push(clashOf(b));
+  }
+  for (const rows of sameWindowByInstant.values()) {
+    const holders = seat.holders.filter((h) => planHoldsOccurrence(h.reservedBookings, rows[0].occurrenceDate));
+    if (countSeatUnits(rows, holders).taken >= seat.seats) out.push(...rows.map(clashOf));
   }
   return out;
+}
+
+function clashOf(b: FutureBooking): TimeClash {
+  return { bookingId: b.id, studentId: b.studentId, name: b.student.name ?? b.student.email, firstName: firstNameOf(b.student.name, b.student.email), date: etYmd(b.scheduledAt), at: b.scheduledAt.toISOString() };
+}
+
+/** The seats of a window's class starting at `startTime`, and the live plans keeping it other than `ignorePlanIds`. One seat when the window is unknown. */
+async function seatContextFor(db: Db, time: ClashTime, ignorePlanIds: string[]): Promise<SeatContext> {
+  if (!time.scheduleId) return { seats: 1, holders: [] };
+  const schedule = await db.classSchedule.findUnique({ where: { id: time.scheduleId } });
+  if (!schedule) return { seats: 1, holders: [] };
+  const chunk = chunksForSchedule(schedule).find((c) => addMinutesToHHmm(schedule.startTime, c.offsetMin) === time.startTime);
+  if (!chunk) return { seats: schedule.seats, holders: [] };
+  const plans = await db.paymentPlan.findMany({
+    where: { reservedScheduleId: schedule.id, reservedChunkIndex: chunk.chunkIndex, id: { notIn: ignorePlanIds }, OR: livePaymentPlanConditions() },
+    select: { userId: true, familyGroupId: true, reservedBookings: { select: { occurrenceDate: true, status: true } } },
+  });
+  return { seats: schedule.seats, holders: plans };
 }
 
 /** Other people's classes on this weekly time from `from` on (today when it is left out). `ignoreBookingIds` are classes moving away too. */
 export async function findClashes(
   db: Db,
   time: ClashTime,
-  options: { from?: Date; ignoreUserIds?: string[]; ignoreBookingIds?: string[] } = {},
+  options: { from?: Date; ignoreUserIds?: string[]; ignoreBookingIds?: string[]; ignorePlanIds?: string[] } = {},
 ): Promise<TimeClash[]> {
   const from = options.from ?? new Date();
   const skip = new Set(options.ignoreBookingIds ?? []);
-  return clashesWith(time, (await futureBookings(db, from)).filter((b) => !skip.has(b.id)), options.ignoreUserIds ?? [], from);
+  const seat = await seatContextFor(db, time, options.ignorePlanIds ?? []);
+  return clashesWith(time, (await futureBookings(db, from)).filter((b) => !skip.has(b.id)), options.ignoreUserIds ?? [], from, seat);
 }
 
 /** The offered windows of a day (or every day) as the pure rules need them. */
@@ -144,7 +186,7 @@ export async function getWeeklyTimeOptions(options: { creditsPerWeek: number; ig
   const now = new Date();
   const [schedules, plans, bookings, holds, waits] = await Promise.all([
     prisma.classSchedule.findMany({ where: { active: true }, orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] }),
-    prisma.paymentPlan.findMany({ where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() }, select: { id: true, reservedScheduleId: true, reservedChunkIndex: true } }),
+    prisma.paymentPlan.findMany({ where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() }, select: { id: true, userId: true, familyGroupId: true, reservedScheduleId: true, reservedChunkIndex: true, reservedBookings: { select: { occurrenceDate: true, status: true } } } }),
     futureBookings(prisma, now),
     prisma.slotHold.findMany({
       where: { releasedAt: null, OR: [{ until: null }, { until: { gte: todayUtcMidnight() } }] },
@@ -153,13 +195,19 @@ export async function getWeeklyTimeOptions(options: { creditsPerWeek: number; ig
     }),
     prisma.slotWaitlist.findMany({ select: { scheduleId: true, chunkIndex: true, user: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: "asc" } }),
   ]);
-  const held = new Set(plans.filter((p) => !options.ignorePlanIds.includes(p.id)).map((p) => `${p.reservedScheduleId}:${p.reservedChunkIndex}`));
+  const holdersByKey = new Map<string, typeof plans>();
+  for (const p of plans.filter((p) => !options.ignorePlanIds.includes(p.id))) {
+    const k = `${p.reservedScheduleId}:${p.reservedChunkIndex}`;
+    holdersByKey.set(k, [...(holdersByKey.get(k) ?? []), p]);
+  }
   const out: WeeklyTimeOption[] = [];
   for (const schedule of schedules) {
     for (const chunk of chunksForSchedule(schedule)) {
       if (chunk.creditCost < options.creditsPerWeek) continue;
       const key = `${schedule.id}:${chunk.chunkIndex}`;
-      if (held.has(key)) continue;
+      // Offered while fewer plans keep it than it has seats.
+      const keepers = holdersByKey.get(key) ?? [];
+      if (new Set(keepers.map(holderUnit)).size >= schedule.seats) continue;
       const startTime = addMinutesToHHmm(schedule.startTime, chunk.offsetMin);
       out.push({
         key,
@@ -169,7 +217,7 @@ export async function getWeeklyTimeOptions(options: { creditsPerWeek: number; ig
         startTime,
         label: weeklyTimeLabel(schedule.dayOfWeek, startTime),
         newTime: null,
-        clashes: clashesWith({ scheduleId: schedule.id, dayOfWeek: schedule.dayOfWeek, startTime }, bookings, options.ignoreUserIds, now),
+        clashes: clashesWith({ scheduleId: schedule.id, dayOfWeek: schedule.dayOfWeek, startTime }, bookings, options.ignoreUserIds, now, { seats: schedule.seats, holders: keepers }),
         holds: holds.filter((h) => h.scheduleId === schedule.id && h.chunkIndex === chunk.chunkIndex).map((h) => ({ holdId: h.id, contactId: h.contact.id, contactName: h.contact.name, email: h.contact.email })),
         waiting: waits.filter((w) => w.scheduleId === schedule.id && w.chunkIndex === chunk.chunkIndex && !options.ignoreUserIds.includes(w.user.id)).map((w) => ({ userId: w.user.id, name: w.user.name ?? w.user.email })),
       });
@@ -178,18 +226,22 @@ export async function getWeeklyTimeOptions(options: { creditsPerWeek: number; ig
   return out.sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
 }
 
-/** Whose live plan keeps this weekly time, leaving out `ignorePlanIds`, or null. */
+/** Whose live plan keeps this weekly time once every seat is kept (leaving out `ignorePlanIds`), or null while a seat is free. */
 async function keptBy(db: Db, scheduleId: string, chunkIndex: number, ignorePlanIds: string[]): Promise<string | null> {
-  const plan = await db.paymentPlan.findFirst({
-    where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, id: { notIn: ignorePlanIds }, OR: livePaymentPlanConditions() },
-    select: { user: { select: { name: true, email: true } } },
-  });
-  return plan ? firstNameOf(plan.user.name, plan.user.email) : null;
+  const [schedule, plans] = await Promise.all([
+    db.classSchedule.findUnique({ where: { id: scheduleId }, select: { seats: true } }),
+    db.paymentPlan.findMany({
+      where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, id: { notIn: ignorePlanIds }, OR: livePaymentPlanConditions() },
+      select: { userId: true, familyGroupId: true, user: { select: { name: true, email: true } } },
+    }),
+  ]);
+  if (plans.length === 0 || new Set(plans.map(holderUnit)).size < (schedule?.seats ?? 1)) return null;
+  return firstNameOf(plans[0].user.name, plans[0].user.email);
 }
 
 /** A virtual window for a typed time that has none yet, so dates and labels can be worked out before anything is made. */
 export function virtualWindow(time: TypedWeeklyTime): ClassSchedule {
-  return { id: "", dayOfWeek: time.dayOfWeek, startTime: time.startTime, durationMin: CLASS_MINUTES, creditCost: 2, label: null, active: true, createdAt: new Date() };
+  return { id: "", dayOfWeek: time.dayOfWeek, startTime: time.startTime, durationMin: CLASS_MINUTES, creditCost: 2, label: null, active: true, seats: 1, createdAt: new Date() };
 }
 
 /**
@@ -251,7 +303,7 @@ export async function assertWeeklyTimeOpen(
   if (chunk.creditCost < input.creditsPerWeek) throw new PaymentPlanError("That time slot is too short for a weekly class.");
   const owner = await keptBy(db, input.scheduleId, input.chunkIndex, input.ignorePlanIds);
   if (owner) throw new PaymentPlanError(`That is ${owner}'s weekly time now. Pick another.`);
-  const clashes = await findClashes(db, { scheduleId: schedule.id, dayOfWeek: schedule.dayOfWeek, startTime: addMinutesToHHmm(schedule.startTime, chunk.offsetMin) }, { from: input.from, ignoreUserIds: input.memberIds });
+  const clashes = await findClashes(db, { scheduleId: schedule.id, dayOfWeek: schedule.dayOfWeek, startTime: addMinutesToHHmm(schedule.startTime, chunk.offsetMin) }, { from: input.from, ignoreUserIds: input.memberIds, ignorePlanIds: input.ignorePlanIds });
   if (clashes.length > 0) throw new PaymentPlanError(clashRefusal(clashes, input.canStartLater));
 }
 

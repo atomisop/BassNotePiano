@@ -26,6 +26,8 @@ export async function getTakenSlots(): Promise<ReservableSlot[]> {
         startTime: addMinutesToHHmm(schedule.startTime, chunk.offsetMin),
         chunkIndex: chunk.chunkIndex,
         creditCost: chunk.creditCost,
+        seats: schedule.seats,
+        seatsLeft: 0,
       });
     }
   }

@@ -23,6 +23,8 @@ interface ScheduleRow {
   durationMin: number;
   creditCost: number;
   label: string | null;
+  /** Students who can share each hour of this time. */
+  seats: number;
   active: boolean;
   /** Future classes already booked on this slot. */
   upcomingBookings: number;
@@ -37,6 +39,8 @@ interface ScheduleInput {
   startTime: string;
   endTime: string;
   label: string | null;
+  /** Students who can share each hour-long class (1 to 1000). */
+  seats: number;
 }
 
 type ActionResult = { ok: true } | { ok: false; error: string };
@@ -197,10 +201,11 @@ function ScheduleForm({
   const [startTime, setStartTime] = useState(initial.startTime);
   const [endTime, setEndTime] = useState(initial.endTime);
   const [label, setLabel] = useState(initial.label ?? "");
+  const [seats, setSeats] = useState(String(initial.seats));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit({ dayOfWeek, startTime, endTime, label: label.trim() || null });
+    onSubmit({ dayOfWeek, startTime, endTime, label: label.trim() || null, seats: seats.trim() === "" ? 1 : Number(seats) });
   }
 
   return (
@@ -254,6 +259,21 @@ function ScheduleForm({
           disabled={submitting}
           className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-slate-50/60 disabled:opacity-60"
         />
+      </label>
+      <label className="block text-small text-slate-500">
+        Seats per slot
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={1000}
+          step={1}
+          value={seats}
+          onChange={(e) => setSeats(e.target.value)}
+          disabled={submitting}
+          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60 sm:w-40"
+        />
+        <span className="mt-1 block text-caption text-slate-500">How many students can share each hour. 1 means one student per hour.</span>
       </label>
       {error && <p className="text-small text-red-400">{error}</p>}
       <div className="flex gap-2">
@@ -426,6 +446,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       startTime: row.startTime,
                       endTime: endTimeFromDuration(row.startTime, row.durationMin),
                       label: row.label,
+                      seats: row.seats,
                     }}
                     submitting={submitting}
                     error={formError}
@@ -464,6 +485,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         row.label,
                         `${row.durationMin} min`,
                         `${classesInWindow(row.durationMin)} ${classesInWindow(row.durationMin) === 1 ? "slot" : "slots"}`,
+                        row.seats > 1 ? `${row.seats} seats` : null,
                         row.upcomingBookings > 0 ? <span className="text-slate-300">{row.upcomingBookings} booked</span> : null,
                       ]}
                     />
@@ -542,7 +564,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
               <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
                 <h3 className="mb-3 text-body font-semibold text-slate-50">New weekly time</h3>
                 <ScheduleForm
-                  initial={{ dayOfWeek: openDay, startTime: "16:00", endTime: "16:45", label: null }}
+                  initial={{ dayOfWeek: openDay, startTime: "16:00", endTime: "16:45", label: null, seats: 1 }}
                   submitting={submitting}
                   error={formError}
                   onSubmit={handleCreate}

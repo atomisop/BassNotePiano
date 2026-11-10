@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { chunksForSchedule, classesOverlap, computeScheduledAt, livePaymentPlanConditions, rescheduleClassBooking } from "@/lib/classSchedule";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
-import { ClassScheduleError, chunkIndexOf, createClassSchedule, resolveDurationMin, setClassScheduleActive, windowPeople, type ClassScheduleInput } from "@/lib/classScheduleManage";
+import { ClassScheduleError, chunkIndexOf, createClassSchedule, resolveDurationMin, resolveSeats, setClassScheduleActive, windowPeople, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { changeReservedSlot } from "@/lib/paymentPlans";
 import { withStudentNotice } from "@/lib/notifyScope";
 import { createNotification } from "@/lib/notifications";
@@ -47,6 +47,7 @@ async function plan(scheduleId: string, input: ClassScheduleInput): Promise<Plan
   if (!old) throw new ClassScheduleError("That weekly time was not found.");
   if (!Number.isInteger(input.dayOfWeek) || input.dayOfWeek < 0 || input.dayOfWeek > 6) throw new ClassScheduleError("Pick a day.");
   const durationMin = resolveDurationMin(input.startTime, input.endTime);
+  const seats = resolveSeats(input.seats, old.seats);
   if (input.dayOfWeek === old.dayOfWeek && input.startTime === old.startTime && durationMin === old.durationMin) throw new ClassScheduleError("The day and times are the same, so nobody moves.");
   const target = { dayOfWeek: input.dayOfWeek, startTime: input.startTime, durationMin };
   const oldChunks = chunksForSchedule(old);
@@ -59,7 +60,7 @@ async function plan(scheduleId: string, input: ClassScheduleInput): Promise<Plan
   if ("error" in matched) throw new ClassScheduleError(matched.error);
 
   const problems: string[] = [];
-  const existingTarget = await prisma.classSchedule.findFirst({ where: { active: true, id: { not: scheduleId }, dayOfWeek: input.dayOfWeek, startTime: input.startTime, durationMin }, select: { id: true } });
+  const existingTarget = await prisma.classSchedule.findFirst({ where: { active: true, id: { not: scheduleId }, dayOfWeek: input.dayOfWeek, startTime: input.startTime, durationMin }, select: { id: true, seats: true } });
   // The new times must not run into another window's class. The old window is being retired, and a window with exactly the new times is a
   // move run again after it stopped half way.
   const shapes = await windowShapes(prisma, input.dayOfWeek);
@@ -72,11 +73,18 @@ async function plan(scheduleId: string, input: ClassScheduleInput): Promise<Plan
     }
   }
 
-  // A window with the new times that someone else's plan already keeps a class of is not free for the people moving.
+  // A window with the new times that other plans already keep is only free for the people moving while every class has a seat for them.
+  const targetSeats = existingTarget ? existingTarget.seats : seats;
   const keptThere = existingTarget
     ? await prisma.paymentPlan.findMany({ where: { reservedScheduleId: existingTarget.id, userId: { notIn: people.plans.map((p) => p.userId) }, OR: livePaymentPlanConditions() }, select: { reservedChunkIndex: true } })
     : [];
-  if (keptThere.some((k) => used.includes(k.reservedChunkIndex ?? 0))) problems.push("Another plan already keeps one of those new times. Pick other times.");
+  for (const i of used) {
+    const arriving = people.plans.filter((p) => (p.reservedChunkIndex ?? 0) === i).length;
+    if (keptThere.filter((k) => (k.reservedChunkIndex ?? 0) === i).length + arriving > targetSeats) {
+      problems.push("Another plan already keeps one of those new times. Pick other times.");
+      break;
+    }
+  }
 
   const movingBookingIds = people.bookings.map((b) => b.id);
   const runningPlanIds = new Set(people.plans.filter((p) => p.status === "ACTIVE").map((p) => p.id));
@@ -129,7 +137,7 @@ async function plan(scheduleId: string, input: ClassScheduleInput): Promise<Plan
       problems,
     },
     old: { id: old.id, dayOfWeek: old.dayOfWeek, startTime: old.startTime, durationMin: old.durationMin, label: old.label },
-    target: input,
+    target: { ...input, seats },
     existingTargetId: existingTarget?.id ?? null,
     moves: { plans, classes },
   };

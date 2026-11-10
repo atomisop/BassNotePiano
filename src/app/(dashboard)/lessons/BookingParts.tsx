@@ -29,6 +29,9 @@ export interface OccurrenceRow {
   occurrenceDateMs: number;
   scheduledAt: string;
   isBooked: boolean;
+  /** Seats per slot and how many are still free (shown as "N left" only when a shared slot is nearly full). */
+  seats?: number;
+  seatsLeft?: number;
   /** The owner kept this time for this student: open to them, locked for everyone else. */
   reservedForYou?: boolean;
   /** Held by someone's payment plan (not yet an actual booking). Shown as Reserved, not Taken. */

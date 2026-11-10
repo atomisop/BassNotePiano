@@ -7,6 +7,7 @@ import { DAY_NAMES, DAY_ORDER, DAY_SHORT, formatTimeLabel } from "@/lib/weeklyTi
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { seatsLeftNote } from "@/lib/seatRules";
 
 const chip = "tap rounded-control bg-neu-base text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const chipState = (active: boolean) => (active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low");
@@ -128,9 +129,10 @@ export function WeekdayTimePicker({
                   setLooking(null);
                   onSelect(slot);
                 }}
-                className={cn(chip, "flex min-h-11 items-center justify-center px-1 py-2 text-small font-semibold", chipState(active), active ? "text-signal-fg" : "text-slate-100")}
+                className={cn(chip, "flex min-h-11 flex-col items-center justify-center px-1 py-2 text-small font-semibold", chipState(active), active ? "text-signal-fg" : "text-slate-100")}
               >
                 {formatTimeLabel(slot.startTime)}
+                {seatsLeftNote(slot.seats, slot.seatsLeft) && <span className="text-caption font-normal text-slate-500">{seatsLeftNote(slot.seats, slot.seatsLeft)}</span>}
               </button>
             );
           })}

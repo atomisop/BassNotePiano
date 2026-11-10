@@ -1720,6 +1720,8 @@ model ClassSchedule {
   creditCost  Int // durationMin / 30, 1 credit = 30 min, fixed regardless of how the credit was purchased
   label       String?
   active      Boolean @default(true)
+  // How many students can share each hour-long slot of this window (1 = one party per slot, as always).
+  seats       Int     @default(1)
 
   createdAt DateTime @default(now())
 
