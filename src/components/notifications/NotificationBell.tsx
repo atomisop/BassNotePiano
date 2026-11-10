@@ -208,25 +208,22 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
 
 /** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
 function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
-  // Cards get their own bg-slate-900 rather than the panel's bg-surface,
-  // the two were identical before, which is exactly why every row read as
-  // one uniform gray field with nothing to tell "card" from "page." Unread
-  // rows layer a real accent tint plus a colored left edge on top of that
-  // dark card. Uses --signal (the logo orange), not --c-s-50: that is this
-  // theme's near-white TEXT ramp, not an accent at all, which is why unread
-  // rows used to read as white instead of highlighted.
-  const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
-    notification.read
-      ? "border-transparent bg-neu-base shadow-raised-low"
-      : "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
+  // Unread stands out by its weight and a dot, read ones step back (DESIGN.md, Hierarchy 3: emphasize by de-emphasizing). An unread row
+  // is a raised card with a bright, bold title and an orange dot; a read row is flat, with no card, a normal-weight title and quieter text.
+  // The time is always the quietest line.
+  const itemClassName = `flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left transition ${
+    notification.read ? "hover:bg-slate-50/4" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid"
   }`;
   const inner = (
     <>
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-signal"}`} />
+      <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-signal"}`} />
       <span className="min-w-0 flex-1">
-        <span className="block text-small font-medium text-slate-100">{notification.title}</span>
-        {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
-        <span className="mt-1.5 block text-small text-slate-500">{relativeTime(notification.createdAt)}</span>
+        <span className={`block text-small ${notification.read ? "text-slate-300" : "font-semibold text-slate-50"}`}>
+          {!notification.read && <span className="sr-only">Unread: </span>}
+          {notification.title}
+        </span>
+        {notification.body && <span className={`mt-0.5 block text-small ${notification.read ? "text-slate-500" : "text-slate-400"}`}>{notification.body}</span>}
+        <span className="mt-1 block text-caption text-slate-500">{relativeTime(notification.createdAt)}</span>
       </span>
     </>
   );
@@ -274,9 +271,9 @@ function NotificationGroup({
       <div className="relative">
         {!expanded && (
           <>
-            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl bg-neu-base shadow-raised-low" aria-hidden />
+            <div className={`absolute inset-x-2 -top-1.5 h-full rounded-xl bg-neu-base ${hasUnread ? "shadow-raised-low" : "opacity-50"}`} aria-hidden />
             {items.length > 2 && (
-              <div className="absolute inset-x-4 -top-3 h-full rounded-xl bg-neu-base shadow-raised-low" aria-hidden />
+              <div className={`absolute inset-x-4 -top-3 h-full rounded-xl bg-neu-base ${hasUnread ? "shadow-raised-low" : "opacity-50"}`} aria-hidden />
             )}
           </>
         )}
@@ -284,13 +281,11 @@ function NotificationGroup({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
-            hasUnread
-              ? "border-l-[3px] border-y border-r border-y-signal/30 border-r-signal/30 border-l-signal bg-signal/14 hover:bg-signal/20"
-              : "border-transparent bg-neu-base shadow-raised-low"
+          className={`relative flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left transition ${
+            hasUnread ? "bg-neu-base shadow-raised-low hover:shadow-raised-mid" : "bg-neu-base/60 hover:bg-neu-base"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-signal/15 text-signal-fg">
+          <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50/8 ${hasUnread ? "text-slate-100" : "text-slate-500"}`}>
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -298,12 +293,12 @@ function NotificationGroup({
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
-              <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
+              <span className={`text-small ${hasUnread ? "font-semibold text-slate-50" : "text-slate-300"}`}>{categoryLabel}</span>
+              <span className="rounded-full bg-slate-50/8 px-1.5 py-0.5 text-caption font-semibold tabular-nums text-slate-400">{items.length}</span>
               {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-signal" aria-hidden />}
             </span>
-            <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
-            <span className="mt-1.5 block text-small text-slate-500">{relativeTime(latest.createdAt)}</span>
+            <span className={`mt-0.5 block truncate text-small ${hasUnread ? "text-slate-400" : "text-slate-500"}`}>{latest.title}</span>
+            <span className="mt-1 block text-caption text-slate-500">{relativeTime(latest.createdAt)}</span>
           </span>
           <ChevronRight
             className={`mt-1 h-4 w-4 shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-90" : ""}`}

@@ -26,6 +26,9 @@ import { announceChange } from "@/lib/liveEvents";
 import { NETWORK_ERROR, type OccurrenceRow, type BookingRow, type BookingMode, type TabId, formatOccurrenceDay, creditsLabel, weekStartMs, formatOccurrenceTime, groupOccurrencesByWeek, groupByMonth, BookingCard, MonthGroup, AttendeeEmailRow } from "./BookingParts";
 import { MaskReveal } from "@/components/ui/MaskReveal";
 import { SuccessPulse } from "@/components/ui/SuccessPulse";
+import { Meta } from "@/components/ui/CardKit";
+import { DiscordLink } from "@/components/ui/DiscordLink";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 /** A request the student sent (request mode), as the booking screen shows it. */
 export interface MyRequestRow {
@@ -546,6 +549,10 @@ export function ClassBookingClient({
     setSuccess(`Booked for ${familyEmailsTrimmed.length} students, ${creditsLabel(familyCreditsPerStudent)} reserved from each.`);
   }
 
+  const nextClass = upcoming[0] ?? null;
+  const nextHours = nextClass ? (new Date(nextClass.scheduledAt).getTime() - Date.now()) / 3_600_000 : null;
+  const nextClassJoinable = nextClass !== null && nextHours !== null && nextHours <= 0.5 && nextHours > -1 && !nextClass.inPerson;
+
   const actionClass =
     "tap flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-slate-50";
   const bookingBarVisible = tab === "book" && mode === "SOLO" && !reschedulingBooking && selectedKeys.size > 0 && !extraPayment;
@@ -556,7 +563,42 @@ export function ClassBookingClient({
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
       {/* The page's own title ("Lessons") sits above this on the page; this names the section. */}
       {/* The Book tab already says it; only the extra-class mode needs its own heading. */}
-      {extraMode && <h2 className="text-headline font-semibold text-balance text-slate-50">Book an extra class</h2>}
+      {extraMode && <h2 className="text-title font-semibold text-balance text-slate-50">Book an extra class</h2>}
+      {/* Without a plan this is the whole Lessons screen, so its hero is the next class: the day and time big, the rest quiet. (On a
+          plan the weekly tab carries that hero, and this is the quieter extra-sessions tab.) */}
+      {!extraMode && nextClass && (
+        <section aria-label="Next class" className="mb-(--space-group) rounded-card bg-neu-base p-5 shadow-raised-mid sm:p-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
+              <p className="mt-1 text-headline font-semibold tabular-nums text-balance text-slate-50">
+                <span className="block sm:inline">{formatOccurrenceDay(nextClass.scheduledAt)}</span>
+                <span aria-hidden className="hidden text-slate-500 sm:inline"> · </span>
+                <span className="block sm:inline">{formatOccurrenceTime(nextClass.scheduledAt)}</span>
+              </p>
+              <Meta
+                className="mt-1.5"
+                items={[
+                  nextClass.label ?? "Class",
+                  `to ${formatEndTime(nextClass.scheduledAt, nextClass.creditsSpent)}`,
+                  nextClass.inPerson && "In person",
+                  upcoming.length > 1 && `${upcoming.length - 1} more booked`,
+                ]}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button type="button" onClick={() => setTab("upcoming")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                See all
+              </button>
+              {nextClassJoinable && (
+                <DiscordLink href={nextClass.discordUrl ?? DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
+                  Join on Discord
+                </DiscordLink>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className={extraMode ? "mt-(--space-group)" : ""}>
         <Tabs<TabId>
@@ -634,12 +676,14 @@ export function ClassBookingClient({
             </div>
 
             {reschedulingBooking && (
-              <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
-                <p className="text-small font-medium text-slate-100">
-                  Moving {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
-                  {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only)</span>}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-control bg-signal/10 px-4 py-3 ring-1 ring-inset ring-signal/25">
+                <p className="min-w-0 text-small text-slate-300">
+                  Moving <span className="font-semibold text-slate-50">{formatDateTime(reschedulingBooking.scheduledAt)}</span>
+                  {reschedulingBooking.label && <span className="text-slate-400"> · {reschedulingBooking.label}</span>}
+                  {reschedulingBooking.reserved && <span className="text-slate-500"> (this week only)</span>}
+                  <span className="block text-caption text-slate-400">Pick its new time below.</span>
                 </p>
-                <button type="button" onClick={() => setReschedulingBooking(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                <button type="button" onClick={() => setReschedulingBooking(null)} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
                   Never mind
                 </button>
               </div>
@@ -664,18 +708,18 @@ export function ClassBookingClient({
             )}
             {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
             {upcoming.length > 0 && (
-              <div className="hidden rounded-2xl bg-neu-base shadow-raised-mid p-4 lg:block">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-small font-semibold text-slate-50">Upcoming classes</p>
-                  <button type="button" onClick={() => setTab("upcoming")} className="text-small text-signal-fg hover:underline">
+              <div className="hidden rounded-card bg-neu-base p-4 shadow-raised-low lg:block">
+                <div className="flex items-center justify-between">
+                  <p className="text-small font-semibold uppercase tracking-caps text-slate-400">Upcoming</p>
+                  <button type="button" onClick={() => setTab("upcoming")} className="tap inline-flex items-center text-small font-medium text-slate-400 hover:text-slate-100">
                     See all
                   </button>
                 </div>
-                <ul className="space-y-2">
-                  {upcoming.slice(0, 3).map((b, i) => (
-                    <li key={b.id} className={`${["tint-purple", "tint-peach", "tint-blue"][i % 3]} rounded-xl px-3 py-2.5`}>
-                      <p className="text-small font-semibold">{formatDateTime(b.scheduledAt)}</p>
-                      {b.label && <p className="text-small opacity-80">{b.label}</p>}
+                <ul className="mt-1 divide-y divide-slate-50/8">
+                  {upcoming.slice(0, 3).map((b) => (
+                    <li key={b.id} className="py-2.5">
+                      <p className="text-small font-semibold tabular-nums text-slate-50">{formatDateTime(b.scheduledAt)}</p>
+                      {b.label && <p className="text-caption text-slate-500">{b.label}</p>}
                     </li>
                   ))}
                 </ul>
@@ -753,7 +797,7 @@ export function ClassBookingClient({
             {/* The day's times show as soon as a day is tapped: two to a row for plain pick-a-time cards, one per row for cards that carry their own button (family, moving a class, a second class in a week). */}
             <div ref={timesRef} className="mt-6 scroll-mt-20">
               {selectedDateKey && (
-                <p className="mb-3 text-body font-semibold text-slate-100">
+                <p className="mb-3 text-title font-semibold text-slate-50">
                   {new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
                 </p>
               )}
@@ -777,8 +821,8 @@ export function ClassBookingClient({
                         onClick={onClick}
                         disabled={!onClick}
                         aria-pressed={onClick ? isSelected : undefined}
-                        className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed bg-neu-base ${
-                          isSelected ? "shadow-pressed-low ring-1 ring-signal/50" : "shadow-raised-low hover:shadow-raised-mid"
+                        className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed ${
+                          !onClick ? "bg-slate-50/3" : isSelected ? "bg-neu-base shadow-pressed-low ring-1 ring-signal/50" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid"
                         } ${extra}`}
                       >
                         {children}
@@ -787,12 +831,12 @@ export function ClassBookingClient({
                     const time = (
                       <span className="min-w-0">
                         <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
-                        <span className="block text-small text-slate-500">
+                        <span className="block text-caption text-slate-500">
                           to {formatEndTime(row.scheduledAt, cost)}
                           {cost !== CREDITS_PER_CLASS && ` · ${creditsLabel(cost)}`}
                         </span>
                         {row.reservedForYou && !row.isBooked && (
-                          <span className="mt-1 inline-block whitespace-nowrap rounded-full bg-signal/15 px-2 py-0.5 text-small font-medium text-signal-fg">Reserved for you</span>
+                          <span className="mt-0.5 block whitespace-nowrap text-caption font-medium text-signal-fg">Reserved for you</span>
                         )}
                       </span>
                     );
@@ -801,10 +845,10 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : row.heldByPlan ? "Reserved" : "Taken"}</span>
+                          <span className="shrink-0 text-small text-slate-500">{isCurrentRescheduleSlot ? "Your time" : row.heldByPlan ? "Reserved" : "Taken"}</span>
                         </>,
                         undefined,
-                        "opacity-60",
+                        "opacity-50",
                       );
                     }
 
@@ -881,7 +925,7 @@ export function ClassBookingClient({
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                          {!isSelected && (hint && hint.count > 0 ? <span className="text-small font-medium text-amber-300">Requested</span> : <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>)}
+                          {!isSelected && (hint && hint.count > 0 ? <span className="text-small font-medium text-amber-300">Requested</span> : <span className="hidden text-small text-slate-500 sm:inline">Open</span>)}
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-signal text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>
@@ -905,8 +949,8 @@ export function ClassBookingClient({
                 aria-label="Your selection"
               >
                 <div>
-                  <p className="text-small font-medium text-slate-100">
-                    {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} · <span className="tabular-nums">{creditsLabel(selectedCreditTotal)}</span>
+                  <p className="text-body font-semibold text-slate-50">
+                    {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} <span className="text-small font-normal tabular-nums text-slate-400">· {creditsLabel(selectedCreditTotal)}</span>
                   </p>
                   <p className={`mt-0.5 text-small ${missingCredits > 0 ? "text-red-400" : "text-slate-500"}`}>
                     {missingCredits > 0
@@ -917,7 +961,7 @@ export function ClassBookingClient({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                     Clear
                   </button>
                   {missingCredits > 0 ? (
@@ -945,13 +989,13 @@ export function ClassBookingClient({
           <div className="tab-in max-w-3xl">
             {myRequests.length > 0 && (
               <div className="mb-6">
-                <p className="mb-2 text-small font-medium text-slate-400">Your requests</p>
-                <ul className="space-y-2">
+                <p className="mb-2 px-1 text-small font-semibold uppercase tracking-caps text-slate-400">Your requests</p>
+                <ul className="divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low sm:px-5">
                   {myRequests.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                    <li key={r.id} className="flex items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <p className="text-small font-medium text-slate-100">{formatDateTime(r.scheduledAt)}</p>
-                        <p className="text-small text-slate-400">
+                        <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(r.scheduledAt)}</p>
+                        <p className="text-small text-slate-500">
                           {r.status === "PENDING"
                             ? r.ahead === 0
                               ? "Waiting for us. You are first in line."
@@ -962,7 +1006,7 @@ export function ClassBookingClient({
                         </p>
                       </div>
                       {r.status === "PENDING" && (
-                        <button type="button" onClick={() => handleCancelRequest(r.id)} disabled={cancelingRequestId === r.id} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                        <button type="button" onClick={() => handleCancelRequest(r.id)} disabled={cancelingRequestId === r.id} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}>
                           {cancelingRequestId === r.id ? "Canceling…" : "Cancel"}
                         </button>
                       )}
@@ -974,7 +1018,7 @@ export function ClassBookingClient({
             {upcoming.length === 0 ? (
               <p className="text-small text-slate-500">Nothing booked</p>
             ) : (
-              <div className="space-y-3">
+              <div className="divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low sm:px-5">
                 {upcoming.map((b) => (
                   <BookingCard
                     key={b.id}

@@ -328,7 +328,8 @@ proves nothing about the line being active or theirs; only a text code or a paid
   Plivo keys in production it can never turn on (`smsAvailable()`), so nobody gets locked out. In development
   the code is printed to the server log. There is NO free production SMS service.
 - Settings (`/account`) has one "Account" choice that holds every account item in groups (profile, contact,
-  sign-in and security, connected accounts, privacy and data incl. download, delete). The content is rendered
+  sign-in and security, connected accounts, classes and reminders, family and offers, privacy and data incl. download, delete;
+  regrouped 2026-11-10, each card showing its current value under its title). The content is rendered
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone

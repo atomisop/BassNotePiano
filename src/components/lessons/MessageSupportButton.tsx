@@ -16,6 +16,7 @@ export function MessageSupportButton({
   problem,
   className,
   label = "Message support",
+  onError,
 }: {
   /** A booked class this is about. */
   bookingId?: string;
@@ -23,6 +24,8 @@ export function MessageSupportButton({
   problem?: string;
   className?: string;
   label?: string;
+  /** Report a failure to the caller instead of showing it beside the button (for a button inside a menu, which closes on tap). */
+  onError?: (message: string | null) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,16 +33,17 @@ export function MessageSupportButton({
   async function handleClick() {
     if (busy) return;
     setBusy(true);
-    setError(null);
+    const report = onError ?? setError;
+    report(null);
     try {
       const result = bookingId ? await contactSupportAboutBookingAction(bookingId) : await contactSupportAboutBookingProblemAction(problem ?? "");
       if (!result.ok) {
-        setError(result.error);
+        report(result.error);
         return;
       }
       openAtomWithCase(result.escalationId);
     } catch {
-      setError("That didn't go through. Check your connection and try again.");
+      report("That didn't go through. Check your connection and try again.");
     } finally {
       setBusy(false);
     }

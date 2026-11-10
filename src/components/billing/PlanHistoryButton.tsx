@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Clock } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { Hint } from "@/components/ui/Hint";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface PastPlanRow {
   id: string;
@@ -41,18 +42,18 @@ export function PlanHistoryButton({ plans }: { plans: PastPlanRow[] }) {
         {plans.length === 0 ? (
           <p className="text-small text-slate-400"><Hint>No earlier plans yet. Plans that finished or were canceled show up here.</Hint></p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-slate-50/8">
             {plans.map((plan) => (
-              <li key={plan.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="min-w-0 text-small font-medium text-slate-100">{plan.name}</p>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-small font-medium ${plan.status === "COMPLETED" ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-800 text-slate-300"}`}>
-                    {STATUS_LABEL[plan.status]}
-                  </span>
+              <li key={plan.id} className="flex items-start justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-body font-medium text-slate-100">{plan.name}</p>
+                  <p className="mt-0.5 text-small text-slate-500">
+                    {plan.billsPaid} of {plan.billsTotal} bills paid · started {day(plan.startedAt)}
+                  </p>
                 </div>
-                <p className="mt-1 text-small text-slate-500">
-                  {plan.billsPaid} of {plan.billsTotal} bills paid · started {day(plan.startedAt)}
-                </p>
+                <StatusDot tone={plan.status === "COMPLETED" ? "success" : "neutral"} className="shrink-0 pt-0.5">
+                  {STATUS_LABEL[plan.status]}
+                </StatusDot>
               </li>
             ))}
           </ul>

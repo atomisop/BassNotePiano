@@ -39,20 +39,25 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
         </div>
       </div>
       {bills.length > 0 && (
-        <section className="mt-5 space-y-4" aria-label="To pay">
+        <section className="mt-5 space-y-3" aria-label="To pay">
           {bills.map((bill) => (
-            <ZelleUnlockGate
-              key={bill.paymentId}
-              status={bill.status}
-              rejectionReason={bill.rejectionReason}
-              scaleCode={`${bill.childName}: ${bill.label}`}
-              scaleTitle={bill.planName}
-              eyebrowLabel="Plan for your child"
-              amountCents={bill.amountCents}
-              zelleHandle={zelleHandle}
-              paymentId={bill.paymentId}
-              onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.paymentId)}
-            />
+            <div key={bill.paymentId} className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.label}</p>
+                <p className="shrink-0 text-small text-slate-500">{bill.planName}</p>
+              </div>
+              <ZelleUnlockGate
+                status={bill.status}
+                rejectionReason={bill.rejectionReason}
+                scaleCode={`${bill.childName}: ${bill.label}`}
+                scaleTitle={bill.planName}
+                eyebrowLabel="Plan for your child"
+                amountCents={bill.amountCents}
+                zelleHandle={zelleHandle}
+                paymentId={bill.paymentId}
+                onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.paymentId)}
+              />
+            </div>
           ))}
         </section>
       )}

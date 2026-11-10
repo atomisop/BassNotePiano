@@ -8,6 +8,7 @@ import { ZellePaymentModal } from "@/components/progression/ZellePaymentModal";
 import type { ZelleReferenceSubmission } from "@/lib/payments";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { buttonVariants } from "@/components/ui/button";
+import { Callout } from "@/components/ui/CardKit";
 import { announceChange } from "@/lib/liveEvents";
 import { precheckReceiptAction } from "@/app/(dashboard)/billing/receipt-actions";
 
@@ -74,18 +75,19 @@ export function ZelleUnlockGate({
   return (
     <>
       {status === "REJECTED" && (
-        <div className="mb-4 rounded-xl border border-red-400/20 bg-neu-base shadow-pressed-low p-4 text-small text-red-300">
+        <Callout tone="danger" className="mb-3">
           Your last submission couldn&apos;t be verified{rejectionReason ? `: ${rejectionReason}` : "."} Double-check
           the reference code and try again.
-        </div>
+        </Callout>
       )}
 
+      {/* The one primary button on the screen, carrying the amount so the figure and the action are read together. */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={buttonVariants({ variant: "primary", className: "w-full" })}
+        className={buttonVariants({ variant: "primary", size: "lg", className: "w-full tabular-nums" })}
       >
-        {status === "REJECTED" ? "Resubmit payment" : "Pay"}
+        {status === "REJECTED" ? "Resubmit payment" : `Pay ${(amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}`}
       </button>
 
       <ZellePaymentModal

@@ -8,6 +8,8 @@ import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWe
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { Hint } from "@/components/ui/Hint";
+import { Callout, CardFoot, CardHead, Fact, Facts } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 type TabId = "progress" | "practice" | "classes" | "plan";
 
@@ -24,20 +26,17 @@ export function ChildView({ view }: { view: ChildViewData }) {
   const open = view.scales.filter((s) => !s.locked);
   return (
     <div className="mt-6">
-      <dl className="mb-5 grid grid-cols-3 gap-2 text-small">
-        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
-          <dt className="text-slate-500">Next class</dt>
-          <dd className="mt-0.5 truncate font-medium text-slate-100">{view.upcoming[0] ? formatDateTime(view.upcoming[0].scheduledAt) : "None"}</dd>
-        </div>
-        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
-          <dt className="text-slate-500">Plan</dt>
-          <dd className="mt-0.5 truncate font-medium text-slate-100">{view.plan ? view.plan.weeklyTime ?? "Active" : "None"}</dd>
-        </div>
-        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
-          <dt className="text-slate-500">Credits</dt>
-          <dd className="mt-0.5 truncate font-medium tabular-nums text-slate-100">{view.creditsLabel}</dd>
-        </div>
-      </dl>
+      {/* The one fact a parent opens this for (the next class) is the big line; the plan and credits sit small beside it. */}
+      <section aria-label="At a glance" className="mb-5 rounded-card bg-neu-base p-5 shadow-raised-mid">
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
+        <p className={`mt-1 text-title font-semibold tabular-nums ${view.upcoming[0] ? "text-slate-50" : "text-slate-400"}`}>
+          {view.upcoming[0] ? formatDateTime(view.upcoming[0].scheduledAt) : "None booked"}
+        </p>
+        <Facts columns={2} className="mt-4 border-t border-slate-50/8 pt-4">
+          <Fact label="Weekly time" value={view.plan ? (view.plan.weeklyTime ?? "None") : "No plan"} tone={view.plan?.weeklyTime ? "default" : "muted"} />
+          <Fact label="Credits" value={view.creditsLabel} />
+        </Facts>
+      </section>
       <div className="lg:flex lg:justify-start">
         <Tabs
           label="Sections"
@@ -58,12 +57,12 @@ export function ChildView({ view }: { view: ChildViewData }) {
             <span className="tabular-nums text-slate-50">{open.filter((s) => s.quizPassed).length}</span> of <span className="tabular-nums text-slate-50">{view.scales.length}</span> scales finished ·{" "}
             <span className="tabular-nums text-slate-50">{open.length}</span> open
           </p>
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low md:px-5">
             {view.scales.map((s) => (
-              <li key={s.slug} className="flex items-center justify-between gap-3 rounded-2xl bg-neu-base p-4 shadow-raised-low">
+              <li key={s.slug} className="flex items-center justify-between gap-3 py-3.5">
                 <div className="min-w-0">
-                  <p className="truncate text-small font-medium text-slate-100">
-                    <span className="mr-2 font-mono text-slate-500">{s.code}</span>
+                  <p className={`truncate text-body font-medium ${s.locked ? "text-slate-400" : "text-slate-100"}`}>
+                    <span className="mr-2 font-mono text-small text-slate-500">{s.code}</span>
                     {s.title}
                   </p>
                   {s.locked ? (
@@ -127,38 +126,25 @@ export function ChildView({ view }: { view: ChildViewData }) {
       {tab === "plan" && (
         <section className="tab-in mt-6 space-y-4" aria-label="Plan">
           {view.plan ? (
-            <div className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
-              <p className="text-body font-semibold text-slate-50">{view.plan.name}</p>
-              <dl className="mt-4 grid gap-3 text-small sm:grid-cols-2">
-                <div>
-                  <dt className="text-slate-500">Bills paid</dt>
-                  <dd className="mt-0.5 tabular-nums text-slate-100">
-                    {view.plan.billsPaid} of {view.plan.billsTotal}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-slate-500">Next bill</dt>
-                  <dd className="mt-0.5 text-slate-100">{view.plan.paused ? "Paused" : formatDateTime(view.plan.nextBillOn).replace(/, \d+:\d+ [AP]M$/, "")}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-500">Class credits</dt>
-                  <dd className="mt-0.5 text-slate-100">{view.creditsLabel}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-500">Weekly time</dt>
-                  <dd className="mt-0.5 text-slate-100">{view.plan.weeklyTime ?? "None (books with credits)"}</dd>
-                </div>
-              </dl>
+            <div className="rounded-card bg-neu-base p-5 shadow-raised-low">
+              <CardHead as="p" eyebrow="Plan" title={view.plan.name} status={view.plan.paused ? <StatusDot tone="warning">Paused</StatusDot> : undefined} />
+              <Facts className="mt-4">
+                <Fact label="Next bill" value={view.plan.paused ? "Paused" : formatDateTime(view.plan.nextBillOn).replace(/, \d+:\d+ [AP]M$/, "")} />
+                <Fact label="Bills paid" value={`${view.plan.billsPaid} of ${view.plan.billsTotal}`} />
+                <Fact label="Class credits" value={view.creditsLabel} />
+                <Fact label="Weekly time" value={view.plan.weeklyTime ?? "None (books with credits)"} tone={view.plan.weeklyTime ? "default" : "muted"} />
+              </Facts>
               {!view.hasWeeklyTime && (
-                <div className="mt-4 rounded-xl bg-neu-base p-3 shadow-pressed-low">
-                  <p className="text-small font-semibold text-amber-300">No weekly time yet</p>
-                  <p className="mt-0.5 text-small text-slate-400"><Hint>Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</Hint></p>
-                </div>
+                <Callout tone="warning" className="mt-4">
+                  <p className="font-semibold">No weekly time yet</p>
+                  <p className="mt-0.5 opacity-90"><Hint>Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</Hint></p>
+                </Callout>
               )}
-              <div className="mt-5 flex flex-wrap gap-2">
-                {view.canMoveWeeklyTime && <ChildWeeklyTime childId={view.id} hasTime={view.hasWeeklyTime} />}
+              <CardFoot className="justify-between">
+                {/* Ending the plan is the one destructive action: quiet, at the far end from the everyday one, still two taps. */}
                 <EndChildPlanButton childId={view.id} />
-              </div>
+                {view.canMoveWeeklyTime && <ChildWeeklyTime childId={view.id} hasTime={view.hasWeeklyTime} />}
+              </CardFoot>
             </div>
           ) : (
             <p className="rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No plan right now. Start one from the Parent mode page.</Hint></p>

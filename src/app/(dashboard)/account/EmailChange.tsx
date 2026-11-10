@@ -62,7 +62,7 @@ export function EmailChange({ currentEmail, verified, renderBadge }: { currentEm
 
   const current = (
     <div className="flex flex-wrap items-center">
-      <span className="text-small text-slate-100">{shownEmail}</span>
+      <span className="min-w-0 break-all text-body font-semibold text-slate-50">{shownEmail}</span>
       {renderBadge(isVerified)}
     </div>
   );

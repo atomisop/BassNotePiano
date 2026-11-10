@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { listMail } from "@/lib/mail";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { Card, Eyebrow } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Card";
 import { MarkAllReadButton } from "./MarkAllReadButton";
 
 const KIND_LABEL = { ADMIN_MESSAGE: "Message", PAYMENT: "Payment", BILLING: "Billing" } as const;
@@ -47,26 +47,28 @@ export default async function MailPage() {
             actionHref="/dashboard"
           />
         ) : (
-          <div className="space-y-3">
+          // One list of rows: unread mail stands out by weight and its dot, read mail steps back, and the date is the quietest part.
+          <ul className="divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low">
             {mail.map((m, i) => (
-              <Link key={m.id} href={`/mail/${m.id}`} style={{ "--i": i } as CSSProperties} className="stagger-item block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <Card interactive className="flex items-start gap-3">
+              <li key={m.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
+                <Link href={`/mail/${m.id}`} className="flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5">
                   <span
-                    className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${m.readAt ? "bg-transparent" : "bg-signal"}`}
+                    role={m.readAt ? undefined : "img"}
+                    className={`mt-2 h-2 w-2 shrink-0 rounded-full ${m.readAt ? "bg-transparent" : "bg-signal"}`}
                     aria-label={m.readAt ? undefined : "Unread"}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className={`truncate text-small ${m.readAt ? "font-medium text-slate-200" : "font-semibold text-slate-50"}`}>{m.title}</p>
-                      <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-400 shadow-pressed-low">{KIND_LABEL[m.kind]}</span>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className={`min-w-0 truncate text-body ${m.readAt ? "text-slate-300" : "font-semibold text-slate-50"}`}>{m.title}</p>
+                      <span className="shrink-0 text-caption tabular-nums text-slate-500">{formatDate(m.createdAt)}</span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-small text-slate-400">{m.body}</p>
+                    <p className={`mt-0.5 line-clamp-2 text-small ${m.readAt ? "text-slate-500" : "text-slate-400"}`}>{m.body}</p>
+                    <p className="mt-1 text-caption text-slate-500">{KIND_LABEL[m.kind]}</p>
                   </div>
-                  <span className="shrink-0 text-small text-slate-500">{formatDate(m.createdAt)}</span>
-                </Card>
-              </Link>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </WideLayout>
