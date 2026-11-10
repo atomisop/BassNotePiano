@@ -207,8 +207,10 @@ export async function askToBookTogether(senderId: string, rawEmail: string): Pro
     // A banned or admin account is treated like any other address: nothing is sent, and the answer is the same.
   } catch (err) {
     // A block, "already friends" or an inner limit would each say something about the address, so all are folded into the same answer.
-    if (err instanceof RateLimitError) throw new SocialError(ASK_TOGETHER_LIMIT);
-    if (!(err instanceof SocialError)) throw err;
+    // The only limit in here is the sign-up invitation's (an address with no account): it is absorbed too, so a spent invitation limit
+    // never makes the answer differ from an address that has an account. The ask is still remembered; the invitation just is not sent.
+    // The ask's own daily limit is checked before this, the same for every address.
+    if (!(err instanceof SocialError) && !(err instanceof RateLimitError)) throw err;
   }
   return "asked";
 }

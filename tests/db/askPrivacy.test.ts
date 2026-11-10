@@ -4,6 +4,7 @@ let signedIn: string | null = null;
 vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuthSession: async () => (signedIn ? { user: { id: signedIn } } : null), authOptions: {} }));
 import { askToBookTogether, getEmailAsksSent, getPendingRequestsSent, respondToFriendRequest, sendFriendRequest, withdrawEmailAsk } from "@/lib/social";
 import { GET as exportMyData } from "@/app/api/account/export/route";
+import { sendRegisterInvite } from "@/lib/registerInvite";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("askp");
@@ -102,6 +103,15 @@ describe("asking to book together never tells whether an email has an account", 
     const x = await student("xeight");
     await expect(askToBookTogether(asker.id, x.email)).resolves.toBe("asked");
     await expect(askToBookTogether(asker.id, `${tag}-eight-nobody@example.com`)).resolves.toBe("asked");
+  });
+
+  it("a spent sign-up invitation limit does not change an ask's answer for an address with no account", async () => {
+    const asker = await student("nine");
+    // Use up the invitation limit (10 a day) with other addresses.
+    for (let i = 0; i < 10; i++) await sendRegisterInvite(asker.id, `${tag}-nine-fill${i}@example.com`);
+    await expect(sendRegisterInvite(asker.id, `${tag}-nine-more@example.com`)).rejects.toThrow();
+    await expect(askToBookTogether(asker.id, `${tag}-nine-nobody@example.com`)).resolves.toBe("asked");
+    expect((await getEmailAsksSent(asker.id)).map((a) => a.email)).toEqual([`${tag}-nine-nobody@example.com`]);
   });
 
   it("the data export lists asks by the typed email, never the account a request went to, until it is accepted", async () => {
