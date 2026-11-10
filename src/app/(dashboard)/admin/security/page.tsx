@@ -10,12 +10,16 @@ import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
 import { Hint } from "@/components/ui/Hint";
 import { CardFoot } from "@/components/ui/CardKit";
 
+import { SectionPills } from "@/components/admin/SectionPills";
+import { ActivityView } from "../activity/_view";
+import { DataView } from "../data/_view";
+
 export const metadata = { title: "Admin: System" };
 
 const DAY = 86_400_000;
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-export default async function AdminSecurityPage() {
+async function SystemView() {
   const session = await getServerAuthSession();
   if (!isOwnerEmail(session?.user.email)) {
     return (
@@ -147,6 +151,18 @@ export default async function AdminSecurityPage() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/** System, Activity and Data are one page (2026-11-10): what the system is doing, what people changed in it, and the studio's numbers. */
+export default async function AdminSecurityPage(props: { searchParams: Promise<{ section?: string; q?: string; kind?: string; days?: string; user?: string; page?: string; tab?: string }> }) {
+  const sp = await props.searchParams;
+  const section = sp.section === "activity" ? "activity" : sp.section === "data" ? "data" : null;
+  return (
+    <div>
+      <SectionPills base="/admin/security" label="System views" active={section} items={[{ label: "System", value: null }, { label: "Activity", value: "activity" }, { label: "Data", value: "data" }]} />
+      {section === "activity" ? <ActivityView searchParams={Promise.resolve(sp)} /> : section === "data" ? <DataView searchParams={Promise.resolve(sp)} /> : <SystemView />}
     </div>
   );
 }

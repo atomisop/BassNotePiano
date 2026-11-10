@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
+import { MoneyCheckView } from "../money-check/_view";
 import { searchUsersForCredits, getRecentCreditAdjustments } from "@/lib/creditAdjustments";
 import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel";
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
@@ -37,6 +38,7 @@ export default async function AdminPaymentsPage(
   const searchParams = await props.searchParams;
   if (searchParams.tab === "credits") return <CreditsTab />;
   if (searchParams.tab === "emails") return <EmailsTab />;
+  if (searchParams.tab === "check") return <CheckTab />;
   // ?user= narrows the list to one person (every status), ?q= searches every page, ?id= opens the tab and page one payment is on.
   const view = readAdminPaymentsParams(searchParams);
   const filter = { userId: view.user ?? undefined, query: view.q ?? undefined };
@@ -57,7 +59,7 @@ export default async function AdminPaymentsPage(
   return (
     <div>
       <h1 className="sr-only">Payments</h1>
-      <TopTabs active="payments" unmatched={unmatched} />
+      <TopTabs active="payments" unmatched={unmatched} owner={isOwner} />
       <PaymentPipelineBanner health={health} />
       {(person || view.q) && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -173,7 +175,7 @@ export default async function AdminPaymentsPage(
   );
 }
 
-function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credits"; unmatched: number }) {
+function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" | "credits" | "check"; unmatched: number; owner: boolean }) {
   return (
     <div className="mt-6">
       <AdminFilterTabs
@@ -182,6 +184,8 @@ function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credi
           { label: "Zelle payments", href: "/admin/payments", active: active === "payments" },
           { label: unmatched > 0 ? `Unmatched emails (${unmatched})` : "Unmatched emails", href: "/admin/payments?tab=emails", active: active === "emails" },
           { label: "Class credits", href: "/admin/payments?tab=credits", active: active === "credits" },
+          // The owner's money check lives here too (2026-11-10): what does not add up, with a fix for each.
+          ...(owner ? [{ label: "Check", href: "/admin/payments?tab=check", active: active === "check" }] : []),
         ]}
       />
     </div>
@@ -195,7 +199,7 @@ async function EmailsTab() {
   return (
     <div>
       <h1 className="sr-only">Payments</h1>
-      <TopTabs active="emails" unmatched={rows.length} />
+      <TopTabs active="emails" unmatched={rows.length} owner={isOwner} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 max-w-[70ch] text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</Hint></p>
       <div className="mt-6">
@@ -238,7 +242,7 @@ async function CreditsTab() {
   return (
     <div>
       <h1 className="sr-only">Payments</h1>
-      <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} />
+      <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} owner={isOwnerEmail((await getServerAuthSession())?.user?.email)} />
 
       <div className="mt-6">
         <AdminCreditGrantPanel
@@ -257,6 +261,21 @@ async function CreditsTab() {
           onAdjust={adjustUserCreditsAction}
           onGetHistory={getUserCreditHistoryAction}
         />
+      </div>
+    </div>
+  );
+}
+
+/** The owner's money check, as a tab beside Zelle payments, Unmatched emails and Class credits. */
+async function CheckTab() {
+  const session = await getServerAuthSession();
+  const owner = isOwnerEmail(session?.user?.email);
+  return (
+    <div>
+      <h1 className="sr-only">Payments</h1>
+      <TopTabs active="check" unmatched={await countUnmatchedReceipts()} owner={owner} />
+      <div className="mt-6">
+        <MoneyCheckView />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-// Pure date rules for the Today screen (/admin/today?day=YYYY-MM-DD). No database, so they are tested on their own.
+// Pure date rules for the Today screen (/admin/schedule?view=TODAY&day=YYYY-MM-DD). No database, so they are tested on their own.
 // Every day here is an Eastern calendar day written as "YYYY-MM-DD", the same key `etDayKey` makes.
 
 const KEY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -65,7 +65,7 @@ export function dayTitle(key: string, today: string): string {
   return `${word === weekday ? weekday : word}, ${date}`;
 }
 
-/** The Today screen's address for a day: plain /admin/today for today itself, so the everyday link stays short. */
+/** The Today screen's address for a day: /admin/schedule?view=TODAY for today itself, so the everyday link stays short. */
 export function todayHref(key: string, today: string): string {
-  return key === today ? "/admin/today" : `/admin/today?day=${key}`;
+  return key === today ? "/admin/schedule?view=TODAY" : `/admin/schedule?view=TODAY&day=${key}`;
 }

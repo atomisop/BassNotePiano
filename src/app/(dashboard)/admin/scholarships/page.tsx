@@ -1,38 +1,8 @@
-import { getServerAuthSession } from "@/lib/auth";
-import { isOwnerEmail } from "@/lib/adminNotifications";
-import { listScholarshipCodes } from "@/lib/scholarships";
-import { formatScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
-import { ScholarshipManager, type ScholarshipRow } from "@/components/admin/ScholarshipManager";
-import { Hint } from "@/components/ui/Hint";
+import { redirect } from "next/navigation";
+import { intoParams } from "@/components/admin/SectionPills";
 
-export const metadata = { title: "Admin: Scholarships" };
-
-export default async function AdminScholarshipsPage() {
-  const session = await getServerAuthSession();
-  if (!isOwnerEmail(session?.user.email)) {
-    return (
-      <div>
-        <h1 className="sr-only">Scholarships<Hint className="ml-1.5">Only the owner can manage scholarship codes.</Hint></h1>
-      </div>
-    );
-  }
-  const now = new Date();
-  const rows: ScholarshipRow[] = (await listScholarshipCodes()).map((r) => ({
-    id: r.id,
-    code: formatScholarshipCode(r.code),
-    email: r.assignedEmail,
-    percent: r.percent,
-    note: r.note,
-    status: scholarshipStatus(r, now),
-    expiresAt: r.expiresAt?.toISOString() ?? null,
-    claimedAt: r.claimedAt?.toISOString() ?? null,
-    claimedBy: r.claimedBy ? (r.claimedBy.name ?? r.claimedBy.email) : null,
-    createdAt: r.createdAt.toISOString(),
-  }));
-  return (
-    <div>
-      <h1 className="sr-only">Scholarships</h1>
-      <ScholarshipManager rows={rows} />
-    </div>
-  );
+/** Scholarships is part of another page now: this address opens it there, keeping any filters the link carried. */
+export default async function Page(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await props.searchParams;
+  redirect(`/admin/payment-plans?${intoParams(sp, { section: "scholarships" })}`);
 }

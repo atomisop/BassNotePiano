@@ -1,5 +1,6 @@
 // The admin menu's shape: six hubs, each holding the related pages as tabs. Pure, so it is tested without a browser.
 //
+// Nine pages (it was twenty-one): related pages are views of one page, with `?section=` or `?tab=` pills.
 // Seventeen pages used to be seventeen choices. Related ones now sit together (Billing holds Payments, Payment Plans and Pricing, and
 // so on), so the menu is six items and the rest are one tap away inside the page. Every page keeps its own address, so a link in an
 // email or a notification still opens exactly where it did.
@@ -28,51 +29,39 @@ export const ADMIN_HUBS: AdminHub[] = [
     id: "billing",
     label: "Billing",
     pages: [
+      // Payments holds Unmatched emails, Class credits and the money Check; Plans holds Prices and Scholarships (2026-11-10).
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Plans" },
-      { href: "/admin/pricing", label: "Pricing", more: true },
-      { href: "/admin/money-check", label: "Check", more: true },
     ],
   },
   {
     id: "people",
     label: "People",
-    pages: [
-      { href: "/admin/users", label: "Accounts" },
-      // Class applications were removed (2026-11-09): what the class form sends is listed here.
-      { href: "/admin/contacts", label: "Contacts" },
-      { href: "/admin/scholarships", label: "Scholarships" },
-      { href: "/admin/employees", label: "Staff", more: true },
-    ],
+    // Accounts and Contacts are one list, and Staff is a view of it (2026-11-10).
+    pages: [{ href: "/admin/users", label: "People" }],
   },
   {
     id: "classes",
     label: "Classes",
     pages: [
-      { href: "/admin/today", label: "Today" },
+      // Schedule holds Today, Times, Requests, Attendance and Reserved; Lessons holds Roadmaps and Discord (2026-11-10).
       { href: "/admin/schedule", label: "Schedule" },
       { href: "/admin/lessons", label: "Lessons" },
-      { href: "/admin/discord", label: "Discord", more: true },
     ],
   },
   {
     id: "inbox",
     label: "Inbox",
-    pages: [
-      { href: "/admin/support", label: "Support Chat" },
-      { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/sent", label: "Sent", more: true },
-    ],
+    // Chats and email threads, and Messages with what was Sent, are one page (2026-11-10).
+    pages: [{ href: "/admin/support", label: "Inbox" }],
   },
   {
     id: "setup",
     label: "Setup",
+    // System holds Activity and Data (2026-11-10).
     pages: [
       { href: "/admin/settings", label: "Settings" },
       { href: "/admin/security", label: "System" },
-      { href: "/admin/activity", label: "Activity", more: true },
-      { href: "/admin/roadmaps", label: "Roadmaps", more: true },
-      { href: "/admin/data", label: "Data", more: true },
     ],
   },
 ];

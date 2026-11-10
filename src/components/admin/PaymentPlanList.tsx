@@ -15,6 +15,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreditCard } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { cn } from "@/lib/utils";
 import { CardFoot, CardHead, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { toast } from "@/components/ui/Toaster";
 import { RemindButton } from "@/components/admin/RemindButton";
@@ -80,6 +81,13 @@ function needsPaymentRecord(plan: AdminPaymentPlan): boolean {
 }
 
 /** The bill open on this plan now (sent in or not): money that arrived another way can be recorded against it. */
+/** The next bill falls within three days (and the plan is running and not yet late). */
+function dueSoon(plan: AdminPaymentPlan): boolean {
+  if (plan.status !== "ACTIVE" || plan.isOverdue) return false;
+  const days = (new Date(plan.nextDueDate).getTime() - Date.now()) / 86_400_000;
+  return days >= 0 && days <= 3;
+}
+
 function openBill(plan: AdminPaymentPlan) {
   return plan.installmentPayments.find((p) => p.status === "AWAITING_TRANSFER" || p.status === "PENDING_REVIEW") ?? null;
 }
@@ -195,9 +203,9 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
         // Money that arrived another way can be recorded whenever a bill is open, not only when the plan shows nothing paid.
         const canRecord = !!onRecordPayment && plan.status === "ACTIVE" && (noRecord || !!bill);
         return (
-        <article key={plan.id} className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+        <article key={plan.id} className={cn("rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5", plan.isOverdue && "ring-1 ring-inset ring-red-400/30")}>
           <CardHead
-            eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+            eyebrow={<span className="text-signal-fg">{describePaymentPlan(plan.cadence, plan.term)}</span>}
             title={
               <Link href={`/admin/users/${plan.user.id}`} className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {name}
@@ -208,14 +216,36 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
           />
 
           <Facts className="mt-4">
+            {/* The date is the figure this card is about: biggest, and red when late, amber when it is due within three days. */}
             <Fact
+              hero
               label={plan.isOverdue ? "Bill was due" : "Next bill"}
               value={paused && isIndefinitePause(plan) ? "On resume" : shortDate(plan.nextDueDate)}
-              tone={plan.isOverdue ? "danger" : "default"}
+              tone={plan.isOverdue ? "danger" : dueSoon(plan) ? "warning" : "default"}
             />
-            <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />
+            <Fact
+              label="Bills paid"
+              value={
+                <>
+                  <span>{plan.installmentsPaid} of {plan.termMonths}</span>
+                  <span aria-hidden className="mt-1.5 block h-1 overflow-hidden rounded-full bg-slate-50/10">
+                    <span className="block h-full rounded-full bg-signal" style={{ width: `${Math.min(100, Math.round((plan.installmentsPaid / Math.max(1, plan.termMonths)) * 100))}%` }} />
+                  </span>
+                </>
+              }
+            />
             <Fact label={free ? "Scholarship" : "Every 28 days"} value={free ? "Free" : formatUsd(plan.installmentAmountCents)} tone={free ? "success" : "default"} />
-            <Fact label={plan.reservedSchedule?.label ?? "Weekly class"} value={slot ?? "None"} tone={slot ? "default" : "muted"} />
+            <Fact
+              label={plan.reservedSchedule?.label ?? "Weekly class"}
+              value={
+                slot ? (
+                  <span className="inline-flex rounded-full bg-signal/16 px-2.5 py-0.5 text-small font-semibold text-signal-fg">{slot}</span>
+                ) : (
+                  "None"
+                )
+              }
+              tone="muted"
+            />
           </Facts>
 
           <Meta
@@ -225,7 +255,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 <span className="text-signal-fg">First class {startsLater.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</span>
               ) : null,
               `Started ${shortDate(plan.createdAt)}`,
-              `Received ${formatUsd(receivedCents(plan))}`,
+              <span key="received" className="text-emerald-400/80">{`Received ${formatUsd(receivedCents(plan))}`}</span>,
               plan.status === "ACTIVE" && bill && !noRecord ? `Bill of ${formatUsd(bill.amountCents)} ${bill.status === "PENDING_REVIEW" ? "sent in for review" : "open, not paid yet"}` : null,
             ]}
           />

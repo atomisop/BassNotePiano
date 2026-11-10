@@ -52,12 +52,13 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   `/billing/*`, `/friends`, `/messages` (1:1 + group), `/account`
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
-- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
-  Pricing), People (Accounts, Contacts, Scholarships, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
-  Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
-  `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
-  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
-  across a 320px phone, checked in `tests/adminNav.test.ts`). Pages keep their own filter pills for statuses.
+- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices and NINE pages (2026-11-10, defined in `src/lib/adminNav.ts`, tested): Overview; Billing (Payments, Plans);
+  People (People); Classes (Schedule, Lessons); Inbox (Inbox); Setup (Settings, System). Every other page is a view of one of these, switched by pills (`SectionPills`, `?section=`) or the page's own
+  tabs: Payments holds Unmatched emails, Class credits and Check (`?tab=`); Plans holds Prices and Scholarships; People holds Class form, Added and Staff (`?filter=`) and has the Add person button;
+  Schedule holds Today (`?view=TODAY&day=`), Times, Requests, Attendance and Reserved; Lessons holds Roadmaps and Discord; Inbox holds Chats and Messages (Direct, Announcements, Sent); System holds Activity
+  and Data. A moved page keeps its code in a `_view.tsx` next to its old address, which only redirects (`intoParams`), so old links, emails and notifications still work. Merge the same way when two pages
+  describe one job; never add a tenth page. `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
+  `AdminSectionTabs` draws a section's pages as one underlined tab row above every page (hidden when the section has one page; a dot marks a tab with something waiting). Pages keep their own filter pills for statuses.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
@@ -272,7 +273,7 @@ leaving ends the family (members keep the month paid). One family change per `fa
 
 ## Contacts and soft holds (added 2026-10-20)
 
-Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
+Admin > People (`/admin/users`, one page since 2026-11-10: Accounts and Contacts were merged; `/admin/contacts` only redirects, its detail pages and actions stay; `src/lib/contacts.ts`, `DirectorySection`) lists every account, then under "Not signed up yet" the people with no account, with pills Class form and Added and an Add person button. The directory is one list of everyone: accounts (classes taken, next class,
 the weekly time a payment plan reserves), people who sent the class form and have no account (`ClassRegistration`, shown as "Class form" with Call / Text / Email and Remove), and people added by hand (`Contact`, with a status, notes
 and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
 contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. Every admin time picker shows it
@@ -365,7 +366,7 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
 - **Signed-in devices** (Settings > "Where you are signed in"): `KnownDevice` rows (browser + OS, never the IP) with city/region/country from the host's geo headers
   (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
   Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
-- **Follow-ups** (`adminFollowUps.ts`, People > Accounts (`FollowUpList`) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
+- **Follow-ups** (`adminFollowUps.ts`, the Follow up button on the Overview (`FollowUpMenu`, a dropdown of every reason; People > Accounts no longer lists them, only its filter tabs) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
   expiring, Discord not linked. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
 - **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
 - **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
@@ -622,7 +623,7 @@ Two levels at most: six sections, each showing its everyday pages as tabs and th
 
 ## Admin Overview (reworked 2026-10-30)
 
-`/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups on People > Accounts; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
+`/admin` has no greeting or date, and no admin page shows a title (2026-10-31): the phone section bar and the section tabs pin together at the top (`deck-header` in `admin/layout.tsx`) and the content starts right under them; each page keeps a screen-reader `h1 className="sr-only"`. It shows only what the owner asked for: the schedule (today in the hero, a 7-day strip from `getWeekSchedule`, today's classes), the money (this week and this month with week and month bars from `getRevenueSummary` / pure `summariseRevenue` in `revenueSummary.ts`, tested; every 28 days; due in 7 days; all-time) and a rough "How it's going" (plans, full access, progress by scale folded away). Automatic tasks (`#tasks`) and page views live on Setup > Security; follow-ups behind the Follow up button; payments to approve on Billing > Payments. Put new operational panels on the page they belong to, not here.
 
 ## Activity log (added 2026-10-21)
 

@@ -40,7 +40,7 @@ describe("the Today screen's days", () => {
   });
 
   it("keeps today's address short", () => {
-    expect(todayHref("2026-11-09", "2026-11-09")).toBe("/admin/today");
-    expect(todayHref("2026-11-12", "2026-11-09")).toBe("/admin/today?day=2026-11-12");
+    expect(todayHref("2026-11-09", "2026-11-09")).toBe("/admin/schedule?view=TODAY");
+    expect(todayHref("2026-11-12", "2026-11-09")).toBe("/admin/schedule?view=TODAY&day=2026-11-12");
   });
 });

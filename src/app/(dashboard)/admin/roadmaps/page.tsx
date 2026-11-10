@@ -1,40 +1,8 @@
-import { getServerAuthSession } from "@/lib/auth";
-import { isOwnerEmail } from "@/lib/adminNotifications";
-import { listRoadmapsForAdmin } from "@/lib/roadmaps";
-import { RoadmapsAdmin } from "@/components/admin/RoadmapsAdmin";
-import { Hint } from "@/components/ui/Hint";
+import { redirect } from "next/navigation";
+import { intoParams } from "@/components/admin/SectionPills";
 
-export const metadata = { title: "Admin: Roadmaps" };
-
-/** Admin > Setup > Roadmaps: the owner adds roadmaps, orders them, adds scales and decides when students see each one. */
-export default async function AdminRoadmapsPage() {
-  const session = await getServerAuthSession();
-  if (!isOwnerEmail(session?.user.email)) {
-    return (
-      <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Roadmaps<Hint className="ml-1.5">Only the owner can change the roadmaps.</Hint></h1>
-      </div>
-    );
-  }
-  const roadmaps = await listRoadmapsForAdmin();
-  return (
-    <div>
-      <h1 data-page-title="" className="sr-only">Roadmaps</h1>
-      <p className="mt-2 max-w-2xl text-small text-slate-500"><Hint>Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you already give. A new roadmap starts hidden: add its scales, tap a scale&apos;s lesson count to add its lessons, then turn it on.</Hint></p>
-      <div className="mt-6">
-        <RoadmapsAdmin
-          roadmaps={roadmaps.map((r) => ({
-            id: r.id,
-            name: r.name,
-            description: r.description,
-            instrument: r.instrument,
-            level: r.level,
-            artwork: r.artwork,
-            visible: r.visible,
-            scales: r.scales,
-          }))}
-        />
-      </div>
-    </div>
-  );
+/** Roadmaps is part of another page now: this address opens it there, keeping any filters the link carried. */
+export default async function Page(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await props.searchParams;
+  redirect(`/admin/lessons?${intoParams(sp, { section: "roadmaps" })}`);
 }

@@ -6,15 +6,15 @@ import { RemindButton } from "@/components/admin/RemindButton";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { sendAllFollowUpRemindersAction } from "@/app/(dashboard)/admin/followup-actions";
 import { Hint } from "@/components/ui/Hint";
-import { ChevronRight } from "@/components/ui/appIcons";
+import { ChevronDown, ChevronRight } from "@/components/ui/appIcons";
 
 /** Rows shown per reason before "Show N more" (DESIGN.md, Hierarchy rule 9: show a few, fold the rest). */
 const FIRST = 3;
 
 /**
  * People who need a nudge (overdue bills, not practicing, trial ending, credits expiring, Discord not linked), each with a one-tap
- * reminder and "Remind all N" per reason. Lives on People > Accounts (moved off the Overview 2026-10-30: it is about people, not about
- * how the studio is doing).
+ * reminder and "Remind all N" per reason. Lives behind the Follow up button on the Overview (`FollowUpMenu`, 2026-11-10, the owner:
+ * one button that drops down every follow up; People > Accounts no longer lists them).
  *
  * Laid out for scanning (2026-11-10): each reason is its own group with its count, and each person is a row (name on the left, the
  * reminder on the right). Three rows show; "Show N more" opens the whole list right here. Each heading opens the list it is about,
@@ -22,16 +22,9 @@ const FIRST = 3;
  */
 export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; className?: string }) {
   if (followUps.length === 0) return null;
-  const people = followUps.reduce((n, f) => n + f.total, 0);
   return (
     <section aria-label="Follow up" className={className}>
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 className="text-title font-semibold text-slate-50">Follow up</h2>
-        <span className="text-small text-slate-500">
-          {people} {people === 1 ? "person" : "people"}
-        </span>
-      </div>
-      <div className="mt-3 space-y-4">
+      <div className="space-y-4">
         {followUps.map((f) => {
           const canRemind = (REMINDER_KINDS as string[]).includes(f.key);
           const row = (p: FollowUpPerson) => (
@@ -102,5 +95,30 @@ export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; 
         })}
       </div>
     </section>
+  );
+}
+
+/**
+ * The Follow up button: one quiet button (with the number of people waiting) that drops down every follow up, grouped by reason, each
+ * person with a one-tap reminder. A native disclosure, so it works without scripts and closes with a second tap.
+ */
+export function FollowUpMenu({ followUps, className }: { followUps: FollowUp[]; className?: string }) {
+  const people = followUps.reduce((n, f) => n + f.total, 0);
+  if (people === 0) {
+    return (
+      <p className={className}>
+        <span className="inline-flex min-h-11 items-center rounded-full px-4 text-small font-medium text-slate-500 ring-1 ring-inset ring-slate-50/8">Follow up · nobody right now</span>
+      </p>
+    );
+  }
+  return (
+    <details className={className ? `group/follow ${className}` : "group/follow"}>
+      <summary className="tap inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full bg-slate-50/6 px-4 text-small font-semibold text-slate-100 ring-1 ring-inset ring-slate-50/10 transition hover:bg-slate-50/10 [&::-webkit-details-marker]:hidden">
+        Follow up
+        <span className="min-w-6 rounded-full bg-signal px-1.5 py-0.5 text-center text-caption font-semibold tabular-nums text-white">{people}</span>
+        <ChevronDown aria-hidden className="h-4 w-4 text-slate-400 transition-transform group-open/follow:rotate-180" />
+      </summary>
+      <FollowUpList followUps={followUps} className="mt-3" />
+    </details>
   );
 }

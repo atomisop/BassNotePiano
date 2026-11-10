@@ -6,6 +6,9 @@ import { PaymentPlanList } from "@/components/admin/PaymentPlanList";
 import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellationFeedbackList";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
+import { SectionPills } from "@/components/admin/SectionPills";
+import { PricingView } from "../pricing/_view";
+import { ScholarshipsView } from "../scholarships/_view";
 import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
 
 // "Overdue" isn't a real PaymentPlanStatus, it's derived (ACTIVE && past its
@@ -29,7 +32,7 @@ const FILTERS: { label: string; value: FilterValue }[] = [
 
 export const metadata = { title: "Admin: Payment plans" };
 
-export default async function AdminPaymentPlansPage(props: { searchParams: Promise<{ status?: string }> }) {
+async function PlansView(props: { searchParams: Promise<{ status?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "ACTIVE";
@@ -98,6 +101,27 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
           emptyMessage={activeFilter === "ACTIVE" ? "No active plans." : `No ${activeLabel.toLowerCase()} plans.`}
         />
       </div>
+    </div>
+  );
+}
+
+/** Plans, Prices and Scholarships are one page (2026-11-10): what students are on, and what they pay. */
+export default async function AdminPaymentPlansPage(props: { searchParams: Promise<{ status?: string; section?: string }> }) {
+  const sp = await props.searchParams;
+  const session = await getServerAuthSession();
+  const owner = isOwnerEmail(session?.user.email);
+  const section = owner && sp.section === "prices" ? "prices" : owner && sp.section === "scholarships" ? "scholarships" : null;
+  return (
+    <div>
+      {owner && (
+        <SectionPills
+          base="/admin/payment-plans"
+          label="Plan views"
+          active={section}
+          items={[{ label: "Plans", value: null }, { label: "Prices", value: "prices" }, { label: "Scholarships", value: "scholarships" }]}
+        />
+      )}
+      {section === "prices" ? <PricingView /> : section === "scholarships" ? <ScholarshipsView /> : <PlansView searchParams={Promise.resolve(sp)} />}
     </div>
   );
 }

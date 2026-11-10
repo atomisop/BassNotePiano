@@ -3,6 +3,7 @@ import { getUpcomingOccurrences } from "@/lib/classSchedule";
 import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
 import { getAllClassSchedules, countUpcomingBookingsBySchedule, getWindowHolders } from "@/lib/classScheduleManage";
 import { getWaitlistByWindow, setupLinkFor } from "@/lib/slotWaitlist";
+import { TodayView } from "../today/_view";
 import { editWeeklyWindowAction, moveWindowWithEveryoneAction, previewWindowMoveAction } from "./weeklyTimeActions";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
@@ -29,7 +30,7 @@ import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 import { Hint } from "@/components/ui/Hint";
 
-type ViewValue = "WINDOWS" | "REQUESTS" | "ATTENDANCE" | "RESERVED";
+type ViewValue = "TODAY" | "WINDOWS" | "REQUESTS" | "ATTENDANCE" | "RESERVED";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -38,6 +39,7 @@ type ViewValue = "WINDOWS" | "REQUESTS" | "ATTENDANCE" | "RESERVED";
 // page, not one task, and scrolling past a growing attendance history to
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
+  { label: "Today", value: "TODAY" },
   { label: "Times", value: "WINDOWS" },
   { label: "Requests", value: "REQUESTS" },
   { label: "Attendance", value: "ATTENDANCE" },
@@ -46,7 +48,7 @@ const VIEWS: { label: string; value: ViewValue }[] = [
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; name?: string; email?: string; phone?: string }> }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; name?: string; email?: string; phone?: string; day?: string | string[] }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
@@ -64,6 +66,16 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       ))}
     </div>
   );
+
+  // Today (the teaching day, one tap from any other view) is a view of Schedule since 2026-11-10.
+  if (activeView === "TODAY") {
+    return (
+      <div>
+        {viewSwitcher}
+        <TodayView searchParams={Promise.resolve(searchParams)} />
+      </div>
+    );
+  }
 
   if (activeView === "REQUESTS") {
     const [groups, requestMode, session] = await Promise.all([getAdminBookingRequests(), getBoolSetting("booking.requestMode"), getServerAuthSession()]);
