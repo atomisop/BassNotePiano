@@ -1,3 +1,4 @@
+import { reportError } from "@/lib/reportError";
 import { addIgnoredName, isIgnoredSender, normalizeFullName } from "@/lib/ignoredSenders";
 import { getTextSetting, saveSetting } from "@/lib/siteSettings";
 import { SETTING_BY_KEY } from "@/lib/siteSettingsDefs";
@@ -283,20 +284,37 @@ async function openBillRows(plan: PaymentPlan): Promise<OpenBillRow[]> {
 
 /**
  * Puts a plan's (or group's) bills back exactly as they were before an early open: bills that open made are removed (nothing was sent
- * or paid on them, and nobody was told), and the bills that were already open get back their status, amount and combined bill.
+ * or paid on them, and nobody was told), and the unpaid bills that were already open get back their status, amount and combined bill.
+ * Only what the open itself could have changed is touched: a bill someone sent in, approved or removed in the same moment is left as it
+ * is (each write is guarded on the bill still being unsent), and the whole undo runs as one serializable transaction.
  */
 async function undoOpenedBills(plan: PaymentPlan, before: OpenBillRow[]): Promise<void> {
   const beforeIds = new Set(before.map((r) => r.id));
-  const made = (await openBillRows(plan)).filter((r) => !beforeIds.has(r.id) && r.submittedAt === null);
+  const made = (await openBillRows(plan)).filter((r) => !beforeIds.has(r.id) && r.status === "AWAITING_TRANSFER" && r.submittedAt === null);
   const madeIds = made.map((r) => r.id);
-  await prisma.$transaction(async (tx) => {
-    if (madeIds.length > 0) await tx.zellePayment.updateMany({ where: { bundleId: { in: madeIds } }, data: { bundleId: null } });
-    for (const r of before) await tx.zellePayment.update({ where: { id: r.id }, data: { status: r.status, amountCents: r.amountCents, bundleId: r.bundleId } });
-    const members = made.filter((r) => r.purpose !== "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
-    const combined = made.filter((r) => r.purpose === "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
-    if (members.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: members }, submittedAt: null } });
-    if (combined.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: combined }, submittedAt: null } });
-  });
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        if (madeIds.length > 0) await tx.zellePayment.updateMany({ where: { bundleId: { in: madeIds }, submittedAt: null }, data: { bundleId: null } });
+        // An open only ever changes unsent bills (it bundles them, re-totals a combined bill, or closes a combined bill it dissolves).
+        for (const r of before) {
+          if (r.status !== "AWAITING_TRANSFER" || r.submittedAt !== null) continue;
+          await tx.zellePayment.updateMany({
+            where: { id: r.id, submittedAt: null, status: { in: ["AWAITING_TRANSFER", "EXPIRED"] } },
+            data: { status: r.status, amountCents: r.amountCents, bundleId: r.bundleId },
+          });
+        }
+        const members = made.filter((r) => r.purpose !== "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
+        const combined = made.filter((r) => r.purpose === "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
+        if (members.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: members }, status: "AWAITING_TRANSFER", submittedAt: null } });
+        if (combined.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: combined }, status: "AWAITING_TRANSFER", submittedAt: null, bundled: { none: {} } } });
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    // Something changed these bills at the same moment: leave them as they now are (a bill opened a few days early is harmless).
+    reportError(err, "undoOpenedBills");
+  }
 }
 
 /** Marks an email as having nothing to do with a payment, so it stops being counted. */

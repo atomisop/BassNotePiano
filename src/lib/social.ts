@@ -108,7 +108,11 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
   const receiver = await prisma.user.findUnique({ where: { username: normalizeUsername(receiverUsername) } });
   if (!receiver) throw new SocialError("No user found with that username.");
   if (receiver.id === senderId) throw new SocialError("You can't add yourself.");
-  return requestFriendship(senderId, receiver.id, "username");
+  const request = await requestFriendship(senderId, receiver.id, "username");
+  // A request made by username is an ordinary one, listed with their profile: if an earlier ask by email made it, it stops being the
+  // ask's (so sending by username shows the same row whether or not that ask's email was theirs).
+  await prisma.friendEmailAsk.updateMany({ where: { senderId, requestId: request.id }, data: { requestId: null } });
+  return request;
 }
 
 /**
@@ -123,9 +127,18 @@ async function requestFriendship(senderId: string, receiverId: string, via: "use
 
   // STEP 20: 20/hour is generous for genuine friend-adding while blocking
   // mass friend-request spam across many accounts.
+  // Already friends (their request to us accepted is checked below): never reset a friendship to waiting.
+  const own = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId } }, select: { status: true } });
+  if (own?.status === "ACCEPTED") throw new SocialError("You're already friends.");
+
+  // Requests an ask by email made are limited by the ask's own daily cap, and are left out here: counting them would let the hourly
+  // cap tell the sender how many of their asks reached an account.
+  const askMade = (await prisma.friendEmailAsk.findMany({ where: { senderId, requestId: { not: null } }, select: { requestId: true } }))
+    .map((a) => a.requestId)
+    .filter((id): id is string => Boolean(id));
   await assertRateLimit(
     prisma.friendRequest.count,
-    { senderId },
+    { senderId, ...(askMade.length > 0 ? { id: { notIn: askMade } } : {}) },
     { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast. Please wait a bit and try again." },
   );
 
@@ -186,10 +199,7 @@ export async function askToBookTogether(senderId: string, rawEmail: string): Pro
     if (!receiver) {
       await sendRegisterInvite(senderId, email);
     } else if (receiver.role === "STUDENT" && !receiver.bannedAt) {
-      const waiting = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId: receiver.id } }, select: { id: true, status: true } });
-      // Already asked and not answered yet: they are not told twice.
-      const request = waiting?.status === "PENDING" ? waiting : await requestFriendship(senderId, receiver.id, "booking");
-      await linkAskToRequest(ask.id, request.id);
+      await makeAskRequest(ask.id, senderId, receiver.id);
     }
     // A banned or admin account is treated like any other address: nothing is sent, and the answer is the same.
   } catch (err) {
@@ -198,6 +208,23 @@ export async function askToBookTogether(senderId: string, rawEmail: string): Pro
     if (!(err instanceof SocialError)) throw err;
   }
   return "asked";
+}
+
+/**
+ * Makes the friend request for an ask by email, and makes it the ask's own (listed only as the typed email). Only when nothing is
+ * between the two people yet: a request either way, a friendship or a block is left exactly as it was, so nothing the sender can see
+ * (their Sent list, their friends, their data export) changes depending on whether the email was someone they know. True when made.
+ */
+async function makeAskRequest(askId: string, senderId: string, receiverId: string): Promise<boolean> {
+  const [mine, theirs] = await Promise.all([
+    prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId } }, select: { status: true } }),
+    prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId: receiverId, receiverId: senderId } }, select: { status: true } }),
+  ]);
+  const between = (r: { status: string } | null) => r?.status === "PENDING" || r?.status === "ACCEPTED";
+  if (between(mine) || between(theirs) || (await isBlockedEitherWay(senderId, receiverId))) return false;
+  const request = await requestFriendship(senderId, receiverId, "booking");
+  await linkAskToRequest(askId, request.id);
+  return true;
 }
 
 /** Links an ask to the friend request it became. A request can only belong to one ask (the unique key), so a clash is ignored. */
@@ -255,10 +282,7 @@ export async function claimFriendEmailAsks(userId: string, rawEmail: string | nu
     const sender = await prisma.user.findUnique({ where: { id: ask.senderId }, select: { bannedAt: true } });
     if (!sender || sender.bannedAt) continue;
     try {
-      const existing = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId: ask.senderId, receiverId: userId } }, select: { id: true, status: true } });
-      const request = existing?.status === "PENDING" ? existing : await requestFriendship(ask.senderId, userId, "booking");
-      await linkAskToRequest(ask.id, request.id);
-      made++;
+      if (await makeAskRequest(ask.id, ask.senderId, userId)) made++;
     } catch (err) {
       if (!(err instanceof SocialError) && !(err instanceof RateLimitError)) throw err;
     }
