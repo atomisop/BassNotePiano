@@ -158,7 +158,8 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           <div key={f.label} className="px-2 py-1">
             <dt className="text-small text-slate-500">{f.label}</dt>
             <dd className={`text-small font-semibold ${f.warn ? "text-amber-300" : "text-slate-50"}`}>{f.value}</dd>
-            {f.extra}
+            {/* Badges and buttons under a fact belong to its value, so they sit in a dd (a bare element inside a dl group is invalid). */}
+            {f.extra ? <dd>{f.extra}</dd> : null}
           </div>
         ))}
       </dl>
