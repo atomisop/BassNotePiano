@@ -16,6 +16,7 @@ import { ContactForm } from "@/components/admin/ContactPanels";
 import { Card } from "@/components/ui/Card";
 import { Plus } from "@/components/ui/appIcons";
 import { createContactAction } from "../contacts/actions";
+import { StaffView } from "../employees/_view";
 
 /** The follow-up filters: one reason's people, with the same Remind all as the Follow up list. */
 const FOLLOW_UP_TABS: Record<AccountFollowUpFilter, { label: string; title: string }> = {
@@ -38,12 +39,14 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const classForm = searchParams.filter === "classform";
   const added = searchParams.filter === "added";
   const contactsOnly = classForm || added;
+  // Staff (the admins and their alerts) is a view of this page too, not a page of its own.
+  const staff = searchParams.filter === "staff";
   const followUpFilter = (ACCOUNT_FOLLOW_UP_FILTERS as readonly string[]).includes(searchParams.filter ?? "") ? (searchParams.filter as AccountFollowUpFilter) : null;
   const followUpIds = followUpFilter ? (await getFollowUpPeople(followUpFilter)).map((p) => p.id) : undefined;
-  const everyone = !needsApproval && !notPracticing && !complimentary && !followUpFilter && !contactsOnly;
+  const everyone = !needsApproval && !notPracticing && !complimentary && !followUpFilter && !contactsOnly && !staff;
   const [users, progress, noAccount] = await Promise.all([
-    contactsOnly ? Promise.resolve([]) : searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds }),
-    contactsOnly ? Promise.resolve([]) : getAdminProgressOverview(query),
+    contactsOnly || staff ? Promise.resolve([]) : searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds }),
+    contactsOnly || staff ? Promise.resolve([]) : getAdminProgressOverview(query),
     // Under Everyone they follow the accounts; under their own pill they are the whole list.
     everyone ? listDirectory(query, "ALL").then((all) => all.filter((p) => p.kind !== "ACCOUNT")) : contactsOnly ? listDirectory(query, classForm ? "APPLICATION" : "ADDED") : Promise.resolve([]),
   ]);
@@ -90,11 +93,15 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
             { label: "Complimentary", href: `/admin/users?filter=comped${q}`, active: complimentary },
             { label: "Class form", href: `/admin/users?filter=classform${q}`, active: classForm },
             { label: "Added", href: `/admin/users?filter=added${q}`, active: added },
+            { label: "Staff", href: "/admin/users?filter=staff", active: staff },
           ]}
         />
       </div>
 
+      {staff && <div className="mt-6"><StaffView /></div>}
+
       {/* Add someone who has no account (a call, a walk-in); open, the form takes its own row under the buttons. */}
+      {!staff && (
       <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
         {isOwner && (
           <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "ghost", size: "sm" })}>
@@ -110,6 +117,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
           </Card>
         </details>
       </div>
+      )}
 
       {followUpFilter && followUpIds && followUpIds.length > 0 && (
         <div className="mt-6">

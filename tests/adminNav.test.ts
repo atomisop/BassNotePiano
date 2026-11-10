@@ -9,11 +9,13 @@ describe("admin menu", () => {
   it("lists every page once, so no page is missing and none is repeated", () => {
     const hrefs = allAdminPages().map((p) => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(hrefs).toHaveLength(20);
-    // The pages the old menu had.
-    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/scholarships", "/admin/users", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps", "/admin/data"]) {
+    expect(hrefs).toHaveLength(15);
+    // The pages the menu has now (2026-11-10: seven pages became views of the page they belong with).
+    for (const href of ["/admin", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/users", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/settings", "/admin/security", "/admin/data"]) {
       expect(hrefs).toContain(href);
     }
+    // Their old addresses only redirect to the page that holds them.
+    for (const href of ["/admin/scholarships", "/admin/employees", "/admin/roadmaps", "/admin/activity", "/admin/sent"]) expect(hrefs).not.toContain(href);
     // Applicants and Contacts are gone as pages: their addresses only redirect to the class form list on People (2026-11-10).
     expect(hrefs).not.toContain("/admin/students");
     expect(hrefs).not.toContain("/admin/contacts");

@@ -7,12 +7,14 @@ import { MessageComposer } from "@/components/admin/MessageComposer";
 import { AnnouncementManager } from "@/components/admin/AnnouncementManager";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import type { MessageRecipient } from "./actions";
+import { SentView } from "../sent/_view";
 
 export const metadata = { title: "Admin: Messages" };
 
-export default async function AdminMessagesPage(props: { searchParams: Promise<{ tab?: string; to?: string | string[] }> }) {
+export default async function AdminMessagesPage(props: { searchParams: Promise<{ tab?: string; to?: string | string[]; q?: string; channel?: string; who?: string; days?: string; user?: string; view?: string; page?: string }> }) {
   const searchParams = await props.searchParams;
   const announcementsTab = searchParams.tab === "announcements";
+  const sentTab = searchParams.tab === "sent";
 
   return (
     <div>
@@ -22,13 +24,14 @@ export default async function AdminMessagesPage(props: { searchParams: Promise<{
         <AdminFilterTabs
           label="Message type"
           items={[
-            { label: "Direct", href: "/admin/messages", active: !announcementsTab },
+            { label: "Direct", href: "/admin/messages", active: !announcementsTab && !sentTab },
             { label: "Announcements", href: "/admin/messages?tab=announcements", active: announcementsTab },
+            { label: "Sent", href: "/admin/messages?tab=sent", active: sentTab },
           ]}
         />
       </div>
 
-      <div className="mt-6">{announcementsTab ? <Announcements /> : <Direct to={parseMessageRecipients(searchParams.to)} />}</div>
+      <div className="mt-6">{sentTab ? <SentView searchParams={Promise.resolve(searchParams)} /> : announcementsTab ? <Announcements /> : <Direct to={parseMessageRecipients(searchParams.to)} />}</div>
     </div>
   );
 }

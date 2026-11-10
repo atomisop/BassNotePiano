@@ -30,6 +30,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Plans" },
+      // Pricing holds Scholarships (2026-11-10).
       { href: "/admin/pricing", label: "Pricing", more: true },
       { href: "/admin/money-check", label: "Check", more: true },
     ],
@@ -39,9 +40,8 @@ export const ADMIN_HUBS: AdminHub[] = [
     label: "People",
     pages: [
       // Accounts and Contacts are one list (2026-11-10): accounts first, then people who only sent the class form or were added by hand.
+      // Staff is a view of it too (2026-11-10), and Scholarships sits with Pricing.
       { href: "/admin/users", label: "People" },
-      { href: "/admin/scholarships", label: "Scholarships" },
-      { href: "/admin/employees", label: "Staff", more: true },
     ],
   },
   {
@@ -50,6 +50,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/today", label: "Today" },
       { href: "/admin/schedule", label: "Schedule" },
+      // Lessons holds Roadmaps (2026-11-10).
       { href: "/admin/lessons", label: "Lessons" },
       { href: "/admin/discord", label: "Discord", more: true },
     ],
@@ -59,8 +60,8 @@ export const ADMIN_HUBS: AdminHub[] = [
     label: "Inbox",
     pages: [
       { href: "/admin/support", label: "Support Chat" },
+      // Messages holds what was Sent (2026-11-10).
       { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/sent", label: "Sent", more: true },
     ],
   },
   {
@@ -68,10 +69,9 @@ export const ADMIN_HUBS: AdminHub[] = [
     label: "Setup",
     pages: [
       { href: "/admin/settings", label: "Settings" },
+      // System holds Activity (2026-11-10).
       { href: "/admin/security", label: "System" },
-      { href: "/admin/activity", label: "Activity", more: true },
-      { href: "/admin/roadmaps", label: "Roadmaps", more: true },
-      { href: "/admin/data", label: "Data", more: true },
+      { href: "/admin/data", label: "Data" },
     ],
   },
 ];

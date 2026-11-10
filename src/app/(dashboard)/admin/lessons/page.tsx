@@ -8,9 +8,12 @@ import { AdminLessonManager } from "@/components/admin/AdminLessonManager";
 import { Callout } from "@/components/ui/CardKit";
 import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction, updateLessonTextAction } from "./actions";
 
+import { SectionPills } from "@/components/admin/SectionPills";
+import { RoadmapsView } from "../roadmaps/_view";
+
 export const metadata = { title: "Admin: Lessons" };
 
-export default async function AdminLessonsPage(props: { searchParams: Promise<{ scale?: string }> }) {
+async function LessonsView(props: { searchParams: Promise<{ scale?: string }> }) {
   const searchParams = await props.searchParams;
   // The scales come from the database, so one added on Setup > Roadmaps is here at once and can get its lessons.
   const scales = await listScalesForLessons();
@@ -72,6 +75,18 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Lessons and Roadmaps are one page (2026-11-10): the roadmaps hold the scales the lessons belong to. */
+export default async function AdminLessonsPage(props: { searchParams: Promise<{ scale?: string; section?: string }> }) {
+  const sp = await props.searchParams;
+  const section = sp.section === "roadmaps" ? "roadmaps" : null;
+  return (
+    <div>
+      <SectionPills base="/admin/lessons" label="Lesson views" active={section} items={[{ label: "Lessons", value: null }, { label: "Roadmaps", value: "roadmaps" }]} />
+      {section ? <RoadmapsView /> : <LessonsView searchParams={Promise.resolve(sp)} />}
     </div>
   );
 }

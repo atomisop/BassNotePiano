@@ -5,10 +5,12 @@ import { listAccountDiscounts } from "@/lib/accountDiscounts";
 import { PricingManager, type PricingDiscountRow } from "@/components/admin/PricingManager";
 import { clearAccountDiscountAction, savePricingAction, searchDiscountCandidatesAction, setAccountDiscountAction, type PricingFormValues } from "./actions";
 import { Hint } from "@/components/ui/Hint";
+import { SectionPills } from "@/components/admin/SectionPills";
+import { ScholarshipsView } from "../scholarships/_view";
 
 export const metadata = { title: "Admin: Pricing" };
 
-export default async function AdminPricingPage() {
+async function PricingView() {
   const session = await getServerAuthSession();
   if (!isOwnerEmail(session?.user.email)) {
     return (
@@ -51,6 +53,18 @@ export default async function AdminPricingPage() {
           onClearDiscount={clearAccountDiscountAction}
         />
       </div>
+    </div>
+  );
+}
+
+/** Prices and Scholarships are one page (2026-11-10): both decide what a student pays. */
+export default async function AdminPricingPage(props: { searchParams: Promise<{ section?: string }> }) {
+  const sp = await props.searchParams;
+  const section = sp.section === "scholarships" ? "scholarships" : null;
+  return (
+    <div>
+      <SectionPills base="/admin/pricing" label="Pricing views" active={section} items={[{ label: "Prices", value: null }, { label: "Scholarships", value: "scholarships" }]} />
+      {section ? <ScholarshipsView /> : <PricingView />}
     </div>
   );
 }
