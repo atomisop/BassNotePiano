@@ -35,22 +35,14 @@ describe("describeLockedScale", () => {
 });
 
 describe("gettingStartedStep", () => {
-  it("offers a free trial class or a plan to a new student", () => {
-    const s = gettingStartedStep({ kind: "NONE", applicationPending: false });
-    expect(s?.href).toBe("/classes");
-    expect(s?.secondary?.href).toBe("/billing/plans");
-  });
-  it("tells a student whose application is waiting that it is being reviewed", () => {
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: true })?.action).toContain("being reviewed");
+  it("points someone with no access (trial over) at a plan, or a word with an instructor", () => {
+    const s = gettingStartedStep({ kind: "NONE" });
+    expect(s?.href).toBe("/billing/plans");
+    expect(s?.secondary?.href).toBe("/classes");
+    // Class applications were removed (2026-11-09): nothing is "being reviewed" any more.
+    expect(`${s?.action} ${s?.detail}`).not.toMatch(/apply|application|review/i);
   });
   it("stays out of the way of anyone with access", () => {
-    for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind, applicationPending: false })).toBeNull();
-  });
-});
-
-describe("getting started copy follows the trial length", () => {
-  it("names the configured number of days, or leaves the trial out when it is off", () => {
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 5 })?.detail).toContain("5 days");
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 0 })?.detail).not.toMatch(/trial|days/);
+    for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind })).toBeNull();
   });
 });

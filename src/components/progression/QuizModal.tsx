@@ -194,7 +194,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               <ChevronLeft className="h-[18px] w-[18px]" />
             </button>
             <div>
-              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+              <p className="text-caption font-medium uppercase tracking-caps text-slate-500">
                 Scale-Spelling Quiz
               </p>
               <h2 id="quiz-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
@@ -221,10 +221,11 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         />
                       ))}
                     </div>
-                    <p className="text-small text-slate-500">
+                    <p className="text-small tabular-nums text-slate-500">
                       Question {currentIndex + 1} of {questions.length}
                     </p>
-                    <p className="mt-2 text-body text-slate-100">{current.prompt}</p>
+                    {/* The question is the one thing to read on this screen. */}
+                    <p className="mt-2 text-title font-semibold text-slate-50">{current.prompt}</p>
 
                     <div className="mt-4 space-y-2">
                       {current.choices.map((choice, i) => {
@@ -234,7 +235,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                             key={choice}
                             type="button"
                             onClick={() => selectChoice(i)}
-                            className={`w-full rounded-xl border px-4 py-2.5 text-left text-small font-medium transition ${
+                            className={`w-full rounded-xl border px-4 py-3 text-left text-body font-medium transition ${
                               selected
                                 ? "border-slate-50 bg-slate-50/10 text-slate-50"
                                 : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
@@ -316,19 +317,16 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         <X className="text-slate-400" size={26} />
                       )}
                     </motion.div>
-                    <h3 className="text-title text-slate-50">
+                    <h3 className="text-title font-semibold text-slate-50">
                       {result.passed ? "Quiz passed" : "Not quite yet"}
                     </h3>
-                    <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
-                      <CountUpNumber value={result.score} /> of {result.total} correct
+                    {/* The score is the one figure; what it needed is a quiet line under it (it used to repeat in a second pill). */}
+                    <p className="mt-3 text-headline font-bold tabular-nums text-slate-50">
+                      <CountUpNumber value={result.score} /> of {result.total}
                     </p>
-                    <div
-                      className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-small font-medium ${
-                        result.passed ? "bg-slate-50/10 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
-                      }`}
-                    >
-                      Your score: {result.score}/{result.total} · {Math.round(passThreshold * 100)}% required
-                    </div>
+                    <p className="mx-auto mt-1 max-w-xs text-small text-slate-400">
+                      correct · {Math.round(passThreshold * 100)}% needed to pass
+                    </p>
                     <div className="mt-6 flex gap-2">
                       {!result.passed && (
                         <button

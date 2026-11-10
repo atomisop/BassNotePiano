@@ -3,7 +3,7 @@
 import { BlurhashImage } from "@/components/ui/BlurhashImage";
 import { useState } from "react";
 import Image from "next/image";
-import { PillCTA } from "@/components/ui/pill-cta";
+import { ArrowUpRight } from "@/components/ui/appIcons";
 import type { ShopProduct } from "@/lib/shopProducts";
 
 type Category = "all" | "keyboard" | "guitar";
@@ -32,8 +32,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`tap shrink-0 rounded-full px-4 py-2 text-small font-medium transition ${
-        active ? "bg-amber-400 text-black shadow-pressed-low" : "neu-btn !text-cream/80 hover:!text-cream"
+      // A filter is a choice, not a call to action: the chosen one gets a soft neutral fill and the rest are plain words, so
+      // seven chips never outshout the products.
+      className={`tap shrink-0 rounded-full px-4 py-2 text-small font-medium transition-colors ${
+        active ? "bg-cream/12 text-cream" : "text-cream/60 hover:text-cream"
       }`}
     >
       {children}
@@ -52,15 +54,23 @@ function ProductCard({ product }: { product: ShopProduct }) {
           className="object-contain p-6"
         />
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3 pt-5">
-        <p className="text-small uppercase tracking-caps text-cream/60">{product.brand}</p>
-        <h2 className="text-balance text-body font-medium leading-snug tracking-tight text-cream">{product.name}</h2>
-        <p className="text-small leading-relaxed text-cream/60">{product.blurb}</p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-          <span className="text-xl font-medium tracking-tight text-cream">{formatUsd(product.priceCents)}</span>
-          <PillCTA href={product.amazonUrl} external className="px-4 text-sm sm:px-5">
+      {/* What it is (brand eyebrow, name), one quiet line on why, then the price as the one figure and a quiet way out to
+          Amazon. Every card used to carry a solid orange button, so a page of them was a page of equal shouting. */}
+      <div className="flex flex-1 flex-col p-3 pt-5">
+        <p className="text-caption font-medium uppercase tracking-caps text-cream/55">{product.brand}</p>
+        <h2 className="mt-1 text-balance text-body font-semibold leading-snug text-cream">{product.name}</h2>
+        <p className="mb-5 mt-2 text-small leading-relaxed text-cream/60">{product.blurb}</p>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-cream/10 pt-4">
+          <span className="text-title font-semibold tabular-nums text-cream">{formatUsd(product.priceCents)}</span>
+          <a
+            href={product.amazonUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="tap inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-4 py-2 text-small font-semibold text-cream transition-colors hover:bg-cream/16"
+          >
             View on Amazon
-          </PillCTA>
+            <ArrowUpRight aria-hidden className="h-4 w-4" />
+          </a>
         </div>
       </div>
     </div>

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 import type { MoneyFixId, MoneyIssue } from "@/lib/moneyCheck";
+import { CardFoot, CardHead } from "@/components/ui/CardKit";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 /** One thing the money check found, in plain words, with a two-step button for each way to fix it. */
 export function MoneyIssueCard({ issue, onFix }: { issue: MoneyIssue; onFix: (key: string, fix: MoneyFixId) => Promise<{ ok: boolean; message: string }> }) {
@@ -25,30 +27,38 @@ export function MoneyIssueCard({ issue, onFix }: { issue: MoneyIssue; onFix: (ke
     router.refresh();
   }
 
+  // The issue is the one loud line; who it is about is the quiet eyebrow, what is wrong the quiet line under it. The first fix is the
+  // one primary button, any other fix sits quiet beside it, and each still asks before it changes anything.
+  const open = issue.fixes.find((fix) => fix.id === confirming);
   return (
-    <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
-      <p className="text-small font-semibold text-slate-50">{issue.title}</p>
-      <p className="mt-1 text-small text-slate-300">{issue.detail}</p>
-      <div className="mt-3 space-y-2">
-        {issue.fixes.map((fix) =>
-          confirming === fix.id ? (
-            <div key={fix.id} className="rounded-xl bg-neu-base p-3 shadow-pressed-low">
-              <p className="text-small text-slate-300">{fix.hint}</p>
-              <div className="mt-2 flex gap-2">
-                <button type="button" onClick={() => setConfirming(null)} disabled={busy} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low disabled:opacity-50">Not now</button>
-                <button type="button" onClick={() => apply(fix.id)} disabled={busy} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
-                  {busy ? "Fixing…" : "Yes, fix it"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button key={fix.id} type="button" onClick={() => setConfirming(fix.id)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mr-2" })}>
-              {fix.label}
+    <article className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+      <CardHead as="p" eyebrow={issue.person} title={issue.title} />
+      <p className="mt-2 text-small text-slate-400">{issue.detail}</p>
+      {open ? (
+        <div className="mt-4 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
+          <p className="text-small text-slate-300">{open.hint}</p>
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={() => setConfirming(null)} disabled={busy} className={buttonVariants({ variant: "secondary", className: "flex-1" })}>Not now</button>
+            <button type="button" onClick={() => apply(open.id)} disabled={busy} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+              {busy ? "Fixing…" : "Yes, fix it"}
             </button>
-          ),
-        )}
-      </div>
-      <Link href={`/admin/users/${issue.personId}`} className="tap mt-3 inline-flex text-small font-medium text-signal-fg hover:underline">Open {issue.person}</Link>
-    </div>
+          </div>
+        </div>
+      ) : (
+        <CardFoot className="justify-between">
+          <Link href={`/admin/users/${issue.personId}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 gap-1" })}>
+            Open {issue.person}
+            <ChevronRight aria-hidden className="h-3.5 w-3.5" />
+          </Link>
+          <div className="flex flex-wrap justify-end gap-2">
+            {issue.fixes.map((fix, i) => (
+              <button key={fix.id} type="button" onClick={() => setConfirming(fix.id)} className={buttonVariants({ variant: i === 0 ? "primary" : "secondary", size: "sm" })}>
+                {fix.label}
+              </button>
+            ))}
+          </div>
+        </CardFoot>
+      )}
+    </article>
   );
 }

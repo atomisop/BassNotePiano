@@ -297,10 +297,10 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+          <p className="text-caption font-medium uppercase tracking-caps tabular-nums text-slate-500">
             {visibleIndex} of {visibleTotal}
           </p>
-          <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
+          <button type="button" onClick={handleSkip} aria-label="Skip tour" className="tap -m-1 inline-flex shrink-0 items-center justify-center p-1 text-slate-500 transition hover:text-slate-200">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -308,7 +308,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         <p className="mt-2 text-small text-slate-400">{step.body}</p>
 
         <div className="mt-5 flex items-center justify-between gap-3">
-          <button type="button" onClick={handleSkip} className="text-small text-slate-500 transition hover:text-slate-300">
+          <button type="button" onClick={handleSkip} className="tap inline-flex items-center text-small text-slate-500 transition hover:text-slate-300">
             Skip tour
           </button>
           <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
               <button
                 type="button"
                 onClick={goBack}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                className={buttonVariants({ variant: "ghost", size: "sm" })}
               >
                 Back
               </button>

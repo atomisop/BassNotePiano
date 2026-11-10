@@ -4,7 +4,7 @@ import { useWebOtp } from "@/lib/useWebOtp";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
@@ -71,8 +71,8 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Last step</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your phone</h1>
+      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Last step</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Verify your phone</h1>
 
       {step === "number" && (
         <form onSubmit={submitNumber} className="mt-4 space-y-4">
@@ -99,7 +99,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           <Button type="button" onClick={sendCode} loading={busy} className="cta-sheen w-full">
             {busy ? "Sending…" : "Text me a code"}
           </Button>
-          <button type="button" onClick={() => { setError(null); setStep("number"); }} className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}>
+          <button type="button" onClick={() => { setError(null); setStep("number"); }} className="tap block w-full text-center text-small text-slate-400 transition hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
             Use a different number
           </button>
         </div>
@@ -142,7 +142,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
               await sendCode();
             }}
             disabled={cooldown.secondsLeft > 0 || busy}
-            className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4 w-full" })}
+            className="tap mt-4 block w-full text-center text-small text-slate-400 transition hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a text? Send it again"}
           </button>
@@ -151,7 +151,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           </button>
           {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
             <p className="mt-3 text-center text-small text-slate-500">
-              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+              Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
             </p>
           )}
         </>

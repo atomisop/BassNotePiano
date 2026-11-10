@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ScaleAccessState } from "@/lib/access";
-import { CheckIcon, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
+import { CheckIcon, LockIcon, STATUS_LABEL, scaleState } from "@/components/progression/scaleStatusUi";
 
 const listContainer = {
   hidden: {},
@@ -41,7 +41,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
       {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
-        const isCompleted = scale.status === "COMPLETED";
+        const state = scaleState(scale, isCurrent);
         const doneCount = [scale.moduleRead, scale.practiceCompleted, scale.quizPassed].filter(Boolean).length;
 
         return (
@@ -54,7 +54,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
                 isCurrent ? "bg-signal/6 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
               }`}
             >
-              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-caps">
+              <span className="w-8 shrink-0 text-small font-medium tabular-nums text-slate-500 sm:w-14 sm:uppercase sm:tracking-caps">
                 {scale.scaleGroup.code.replace("Scale ", "#")}
               </span>
 
@@ -64,11 +64,12 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
                     {scale.scaleGroup.title}
                   </span>
                   {scale.scaleGroup.kinitName && (
-                    <span className="hidden shrink-0 text-small text-slate-400 sm:inline">{scale.scaleGroup.kinitName}</span>
+                    <span className="hidden shrink-0 text-small text-slate-500 sm:inline">{scale.scaleGroup.kinitName}</span>
                   )}
                 </span>
               </span>
 
+              {/* Progress as one figure: the three steps as a short bar (the words are on the card view). */}
               {!locked && (
                 <span className="flex shrink-0 items-center gap-1 sm:gap-1.5" aria-hidden>
                   {[0, 1, 2].map((i) => (
@@ -83,15 +84,15 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
               )}
 
               {/* On a phone the row is the name and a small mark (a lock, a check, or just the bars); the words come back from sm up.
-                  The words stay in the page for screen readers either way. */}
+                  The words stay in the page for screen readers either way. The same state words as the cards. */}
               <span
                 className={`flex shrink-0 items-center gap-1 text-small font-medium ${
-                  isCurrent || isCompleted ? "text-slate-50" : locked ? "text-slate-500" : "text-slate-400"
+                  isCurrent ? "text-signal-fg" : state?.tone === "success" ? "text-slate-200" : locked ? "text-slate-500" : "text-slate-400"
                 }`}
               >
                 {locked && <LockIcon />}
-                {isCompleted && <CheckIcon />}
-                <span className="sr-only sm:not-sr-only">{isCurrent ? "You're here" : STATUS_LABEL[scale.status]}</span>
+                {state?.tone === "success" && <CheckIcon />}
+                <span className="sr-only sm:not-sr-only">{state?.label ?? STATUS_LABEL[scale.status]}</span>
               </span>
             </button>
           </motion.li>

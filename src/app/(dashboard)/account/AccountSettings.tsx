@@ -24,7 +24,19 @@ import { announceChange } from "@/lib/liveEvents";
 import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
 import { SectionCard } from "./SectionCard";
 import { EmailChange } from "./EmailChange";
-import { PasswordSection, DangerZoneSection, TutorialsSection, NotificationSettingsSection } from "./AccountSections";
+import {
+  PasswordSection,
+  DangerZoneSection,
+  TutorialsSection,
+  NotificationSettingsSection,
+  ParentModeCard,
+  ScholarshipCard,
+  ReferralCard,
+  PushCard,
+  CalendarFeedCard,
+  SignedInDevicesCard,
+} from "./AccountSections";
+import { Meta } from "@/components/ui/CardKit";
 import { Hint } from "@/components/ui/Hint";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -321,37 +333,18 @@ function AccountGroup({ id, title, blurb, danger, children }: { id: string; titl
   );
 }
 
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-2.5">
-      <span className="text-small text-slate-500">{label}</span>
-      <span className="min-w-0 text-right text-small text-slate-100">{children}</span>
-    </div>
-  );
-}
-
+// Verified is the healthy state, so it is a quiet word; only "Not verified" carries a colour (DESIGN.md, Hierarchy 5).
 function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-  return (
-    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
-  );
+  return <span className={`ml-2 text-small ${ok ? "text-slate-500" : "font-medium text-amber-300"}`}>{children}</span>;
 }
 
 function DiscordAccountCard({ username }: { username: string | null }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   return (
-    <SectionCard title="Discord">
-      <p className="text-small text-slate-100">
-        {username ? (
-          <>
-            Connected as <span className="font-semibold">{username}</span>
-          </>
-        ) : (
-          "Not connected"
-        )}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <DiscordConnectLink className={buttonVariants({ variant: "secondary", size: "sm" })}>
+    <SectionCard title="Discord" value={username ? <>Connected as <span className="font-medium text-slate-100">{username}</span></> : "Not connected"}>
+      <div className="flex flex-wrap gap-2">
+        <DiscordConnectLink className={buttonVariants({ variant: username ? "ghost" : "primary", size: "sm", className: username ? "-ml-2" : undefined })}>
           {username ? "Reconnect" : "Connect Discord"}
         </DiscordConnectLink>
         {username && (
@@ -366,7 +359,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
               router.refresh();
               announceChange("status");
             }}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
           >
             Disconnect
           </button>
@@ -384,12 +377,16 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
     <div className="space-y-10">
       <AccountGroup id="profile" title="Profile">
         <SectionCard title="Your account">
-          <div className="divide-y divide-ink/10">
-            <InfoRow label="Name">{account.name ?? "Not set"}</InfoRow>
-            <InfoRow label="Username">{account.username ? `@${account.username}` : "Not set"}</InfoRow>
-            <InfoRow label="Member since">{new Date(account.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}</InfoRow>
-          </div>
-          <Link href="/profile" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+          {/* Who you are is the one bright line; the rest is a quiet meta line under it. */}
+          <p className="break-words text-body font-semibold text-slate-50">{account.name ?? "No name yet"}</p>
+          <Meta
+            className="mt-0.5"
+            items={[
+              account.username ? `@${account.username}` : "No username",
+              `Member since ${new Date(account.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`,
+            ]}
+          />
+          <Link href="/profile" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
             Edit name, photo and music profile
           </Link>
         </SectionCard>
@@ -402,13 +399,26 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
         <PhoneCard state={account.phone} />
       </AccountGroup>
 
+      {/* Sign-in only: the password, two-step (admins), and where you are signed in, which holds "sign out other devices" last. */}
       <AccountGroup id="security" title="Sign-in & security">
         <PasswordSection />
         {twoStep && <AdminTwoStepCard enabled={twoStep.enabled} backupLeft={twoStep.backupLeft} />}
+        <SignedInDevicesCard />
       </AccountGroup>
 
       <AccountGroup id="connections" title="Connected accounts">
         <DiscordAccountCard username={account.discordUsername} />
+      </AccountGroup>
+
+      <AccountGroup id="classes" title="Classes & reminders">
+        <PushCard />
+        <CalendarFeedCard />
+      </AccountGroup>
+
+      <AccountGroup id="family" title="Family & offers">
+        <ParentModeCard />
+        <ScholarshipCard />
+        <ReferralCard />
       </AccountGroup>
 
       <AccountGroup id="privacy" title="Privacy & data">
@@ -420,7 +430,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
           )}
         </SectionCard>
         <PrivacySection history={history} />
-        <SectionCard advanced title="Download my data">
+        <SectionCard advanced title="Download my data" value="Everything we keep, as one file">
           <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Download my data
           </a>
@@ -442,7 +452,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 // who wants it gone sooner.
 function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
-    <SectionCard advanced title="Saved Atom conversations">
+    <SectionCard advanced title="Saved Atom conversations" value={history.length === 0 ? "Nothing saved" : `${history.length} ${history.length === 1 ? "message" : "messages"}, kept 30 days`}>
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
@@ -589,21 +599,16 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
   return (
     <div className="space-y-6">
       <SectionCard title="Membership & purchases">
-        <Link
-          href="/billing/plans"
-          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
-        >
-          Payment plan
-          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
-        </Link>
-
-        <Link
-          href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
-        >
-          Payment history
-          <ChevronRight aria-hidden className="h-4 w-4 text-slate-500" />
-        </Link>
+        <div className="-my-1 divide-y divide-slate-50/8">
+          <Link href="/billing/plans" className="tap group flex items-center justify-between gap-3 py-3 text-body font-medium text-slate-100 transition hover:text-slate-50">
+            Payment plan
+            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
+          </Link>
+          <Link href="/billing/history" className="tap group flex items-center justify-between gap-3 py-3 text-body font-medium text-slate-100 transition hover:text-slate-50">
+            Payment history
+            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </SectionCard>
 
       {activePlan && !activePlan.family && (

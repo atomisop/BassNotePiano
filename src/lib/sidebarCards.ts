@@ -112,9 +112,8 @@ async function getStudentCards(userId: string): Promise<SidebarCard[]> {
 
 async function getAdminCards(userId: string, isOwner: boolean): Promise<SidebarCard[]> {
   const now = new Date();
-  const [payments, applications, chats, unmarked, todays, stopped] = await Promise.all([
+  const [payments, chats, unmarked, todays, stopped] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(now.getTime() - 3 * 3_600_000) } } }),
     prisma.classBooking.findMany({
@@ -129,7 +128,6 @@ async function getAdminCards(userId: string, isOwner: boolean): Promise<SidebarC
   const items = [
     { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
     { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
-    { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
     { label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/schedule?view=ATTENDANCE" },
   ].filter((i) => i.count > 0);
   if (stopped.length > 0) cards.push({ kind: "jobsStopped", count: stopped.length });

@@ -4,7 +4,7 @@ import { OPEN_STUDENT_NOTES, listen } from "@/lib/topBarEvents";
 import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, NotebookPen, Search } from "@/components/ui/appIcons";
+import { ArrowLeft, ChevronRight, NotebookPen, Search } from "@/components/ui/appIcons";
 import { getTodaysNotesRosterAction, searchStudentsForNotesAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { NotesRosterRow } from "@/lib/studentNotes";
 import type { BookableStudent } from "@/lib/admin";
@@ -62,7 +62,11 @@ export function StudentNotesPanel() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const rowClass = "tap flex w-full items-center gap-2 rounded-lg bg-neu-base p-2.5 text-left shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low";
+  // People are rows in one box (name bright, the facts quiet, a chevron), not a stack of equal raised buttons.
+  const rowClass = "tap group flex w-full items-center gap-2 px-3 py-2.5 text-left transition hover:bg-slate-50/5";
+  const listClass = "divide-y divide-slate-50/6 overflow-hidden rounded-control bg-slate-50/4 ring-1 ring-inset ring-slate-50/8";
+  const eyebrow = "px-1 text-caption font-medium uppercase tracking-caps text-slate-500";
+  const chevron = <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -102,32 +106,36 @@ export function StudentNotesPanel() {
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
-                <p className="mb-3 mt-1 px-1 text-body font-semibold text-slate-100">{selected.name}</p>
+                <p className="mb-3 mt-1 px-1 text-title font-semibold text-slate-50">{selected.name}</p>
                 <StudentNotesEditor studentId={selected.id} />
               </>
             ) : (
               <>
-                <p className="px-1 text-body font-semibold text-slate-100">Student notes</p>
-                <p className="px-1 text-small text-slate-500">Booked today</p>
-                <div className="mt-2 space-y-1.5">
+                <p className="px-1 text-title font-semibold text-slate-50">Student notes</p>
+                <p className={`mt-3 ${eyebrow}`}>Booked today</p>
+                <div className="mt-1.5">
                   {roster === null ? (
                     <PulsatingDots className="justify-start px-1" />
                   ) : roster.length === 0 ? (
                     <p className="px-1 text-small text-slate-500"><Hint>Nobody is booked today. Search for a student below.</Hint></p>
                   ) : (
-                    roster.map((r) => (
-                      <button key={r.studentId} type="button" onClick={() => setSelected({ id: r.studentId, name: r.name ?? r.email })} className={rowClass}>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-small font-medium text-slate-100">{r.name ?? r.email}</span>
-                          <span className="block truncate text-small text-slate-500">{r.times.map(timeOf).join(", ")}</span>
-                        </span>
-                        <span className="shrink-0 text-small text-slate-500">{r.noteCount} note{r.noteCount === 1 ? "" : "s"}</span>
-                      </button>
-                    ))
+                    <div className={listClass}>
+                      {roster.map((r) => (
+                        <button key={r.studentId} type="button" onClick={() => setSelected({ id: r.studentId, name: r.name ?? r.email })} className={rowClass}>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-body font-medium text-slate-50">{r.name ?? r.email}</span>
+                            <span className="block truncate text-small tabular-nums text-slate-500">
+                              {r.times.map(timeOf).join(", ")} · {r.noteCount} note{r.noteCount === 1 ? "" : "s"}
+                            </span>
+                          </span>
+                          {chevron}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                <p className="mt-4 px-1 text-small text-slate-500">Anyone else</p>
+                <p className={`mt-4 ${eyebrow}`}>Anyone else</p>
                 <div className="relative mt-1.5">
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <input
@@ -139,18 +147,21 @@ export function StudentNotesPanel() {
                   />
                 </div>
                 {results && (
-                  <div className="mt-2 space-y-1.5">
+                  <div className="mt-2">
                     {results.length === 0 ? (
                       <p className="px-1 text-small text-slate-500">No match.</p>
                     ) : (
-                      results.map((s) => (
-                        <button key={s.id} type="button" onClick={() => setSelected({ id: s.id, name: s.name ?? s.email })} className={rowClass}>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-small font-medium text-slate-100">{s.name ?? s.email}</span>
-                            <span className="block truncate text-small text-slate-500">{s.email}</span>
-                          </span>
-                        </button>
-                      ))
+                      <div className={listClass}>
+                        {results.map((s) => (
+                          <button key={s.id} type="button" onClick={() => setSelected({ id: s.id, name: s.name ?? s.email })} className={rowClass}>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-body font-medium text-slate-50">{s.name ?? s.email}</span>
+                              {s.name && <span className="block truncate text-small text-slate-500">{s.email}</span>}
+                            </span>
+                            {chevron}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}

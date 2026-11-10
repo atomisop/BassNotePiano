@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Pause, Play, RefreshCw } from "@/components/ui/appIcons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
+import { buttonVariants } from "@/components/ui/button";
 import { checkJobsAction, setJobPausedAction } from "@/app/(dashboard)/admin/jobActions";
 
 export interface TaskRow {
@@ -94,13 +95,13 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
           onClick={refresh}
           disabled={checking}
           aria-busy={checking}
-          className="tap inline-flex min-h-9 items-center gap-2 rounded-full bg-neu-base px-3 text-small font-medium text-slate-200 shadow-raised-low transition hover:text-slate-50 active:shadow-pressed-low disabled:opacity-70"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "disabled:opacity-70" })}
         >
           <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} aria-hidden />
           {checking ? "Checking…" : "Check now"}
         </button>
       </div>
-      <ul className="mt-3 divide-y divide-slate-50/10">
+      <ul className="mt-3 divide-y divide-slate-50/8">
         {jobs.map((listed) => {
           let job = listed;
           const got = fresh[job.name];
@@ -113,7 +114,7 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
           return (
             <li key={job.name} className="py-2 text-small">
               <div className="flex items-center justify-between gap-3">
-                <span className={isPaused ? "text-slate-500" : "text-slate-200"}>{job.name}</span>
+                <span className={isPaused ? "text-slate-500" : bad ? "font-medium text-slate-50" : "text-slate-200"}>{job.name}</span>
                 <span className="flex items-center gap-2">
                   {phase === "looking" && (
                     <span className="inline-flex items-center gap-1.5 text-slate-400">
@@ -129,8 +130,9 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                       disabled={busy === job.name || checking}
                       aria-label={isPaused ? `Resume ${job.name}` : sure === job.name ? `Tap again to pause ${job.name}` : `Pause ${job.name}`}
                       title={isPaused ? "Resume this task" : sure === job.name ? "Tap again to pause" : "Pause this task"}
-                      className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium shadow-raised-low transition active:shadow-pressed-low disabled:opacity-50 ${
-                        isPaused ? "bg-signal/16 text-signal-fg" : sure === job.name ? "bg-red-500/90 text-white" : "bg-neu-base text-slate-300 hover:text-slate-50"
+                      // Flat and quiet on a healthy row (the task's state is the thing to read); tinted only when paused or asking "Sure?".
+                      className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium transition disabled:opacity-50 ${
+                        isPaused ? "bg-signal/16 text-signal-fg" : sure === job.name ? "bg-red-500/90 text-white" : "text-slate-500 hover:bg-slate-50/6 hover:text-slate-100"
                       }`}
                     >
                       {isPaused ? <Play aria-hidden className="h-3.5 w-3.5" /> : <Pause aria-hidden className="h-3.5 w-3.5" />}

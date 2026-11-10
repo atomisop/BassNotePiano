@@ -89,8 +89,7 @@ export function PasswordSection() {
   }
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="Password">
+    <SectionCard advanced title="Password" value={awaitingCode ? "Waiting for the emailed code" : "Change it with a code we email you"}>
         <form onSubmit={handleSubmit} className="space-y-3">
           <PasswordInput
             placeholder="Current password"
@@ -174,24 +173,23 @@ export function PasswordSection() {
             {submitting ? (awaitingCode ? "Saving…" : "Sending code…") : awaitingCode ? "Confirm change" : "Send verification code"}
           </button>
         </form>
-      </SectionCard>
+    </SectionCard>
+  );
+}
 
-      <div id="parent-mode" className="scroll-mt-24">
-        <SectionCard title="Parent mode">
-          <ParentLinksPanel />
-        </SectionCard>
-      </div>
-      <ScholarshipCard />
-      <ReferralCard />
-      <PushCard />
-      <CalendarFeedCard />
-      <SignedInDevicesCard />
+/** Parent mode in Settings. The id is the target of the "Answer the request" links (`#parent-mode`). */
+export function ParentModeCard() {
+  return (
+    <div id="parent-mode" className="scroll-mt-24">
+      <SectionCard title="Parent mode">
+        <ParentLinksPanel />
+      </SectionCard>
     </div>
   );
 }
 
 /** Type the 16 digit scholarship code to add its free classes. The server checks it was made for this account's email. */
-function ScholarshipCard() {
+export function ScholarshipCard() {
   const router = useRouter();
   const [raw, setRaw] = useState("");
   const [busy, setBusy] = useState(false);
@@ -216,9 +214,8 @@ function ScholarshipCard() {
   }
 
   return (
-    <SectionCard title="Claim a scholarship" hint="A scholarship code is made for one email address, works once, and discounts the 6 Month plan only.">
+    <SectionCard advanced title="Claim a scholarship" value="16 digit code · 6 Month plan only" hint="A scholarship code is made for one email address, works once, and discounts the 6 Month plan only.">
       <form onSubmit={claim} className="space-y-3">
-        <p className="text-small text-slate-400">16 digit code · 6 Month plan only</p>
         <label htmlFor="scholarship-code" className="sr-only">Scholarship code</label>
         <input
           id="scholarship-code"
@@ -245,7 +242,7 @@ const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as c
 
 // Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
 // it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
-function ReferralCard() {
+export function ReferralCard() {
   // Shown from the last visit at once, refreshed behind it.
   const { data: swrData } = useSwr<{ link: string; joined: number; rewarded: number; percent: number; months: number }>("/api/me/referral");
   const data = swrData ?? null;
@@ -264,9 +261,9 @@ function ReferralCard() {
 
   if (!data) return null;
   return (
-    <SectionCard advanced title="Invite a friend">
-      <p className="text-small text-slate-400">
-        Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
+    <SectionCard advanced title="Invite a friend" value={data.joined === 0 ? `${data.percent}% off for you both` : `${data.joined} joined`}>
+      <p className="text-small text-slate-500">
+        Send your link. When your friend starts a 3 Months or 6 Months plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
       <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
@@ -289,7 +286,7 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 type PushState = "loading" | "unavailable" | "needs-home-screen" | "unsupported" | "blocked" | "off" | "on";
 
 /** Class and practice reminders as push notifications. On an iPhone the browser only allows it once the site is on the Home Screen. */
-function PushCard() {
+export function PushCard() {
   const [state, setState] = useState<PushState>("loading");
   const [key, setKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -381,7 +378,11 @@ function PushCard() {
   if (state === "loading" || state === "unavailable") return null;
 
   return (
-    <SectionCard advanced title="Reminders on your phone">
+    <SectionCard
+      advanced
+      title="Reminders on your phone"
+      value={state === "on" ? "On for this device" : state === "off" ? "Off" : state === "blocked" ? "Blocked in this browser" : state === "needs-home-screen" ? "Needs the Home Screen app" : "Not supported here"}
+    >
       {state === "needs-home-screen" && (
         <p className="mt-3 text-small text-slate-300"><Hint>On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.</Hint></p>
       )}
@@ -394,9 +395,8 @@ function PushCard() {
       )}
       {state === "on" && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-small text-slate-300">On for this device.</span>
           <button type="button" disabled={busy} onClick={sendTest} className={buttonVariants({ variant: "secondary", size: "sm" })}>Send a test</button>
-          <button type="button" disabled={busy} onClick={turnOff} className={buttonVariants({ variant: "secondary", size: "sm" })}>Turn off</button>
+          <button type="button" disabled={busy} onClick={turnOff} className={buttonVariants({ variant: "ghost", size: "sm" })}>Turn off</button>
         </div>
       )}
       {message && <p className="mt-2 text-small text-slate-300" role="status">{message}</p>}
@@ -404,7 +404,7 @@ function PushCard() {
   );
 }
 
-function CalendarFeedCard() {
+export function CalendarFeedCard() {
   const [links, setLinks] = useState<{ https: string; webcal: string } | null | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -461,7 +461,7 @@ function CalendarFeedCard() {
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
           <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           {!confirmReset ? (
-            <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
+            <button type="button" onClick={() => setConfirmReset(true)} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-slate-400" })}>Make a new link</button>
           ) : (
             <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
               <p className="text-small text-slate-200">The old link stops working.</p>
@@ -477,7 +477,7 @@ function CalendarFeedCard() {
   );
 }
 
-function SignedInDevicesCard() {
+export function SignedInDevicesCard() {
   const { update } = useSession();
   const [devices, setDevices] = useState<SignedInDevice[] | null>(null);
   const [busyId, setBusyId] = useState<string | "all" | null>(null);
@@ -521,7 +521,11 @@ function SignedInDevicesCard() {
   }, []);
 
   return (
-    <SectionCard advanced title="Where you are signed in">
+    <SectionCard
+      advanced
+      title="Where you are signed in"
+      value={devices === null ? undefined : `${devices.length} ${devices.length === 1 ? "device" : "devices"}${devices.some((d) => d.active && !d.isThisDevice) ? ", another one active now" : ""}`}
+    >
       {devices === null ? (
         <p className="text-small text-slate-500">Loading…</p>
       ) : devices.length === 0 ? (
@@ -534,22 +538,20 @@ function SignedInDevicesCard() {
               <li key={d.id} className="flex items-center gap-3 py-3">
                 <Icon className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
                 <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-slate-50">
-                    <span className="min-w-0 break-words">{d.label}</span>
-                    {d.isThisDevice && <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">This device</span>}
-                  </p>
-                  <p className="text-small text-slate-400">
+                  <p className="min-w-0 break-words text-body font-medium text-slate-100">{d.label}</p>
+                  <p className="text-small text-slate-500">
+                    {d.isThisDevice ? "This device · " : ""}
                     {d.place ?? "Location unavailable"} · Signed in{" "}
                     {new Date(d.signedInAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <span className="flex items-center gap-1.5 text-small text-slate-400">
-                    <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${d.active ? "bg-green-400 shadow-[0_0_6px_rgb(74_222_128/0.8)]" : "bg-slate-600"}`} />
+                    <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${d.active ? "bg-emerald-400" : "bg-slate-600"}`} />
                     {d.active ? "Active now" : "Not active"}
                   </span>
                   {!d.isThisDevice && (
-                    <button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    <button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                       {busyId === d.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       Sign out
                     </button>
@@ -562,7 +564,7 @@ function SignedInDevicesCard() {
       )}
       {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       {devices && devices.some((d) => !d.isThisDevice) && (
-        <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "secondary", className: "mt-4" })}>
+        <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 mt-3 text-red-300 hover:text-red-200" })}>
           {busyId === "all" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           Sign out of all other devices
         </button>
@@ -629,9 +631,9 @@ export function DangerZoneSection() {
   }
 
   return (
-    <SectionCard advanced title="Danger zone">
-      <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
-        <p className="text-small text-slate-200">
+    <SectionCard advanced title="Delete my account" value="Permanent, can't be undone">
+      <div className="rounded-xl bg-neu-base p-4 shadow-pressed-low">
+        <p className="text-small text-slate-400">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
           to your account.
         </p>
@@ -644,7 +646,7 @@ export function DangerZoneSection() {
           <button
             type="button"
             onClick={() => setStage("password")}
-            className={buttonVariants({ variant: "danger", className: "mt-4" })}
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 mt-3 text-red-300 hover:text-red-200" })}
           >
             Delete my account
           </button>
@@ -746,13 +748,13 @@ export function TutorialsSection() {
         <button
           type="button"
           onClick={() => router.push("/dashboard?tour=1")}
-          className={buttonVariants({ variant: "primary", className: "mt-4" })}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
           Replay app tour
         </button>
       </SectionCard>
-      <SectionCard advanced title="Add to your Home Screen">
-        <p className="text-small text-slate-400">
+      <SectionCard advanced title="Add to your Home Screen" value={installed ? "Already on your Home Screen" : undefined}>
+        <p className="text-small text-slate-500">
           {installed
             ? "You are already using Bass Note Piano from your Home Screen. The steps are here in case you set up another phone."
             : "Put Bass Note Piano on your Home Screen so it opens full screen with its own icon, like an app from the store."}
@@ -769,19 +771,19 @@ const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: st
   {
     key: "notifyEmailPayments",
     label: "Payments and invoices",
-    description: "Payment plan installment invoices, overdue reminders and credit expiry. Results you are waiting on (a payment approved, rejected or refunded) are always emailed.",
+    description: "Your 28-day bills, overdue reminders and credit expiry. A payment result you are waiting on is always emailed.",
   },
-  { key: "notifyEmailRoleUpdates", label: "Account updates", description: "Admin access, and changes to your Discord, phone number and signed-in devices." },
-  { key: "notifyEmailSocial", label: "Social", description: "Friend requests, new messages, and messages and announcements from the studio." },
+  { key: "notifyEmailRoleUpdates", label: "Account updates", description: "Admin access, Discord, phone number and signed-in devices." },
+  { key: "notifyEmailSocial", label: "Social", description: "Friend requests, messages and studio announcements." },
   {
     key: "notifyEmailClasses",
     label: "Class updates",
-    description: "A class booked for you, canceled, moved or marked, and changes to your weekly time.",
+    description: "A class booked, canceled, moved or marked, and changes to your weekly time.",
   },
   {
     key: "notifyEmailReminders",
     label: "Practice and class reminders",
-    description: "The practice reminder banner at the top of the screen, practice nudges after days away, and the day-before and hour-before class reminder emails. Off means none of them. On by default when you subscribe to a class plan.",
+    description: "The practice banner and nudges, and the day-before and hour-before class emails. On when you subscribe to a plan.",
   },
 ];
 
@@ -801,13 +803,13 @@ export function NotificationSettingsSection({ initial }: { initial: Notification
   }
 
   return (
-    <SectionCard title="Notification settings">
-      <div className="space-y-3">
+    <SectionCard title="Notification settings" value={`${Object.values(prefs).filter(Boolean).length} of ${NOTIFICATION_TOGGLES.length} kinds of email on`}>
+      <div className="divide-y divide-slate-50/8">
         {NOTIFICATION_TOGGLES.map((item) => (
-          <div key={item.key} className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-small text-slate-200">{item.label}</p>
-              <p className="text-small text-slate-500">{item.description}</p>
+          <div key={item.key} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="text-body font-medium text-slate-100">{item.label}</p>
+              <p className="mt-0.5 text-small text-slate-500">{item.description}</p>
             </div>
             <Switch
               checked={prefs[item.key]}

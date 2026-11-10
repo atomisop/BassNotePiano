@@ -27,7 +27,7 @@ const primary = cn(
   lift,
 )
 
-const buttonVariants = cva(
+const buttonCva = cva(
   "tap inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-small font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
@@ -63,6 +63,13 @@ const buttonVariants = cva(
     },
   },
 )
+
+/**
+ * cva only joins strings, so a caller's override such as `className: "text-red-300"` on a ghost button used to lose to the variant's own
+ * `text-slate-300` (whichever rule the stylesheet happened to print last won). Every quiet red "Cancel" in the app rendered gray because of
+ * it. Running the result through `cn` (tailwind-merge) makes the caller's class always win.
+ */
+const buttonVariants = (props?: Parameters<typeof buttonCva>[0]) => cn(buttonCva(props))
 
 /**
  * The variants that get a glass lens. This is the explicit version of what GlassButtons used to infer from the `liquid` class names:

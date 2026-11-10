@@ -184,24 +184,31 @@ export function PaymentPlanTierGrid({
           ...(isMonthly ? [] : [<>Whole plan: <NumberTicker value={perStudentCents * rate.termMonths} format={formatUsd} /></>]),
         ];
 
+    // Von Restorff: only the featured plan is lit (its colour, glow and stars) and only its button is solid. The other two are
+    // plain cards with a quiet button, so the eye lands on one plan and then compares prices.
+    const primaryCta = "tier-accent-bg text-black hover:brightness-110";
+    const quietCta = "bg-slate-50/8 text-slate-50 hover:bg-slate-50/12";
+    const ctaBase = "tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed active:scale-[0.99]";
+
     return {
       featured,
       node: (
           <div
             style={tierVars(look(option.value))}
-            className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} ${
+            className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"} ${
               featured ? "" : "transition hover:shadow-raised-high"
             }`}
           >
             {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
-            {(["solo", "family"] as const).map((who) => (
-              <div
-                key={who}
-                aria-hidden
-                style={tierVars(tierLook(option.value)[who])}
-                className={`tier-layer tier-card pointer-events-none absolute inset-0 -z-10 rounded-2xl ${featured ? "tier-glow" : ""} ${(who === "family") === isFamily ? "opacity-100" : "opacity-0"}`}
-              />
-            ))}
+            {featured &&
+              (["solo", "family"] as const).map((who) => (
+                <div
+                  key={who}
+                  aria-hidden
+                  style={tierVars(tierLook(option.value)[who])}
+                  className={`tier-layer tier-card tier-glow pointer-events-none absolute inset-0 -z-10 rounded-2xl ${(who === "family") === isFamily ? "opacity-100" : "opacity-0"}`}
+                />
+              ))}
             {featured && (
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
                 {STARS.map((star, i) => (
@@ -213,54 +220,47 @@ export function PaymentPlanTierGrid({
                 ))}
               </div>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <p className="font-serif text-body text-slate-50">{option.label}</p>
-              <span
-                className={`rounded-full px-3 py-1 text-small font-bold ${
-                  isMonthly ? "tier-starter" : "tier-accent-bg text-black"
-                }`}
-              >
+            {/* Which plan, quietly: the price below is the one loud thing on the card. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p className="text-body font-semibold text-slate-50">{option.label}</p>
+              <span className={featured ? "tier-accent-bg rounded-full px-2.5 py-0.5 text-small font-semibold text-black" : "text-small text-slate-400"}>
                 {tierLook(option.value).tag}
               </span>
             </div>
-    
+
             <div>
               <p className={`text-small tabular-nums text-slate-500 ${narrow ? "min-h-5" : "h-5"}`}>
                 {percentOff > 0 && (
                   <span className="line-through">
                     <NumberTicker value={monthlyBaseline} format={formatUsd} />
-                    /28 days
                   </span>
                 )}
                 {percentOff > 0 && (
-                  <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
+                  <span className="ml-2 font-semibold text-slate-300">
                     −<NumberTicker value={percentOff} />%
                   </span>
                 )}
               </p>
-              <p className="mt-1 flex items-baseline gap-1.5">
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
                 <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} tier-price`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
-                <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>
+                <span className="text-small text-slate-400">{isFamily ? "per student, every 28 days" : "every 28 days"}</span>
               </p>
             </div>
-    
+
             <div className="h-px w-full bg-ink/10" />
-    
-            <ul className="flex flex-1 flex-col gap-3.5">
+
+            <ul className="flex flex-1 flex-col gap-3">
               {features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3 text-small text-slate-300">
-                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-slate-50" />
+                <li key={i} className="flex items-start gap-2.5 text-small text-slate-400">
+                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-slate-500" />
                   <span className="min-w-0">{feature}</span>
                 </li>
               ))}
             </ul>
-    
+
             {(() => {
-              const cta = `tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed ${
-                isMonthly ? "tier-starter hover:opacity-90" : "tier-accent-bg text-black hover:brightness-110"
-              } active:scale-[0.99]`;
               if (switchTo) {
                 const current = option.value === switchTo.currentTerm;
                 return (
@@ -268,7 +268,11 @@ export function PaymentPlanTierGrid({
                     type="button"
                     disabled={current || switchTo.pendingTerm !== null}
                     onClick={() => switchTo.onSwitch(option.value)}
-                    className={current ? "tap flex h-12 w-full items-center justify-center rounded-full bg-neu-base text-small font-semibold text-slate-400 shadow-pressed-low" : `${cta} disabled:opacity-60`}
+                    className={
+                      current
+                        ? "tap flex h-12 w-full items-center justify-center rounded-full bg-neu-base text-small font-semibold text-slate-400 shadow-pressed-low"
+                        : `${ctaBase} ${featured ? primaryCta : quietCta} disabled:opacity-60`
+                    }
                   >
                     {switchTo.pendingTerm === option.value && <MorphingSquare size={14} className="mr-2 shrink-0" />}
                     {current ? "Your current plan" : `Switch to ${option.label}`}
@@ -278,13 +282,13 @@ export function PaymentPlanTierGrid({
               if (select) {
                 const chosen = select.term === option.value;
                 return (
-                  <button type="button" aria-pressed={chosen} onClick={() => select.onSelect(option.value)} className={chosen ? `${cta} ring-2 ring-offset-2 ring-offset-transparent ring-white/70` : cta}>
+                  <button type="button" aria-pressed={chosen} onClick={() => select.onSelect(option.value)} className={`${ctaBase} ${chosen ? primaryCta : quietCta}`}>
                     {chosen ? "Selected" : "Choose this plan"}
                   </button>
                 );
               }
               return (
-                <Link href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`} className={cta}>
+                <Link href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`} className={`${ctaBase} ${featured ? primaryCta : quietCta}`}>
                   {isFamily ? "Bundle & save" : "Start plan"}
                 </Link>
               );

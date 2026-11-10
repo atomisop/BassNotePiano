@@ -30,19 +30,32 @@ export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; fla
       </div>
     );
   }
+  // Connected is the healthy state, so it is one quiet row: the name, and Disconnect as a quiet word at the end.
   return (
-    <div className="mx-auto mb-4 w-full max-w-wide rounded-2xl bg-neu-base px-4 py-3 shadow-raised-low">
+    <div className="mx-auto mb-4 w-full max-w-wide rounded-card bg-neu-base px-4 py-2.5 shadow-raised-low">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <DiscordIcon size={22} className="shrink-0 text-discord" />
-          <div className="min-w-0">
-            <p className="text-small font-semibold text-slate-50">{link.connected ? `Discord: ${discordUsername}` : "Connect Discord"}</p>
-          </div>
+          <DiscordIcon size={20} className="shrink-0 text-discord" />
+          <p className="min-w-0 truncate text-small text-slate-400">
+            {link.connected ? (
+              <>
+                Discord <span className="font-medium text-slate-100">{discordUsername}</span>
+              </>
+            ) : (
+              "Connect Discord"
+            )}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {/* Connecting already puts you in the server. The invite is only for someone connected who is not in it yet. */}
+          {link.connected && flag === "linked-nojoin" && (
+            <DiscordLink href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              Join the server
+            </DiscordLink>
+          )}
           {link.connected ? (
             <form action={unlinkDiscordAction}>
-              <button type="submit" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
                 Disconnect
               </button>
             </form>
@@ -51,15 +64,9 @@ export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; fla
               Connect Discord
             </DiscordConnectLink>
           )}
-          {/* Connecting already puts you in the server. The invite is only for someone connected who is not in it yet. */}
-          {link.connected && flag === "linked-nojoin" && (
-            <DiscordLink href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary", size: "sm" })}>
-              Join the server
-            </DiscordLink>
-          )}
         </div>
       </div>
-      {message && <p className={`mt-3 text-small ${message.good ? "text-slate-300" : "text-red-400"}`}>{message.text}</p>}
+      {message && <p className={`mt-2 text-small ${message.good ? "text-slate-300" : "text-red-400"}`}>{message.text}</p>}
     </div>
   );
 }

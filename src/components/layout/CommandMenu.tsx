@@ -279,8 +279,8 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
               Studio overview
             {hint("/admin")}
             </CommandItem>
-            <CommandItem value="admin students" onSelect={() => go("/admin/students", "Students")}>
-              Students
+            <CommandItem value="admin contacts class form people" onSelect={() => go("/admin/contacts", "Contacts")}>
+              Contacts
             </CommandItem>
             <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments", "Payments")}>
               Payments

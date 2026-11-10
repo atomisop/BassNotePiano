@@ -17,6 +17,8 @@ import { buttonVariants } from "@/components/ui/button";
 import type { DiscountCandidate, PricingFormValues } from "@/app/(dashboard)/admin/pricing/actions";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Callout, Meta } from "@/components/ui/CardKit";
 
 export interface PricingDiscountRow {
   userId: string;
@@ -60,10 +62,10 @@ function toConfig(v: PricingFormValues): PricingConfig {
 
 function Card({ title, blurb, children }: { title: string; blurb?: string; children: React.ReactNode }) {
   return (
-    <section className="glass-surface p-5">
+    <section className="glass-surface p-4 md:p-5">
       <h2 className="text-title font-semibold text-slate-50">{title}</h2>
-      {blurb && <p className="mt-1 text-small text-slate-400">{blurb}</p>}
-      <div className="mt-4">{children}</div>
+      {blurb && <p className="mt-1 max-w-[70ch] text-small text-slate-400">{blurb}</p>}
+      <div className="mt-4 border-t border-slate-50/8 pt-4">{children}</div>
     </section>
   );
 }
@@ -114,11 +116,11 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
       <div className="grid gap-4 sm:grid-cols-2">
         {FIELDS.map((f) => (
           <div key={f.key}>
-            <label htmlFor={`pr-${f.key}`} className="text-small font-medium text-slate-200">
+            <label htmlFor={`pr-${f.key}`} className="text-small font-medium text-slate-300">
               {f.label}
             </label>
             <div className="mt-1 flex items-center gap-2">
-              {f.unit === "$" && <span className="text-slate-400">$</span>}
+              {f.unit === "$" && <span className="text-body text-slate-400">$</span>}
               <input
                 id={`pr-${f.key}`}
                 type="number"
@@ -130,68 +132,45 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
                 onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                 className={`${inputClass} w-28`}
               />
-              {f.unit === "%" && <span className="text-slate-400">%</span>}
-              {parsed.values[f.key] !== initial[f.key] && <span className="text-small text-signal-fg">Changed</span>}
+              {f.unit === "%" && <span className="text-body text-slate-400">%</span>}
+              {parsed.values[f.key] !== initial[f.key] && <StatusDot tone="warning">Changed</StatusDot>}
             </div>
-            <p className="mt-1 text-small text-slate-500">{f.help}</p>
+            <p className="mt-1 text-caption text-slate-500">{f.help}</p>
           </div>
         ))}
       </div>
 
       {preview && (
-        <div className="mt-5">
-          <p className="mb-2 text-small font-medium uppercase tracking-wide text-slate-500">What people will see</p>
-          {/* Phones: one small card per plan. From sm up: the table. */}
-          <ul className="grid gap-2 sm:hidden">
+        // The outcome is what matters: each plan is a row with what people pay every 28 days as its one figure.
+        <div className="mt-5 border-t border-slate-50/8 pt-4" role="region" aria-label="What people will see">
+          <p className="text-caption font-medium uppercase tracking-caps text-slate-500">What people will see</p>
+          <ul className="mt-1 divide-y divide-slate-50/6">
             {preview.map((r) => (
-              <li key={r.term} className="rounded-xl bg-neu-base p-3 shadow-raised-low">
-                <p className="text-small font-medium text-slate-100">{r.label}</p>
-                <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-small text-slate-300">
-                  <dt className="text-slate-500">Per 28 days</dt>
-                  <dd className="tabular-nums">{usd(r.monthly)}</dd>
-                  <dt className="text-slate-500">Family, per person</dt>
-                  <dd className="tabular-nums">{usd(r.family)}</dd>
-                  <dt className="text-slate-500">Whole term</dt>
-                  <dd className="tabular-nums">{r.months === 1 ? "No commitment" : usd(r.monthly * r.months)}</dd>
-                </dl>
+              <li key={r.term} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-body font-medium text-slate-100">{r.label}</p>
+                  <Meta className="tabular-nums" items={[`Family ${usd(r.family)} per person`, r.months === 1 ? "No commitment" : `${usd(r.monthly * r.months)} whole term`]} />
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-title font-semibold tabular-nums text-slate-50">{usd(r.monthly)}</p>
+                  <p className="text-caption text-slate-500">every 28 days</p>
+                </div>
               </li>
             ))}
           </ul>
-          <div className="hidden overflow-x-auto sm:block" role="region" aria-label="What people will see" tabIndex={0}>
-            <table className="w-full min-w-[22rem] text-left text-small">
-              <thead>
-                <tr className="text-slate-500">
-                  <th scope="col" className="py-1 pr-3 font-medium">Plan</th>
-                  <th scope="col" className="py-1 pr-3 font-medium">Per 28 days</th>
-                  <th scope="col" className="py-1 pr-3 font-medium">Family, per person</th>
-                  <th scope="col" className="py-1 font-medium">Whole term</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50/10 text-slate-200">
-                {preview.map((r) => (
-                  <tr key={r.term}>
-                    <th scope="row" className="py-2 pr-3 font-medium">{r.label}</th>
-                    <td className="py-2 pr-3 tabular-nums">{usd(r.monthly)}</td>
-                    <td className="py-2 pr-3 tabular-nums">{usd(r.family)}</td>
-                    <td className="py-2 tabular-nums">{r.months === 1 ? "No commitment" : usd(r.monthly * r.months)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 
       {parsed.problem && <p role="alert" className="mt-3 text-small text-red-400">{parsed.problem}</p>}
       {message && <p role="status" className={`mt-3 text-small ${message.ok ? "text-slate-200" : "text-red-400"}`}>{message.text}</p>}
 
-      <div className="mt-4">
+      <div className="mt-4 border-t border-slate-50/8 pt-3">
         {asking ? (
-          <div className="rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
+          <div className="rounded-control bg-slate-50/5 px-4 py-3 ring-1 ring-inset ring-slate-50/10">
             <p className="text-small text-slate-300">
               Save {changed.length} change{changed.length === 1 ? "" : "s"}? New plans and plan changes use these prices straight away, the pricing page and Atom show them, and nobody already on a plan is affected.
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
               <button type="button" onClick={() => void save()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
                 {busy && <MorphingSquare size={12} />}
@@ -200,9 +179,11 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
             </div>
           </div>
         ) : (
-          <button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
-            Save prices
-          </button>
+          <div className="flex justify-end">
+            <button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+              Save prices
+            </button>
+          </div>
         )}
       </div>
     </Card>
@@ -218,7 +199,7 @@ function PlanLine({ plan, percent }: { plan: { monthlyCents: number; listCents: 
       {after !== plan.monthlyCents && (
         <>
           {" "}
-          → <span className="font-semibold text-signal-fg">{usd(after)}</span>
+          → <span className="font-semibold text-slate-50">{usd(after)}</span>
         </>
       )}
     </span>
@@ -249,36 +230,41 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
 
   return (
     <li className="py-3">
+      {/* Who on the left (bright), what it does to their price quiet under it, the percent on the right as the row's one figure. */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <p className="truncate text-body text-slate-50">{row.name ?? row.email}</p>
-          {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
-          {row.note && <p className="text-small text-slate-400">{row.note}</p>}
-          <p className="mt-1 text-small">
+          <p className="truncate text-body font-semibold text-slate-50">{row.name ?? row.email}</p>
+          <Meta className="truncate" items={[row.name ? row.email : null, row.note]} />
+          <p className="mt-0.5 text-small">
             <PlanLine plan={row.plan} percent={valid ? percent : row.percent} />
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`dp-${row.userId}`}>Percent off for {row.name ?? row.email}</label>
-          <input id={`dp-${row.userId}`} type="number" inputMode="numeric" min={1} max={MAX_PERSONAL_DISCOUNT_PERCENT} value={value} onChange={(e) => setValue(e.target.value)} className={`${inputClass} w-20`} />
-          <span className="text-slate-400">% off</span>
+          <input id={`dp-${row.userId}`} type="number" inputMode="numeric" min={1} max={MAX_PERSONAL_DISCOUNT_PERCENT} value={value} onChange={(e) => setValue(e.target.value)} className={`${inputClass} w-20 font-semibold tabular-nums`} />
+          <span className="text-small text-slate-400">% off</span>
           {dirty && (
             <button type="button" disabled={busy} onClick={() => void run(() => onSet(row.userId, percent, row.note ?? ""))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
               {busy && <MorphingSquare size={12} />}
               Save {percent}%
             </button>
           )}
-          {removing ? (
-            <>
-              <button type="button" onClick={() => setRemoving(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep</button>
-              <button type="button" onClick={() => void run(() => onClear(row.userId))} disabled={busy} className={buttonVariants({ variant: "danger", size: "sm" })}>Yes, remove</button>
-            </>
-          ) : (
-            <button type="button" onClick={() => setRemoving(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Remove</button>
+          {!removing && (
+            <button type="button" onClick={() => setRemoving(true)} disabled={busy} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+              Remove
+            </button>
           )}
         </div>
       </div>
-      {removing && <p className="mt-2 text-small text-slate-400"><Hint>Their running plan goes back to the price it signed up at, from the next bill (an unpaid bill updates now), and they are told.</Hint></p>}
+      {removing && (
+        <div className="mt-3 rounded-control bg-red-400/10 p-3 ring-1 ring-inset ring-red-400/20">
+          <p className="text-small text-slate-300">Remove {row.percent}% off? Their running plan goes back to the price it signed up at, from the next bill (an unpaid bill updates now), and they are told.</p>
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => setRemoving(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep</button>
+            <button type="button" onClick={() => void run(() => onClear(row.userId))} disabled={busy} className={buttonVariants({ variant: "danger", size: "sm" })}>Yes, remove</button>
+          </div>
+        </div>
+      )}
       {!valid && <p role="alert" className="mt-1 text-small text-red-400">Whole number, 1 to {MAX_PERSONAL_DISCOUNT_PERCENT}.</p>}
       {msg && <p role="status" className={`mt-1 text-small ${msg.ok ? "text-slate-200" : "text-red-400"}`}>{msg.text}</p>}
     </li>
@@ -331,7 +317,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
 
   return (
     <div>
-      <label htmlFor="dp-search" className="text-small font-medium text-slate-200">Give someone a discount</label>
+      <label htmlFor="dp-search" className="text-small font-medium text-slate-300">Give someone a discount</label>
       <input id="dp-search" type="search" value={picked ? (picked.name ?? picked.email) : query} onChange={(e) => { setPicked(null); setAsking(false); setQuery(e.target.value); }} placeholder="Search a name or email" autoComplete="off" className={`${inputClass} mt-1 w-full`} />
 
       {!picked && results.length > 0 && (
@@ -340,7 +326,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
             <li key={r.id}>
               <button type="button" onClick={() => { setPicked(r); setPercent(String(r.discountPercent || 10)); setMsg(null); }} className="tap flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-small hover:bg-slate-800/40">
                 <span className="min-w-0">
-                  <span className="block truncate text-slate-100">{r.name ?? r.email}</span>
+                  <span className="block truncate text-body font-medium text-slate-50">{r.name ?? r.email}</span>
                   {r.name && <span className="block truncate text-slate-500">{r.email}</span>}
                 </span>
                 <span className="shrink-0 text-slate-400">{r.discountPercent > 0 ? `${r.discountPercent}% off now` : r.plan ? (r.plan.family ? "Family plan" : `${usd(r.plan.monthlyCents)} per 28 days`) : "No plan yet"}</span>
@@ -352,8 +338,8 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
       {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500"><Hint>Nobody found. Admins and banned accounts are left out.</Hint></p>}
 
       {picked && (
-        <div className="mt-3 rounded-xl bg-neu-base p-4 shadow-raised-low">
-          {picked.plan?.family && <p className="mb-2 text-small text-amber-300">This account is on a family plan, which keeps the family rate. A discount here applies only if they later start a solo plan.</p>}
+        <div className="mt-3 rounded-control bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
+          {picked.plan?.family && <Callout tone="warning" className="mb-3">This account is on a family plan, which keeps the family rate. A discount here applies only if they later start a solo plan.</Callout>}
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label htmlFor="dp-percent" className="text-small font-medium text-slate-200">Percent off</label>
@@ -376,7 +362,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                 <p className="text-small text-slate-300">
                   Give {picked.name ?? picked.email} {p}% off? Their running plan (and an unpaid bill) changes now, every bill after it too, and they are told. Bills already paid never change.
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
                   <button type="button" onClick={() => void add()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
                     {busy && <MorphingSquare size={12} />}
@@ -385,11 +371,11 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                 </div>
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => { setPicked(null); setQuery(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
                 <button type="button" disabled={!valid} onClick={() => setAsking(true)} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
                   {picked.discountPercent > 0 ? "Change discount" : "Give discount"}
                 </button>
-                <button type="button" onClick={() => { setPicked(null); setQuery(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
               </div>
             )}
           </div>
@@ -411,11 +397,14 @@ export function PricingManager({ initial, discounts, onSavePricing, onSearch, on
         <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I set, change or remove a discount" className="mb-4" />
         <AddDiscount onSearch={onSearch} onSet={onSetDiscount} />
         <div className="mt-6">
-          <h3 className="text-small font-medium uppercase tracking-wide text-slate-500">Accounts with a discount ({discounts.length})</h3>
+          <h3 className="flex items-center gap-1.5 text-caption font-medium uppercase tracking-caps text-slate-500">
+            Accounts with a discount
+            <span className="min-w-6 rounded-full bg-slate-50/8 px-1.5 py-0.5 text-center text-caption font-semibold tabular-nums text-slate-200">{discounts.length}</span>
+          </h3>
           {discounts.length === 0 ? (
             <p className="mt-2 text-small text-slate-500">Nobody yet.</p>
           ) : (
-            <ul className="mt-1 divide-y divide-slate-50/10">
+            <ul className="mt-1 divide-y divide-slate-50/6">
               {discounts.map((d) => (
                 <DiscountRow key={d.userId} row={d} onSet={onSetDiscount} onClear={onClearDiscount} />
               ))}

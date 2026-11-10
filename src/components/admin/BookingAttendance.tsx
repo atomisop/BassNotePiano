@@ -6,6 +6,7 @@ import { Check, MapPin, Pencil, Undo2, Video, X } from "@/components/ui/appIcons
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
+import { cn } from "@/lib/utils";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -22,6 +23,8 @@ export interface BookingAttendanceProps {
 }
 
 const icon = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
+/** Flat and muted: the switches and the way back (Online / In person, edit, undo, done), so Present and No-show stay the obvious tap. */
+const quiet = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium text-slate-400 transition hover:bg-slate-50/6 hover:text-slate-100 disabled:opacity-50";
 
 /**
  * Everything you do about one class's attendance, in one compact line: Online / In person, Present, No-show, and (once marked) edit or undo.
@@ -77,7 +80,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
 
   const markButtons = (
     <>
-      <button type="button" disabled={busy || attendance === "PRESENT"} onClick={() => mark("PRESENT")} className={`${icon} bg-neu-base text-slate-100`} aria-label="Mark present">
+      <button type="button" disabled={busy || attendance === "PRESENT"} onClick={() => mark("PRESENT")} className={`${icon} bg-neu-base font-semibold text-slate-50`} aria-label="Mark present">
         {busy ? <MorphingSquare size={11} /> : <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={2.25} />}
         Present
       </button>
@@ -97,7 +100,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
             onClick={toggleMode}
             aria-pressed={inPersonShown}
             aria-label={inPersonShown ? "In person. Tap to switch to online." : "Online. Tap to switch to in person."}
-            className={`${icon} ${inPersonShown ? "bg-slate-50/12 text-slate-50" : "bg-neu-base text-slate-300"}`}
+            className={cn(quiet, inPersonShown && "text-slate-200")}
           >
             {inPersonShown ? <MapPin aria-hidden className="h-3.5 w-3.5" /> : <Video aria-hidden className="h-3.5 w-3.5" />}
             {inPersonShown ? "In person" : "Online"}
@@ -107,11 +110,11 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
 
       {attendance && !editing && (
         <>
-          <span className={`inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-small font-medium ${attendance === "PRESENT" ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-400"}`}>
+          <span className={`inline-flex h-8 items-center gap-1 px-1 text-small font-medium ${attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
             {attendance === "PRESENT" ? <Check aria-hidden className="h-3.5 w-3.5" /> : <X aria-hidden className="h-3.5 w-3.5" />}
             {attendance === "PRESENT" ? "Present" : "No-show"}
           </span>
-          <button type="button" onClick={() => setEditing(true)} aria-label="Edit attendance" className={`${icon} w-8 bg-neu-base px-0 text-slate-300`}>
+          <button type="button" onClick={() => setEditing(true)} aria-label="Edit attendance" className={`${quiet} w-8 px-0`}>
             <Pencil aria-hidden className="h-3.5 w-3.5" />
           </button>
         </>
@@ -122,7 +125,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
           {confirmUndo ? (
             <>
               <span className="text-small text-slate-300">Refund {creditsLabelFromStored(creditsSpent)}?</span>
-              <button type="button" onClick={() => setConfirmUndo(false)} disabled={busy} className={`${icon} bg-neu-base text-slate-300`}>
+              <button type="button" onClick={() => setConfirmUndo(false)} disabled={busy} className={quiet}>
                 Keep
               </button>
               <button type="button" onClick={undo} disabled={busy} className={`${icon} bg-slate-50 text-slate-950`}>
@@ -133,11 +136,11 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
           ) : (
             <>
               {markButtons}
-              <button type="button" onClick={() => setConfirmUndo(true)} disabled={busy} className={`${icon} bg-neu-base text-slate-300`} aria-label="Undo attendance and refund">
+              <button type="button" onClick={() => setConfirmUndo(true)} disabled={busy} className={quiet} aria-label="Undo attendance and refund">
                 <Undo2 aria-hidden className="h-3.5 w-3.5" />
                 Undo
               </button>
-              <button type="button" onClick={() => setEditing(false)} className={`${icon} bg-neu-base text-slate-500`}>
+              <button type="button" onClick={() => setEditing(false)} className={quiet}>
                 Done
               </button>
             </>

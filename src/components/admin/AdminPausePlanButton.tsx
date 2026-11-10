@@ -58,7 +58,8 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
     router.refresh();
   }
 
-  const button = buttonVariants({ variant: "secondary", size: "sm", className: compact ? "h-8 px-2.5" : "" });
+  // Lives in the Plan menu, so it is drawn like the menu's other items (quiet), not as a raised button.
+  const button = buttonVariants({ variant: "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" });
 
   if (state.paused) {
     return (

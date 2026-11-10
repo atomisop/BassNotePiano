@@ -30,7 +30,8 @@ export function HomeHero({
       <RoadmapKeys />
       <div className="relative flex min-h-[17rem] flex-col p-6 md:min-h-[22rem] md:p-8">
         <p className="text-small font-medium text-white/80">{eyebrow}</p>
-        <h2 className="mt-2 max-w-xl text-headline font-bold leading-tight text-balance md:text-hero">{title}</h2>
+        {/* The one biggest line on Home at every width (the greeting above it is a step smaller). */}
+        <h2 className="mt-2 max-w-xl text-hero font-bold leading-tight text-balance">{title}</h2>
         {detail && <p className="mt-2 line-clamp-2 max-w-xl text-body text-white/80">{detail}</p>}
         <div className="mt-5 flex flex-wrap items-center gap-3 pb-2">{actions}</div>
         {progress && (
@@ -39,9 +40,9 @@ export function HomeHero({
             aria-label={`Open your roadmap, ${progress.name}. ${progress.percent}% done.`}
             className="group mt-auto block pt-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
-            <span className="flex items-center justify-between gap-3 text-small text-white/85">
+            <span className="flex items-center justify-between gap-3 text-small text-white/75">
               <span className="min-w-0 truncate">
-                <span className="font-semibold text-white">{progress.name}</span>
+                <span className="font-medium text-white/90">{progress.name}</span>
                 {progress.current && <> · {progress.current}</>}
               </span>
               <span className="shrink-0 tabular-nums">{progress.percent}%</span>

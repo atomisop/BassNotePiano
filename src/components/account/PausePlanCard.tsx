@@ -64,7 +64,7 @@ export function PausePlanCard({
 
   return (
     <div>
-      <p className="text-small text-slate-400">
+      <p className="text-small text-slate-500">
         Going away? Pause for 1 to {PAUSE_MAX_WEEKS} weeks. Your weekly time stays reserved, your next payment moves back by the same time, and your unused credits
         last that much longer. One pause every {PAUSE_COOLDOWN_DAYS} days.
         {pausedAt ? ` Your last pause started ${day(pausedAt)}.` : ""}

@@ -40,9 +40,6 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
     return (
       <div>
         <h1 className="sr-only">Plans</h1>
-        <p className="mt-2 text-small text-slate-500">
-          {feedback.length} cancellation{feedback.length === 1 ? "" : "s"}
-        </p>
 
         <div className="mt-6">
           <AdminFilterTabs
@@ -55,6 +52,9 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
             }))}
           />
         </div>
+        <p className="mt-4 text-small tabular-nums text-slate-500">
+          {feedback.length} cancellation{feedback.length === 1 ? "" : "s"}
+        </p>
 
         <PlanCancellationFeedbackList feedback={feedback} />
       </div>
@@ -71,9 +71,6 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
   return (
     <div>
       <h1 className="sr-only">Payment Plans</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-      </p>
 
       <div className="mt-6">
         <AdminFilterTabs
@@ -86,8 +83,12 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
           }))}
         />
       </div>
+      {/* The count is a quiet line under the tabs, so the plans themselves are the first loud thing on the page. */}
+      <p className="mt-4 text-small tabular-nums text-slate-500">
+        {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
+      </p>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <PaymentPlanList
           plans={plans}
           onCancel={cancelPaymentPlanAction}

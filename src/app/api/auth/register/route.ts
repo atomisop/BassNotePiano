@@ -3,7 +3,7 @@ import { reportError } from "@/lib/reportError";
 import { attachReferral } from "@/lib/referrals";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
-import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
+import { startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
@@ -106,11 +106,10 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, email: true },
     });
-    // Someone approved for classes before they made an account gets their
-    // free trial now. Best-effort, never blocks sign-up.
-    if (await hasApprovedRegistration(user.email).catch(() => false)) {
-      await startTrialForEmail(user.email).catch((err) => reportError(err, "Starting the free trial failed"));
-    }
+    // Every new account starts with the free trial (decided 2026-11-09, when class applications were removed). Still one per
+    // person: startTrialForEmail refuses an inbox that ever had one, and does nothing while the owner has trials switched off.
+    // Best-effort, never blocks sign-up.
+    await startTrialForEmail(user.email).catch((err) => reportError(err, "Starting the free trial failed"));
     // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
     if (body?.ref) await attachReferral(user.id, body.ref);
     // The account exists either way. If the email could not be sent the screen says so and offers "Resend", instead of

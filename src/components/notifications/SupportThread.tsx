@@ -84,7 +84,7 @@ export function SupportThread({ active }: { active: boolean }) {
               }`}
             >
               {m.body}
-              <span suppressHydrationWarning className="mt-1 block text-right text-small text-slate-400">
+              <span suppressHydrationWarning className="mt-1 block text-right text-caption tabular-nums text-slate-500">
                 {new Date(m.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </span>
             </div>

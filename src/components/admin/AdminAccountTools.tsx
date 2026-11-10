@@ -69,16 +69,16 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
           setOpen("details");
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm" })}
+        className={buttonVariants({ variant: "ghost", size: "sm" })}
       >
         <Pencil aria-hidden className="h-4 w-4" />
         Edit details
       </button>
-      <button type="button" onClick={() => setOpen("reset")} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <button type="button" onClick={() => setOpen("reset")} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm" })}>
         <KeyRound aria-hidden className="h-4 w-4" />
         Send reset code
       </button>
-      <button type="button" onClick={() => setOpen("trial")} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <button type="button" onClick={() => setOpen("trial")} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm" })}>
         <Hourglass aria-hidden className="h-4 w-4" />
         {trialEnd ? `Trial until ${trialEnd}` : "Free trial"}
       </button>
@@ -126,7 +126,7 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
                 role="radio"
                 aria-checked={days === d}
                 onClick={() => setDays(d)}
-                className={buttonVariants({ variant: days === d ? "primary" : "secondary", size: "sm" })}
+                className={buttonVariants({ variant: days === d ? "secondary" : "ghost", size: "sm", className: days === d ? "text-signal-fg hover:text-signal-fg" : "" })}
               >
                 {d} days
               </button>
@@ -134,7 +134,7 @@ export function AdminAccountTools(props: { userId: string; name: string; email: 
           </div>
           {actions(`Run it for ${days} days`, () => void run(() => setTrialAction(props.userId, days, notify)))}
           {trialEnd && (
-            <button type="button" disabled={busy} onClick={() => void run(() => setTrialAction(props.userId, 0, notify))} className="tap inline-flex items-center justify-self-start text-small text-red-300 underline underline-offset-4">
+            <button type="button" disabled={busy} onClick={() => void run(() => setTrialAction(props.userId, 0, notify))} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 justify-self-start text-red-300 hover:text-red-200" })}>
               End the trial now
             </button>
           )}

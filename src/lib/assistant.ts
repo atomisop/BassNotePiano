@@ -129,7 +129,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
     getNumberSetting("access.scaleUnlockIntervalDays"),
   ]);
   const trialLine = trialOn
-    ? `An approved class applicant gets a ${trialDays}-day free trial of just the first ${trialLessons} lessons of Scale 1.`
+    ? `Every new account gets a ${trialDays}-day free trial of just the first ${trialLessons} lessons of Scale 1 (once per person), starting when the account is created.`
     : "There is no free trial right now.";
   const cutoff = `${cancelHours} hour${cancelHours === 1 ? "" : "s"}`;
   const scaleList = SCALE_GROUPS.map(
@@ -210,7 +210,7 @@ Privacy (full policy at /privacy, last updated ${PRIVACY_LAST_UPDATED}):
 Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one account per person, access isn't transferable, and, as covered above, payments are final/non-refundable and classes are non-refundable as cash.
 
 Where things are: write every page mentioned below using the exact markdown link syntax shown, [label](path), never the bare path as plain text.
-  - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (class plan prices; the curriculum is included), [log in](/login) (the Log in button in the top bar opens a sign-in panel; instead of a password you can choose "Email me a code instead" and type the 6-digit code sent to your email), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
+  - Not signed in: [the homepage](/), [ask about live classes](/classes) (no account needed: send your details and an instructor reaches out), [pricing](/pricing) (class plan prices; the curriculum is included), [log in](/login) (the Log in button in the top bar opens a sign-in panel; instead of a password you can choose "Email me a code instead" and type the 6-digit code sent to your email), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
   - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons) (a Payment Plan subscriber sees My weekly class and an Extra sessions tab here), [start a payment plan](/billing/plans) (solo; you pick your day and time on a calendar), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences, Manage Subscriptions, and the Terms/Privacy tabs live under its "About" page).
 
 IF SOMEONE MENTIONS SELF-HARM, SUICIDE, OR BEING IN DANGER:

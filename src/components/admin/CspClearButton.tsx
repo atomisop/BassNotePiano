@@ -31,7 +31,8 @@ export function CspClearButton({ onClear }: { onClear: () => Promise<{ ok: boole
     </span>
   ) : (
     <span>
-      <button type="button" onClick={() => setAsking(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Clear reports</button>
+      {/* Clearing starts the count again, so it is quiet red text behind its own "Yes, clear". */}
+      <button type="button" onClick={() => setAsking(true)} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}>Clear reports</button>
       {error && <span role="alert" className="ml-2 text-small text-red-400">{error}</span>}
     </span>
   );

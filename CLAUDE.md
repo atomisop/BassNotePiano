@@ -53,7 +53,7 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
-  Pricing), People (Accounts, Applicants, Contacts, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
+  Pricing), People (Accounts, Contacts, Scholarships, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
   Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
   `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
   waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
@@ -234,9 +234,9 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   previous scale's checklist is complete and 7+ days passed since the last
   unlock; the admin can force past both. Approval sets
   `ScaleProgress.unlockedAt`, which only counts while entitlement is active.
-- **Free trial**: approving a class application sets `User.trialEndsAt` (3
-  days, once per person, never cleared) or it starts at registration if they
-  had no account yet. Trial opens only Scale 1's first 3 lessons
+- **Free trial**: every new account starts it at sign-up (`startTrialForEmail` in
+  the register route; decided 2026-11-09): `User.trialEndsAt` (3 days, once per
+  person and per inbox, never cleared; off with `trial.enabled`). Trial opens only Scale 1's first 3 lessons
   (`TRIAL_LESSON_COUNT`), no practice/quiz; locked lessons are sent to the
   client as titles only.
 - **Yearly (`TERM_12`) is retired** for new enrollments
@@ -273,11 +273,18 @@ leaving ends the family (members keep the month paid). One family change per `fa
 ## Contacts and soft holds (added 2026-10-20)
 
 Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
-the weekly time a payment plan reserves), applicants with no account (`ClassRegistration`), and people added by hand (`Contact`, with a status, notes
+the weekly time a payment plan reserves), people who sent the class form and have no account (`ClassRegistration`, shown as "Class form" with Call / Text / Email and Remove), and people added by hand (`Contact`, with a status, notes
 and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
 contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. The admin booking screen
 (`AdminManualBooking`) asks "This slot is reserved for X" before booking over one (`holdAppliesTo` in `slotHolds.ts`). The popup is admin only;
 students never see a contact's name.
+
+## No class applications (removed 2026-11-09)
+
+The public class form (`/classes`, `submitClassRegistration`) only collects details: there is no approve or reject, no Applicants page
+(`/admin/students` redirects to `/admin/contacts?show=application`), no auto-approve switch, and nothing counts "applications" anymore.
+The visitor sees the smiling `PianoCat` ("An instructor will reach out to you soon"), the owner gets the `NEW_REGISTRATION` alert, and the
+teacher reaches out outside the app from the Contacts entry. The free trial no longer waits on an approval: every new account gets it.
 
 ## Daily practice in the admin (added 2026-10-14)
 
@@ -321,7 +328,8 @@ proves nothing about the line being active or theirs; only a text code or a paid
   Plivo keys in production it can never turn on (`smsAvailable()`), so nobody gets locked out. In development
   the code is printed to the server log. There is NO free production SMS service.
 - Settings (`/account`) has one "Account" choice that holds every account item in groups (profile, contact,
-  sign-in and security, connected accounts, privacy and data incl. download, delete). The content is rendered
+  sign-in and security, connected accounts, classes and reminders, family and offers, privacy and data incl. download, delete;
+  regrouped 2026-11-10, each card showing its current value under its title). The content is rendered
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
@@ -357,7 +365,7 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
   (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
   Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
 - **Follow-ups** (`adminFollowUps.ts`, People > Accounts (`FollowUpList`) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
-  expiring, stale applications. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
+  expiring, Discord not linked. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
 - **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
 - **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
 - **Top banners** never ask for what the screen already shows (`alreadyShown` in `TopBanners.tsx`): no Discord banner on Lessons or at desktop width (the sidebar card
@@ -444,8 +452,8 @@ their panels, and they report their counts, through window events (`topBarEvents
 
 ## Account bans (added 2026-10-10)
 
-`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button
-top right of the Account card on the student page, with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
+`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, the red "Ban" item at the end
+of the Account card's "Manage" menu on the student page (moved there 2026-11-10 so the rarest action is no longer the loudest), with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
 `user.unban`). Never for an admin or for yourself. A ban bumps `sessionVersion` (ends every open session) and
 `getServerAuthSession` also refuses a banned account on its next request. Every sign-in route ends in the credentials
 `authorize` in `auth.ts`, which throws `BANNED` for a banned account; `loginStepOneAction` says it after the right password
@@ -494,6 +502,12 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   history includes a dedicated cleanup commit for stray ones).
 
 ## Design system (added 2026-10-29, `DESIGN.md`)
+
+**Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
+(one focal point per card, three sizes and tones, value first with the label under it, status only when it is news, one primary button and
+the rest in a More/Manage `ActionMenu`, destructive quiet, rows for lists, show a few and fold the rest). Build cards from
+`src/components/ui/CardKit.tsx` (`CardHead`, `Facts`/`Fact`, `Meta`, `Callout`, `CardFoot`). `buttonVariants` now runs through `cn`, so a
+caller's `className` (for example `text-red-300` on a ghost button) always beats the variant's own classes.
 
 `DESIGN.md` at the repo root is the design system every screen follows: type scale (`text-caption` 12, `text-small` 13, `text-body` 16,
 `text-title` 20, `text-headline` 24, `text-hero`, `text-figure`), corners (8 small, 12 controls and rows, 16 cards, 24 sheets, pills for

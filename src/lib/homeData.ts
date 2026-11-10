@@ -5,7 +5,6 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatusOnce, type FingerPracticeStatus } from "@/lib/fingerPractice";
 import { putFingerPracticeFirst, resolveNextStep, summariseProgress, type NextStep } from "@/lib/next-step";
 import { gettingStartedStep } from "@/lib/lockedScale";
-import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { BADGES } from "@/lib/badges";
 import { STREAK_GOALS } from "@/lib/streakRules";
 import { minutesThisWeek, pickCelebration, weekDayMinutes, weekDayIndex, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
@@ -54,7 +53,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const today = etDayKey(now);
   const isAdmin = user.role === "ADMIN";
 
-  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows] = await Promise.all([
+  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, weekRows, badges, unlocks, friendRows] = await Promise.all([
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
     prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
@@ -66,9 +65,6 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       select: { scheduledAt: true, creditsSpent: true, discordChannelId: true, inPerson: true },
     }),
     getCurriculumEntitlement(userId),
-    prisma.classRegistration.count({
-      where: { status: "PENDING", OR: [{ userId }, { email: { equals: user.email ?? "", mode: "insensitive" } }] },
-    }),
     prisma.fingerPracticeDay.findMany({ where: { userId, day: { gte: weekStartKey(today), lte: today } }, select: { day: true, seconds: true } }),
     prisma.userBadge.findMany({ where: { userId, earnedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }, select: { code: true, earnedAt: true } }),
     prisma.scaleProgress.findMany({
@@ -92,8 +88,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   ];
   const showChecklist = !isAdmin && entitlement.kind !== "NONE" && checklist.some((c) => !c.done);
 
-  const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
-  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
+  const starting = gettingStartedStep({ kind: entitlement.kind });
   const resolved = resolveNextStep(roadmap);
   const nextStep: NextStep = starting
     ? { ...resolved, ...starting }

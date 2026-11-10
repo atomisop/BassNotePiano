@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowRightLeft, X } from "@/components/ui/appIcons";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Meta } from "@/components/ui/CardKit";
 import { Dialog } from "@/components/ui/Dialog";
 import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
@@ -198,14 +199,12 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     router.refresh();
   }
 
+  // Each class is a row (date first and bright, credits and label quiet, the tools on the right), not a pile of equal boxes.
   const row = (b: SchedulerBooking, actions: boolean) => (
-    <div key={b.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-xl bg-neu-base p-2 shadow-raised-low">
-      <div className="min-w-0 pl-1">
-        <p className="text-small font-semibold text-slate-50">{formatEtShort(b.scheduledAt)}</p>
-        <p className="text-small text-slate-500">
-          {b.status === "CANCELED" ? "Canceled" : creditsLabelFromStored(b.creditsSpent)}
-          {b.label ? ` · ${b.label}` : ""}
-        </p>
+    <div key={b.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2.5">
+      <div className="min-w-0">
+        <p className={`text-body font-medium tabular-nums ${b.status === "CANCELED" ? "text-slate-400" : "text-slate-50"}`}>{formatEtShort(b.scheduledAt)}</p>
+        <Meta items={[b.status === "CANCELED" ? "Canceled" : creditsLabelFromStored(b.creditsSpent), b.label]} />
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <BookingAttendance
@@ -225,12 +224,19 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           </button>
         )}
         {actions && (
-          <>
-            <button type="button" className="tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-red-600 px-2.5 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low" onClick={() => { setError(null); setCanceling(b); }} aria-label="Cancel this class">
-              <X aria-hidden className="h-3.5 w-3.5" />
-              Cancel
-            </button>
-          </>
+          // Destructive, so quiet red text, never the loudest thing on the row; the dialog still asks first.
+          <button
+            type="button"
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "gap-1 text-red-300 hover:text-red-200" })}
+            onClick={() => {
+              setError(null);
+              setCanceling(b);
+            }}
+            aria-label="Cancel this class"
+          >
+            <X aria-hidden className="h-3.5 w-3.5" />
+            Cancel
+          </button>
         )}
       </div>
     </div>
@@ -239,33 +245,50 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const slotsReady = times?.open ?? [];
   const heldReady = times?.held ?? [];
   const bookedReady = (times?.booked ?? []).filter((b) => b.id !== moving?.id);
+  const next = upcoming[0];
+  const groupTitle = "flex items-center gap-1.5 text-caption font-medium uppercase tracking-caps";
+  const countPill = "min-w-6 rounded-full bg-slate-50/8 px-1.5 py-0.5 text-center text-caption font-semibold tabular-nums text-slate-200";
 
   return (
-    <div className="space-y-4">
+    <div className="glass-surface space-y-5 p-4 md:p-5">
+      {/* The one loud line: when the next class is. Everything under it is a list. */}
+      <div>
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
+        <p className={`mt-1 text-title font-semibold tabular-nums ${next ? "text-slate-50" : "text-slate-400"}`}>{next ? formatEtShort(next.scheduledAt) : "Nothing booked"}</p>
+        {next && <Meta className="mt-0.5" items={[creditsLabelFromStored(next.creditsSpent), next.label, upcoming.length > 1 ? `${upcoming.length - 1} more booked` : null]} />}
+      </div>
+
       {needs.length > 0 && (
-        <section>
-          <h2 className="mb-1.5 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-amber-300">
-            Needs a call · {needs.length}
+        <section className="rounded-control bg-amber-300/6 px-3 pt-2.5 ring-1 ring-inset ring-amber-300/20">
+          <h2 className={`${groupTitle} text-amber-300`}>
+            Needs a call
+            <span className={countPill}>{needs.length}</span>
             <Hint label="About needs a call">These classes already happened and still need Present or No-show. Oldest first. Booked on the wrong day? Reschedule it with the arrows, then mark it.</Hint>
           </h2>
-          <div className="space-y-1.5">
+          <div className="divide-y divide-slate-50/6">
             <ViewMore items={needs} initial={4}>{(b) => row(b, false)}</ViewMore>
           </div>
         </section>
       )}
 
-      <section>
-        <h2 className="mb-1.5 text-small font-semibold uppercase tracking-wide text-slate-400">Upcoming · {upcoming.length}</h2>
-        <div className="space-y-1.5">
-          {upcoming.length === 0 && <p className="text-small text-slate-500">Nothing booked.</p>}
+      <section className="border-t border-slate-50/8 pt-4">
+        <h2 className={`${groupTitle} text-slate-500`}>
+          Upcoming
+          <span className={countPill}>{upcoming.length}</span>
+        </h2>
+        <div className="divide-y divide-slate-50/6">
+          {upcoming.length === 0 && <p className="py-2.5 text-small text-slate-500">Nothing booked.</p>}
           <ViewMore items={upcoming} initial={4}>{(b) => row(b, true)}</ViewMore>
         </div>
       </section>
 
       {history.length > 0 && (
-        <section>
-          <h2 className="mb-1.5 text-small font-semibold uppercase tracking-wide text-slate-400">History · {history.length}</h2>
-          <div className="space-y-1.5">
+        <section className="border-t border-slate-50/8 pt-4">
+          <h2 className={`${groupTitle} text-slate-500`}>
+            History
+            <span className={countPill}>{history.length}</span>
+          </h2>
+          <div className="divide-y divide-slate-50/6">
             <ViewMore items={history} initial={3}>{(b) => row(b, false)}</ViewMore>
           </div>
         </section>
@@ -312,14 +335,14 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         }
       >
         {planHold ? (
-          <div className="rounded-xl border border-amber-300/40 bg-neu-base shadow-pressed-low p-4">
+          <div className="rounded-control bg-amber-300/10 p-4 ring-1 ring-inset ring-amber-300/20">
             <p className="text-body font-semibold text-slate-50">This time belongs to a weekly plan</p>
             <p className="mt-1 text-small text-slate-300">
               {planHold === "another student" ? "Another student's" : `${planHold}'s`} plan keeps this weekly time, though nobody has a class in it this week. Move {studentName}&apos;s class here anyway? Their plan keeps the time for its other weeks.
             </p>
           </div>
         ) : confirmNew ? (
-          <div className="rounded-xl border border-slate-50/35 bg-neu-base shadow-pressed-low p-4">
+          <div className="rounded-control bg-slate-50/5 p-4 ring-1 ring-inset ring-slate-50/10">
             <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
             <p className="mt-1 text-small text-slate-300">
               {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and reschedule {studentName} there?

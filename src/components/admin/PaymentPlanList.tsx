@@ -15,6 +15,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreditCard } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { CardFoot, CardHead, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { toast } from "@/components/ui/Toaster";
 
 export interface PaymentPlanListProps {
@@ -27,6 +28,13 @@ export interface PaymentPlanListProps {
   /** Days a plan's weekly time stays held while its first payment is missing (Settings > Payments). */
   firstPaymentHoldDays?: number;
   emptyMessage?: string;
+}
+
+/** "Nov 23", with the year only when it is not this year: a date speaks for itself, so it needs no "Date:" label. */
+function shortDate(value: Date | string): string {
+  const d = new Date(value);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 function formatUsd(cents: number) {
@@ -148,80 +156,67 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
   return (
     <div data-stagger="" className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I cancel or record a payment" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify the student" />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {recordError && <p className="text-small text-red-400">{recordError}</p>}
       <ViewMore items={shown} initial={8}>
-      {(plan) => (
-        <div key={plan.id} className="glass-surface p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
-                {describePaymentPlan(plan.cadence, plan.term)}
-              </p>
-              <h2 className="mt-1 text-title text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
-              {plan.familyGroup && (
-                <p className="mt-1 text-small text-slate-400">
-                  Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}
-                </p>
-              )}
-              <p className="mt-1 text-small text-slate-500">
-                {plan.installmentsPaid} of {plan.termMonths} installments paid · {formatUsd(plan.installmentAmountCents)}/mo
-              </p>
-              <p className="mt-1 text-small text-slate-500">Received {formatUsd(receivedCents(plan))}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5 text-right">
-              {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) ? null : (
-                <StatusDot tone={planBadge(plan).tone}>{planBadge(plan).label}</StatusDot>
-              )}
-              {plan.status === "ACTIVE" && (
-                <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-slate-50 underline underline-offset-4">
-                  Scheduler
-                </Link>
-              )}
-              {plan.isOverdue && (
-                <StatusDot tone="danger">Overdue</StatusDot>
-              )}
-            </div>
-          </div>
+      {(plan) => {
+        const name = plan.user.name ?? plan.user.email;
+        const paused = plan.status === "ACTIVE" && isPausedNow(plan, new Date());
+        const badge = planBadge(plan);
+        // Status only when it is news: a healthy Active plan on the Active list needs no badge (DESIGN.md, Hierarchy rule 5).
+        const status = plan.isOverdue ? (
+          <StatusDot tone="danger">Overdue</StatusDot>
+        ) : paused ? (
+          <StatusDot tone="neutral">{isIndefinitePause(plan) ? "Paused" : `Paused to ${shortDate(plan.pauseUntil ?? plan.nextDueDate)}`}</StatusDot>
+        ) : plan.status !== "ACTIVE" || badge.tone === "warning" ? (
+          <StatusDot tone={badge.tone}>{badge.label}</StatusDot>
+        ) : null;
+        const slot = plan.reservedSchedule ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}` : null;
+        return (
+        <article key={plan.id} className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+          <CardHead
+            eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+            title={
+              <Link href={`/admin/users/${plan.user.id}`} className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {name}
+              </Link>
+            }
+            subtitle={plan.familyGroup ? `Group of ${plan.familyGroup._count.plans}, paid by ${plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}` : undefined}
+            status={status}
+          />
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
-            <div>
-              <dt className="text-small text-slate-500">Next due</dt>
-              <dd className="text-slate-300">{plan.status === "ACTIVE" && isPausedNow(plan, new Date()) && isIndefinitePause(plan) ? "On resume" : new Date(plan.nextDueDate).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Started</dt>
-              <dd className="text-slate-300">{new Date(plan.createdAt).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt className="text-small text-slate-500">Reserved slot</dt>
-              <dd className="text-slate-300">
-                {plan.reservedSchedule
-                  ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}${plan.reservedSchedule.label ? ` · ${plan.reservedSchedule.label}` : ""}`
-                  : "None"}
-              </dd>
-            </div>
-          </dl>
+          <Facts className="mt-4">
+            <Fact
+              label={plan.isOverdue ? "Bill was due" : "Next bill"}
+              value={paused && isIndefinitePause(plan) ? "On resume" : shortDate(plan.nextDueDate)}
+              tone={plan.isOverdue ? "danger" : "default"}
+            />
+            <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />
+            <Fact label="Every 28 days" value={formatUsd(plan.installmentAmountCents)} />
+            <Fact label={plan.reservedSchedule?.label ?? "Weekly class"} value={slot ?? "None"} tone={slot ? "default" : "muted"} />
+          </Facts>
+
+          <Meta className="mt-3" items={[`Started ${shortDate(plan.createdAt)}`, `Received ${formatUsd(receivedCents(plan))}`]} />
 
           {plan.status === "CANCELED" && plan.cancellationNote && (
-            <p className="mt-2 text-small text-red-400">Canceled: {plan.cancellationNote}</p>
+            <Callout tone="neutral" className="mt-3">Canceled: {plan.cancellationNote}</Callout>
           )}
 
           {onRecordPayment && plan.status === "ACTIVE" && needsPaymentRecord(plan) && (
-            <div className="mt-4 rounded-lg bg-neu-base p-3 shadow-pressed-low">
+            <div className="mt-3">
               {recordingId === plan.id ? (
-                <div className="space-y-2">
-                  <p className="text-small text-slate-300">
-                    Record {formatUsd(plan.installmentAmountCents)} as received from {plan.user.name ?? plan.user.email}? This counts it in revenue
+                <Callout tone="warning">
+                  <p>
+                    Record {formatUsd(plan.installmentAmountCents)} as received from {name}? This counts it in revenue
                     {plan.installmentsPaid === 0 ? ", opens their access, grants their credits and books their weekly time" : ""}.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="mt-2 flex gap-2">
                     <button
                       type="button"
                       onClick={() => setRecordingId(null)}
                       disabled={busyId === plan.id}
-                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
                     >
                       Back
                     </button>
@@ -229,34 +224,38 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => handleRecord(plan.id)}
                       disabled={busyId === plan.id}
-                      className={buttonVariants({ variant: "primary", className: "flex-1" })}
+                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex-1" })}
                     >
                       {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Recording…" : "Confirm"}
                     </button>
                   </div>
-                </div>
+                </Callout>
               ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-small text-slate-300">No payment on record for this plan.</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRecordError(null);
-                      setRecordingId(plan.id);
-                    }}
-                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                  >
-                    Record payment
-                  </button>
-                </div>
+                <Callout
+                  tone="warning"
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRecordError(null);
+                        setRecordingId(plan.id);
+                      }}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    >
+                      Record payment
+                    </button>
+                  }
+                >
+                  No payment on record for this plan.
+                </Callout>
               )}
             </div>
           )}
 
           {plan.status === "ACTIVE" &&
             (cancelingId === plan.id ? (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2 border-t border-slate-50/8 pt-3">
                 <textarea
                   autoFocus
                   value={note}
@@ -273,7 +272,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       setNote("");
                     }}
                     disabled={busyId === plan.id}
-                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
                   >
                     Back
                   </button>
@@ -281,7 +280,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                     type="button"
                     onClick={() => handleCancel(plan.id)}
                     disabled={busyId === plan.id || !note.trim()}
-                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className={buttonVariants({ variant: "danger", size: "sm", className: "flex-1" })}
                   >
                     {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === plan.id ? "Canceling…" : "Confirm cancel"}
@@ -289,10 +288,20 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </div>
               </div>
             ) : (
-              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                {/* Compact actions at the end of the plan, not full-width bars: Resend is the everyday one, Cancel stays quiet. */}
-                {onResendBill && (
-                  <>
+              <CardFoot className="justify-between">
+                {/* The destructive action sits alone at the far end from the everyday ones, quiet, so it is never tapped by mistake. */}
+                <button
+                  type="button"
+                  onClick={() => setCancelingId(plan.id)}
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}
+                >
+                  Cancel plan
+                </button>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Link href={`/admin/users/${plan.user.id}#scheduler`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Schedule
+                  </Link>
+                  {onResendBill && (
                     <button
                       type="button"
                       onClick={() => handleResend(plan.id)}
@@ -302,20 +311,14 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}
                     </button>
-                    {billNote?.id === plan.id && <p className={`basis-full text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
-                  </>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setCancelingId(plan.id)}
-                  className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
-                >
-                  Cancel plan
-                </button>
-              </div>
+                  )}
+                </div>
+                {billNote?.id === plan.id && <p className={`basis-full text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
+              </CardFoot>
             ))}
-        </div>
-      )}
+        </article>
+        );
+      }}
       </ViewMore>
     </div>
   );

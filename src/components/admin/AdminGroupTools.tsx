@@ -73,7 +73,7 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
 
   return (
     <>
-      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5" })}>
         <Users aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Group
       </button>
@@ -159,7 +159,7 @@ export function AdminGroupButton({ groupId, planId, userId }: { groupId: string;
                     type="button"
                     disabled={busy !== null || !payer}
                     onClick={() => void run("payer", () => changeGroupPayerAction(groupId, payer, notify), load)}
-                    className={buttonVariants({ variant: "primary", size: "sm" })}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy === "payer" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                     Make payer
@@ -200,7 +200,7 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      <button type="button" onClick={show} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5" })}>
         <UserPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Parent links
       </button>
@@ -239,7 +239,7 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
                       </button>
                     </span>
                   ) : (
-                    <button type="button" onClick={() => setRemoving(l.linkId)} className="tap inline-flex items-center text-small font-medium text-slate-300 hover:text-slate-100">
+                    <button type="button" onClick={() => setRemoving(l.linkId)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
                       Remove
                     </button>
                   )}
@@ -258,7 +258,7 @@ export function AdminParentLinksButton({ userId }: { userId: string }) {
                   role="radio"
                   aria-checked={role === r}
                   onClick={() => setRole(r)}
-                  className={buttonVariants({ variant: role === r ? "primary" : "secondary", size: "sm" })}
+                  className={buttonVariants({ variant: role === r ? "secondary" : "ghost", size: "sm", className: role === r ? "text-signal-fg hover:text-signal-fg" : "" })}
                 >
                   This account is the {r}
                 </button>

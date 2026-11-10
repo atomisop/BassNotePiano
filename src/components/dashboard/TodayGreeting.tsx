@@ -22,7 +22,10 @@ function greetingFor(hour: number): string {
   return "Good evening";
 }
 
-/** The Home screen's one Hero element (STEP 2C). */
+/**
+ * Home's welcome line. It is deliberately one step smaller than the hero card's title under it (DESIGN.md, Hierarchy rule 10: one
+ * hero per screen), so today's next step, not the greeting, is the biggest thing on Home. On phones it rides in the top bar anyway.
+ */
 export function TodayGreeting({ name, className }: { name: string | null; className?: string }) {
   const [greeting, setGreeting] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
@@ -38,7 +41,7 @@ export function TodayGreeting({ name, className }: { name: string | null; classN
     <div data-bar-source="" className={className}>
       {/* Today's date over the greeting, by the student's own clock (so it is filled in the browser too; the line keeps its space). */}
       <p data-bar-eyebrow="" className={`text-small font-medium text-slate-400 ${fade}`}>{date ?? "\u00a0"}</p>
-      <Hero className={`mt-1.5 ${fade}`}>
+      <Hero className={`mt-1.5 text-headline ${fade}`}>
         {greeting ?? "Welcome back"}
         {name ? <>, {name.split(" ")[0]}</> : null}.
       </Hero>

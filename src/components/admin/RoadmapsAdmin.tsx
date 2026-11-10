@@ -10,6 +10,8 @@ import { RoadmapArtwork } from "@/components/home/RoadmapArtwork";
 import { addScaleAction, createRoadmapAction, moveRoadmapAction, moveScaleAction, updateRoadmapAction } from "@/app/(dashboard)/admin/roadmaps/actions";
 import { cn } from "@/lib/utils";
 import { IconSwap } from "@/components/ui/IconSwap";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 
 const field =
   "h-11 w-full min-w-0 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -79,16 +81,13 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
       <div className="flex items-start gap-3">
         <RoadmapArtwork artwork={r.artwork} className="h-14 w-14 shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-body font-semibold text-slate-50">{r.name}</p>
-            <span className={cn("rounded-full px-2 py-0.5 text-caption font-semibold", r.visible ? "bg-signal/14 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low")}>
-              {r.visible ? "Students see it" : "Hidden"}
-            </span>
+          {/* The roadmap's name is the card's one loud line. Shown to students is the normal state, so only Hidden gets a status. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-title font-semibold text-slate-50">{r.name}</p>
+            {!r.visible && <StatusDot tone="warning">Hidden</StatusDot>}
           </div>
-          <p className="mt-0.5 text-small text-slate-400">
-            {meta} · {r.scales.length} scale{r.scales.length === 1 ? "" : "s"}
-          </p>
-          {r.description && <p className="mt-1 text-small text-slate-300">{r.description}</p>}
+          <Meta className="mt-0.5" items={[meta, `${r.scales.length} scale${r.scales.length === 1 ? "" : "s"}`]} />
+          {r.description && <p className="mt-1 text-small text-slate-400">{r.description}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <IconButton label="Move up" disabled={first || pending} onClick={() => run(() => moveRoadmapAction(r.id, "up"))}>
@@ -102,7 +101,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
-          variant="secondary"
+          variant={r.visible ? "ghost" : "secondary"}
           size="sm"
           disabled={pending}
           onClick={() =>
@@ -114,7 +113,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
           <IconSwap state={r.visible}>{r.visible ? <EyeOff aria-hidden className="h-4 w-4" /> : <Eye aria-hidden className="h-4 w-4" />}</IconSwap>
           {r.visible ? "Hide from students" : "Show to students"}
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setEditing((v) => !v)}>
+        <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)}>
           <Pencil aria-hidden className="h-4 w-4" />
           {editing ? "Close" : "Edit"}
         </Button>
@@ -122,12 +121,13 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
       {error && <p className="mt-2 text-small text-red-300">{error}</p>}
       {editing && <RoadmapForm roadmap={r} onDone={() => setEditing(false)} />}
 
-      <ol className="mt-4 grid grid-cols-1 gap-1.5">
+      {/* The scales as plain rows under a hairline, not a stack of wells: the title is what you read, the code and count are quiet. */}
+      <ol className="mt-4 divide-y divide-slate-50/8 border-t border-slate-50/8">
         {r.scales.map((s, i) => (
-          <li key={s.id} className="flex items-center gap-3 rounded-xl bg-neu-base px-3 py-2 shadow-pressed-low">
+          <li key={s.id} className="flex items-center gap-3 py-2">
             <span className="min-w-0 flex-1">
               <span className="block truncate text-small font-semibold text-slate-100">
-                {s.code} · {s.title}
+                <span className="font-medium text-slate-500">{s.code}</span> {s.title}
               </span>
               <span className="block text-caption text-slate-500">
                 {s.lessons} lesson{s.lessons === 1 ? "" : "s"}
@@ -141,13 +141,13 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
             </IconButton>
           </li>
         ))}
-        {r.scales.length === 0 && <li className="text-small text-slate-500">No scales yet.</li>}
+        {r.scales.length === 0 && <li className="py-2 text-small text-slate-500">No scales yet.</li>}
       </ol>
 
       {addingScale ? (
         <ScaleForm roadmapId={r.id} nextCode={`Scale ${r.scales.length + 1}`} onDone={() => setAddingScale(false)} />
       ) : (
-        <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAddingScale(true)}>
+        <Button variant="ghost" size="sm" className="mt-2 -ml-2" onClick={() => setAddingScale(true)}>
           <Plus aria-hidden className="h-4 w-4" />
           Add a scale
         </Button>

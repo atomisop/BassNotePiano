@@ -128,7 +128,8 @@ function RegisterForm() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-300 bg-neu-base shadow-raised-low">
+      {/* A flat, quiet mark: the heading under it is the one thing that should stand out before the form. */}
+      <div aria-hidden className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50/5 text-slate-400">
         <UserPlus className="h-6 w-6" />
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
@@ -227,11 +228,11 @@ function RegisterForm() {
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
+            <Link href="/terms" target="_blank" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
               Terms &amp; refund policy
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" target="_blank" className="text-slate-50 underline transition hover:opacity-70">
+            <Link href="/privacy" target="_blank" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
               Privacy policy
             </Link>
             .
@@ -253,7 +254,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-slate-50 underline underline-offset-4 transition hover:opacity-70">
+        <Link href="/login" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
           Log in
         </Link>
       </p>

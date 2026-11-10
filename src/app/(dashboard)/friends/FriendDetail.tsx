@@ -6,6 +6,7 @@ import { BADGES } from "@/lib/badges";
 import type { FriendProfile } from "@/lib/friendProfile";
 import { getFriendProfileAction } from "./actions";
 import { Hint } from "@/components/ui/Hint";
+import { Fact, Facts } from "@/components/ui/CardKit";
 
 /** The panel under a friend's row: their practice this week and badges. Loaded when the row is opened, so the list itself stays light. */
 export function FriendDetail({ username }: { username: string }) {
@@ -24,30 +25,18 @@ export function FriendDetail({ username }: { username: string }) {
   if (profile === undefined) return <div className="h-24 animate-pulse rounded-lg bg-slate-50/5" aria-label="Loading" />;
   if (profile === null) return <p className="text-small text-slate-400"><Hint>Couldn&apos;t load this profile. Try again in a moment.</Hint></p>;
 
+  // The streak is the one line you read first; the rest are small facts, value first (DESIGN.md, Hierarchy rule 3).
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{profile.streak > 0 ? `${profile.streak} day streak` : "Streak"}</p>
+        <p className="text-body font-semibold tabular-nums text-slate-50">{profile.streak > 0 ? `${profile.streak} day streak` : "No streak right now"}</p>
         <StreakDots currentStreak={profile.streak} />
       </div>
-      <dl className="grid grid-cols-3 gap-2 text-small">
-        <div className="rounded-lg bg-slate-50/5 p-2.5">
-          <dt className="text-slate-400">Longest</dt>
-          <dd className="mt-0.5 font-semibold text-slate-50">
-            {profile.longest} day{profile.longest === 1 ? "" : "s"}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-slate-50/5 p-2.5">
-          <dt className="text-slate-400">Last 7 days</dt>
-          <dd className="mt-0.5 font-semibold text-slate-50">{profile.doneLast7} of 7</dd>
-        </div>
-        <div className="rounded-lg bg-slate-50/5 p-2.5">
-          <dt className="text-slate-400">Badges</dt>
-          <dd className="mt-0.5 font-semibold text-slate-50">
-            {profile.badgeCodes.length} of {BADGES.length}
-          </dd>
-        </div>
-      </dl>
+      <Facts columns={3} className="grid-cols-3">
+        <Fact label="Longest" value={`${profile.longest} day${profile.longest === 1 ? "" : "s"}`} />
+        <Fact label="Last 7 days" value={`${profile.doneLast7} of 7`} />
+        <Fact label="Badges" value={`${profile.badgeCodes.length} of ${BADGES.length}`} />
+      </Facts>
       {profile.practicedToday && <p className="text-small text-slate-400">Finished today&apos;s 10 minutes.</p>}
     </div>
   );

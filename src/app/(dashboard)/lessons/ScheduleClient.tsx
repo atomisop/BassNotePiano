@@ -20,6 +20,8 @@ import { DiscordLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { Callout, CardFoot, Meta } from "@/components/ui/CardKit";
 
 interface UpcomingBooking {
   id: string;
@@ -44,6 +46,17 @@ function formatTimeLabel(hhmm: string): string {
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+/** Later classes shown before "Show N more" (DESIGN.md, Hierarchy 9). */
+const LATER_SHOWN = 3;
+
+/** The hero's two big parts: "Wednesday, Nov 12" and "6:00 PM", in the viewer's own clock like formatDateTime. */
+function classDay(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+function classTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 interface WeeklyTime {
@@ -83,6 +96,8 @@ export function ScheduleClient({
   const [confirmSkipId, setConfirmSkipId] = useState<string | null>(null);
   const [skippingId, setSkippingId] = useState<string | null>(null);
   const [skipError, setSkipError] = useState<string | null>(null);
+  // A "Message support" inside a row's menu reports a failure here, shown under that row (the menu has closed by then).
+  const [supportError, setSupportError] = useState<{ id: string; message: string } | null>(null);
 
   async function handleSkip(bookingId: string) {
     setSkippingId(bookingId);
@@ -144,145 +159,235 @@ export function ScheduleClient({
     router.refresh(); // pulls the new weeklyTime/upcomingBookings server props (revalidatePath alone doesn't re-render an already-mounted page)
   }
 
-  return (
-    <WideLayout className="space-y-6">
-      <h2 className="text-headline font-semibold text-balance text-slate-50">Your schedule</h2>
+  // Everything a class's buttons need to know, worked out once per class.
+  function classState(booking: UpcomingBooking) {
+    const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
+    const insideCutoff = hoursUntil < cancellationCutoffHours;
+    const canChange = !insideCutoff && (canCancel || canReschedule);
+    const minutes = Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES);
+    return {
+      hoursUntil,
+      insideCutoff,
+      canChange,
+      minutes,
+      joinNow: hoursUntil <= 0.5 && hoursUntil > -1 && !booking.inPerson,
+      calendarHref: hoursUntil > 0 ? `/api/calendar/class?s=${encodeURIComponent(booking.scheduledAt)}&m=${minutes}` : null,
+      confirming: confirmSkipId === booking.id,
+      busy: skippingId === booking.id,
+      lockedNote: canChange ? null : insideCutoff ? `Starts within ${cancellationCutoffHours} hours, so changes now go through the team.` : "Changes to this class go through the team.",
+    };
+  }
 
-      {/* This week */}
-      <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-small font-medium uppercase tracking-caps text-slate-400">This week</p>
-        {hasClassThisWeek ? (
-          <p className="mt-2 text-small text-slate-300">
-            <span className="text-slate-50">✓ Booked</span>
-          </p>
-        ) : weeklyTime ? (
-          <p className="mt-2 text-small text-slate-300">
-            Your weekly time is <span className="text-slate-100">{DAY_LABELS[weeklyTime.dayOfWeek]}s at {formatTimeLabel(weeklyTime.startTime)}</span>.
-          </p>
-        ) : (
-          <p className="mt-2 text-small text-slate-300">
-            No weekly time set.{" "}
-            <OpenSupportLink />
-          </p>
-        )}
+  // The two-step skip, shown under whichever class asked for it.
+  function skipConfirm(booking: UpcomingBooking, busy: boolean) {
+    return (
+      <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
+        <p className="text-small text-slate-300"><Hint>Skip this class? It stays on your account.</Hint></p>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setConfirmSkipId(null)}
+            disabled={busy}
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
+          >
+            Keep it
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSkip(booking.id)}
+            disabled={busy}
+            className={buttonVariants({ variant: "danger", size: "sm" })}
+          >
+            {busy && <MorphingSquare size={12} />}
+            {busy ? "Skipping…" : "Skip this class"}
+          </button>
+        </div>
       </div>
+    );
+  }
 
-      {/* Your classes */}
-      <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <h2 className="text-title font-semibold text-slate-50">Your classes</h2>
-        {upcomingBookings.length === 0 ? (
-          <p className="mt-3 text-small text-slate-500">Nothing booked yet.</p>
-        ) : (
-          <div className="mt-2 divide-y divide-slate-50/8">
-            {upcomingBookings.map((booking) => {
-              const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
-              const insideCutoff = hoursUntil < cancellationCutoffHours;
-              const canChange = !insideCutoff && (canCancel || canReschedule);
-              const confirming = confirmSkipId === booking.id;
-              const busy = skippingId === booking.id;
-              return (
-                <div key={booking.id} className="py-4 first:pt-2 last:pb-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
-                      <p className="text-small text-slate-500">
-                        {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {booking.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
-                    {hoursUntil <= 0.5 && hoursUntil > -1 && !booking.inPerson && (
-                      <DiscordLink
-                        href={booking.discordUrl ?? DISCORD_INVITE_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={buttonVariants({ variant: "primary", size: "sm" })}
-                      >
-                        Join on Discord
-                      </DiscordLink>
-                    )}
-                    {hoursUntil > 0 && (
-                      <a
-                        href={`/api/calendar/class?s=${encodeURIComponent(booking.scheduledAt)}&m=${Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)}`}
-                        className={buttonVariants({ variant: "secondary", size: "sm" })}
-                      >
-                        Add to calendar
-                      </a>
-                    )}
-                    {canChange && !confirming && (
-                      <>
-                        {canReschedule && (
-                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                            Move this week
-                          </Link>
-                        )}
-                        {canCancel && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSkipError(null);
-                              setConfirmSkipId(booking.id);
-                            }}
-                            className={buttonVariants({ variant: "secondary", size: "sm" })}
-                          >
-                            Skip this class
-                          </button>
-                        )}
-                      </>
-                    )}
-                    <MessageSupportButton bookingId={booking.id} className={buttonVariants({ variant: "ghost", size: "sm" })} />
-                  </div>
-                  {canChange ? (
-                    confirming && (
-                      <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
-                        <p className="text-small text-slate-300"><Hint>Skip this class? It stays on your account.</Hint></p>
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setConfirmSkipId(null)}
-                            disabled={busy}
-                            className={buttonVariants({ variant: "secondary", size: "sm" })}
-                          >
-                            Keep it
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSkip(booking.id)}
-                            disabled={busy}
-                            className={buttonVariants({ variant: "danger", size: "sm" })}
-                          >
-                            {busy && <MorphingSquare size={12} />}
-                            {busy ? "Skipping…" : "Skip this class"}
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  ) : (
-                    <p className="mt-2 text-small text-slate-500">
-                      {insideCutoff ? `Starts within ${cancellationCutoffHours} hours, so changes now go through the team.` : "Changes to this class go through the team."}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-            {skipError && (
-              <div className="flex flex-wrap items-center gap-3" role="alert">
-                <p className="text-small text-red-400">{skipError}</p>
-                {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
-              </div>
+  const startSkip = (bookingId: string) => {
+    setSkipError(null);
+    setConfirmSkipId(bookingId);
+  };
+
+  const weeklyLine = weeklyTime ? `Every ${DAY_LABELS[weeklyTime.dayOfWeek]} at ${formatTimeLabel(weeklyTime.startTime)}` : null;
+  const [next, ...later] = upcomingBookings;
+  const nextState = next ? classState(next) : null;
+  const laterFirst = later.slice(0, LATER_SHOWN);
+  const laterRest = later.slice(LATER_SHOWN);
+
+  // One row per later class: the day and time to read, one quiet line, and every change behind "More" (DESIGN.md, Hierarchy 6 and 8).
+  const laterRow = (booking: UpcomingBooking) => {
+    const c = classState(booking);
+    return (
+      <li key={booking.id} className="py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(booking.scheduledAt)}</p>
+            <Meta
+              className="mt-0.5"
+              items={[booking.label ?? "Weekly class", `ends ${formatEndTime(booking.scheduledAt, booking.creditsSpent)}`, booking.inPerson && "In person", c.lockedNote && "Changes go through the team"]}
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {c.joinNow && (
+              <DiscordLink href={booking.discordUrl ?? DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
+                Join
+              </DiscordLink>
+            )}
+            {!c.confirming && (
+              <ActionMenu label="More" align="right">
+                {c.calendarHref && (
+                  <a href={c.calendarHref} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Add to calendar
+                  </a>
+                )}
+                {c.canChange && canReschedule && (
+                  <Link href={`/lessons?tab=extra&move=${booking.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Move this week
+                  </Link>
+                )}
+                <MessageSupportButton
+                  bookingId={booking.id}
+                  onError={(message) => setSupportError(message ? { id: booking.id, message } : null)}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                />
+                {c.canChange && canCancel && (
+                  <button type="button" onClick={() => startSkip(booking.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                    Skip this class
+                  </button>
+                )}
+              </ActionMenu>
             )}
           </div>
+        </div>
+        {supportError?.id === booking.id && (
+          <p role="alert" className="mt-2 text-small text-red-400">
+            {supportError.message}
+          </p>
+        )}
+        {c.canChange && c.confirming && skipConfirm(booking, c.busy)}
+      </li>
+    );
+  };
+
+  return (
+    <WideLayout className="space-y-6">
+      <h2 className="sr-only">Your schedule</h2>
+
+      {/* The hero: the next class, its day and time the biggest thing on the screen. Everything else on this tab is quieter. */}
+      <section aria-label="Next class" className="rounded-card bg-neu-base p-5 shadow-raised-mid sm:p-6">
+        {next && nextState ? (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
+                <p className="mt-1 text-headline font-semibold tabular-nums text-balance text-slate-50">
+                  <span className="block sm:inline">{classDay(next.scheduledAt)}</span>
+                  <span aria-hidden className="hidden text-slate-500 sm:inline"> · </span>
+                  <span className="block sm:inline">{classTime(next.scheduledAt)}</span>
+                </p>
+                <Meta
+                  className="mt-1.5"
+                  items={[
+                    `Ends ${formatEndTime(next.scheduledAt, next.creditsSpent)}`,
+                    `${nextState.minutes} min`,
+                    next.inPerson ? "In person" : (next.label ?? "Weekly class"),
+                    hasClassThisWeek && "This week is booked",
+                  ]}
+                />
+              </div>
+            </div>
+            {nextState.lockedNote && <p className="mt-3 text-small text-slate-500">{nextState.lockedNote}</p>}
+            {nextState.confirming && nextState.canChange ? (
+              skipConfirm(next, nextState.busy)
+            ) : (
+              <CardFoot className="justify-between">
+                {/* The rare jobs (asking support, skipping) sit in one quiet menu, Skip last and red, so the row fits on a phone and the
+                    everyday buttons on the right stay the obvious ones. */}
+                <ActionMenu label="More">
+                  <MessageSupportButton
+                    bookingId={next.id}
+                    onError={(message) => setSupportError(message ? { id: next.id, message } : null)}
+                    className={buttonVariants({ variant: "ghost", size: "sm" })}
+                  />
+                  {nextState.canChange && canCancel && (
+                    <button type="button" onClick={() => startSkip(next.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                      Skip this class
+                    </button>
+                  )}
+                </ActionMenu>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {nextState.canChange && canReschedule && (
+                    <Link href={`/lessons?tab=extra&move=${next.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                      Move
+                    </Link>
+                  )}
+                  {nextState.calendarHref && (
+                    <a href={nextState.calendarHref} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      Add to calendar
+                    </a>
+                  )}
+                  {nextState.joinNow && (
+                    <DiscordLink href={next.discordUrl ?? DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "primary", size: "sm" })}>
+                      Join on Discord
+                    </DiscordLink>
+                  )}
+                </div>
+                {supportError?.id === next.id && <p role="alert" className="basis-full text-right text-small text-red-400">{supportError.message}</p>}
+              </CardFoot>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
+            <p className="mt-1 text-headline font-semibold text-balance text-slate-50">{weeklyLine ?? "Nothing booked yet"}</p>
+            {weeklyLine ? (
+              <Meta className="mt-1.5" items={[hasClassThisWeek ? "This week is booked" : "Your weekly time", "Nothing else booked yet"]} />
+            ) : (
+              <Callout tone="neutral" className="mt-3" action={<OpenSupportLink className={buttonVariants({ variant: "secondary", size: "sm" })} />}>
+                No weekly time set.
+              </Callout>
+            )}
+          </>
+        )}
+        {skipError && (
+          <div className="mt-3 flex flex-wrap items-center gap-3" role="alert">
+            <p className="text-small text-red-400">{skipError}</p>
+            {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
+          </div>
+        )}
+      </section>
+
+      {/* The rest, as rows: a few shown, the others folded. */}
+      <section aria-label="Your classes" className="rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-small font-semibold uppercase tracking-caps text-slate-400">Your classes</h2>
+          {upcomingBookings.length > 0 && (
+            <span className="min-w-7 rounded-full bg-slate-50/8 px-2 py-0.5 text-center text-small font-semibold tabular-nums text-slate-100">{upcomingBookings.length}</span>
+          )}
+        </div>
+        {later.length === 0 ? (
+          <p className="mt-3 text-small text-slate-500">{next ? "Nothing else booked yet." : "Nothing booked yet."}</p>
+        ) : (
+          <ul className="mt-1 divide-y divide-slate-50/8">
+            {laterFirst.map(laterRow)}
+            {laterRest.length > 0 && (
+              <li>
+                <details className="group/more">
+                  <summary className="tap flex cursor-pointer list-none items-center py-3 text-small font-medium text-slate-400 hover:text-slate-200 group-open/more:hidden [&::-webkit-details-marker]:hidden">
+                    Show {laterRest.length} more
+                  </summary>
+                  <ul className="divide-y divide-slate-50/8">{laterRest.map(laterRow)}</ul>
+                </details>
+              </li>
+            )}
+          </ul>
         )}
 
-        {/* Self-service move of the standing weekly reservation, by direct
-            instruction, replacing the previous message-support-only note.
-            Changing your own recurring day/time used to be the one thing a
-            Payment Plan subscriber could never do without contacting
-            support at all; this is exactly that gap closed, gated the same
-            way solo self-reschedule is (a real open slot, no conflicts) via
-            changeReservedSlot. */}
+        {/* Self-service move of the standing weekly reservation, gated the same way solo self-reschedule is (a real open slot, no
+            conflicts) via changeReservedSlot. The weekly time is the fact; changing it is the quiet action beside it. */}
         {changeSuccess && (
           <p className="mt-4 rounded-lg px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
             Your weekly time changed.
@@ -315,15 +420,17 @@ export function ScheduleClient({
             )}
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={openChangeTime}
-            className={buttonVariants({ variant: "secondary", className: "mt-4 w-full text-left" })}
-          >
-            Change weekly time
-          </button>
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-50/8 pt-3">
+            <div className="min-w-0">
+              <p className="truncate text-body font-medium text-slate-100">{weeklyLine ?? "No weekly time"}</p>
+              <p className="text-caption text-slate-500">Weekly time</p>
+            </div>
+            <button type="button" onClick={openChangeTime} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
+              Change
+            </button>
+          </div>
         )}
-      </div>
+      </section>
 
     </WideLayout>
   );

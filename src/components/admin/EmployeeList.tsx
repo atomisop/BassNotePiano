@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { EmployeeRow } from "@/lib/admin";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
-import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 import { toast } from "@/components/ui/Toaster";
 
 export interface EmployeeListProps {
@@ -41,34 +41,38 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
     }
   }
 
+  // People are rows in one box: the name bright, the email and role one quiet line (a role is a word, not a badge), Revoke quiet red
+  // text on the right, behind its confirm.
   return (
     <div className="space-y-3">
       {error && <p className="text-small text-red-400">{error}</p>}
-      {employees.map((employee, i) => {
-        const canRevoke = viewerCanRevoke && !employee.isOwner && employee.id !== currentUserId;
-        return (
-          <div key={employee.id} style={{ "--i": i } as import("react").CSSProperties} className="stagger-item glass-surface p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="truncate text-title font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
-                <p className="mt-1 truncate text-small text-slate-500">{employee.email}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                {employee.isOwner && (
-                  <StatusDot tone="accent">Owner</StatusDot>
+      <ul className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-neu-base shadow-raised-mid">
+        {employees.map((employee, i) => {
+          const canRevoke = viewerCanRevoke && !employee.isOwner && employee.id !== currentUserId;
+          return (
+            <li key={employee.id} style={{ "--i": i } as import("react").CSSProperties} className="stagger-item px-4 py-3 md:px-5">
+              <div className="flex min-h-10 items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-body font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
+                  <Meta
+                    className="truncate"
+                    items={[employee.name ? employee.email : null, employee.isOwner ? "Owner" : "Staff", employee.id === currentUserId ? "You" : null]}
+                  />
+                </div>
+                {canRevoke && confirmingId !== employee.id && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingId(employee.id)}
+                    className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
+                  >
+                    Revoke
+                  </button>
                 )}
-                {employee.id === currentUserId && (
-                  <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400 shadow-pressed-low">
-                    You
-                  </span>
-                )}
               </div>
-            </div>
 
-            {canRevoke &&
-              (confirmingId === employee.id ? (
-                <div className="mt-4 space-y-2">
-                  <p className="text-small text-slate-400">
+              {canRevoke && confirmingId === employee.id && (
+                <div className="mt-3 space-y-3 rounded-control bg-red-400/10 p-3 ring-1 ring-inset ring-red-400/20">
+                  <p className="text-small text-slate-300">
                     Remove admin access for {employee.name ?? employee.email}? They are signed out right away and become a student account.
                   </p>
                   <div className="flex gap-2">
@@ -76,7 +80,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                       type="button"
                       onClick={() => setConfirmingId(null)}
                       disabled={busyId === employee.id}
-                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
                     >
                       Cancel
                     </button>
@@ -84,27 +88,18 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                       type="button"
                       onClick={() => handleRevoke(employee.id)}
                       disabled={busyId === employee.id}
-                      className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                      className={buttonVariants({ variant: "danger", size: "sm", className: "flex-1" })}
                     >
                       {busyId === employee.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busyId === employee.id ? "Revoking…" : "Confirm revoke"}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingId(employee.id)}
-                    className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
-                  >
-                    Revoke
-                  </button>
-                </div>
-              ))}
-          </div>
-        );
-      })}
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

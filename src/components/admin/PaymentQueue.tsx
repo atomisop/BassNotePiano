@@ -19,7 +19,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { Hint } from "@/components/ui/Hint";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { CardFoot, Callout, Meta } from "@/components/ui/CardKit";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -37,13 +40,16 @@ export interface PaymentQueueProps {
   emptyMessage?: string;
 }
 
+/** How a bank email found this payment. The sure ways are a quiet word in the meta line; the softer ones are the card's one callout. */
 const MATCHED_VIA_LABEL: Record<string, string> = {
-  code: "the payment code in the note",
-  name: "the sender's name",
-  codeTypo: "a payment code with a typo that is one character from this payment's (please check it is the right person)",
-  phone: "the phone number (please check it is the right person)",
-  amount: "the exact amount only: nobody else had this amount open (please check it is the right person)",
+  code: "Matched by code",
+  name: "Matched by name",
+  codeTypo: "Matched by a payment code one character off. Check it is the right person.",
+  phone: "Matched by phone number. Check it is the right person.",
+  amount: "Matched by the exact amount only (nobody else had it open). Check it is the right person.",
 };
+
+const SOFT_MATCH = new Set(["amount", "phone", "codeTypo"]);
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -117,14 +123,17 @@ const STATUS_LABEL: Record<string, string> = {
   REFUNDED: "Refunded",
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
-  PENDING_REVIEW: "bg-slate-50/15 text-slate-50",
-  VERIFIED: "bg-slate-50/15 text-slate-100",
-  REJECTED: "bg-red-400/15 text-red-300",
-  EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
-  REFUNDED: "bg-amber-400/15 text-amber-300",
+const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "neutral"> = {
+  AWAITING_TRANSFER: "neutral",
+  PENDING_REVIEW: "warning",
+  VERIFIED: "success",
+  REJECTED: "danger",
+  EXPIRED: "neutral",
+  REFUNDED: "neutral",
 };
+
+/** The quiet everyday button, used for Back / Keep in the confirm steps. */
+const QUIET = buttonVariants({ variant: "secondary", className: "flex-1" });
 
 export function PaymentQueue({
   payments,
@@ -174,6 +183,19 @@ export function PaymentQueue({
   const [refundCredits, setRefundCredits] = useState(true);
   const [refundPlan, setRefundPlan] = useState(true);
   const [refundError, setRefundError] = useState<string | null>(null);
+  // A status is news only when the list mixes them: on a tab filtered to one status (Pending, Verified...) the tab already says it.
+  const mixedStatuses = new Set(payments.map((p) => p.status)).size > 1;
+
+  /** Opens one confirm step on a payment and closes any other, so a card never shows two at once. */
+  function openStep(step: "approve" | "reject" | "refund" | "undo" | "cancel" | "delete", id: string) {
+    setApprovingId(step === "approve" ? id : null);
+    setRejectingId(step === "reject" ? id : null);
+    setRefundingId(step === "refund" ? id : null);
+    setUndoingId(step === "undo" ? id : null);
+    setCancelingId(step === "cancel" ? id : null);
+    setDeletingId(step === "delete" ? id : null);
+    if (step === "refund") setRefundError(null);
+  }
 
   /** "Jordan Alemu, $55.00": who and how much, for the toast, so the admin can tell which row it was. */
   function whoAndHow(id: string): string | undefined {
@@ -334,6 +356,25 @@ export function PaymentQueue({
       <ViewMore items={shown} initial={8} animateRemovals>
       {(payment) => {
         const { eyebrow, title } = describePayment(payment);
+        const name = payment.user.name ?? payment.user.email;
+        const busy = busyId === payment.id;
+        const softMatch = !!payment.matchedVia && SOFT_MATCH.has(payment.matchedVia);
+        const needsCheck = payment.autoApproved && !payment.checkedAt;
+        const step =
+          rejectingId === payment.id ? "reject"
+          : approvingId === payment.id ? "approve"
+          : refundingId === payment.id ? "refund"
+          : undoingId === payment.id ? "undo"
+          : cancelingId === payment.id ? "cancel"
+          : deletingId === payment.id ? "delete"
+          : null;
+        // The rare tools live in one "More" menu, the destructive ones last and in red; each opens its own confirm under the card.
+        const canRefund = !!onRefund && payment.status === "VERIFIED";
+        const canUndo = !!onUndoRefund && payment.status === "REFUNDED";
+        const canCancelBill = !!onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED");
+        const hasMenu = canRefund || canUndo || canCancelBill || !!onDelete;
+        const pending = payment.status === "PENDING_REVIEW";
+        const hasFoot = pending || payment.status === "VERIFIED" || hasMenu;
         return (
         // A row that leaves the list (approved, rejected or deleted, once the page refreshes) folds away in 200ms instead of vanishing,
         // so the rows below slide up into its place rather than jump. A row that stays (its status just changed) does not move.
@@ -341,78 +382,89 @@ export function PaymentQueue({
           key={payment.id}
           exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-          className="glass-surface p-4"
+          className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5"
         >
-          {/* Who and how much: bold. How it arrived: one gray line. */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-2">
-              {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
+          {/* The focal point: who paid and how much. What it was for is one quieter line, how it arrived one quieter still. */}
+          <div className="flex items-start gap-1">
+            {canTick(payment) && (
+              <div className="-ml-2 -mt-1.5">
+                <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${name}`} />
+              </div>
+            )}
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="truncate text-title font-semibold text-slate-50">{payment.user.name ?? payment.user.email}</h2>
-                <p className="mt-0.5 truncate text-small text-slate-500">{title === (payment.user.name ?? payment.user.email) ? eyebrow : `${eyebrow} · ${title}`}</p>
-                {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
-                  <p className="mt-0.5 text-caption text-slate-500">To: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}</p>
+                <h2 className="truncate text-title font-semibold text-slate-50">
+                  <Link href={`/admin/users/${payment.user.id}`} className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {name}
+                  </Link>
+                </h2>
+                <p className="mt-0.5 truncate text-small text-slate-400">{title === name ? eyebrow : `${eyebrow} · ${title}`}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(payment.amountCents)}</p>
+                {mixedStatuses && (
+                  <StatusDot tone={STATUS_TONE[payment.status]} className="mt-1">
+                    {STATUS_LABEL[payment.status]}
+                  </StatusDot>
                 )}
               </div>
             </div>
-            <div className="shrink-0 text-right">
-              <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(payment.amountCents)}</p>
-              <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-caption font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}>
-                {STATUS_LABEL[payment.status]}
-              </span>
-            </div>
           </div>
 
-          <p className="mt-3 text-small tabular-nums text-slate-500">
-            {[
+          <Meta
+            className="mt-3 tabular-nums"
+            items={[
               payment.method === "VENMO" ? "Venmo" : "Zelle",
               payment.senderName,
               payment.senderPhone ? formatPhone(payment.senderPhone) : null,
               payment.submittedAt ? new Date(payment.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          {payment.matchedVia && (
-            <p className={`mt-1 text-small ${payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "font-medium text-amber-300" : "text-slate-500"}`}>
-              Matched by {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
-            </p>
+              payment.matchedVia && !softMatch ? (MATCHED_VIA_LABEL[payment.matchedVia] ?? `Matched by ${payment.matchedVia}`) : null,
+              payment.autoApproved && payment.checkedAt ? "Auto-approved, checked" : null,
+            ]}
+          />
+          {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
+            <p className="mt-1 text-small text-slate-500">To: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}</p>
+          )}
+          {payment.note && <p className="mt-2 text-small text-slate-400">&ldquo;{payment.note}&rdquo;</p>}
+
+          {/* At most one problem per card: an auto-approval to check and a soft match share the one strip. */}
+          {(needsCheck || softMatch) && (
+            <Callout
+              tone="warning"
+              className="mt-3"
+              action={
+                needsCheck && onCheck ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusyId(payment.id);
+                      try {
+                        await onCheck(payment.id);
+                        router.refresh();
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
+                  >
+                    {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+                    Mark checked
+                  </button>
+                ) : undefined
+              }
+            >
+              {needsCheck && <p>Auto-approved. Check the transfer arrived.</p>}
+              {softMatch && <p className={needsCheck ? "mt-1 opacity-80" : undefined}>{MATCHED_VIA_LABEL[payment.matchedVia!]}</p>}
+            </Callout>
           )}
 
-          {payment.autoApproved && (
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-neu-base p-3 shadow-pressed-low">
-              <p className="text-small text-slate-300">
-                {payment.checkedAt ? "Auto-approved, checked" : "Auto-approved, check the transfer arrived"}
-              </p>
-              {!payment.checkedAt && onCheck && (
-                <button
-                  type="button"
-                  disabled={busyId === payment.id}
-                  onClick={async () => {
-                    setBusyId(payment.id);
-                    try {
-                      await onCheck(payment.id);
-                      router.refresh();
-                    } finally {
-                      setBusyId(null);
-                    }
-                  }}
-                  className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                >
-                  {busyId === payment.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
-                  Mark checked
-                </button>
-              )}
-            </div>
-          )}
-
-          {payment.note && <p className="mt-2 text-small text-slate-500">&ldquo;{payment.note}&rdquo;</p>}
           {payment.status === "REJECTED" && payment.rejectionReason && (
-            <p className="mt-2 text-small text-red-400">{payment.rejectionReason}</p>
+            <Callout tone="neutral" className="mt-3">Rejected: {payment.rejectionReason}</Callout>
           )}
 
-          {payment.status !== "PENDING_REVIEW" ? null : rejectingId === payment.id ? (
-            <div className="mt-4 space-y-2">
+          {step === "reject" ? (
+            <div className="mt-4 space-y-2 border-t border-slate-50/8 pt-3">
               <textarea
                 autoFocus
                 value={reason}
@@ -428,215 +480,176 @@ export function PaymentQueue({
                     setRejectingId(null);
                     setReason("");
                   }}
-                  disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  disabled={busy}
+                  className={QUIET}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => handleReject(payment.id)}
-                  disabled={busyId === payment.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  disabled={busy || !reason.trim()}
+                  className={buttonVariants({ variant: "danger", className: "flex-1" })}
                 >
-                  {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
-                  {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
+                  {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                  {busy ? "Rejecting…" : "Confirm reject"}
                 </button>
               </div>
             </div>
-          ) : approvingId === payment.id ? (
+          ) : step === "approve" ? (
             // Same two-step shape as reject, just without a reason field:
             // there's nothing to explain for an approval, only something to
             // double-check before it fires.
-            <div className="mt-4 space-y-2">
-              <p className="text-small text-slate-400">
-                Approve {formatUsd(payment.amountCents)} for {payment.user.name ?? payment.user.email}?
+            <div className="mt-4 space-y-2 border-t border-slate-50/8 pt-3">
+              <p className="text-small text-slate-300">
+                Approve {formatUsd(payment.amountCents)} for {name}?
               </p>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setApprovingId(null)}
-                  disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                >
+                <button type="button" onClick={() => setApprovingId(null)} disabled={busy} className={QUIET}>
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApprove(payment.id)}
-                  disabled={busyId === payment.id}
+                  disabled={busy}
                   className={buttonVariants({ variant: "primary", className: "flex-1" })}
                 >
-                  {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
-                  {busyId === payment.id ? "Approving…" : "Confirm approve"}
+                  {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                  {busy ? "Approving…" : "Confirm approve"}
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRejectingId(payment.id)}
-                disabled={busyId === payment.id}
-                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-              >
-                Reject
-              </button>
-              <button
-                type="button"
-                onClick={() => setApprovingId(payment.id)}
-                disabled={busyId === payment.id}
-                className={buttonVariants({ variant: "primary", className: "flex-1" })}
-              >
-                Approve
-              </button>
-            </div>
-          )}
-
-          {payment.status === "VERIFIED" && (
-            <Link href={`/billing/receipt/${payment.id}`} className="tap mt-3 inline-flex items-center text-small font-medium text-signal-fg hover:underline">
-              Receipt
-            </Link>
-          )}
-
-          {onRefund && payment.status === "VERIFIED" && (
-            <div className="mt-4 border-t border-slate-50/10 pt-3">
-              {refundingId === payment.id ? (
-                <div className="space-y-3">
-                  <p className="text-small text-slate-300">
-                    Mark {formatUsd(payment.amountCents)} as refunded. Send the money back yourself on Zelle or Venmo.
-                  </p>
-                  <input
-                    value={refundNote}
-                    onChange={(e) => setRefundNote(e.target.value)}
-                    placeholder="Reason"
-                    maxLength={200}
-                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
-                  />
-                  <label className="flex items-center gap-2 text-small text-slate-300">
-                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-slate-50" />
-                    Take back the credits it gave
-                  </label>
-                  {payment.paymentPlanId && (
-                    <label className="flex items-center gap-2 text-small text-slate-300">
-                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-slate-50" />
-                      Cancel the plan too
-                    </label>
-                  )}
-                  {refundError && <p className="text-small text-red-400">{refundError}</p>}
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRefundingId(null)}
-                      disabled={busyId === payment.id}
-                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRefund(payment.id)}
-                      disabled={busyId === payment.id || !refundNote.trim()}
-                      className="tap flex flex-1 items-center justify-center rounded-lg bg-amber-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
-                      {busyId === payment.id ? "Refunding…" : "Mark refunded"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
+          ) : step === "refund" ? (
+            <div className="mt-4 space-y-3 border-t border-slate-50/8 pt-3">
+              <p className="text-small text-slate-300">
+                Mark {formatUsd(payment.amountCents)} as refunded. Send the money back yourself on Zelle or Venmo.
+              </p>
+              <input
+                value={refundNote}
+                onChange={(e) => setRefundNote(e.target.value)}
+                placeholder="Reason"
+                maxLength={200}
+                className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
+              />
+              <label className="flex items-center gap-2 text-small text-slate-300">
+                <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-slate-50" />
+                Take back the credits it gave
+              </label>
+              {payment.paymentPlanId && (
+                <label className="flex items-center gap-2 text-small text-slate-300">
+                  <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-slate-50" />
+                  Cancel the plan too
+                </label>
+              )}
+              {refundError && <p className="text-small text-red-400">{refundError}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setRefundingId(null)} disabled={busy} className={QUIET}>
+                  Back
+                </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setRefundError(null);
-                    setRefundingId(payment.id);
-                  }}
-                  className="tap inline-flex items-center text-small font-medium text-slate-400 transition hover:text-amber-300"
+                  onClick={() => handleRefund(payment.id)}
+                  disabled={busy || !refundNote.trim()}
+                  className={buttonVariants({ variant: "danger", className: "flex-1" })}
                 >
-                  Refund
+                  {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                  {busy ? "Refunding…" : "Mark refunded"}
                 </button>
-              )}
-            </div>
-          )}
-
-          {onUndoRefund && payment.status === "REFUNDED" && (
-            <div className="mt-4 border-t border-slate-50/10 pt-3">
-              {undoingId === payment.id ? (
-                <div className="space-y-3">
-                  <p className="text-small text-slate-300">Count {formatUsd(payment.amountCents)} as paid again. Choose what else to put back.</p>
-                  <label className="flex items-center gap-2 text-small text-slate-200">
-                    <input type="checkbox" checked={undoCredits} onChange={(e) => setUndoCredits(e.target.checked)} className="h-4 w-4 accent-signal" />
-                    Give back the credits the refund took
-                  </label>
-                  <label className="flex items-center gap-2 text-small text-slate-200">
-                    <input type="checkbox" checked={undoPlan} onChange={(e) => setUndoPlan(e.target.checked)} className="h-4 w-4 accent-signal" />
-                    Run the plan again if the refund ended it (canceled classes are not brought back)
-                  </label>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setUndoingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep refunded</button>
-                    <button type="button" onClick={() => handleUndoRefund(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
-                      {busyId === payment.id ? "Undoing…" : "Undo refund"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button type="button" onClick={() => setUndoingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Undo refund</button>
-              )}
-            </div>
-          )}
-
-          {onCancelBill && (payment.status === "AWAITING_TRANSFER" || payment.status === "REJECTED") && (
-            <div className="mt-4 border-t border-slate-50/10 pt-3">
-              {cancelingId === payment.id ? (
-                <div className="space-y-2">
-                  <p className="text-small text-slate-400"><Hint>Close this unpaid bill? The record stays as expired. The plan is not changed.</Hint></p>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setCancelingId(null)} disabled={busyId === payment.id} className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low">Keep</button>
-                    <button type="button" onClick={() => handleCancelBill(payment.id)} disabled={busyId === payment.id} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
-                      {busyId === payment.id ? "Closing…" : "Cancel bill"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button type="button" onClick={() => setCancelingId(payment.id)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel bill</button>
-              )}
-            </div>
-          )}
-
-          {onDelete &&
-            (deletingId === payment.id ? (
-              <div className="mt-4 space-y-2 border-t border-slate-50/10 pt-3">
-                <p className="text-small text-slate-400"><Hint>Delete this record for good? It does not undo any plan, credits or classes it already gave.</Hint></p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDeletingId(null)}
-                    disabled={busyId === payment.id}
-                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                  >
-                    Keep
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(payment.id)}
-                    disabled={busyId === payment.id}
-                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-                  >
-                    {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
-                    {busyId === payment.id ? "Deleting…" : "Delete payment"}
-                  </button>
-                </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setDeletingId(payment.id)}
-                disabled={busyId === payment.id}
-                className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
-              >
-                Delete
-              </button>
-            ))}
+            </div>
+          ) : step === "undo" ? (
+            <div className="mt-4 space-y-3 border-t border-slate-50/8 pt-3">
+              <p className="text-small text-slate-300">Count {formatUsd(payment.amountCents)} as paid again. Choose what else to put back.</p>
+              <label className="flex items-center gap-2 text-small text-slate-200">
+                <input type="checkbox" checked={undoCredits} onChange={(e) => setUndoCredits(e.target.checked)} className="h-4 w-4 accent-signal" />
+                Give back the credits the refund took
+              </label>
+              <label className="flex items-center gap-2 text-small text-slate-200">
+                <input type="checkbox" checked={undoPlan} onChange={(e) => setUndoPlan(e.target.checked)} className="h-4 w-4 accent-signal" />
+                Run the plan again if the refund ended it (canceled classes are not brought back)
+              </label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setUndoingId(null)} disabled={busy} className={QUIET}>
+                  Keep refunded
+                </button>
+                <button type="button" onClick={() => handleUndoRefund(payment.id)} disabled={busy} className={buttonVariants({ variant: "primary", className: "flex-1" })}>
+                  {busy ? "Undoing…" : "Undo refund"}
+                </button>
+              </div>
+            </div>
+          ) : step === "cancel" ? (
+            <InlineConfirm
+              className="mt-4"
+              danger
+              question="Close this unpaid bill?"
+              detail="The record stays as expired. The plan is not changed."
+              confirmLabel="Cancel bill"
+              busyLabel="Closing…"
+              busy={busy}
+              onCancel={() => setCancelingId(null)}
+              onConfirm={() => void handleCancelBill(payment.id)}
+            />
+          ) : step === "delete" ? (
+            <InlineConfirm
+              className="mt-4"
+              danger
+              question="Delete this payment record for good?"
+              detail="It does not undo any plan, credits or classes it already gave."
+              confirmLabel="Delete payment"
+              busyLabel="Deleting…"
+              busy={busy}
+              onCancel={() => setDeletingId(null)}
+              onConfirm={() => void handleDelete(payment.id)}
+            />
+          ) : hasFoot ? (
+            // One primary (Approve) on a payment waiting for you, Reject quiet beside it, everything rare in More.
+            <CardFoot>
+              {hasMenu && (
+                <ActionMenu label="More" align={pending ? "left" : "right"} className={pending ? "mr-auto" : undefined}>
+                  {canUndo && (
+                    <button type="button" onClick={() => openStep("undo", payment.id)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                      Undo refund
+                    </button>
+                  )}
+                  {canRefund && (
+                    <button type="button" onClick={() => openStep("refund", payment.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                      Refund
+                    </button>
+                  )}
+                  {canCancelBill && (
+                    <button type="button" onClick={() => openStep("cancel", payment.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                      Cancel bill
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => openStep("delete", payment.id)}
+                      disabled={busy}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </ActionMenu>
+              )}
+              {payment.status === "VERIFIED" && (
+                <Link href={`/billing/receipt/${payment.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Receipt
+                </Link>
+              )}
+              {pending && (
+                <>
+                  <button type="button" onClick={() => openStep("reject", payment.id)} disabled={busy} className={buttonVariants({ variant: "secondary" })}>
+                    Reject
+                  </button>
+                  <button type="button" onClick={() => openStep("approve", payment.id)} disabled={busy} className={buttonVariants({ variant: "primary" })}>
+                    Approve
+                  </button>
+                </>
+              )}
+            </CardFoot>
+          ) : null}
         </motion.div>
         );
       }}

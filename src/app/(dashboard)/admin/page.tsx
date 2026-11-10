@@ -8,12 +8,11 @@ import { getTeachingDay, getWeekSchedule } from "@/lib/teachingToday";
 import { changeLabel } from "@/lib/revenueSummary";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
 import { HomeHero } from "@/components/home/HomeHero";
-import { HomeRow } from "@/components/home/HomeRow";
-import { GlanceTiles } from "@/components/home/GlanceTiles";
 import { buttonVariants } from "@/components/ui/button";
-import { ArrowRight, CalendarCheck, CalendarClock, CalendarDays, ChevronDown, Coins, CreditCard, PlayCircle, Users } from "@/components/ui/appIcons";
+import { ArrowRight, ChevronDown, ChevronRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/ui/Hint";
+import type { ReactNode } from "react";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -29,6 +28,70 @@ const timeEt = (d: Date) => d.toLocaleTimeString("en-US", { timeZone: "America/N
 
 /** A titled group of rows in one soft panel (the same look as Home's rows). */
 const PANEL = "mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8";
+
+const ROW = "group flex min-h-14 items-center gap-3 px-4 py-3 transition hover:bg-slate-50/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
+
+/**
+ * A section's quiet heading: a small eyebrow and, at the right, a count or a link. The hero and the money figures are the loud things on
+ * the Overview (DESIGN.md, Hierarchy rules 1 and 10), so the section names step back instead of all being the same title size.
+ */
+function SectionHead({ title, aside }: { title: string; aside?: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 px-1">
+      <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>
+      {aside}
+    </div>
+  );
+}
+
+/** One row with its figure first (bright, tabular) and a quiet line under it saying what the figure is. The whole row opens its page. */
+function FigureRow({ href, value, label }: { href: string; value: ReactNode; label: ReactNode }) {
+  return (
+    <Link href={href} className={ROW}>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-body font-semibold tabular-nums text-slate-50">{value}</span>
+        <span className="block truncate text-small text-slate-500">{label}</span>
+      </span>
+      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+    </Link>
+  );
+}
+
+/** A small bar chart along the bottom of a money figure: one bar per period, the current one in full orange. */
+function MiniBars({ values, label }: { values: number[]; label: string }) {
+  const max = Math.max(1, ...values);
+  const at = values.length - 1;
+  return (
+    <span role="img" aria-label={label} className="flex h-6 items-end gap-0.5">
+      {values.map((v, i) => (
+        <span
+          key={i}
+          className={cn("block flex-1 rounded-sm", i === at ? "bg-signal" : v > 0 ? "bg-signal/40" : "bg-slate-50/10")}
+          style={{ height: `${Math.max(12, Math.round((v / max) * 100))}%` }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** A money figure: the amount is the point (big, tabular), the period a small muted word under it, then how it compares, then its bars. */
+function MoneyFigure({ href, value, label, hint, bars }: { href: string; value: string; label: string; hint: string; bars: { values: number[]; label: string } }) {
+  return (
+    <li className="min-w-0">
+      <Link
+        href={href}
+        className="group flex h-full min-w-0 flex-col rounded-card bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8 transition hover:bg-slate-50/7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+      >
+        <span className="truncate text-headline font-bold leading-none tabular-nums text-slate-50">{value}</span>
+        <span className="mt-1.5 truncate text-caption text-slate-500">{label}</span>
+        <span className="mt-0.5 truncate text-caption text-slate-400">{hint}</span>
+        <span className="mt-auto block pt-3">
+          <MiniBars {...bars} />
+        </span>
+      </Link>
+    </li>
+  );
+}
 
 export const metadata = { title: "Admin: Overview" };
 
@@ -59,21 +122,40 @@ export default async function AdminOverviewPage() {
   const weekChange = changeLabel(revenue.weekCents, revenue.prevWeekCents);
   const monthChange = changeLabel(revenue.monthCents, revenue.prevMonthCents);
 
+  // The hero names the one thing about today: the class coming up (or on now), that the day is done, or that there is none.
+  const upcomingStarted = upcoming ? upcoming.startsAt.getTime() <= Date.now() : false;
+  const heroTitle = upcoming
+    ? upcomingStarted
+      ? `In class now, ${timeEt(upcoming.startsAt)}`
+      : `Next class at ${timeEt(upcoming.startsAt)}`
+    : classesToday > 0
+      ? "Today's classes are done"
+      : "No classes today";
+  const heroDetail = upcoming
+    ? `${upcoming.students.map((s) => s.name).join(", ")} · ${classesToday} ${classesToday === 1 ? "student" : "students"} today`
+    : classesToday > 0
+      ? "Mark anyone you have not marked yet."
+      : nextDay
+        ? `Next classes ${nextDay.weekday}: ${nextDay.students} ${nextDay.students === 1 ? "student" : "students"}.`
+        : "Nothing booked in the next 7 days.";
+
   return (
     <div>
       {/* No greeting in the admin area (owner, 2026-10-31): the pinned menu, then straight to the content. */}
       <h1 className="sr-only">Overview</h1>
 
-      {/* Needs you: the jobs waiting right now, each one tap from where it is done. Empty is a good day. */}
+      {/* Needs you: the jobs waiting right now, each one tap from where it is done. Each row leads with its count, so the owner reads
+          "3" before reading what it is. Empty is a good day. */}
       <section aria-label="Needs you" className={needsYou.length > 0 ? "mb-8" : "mb-5"}>
-        {needsYou.length > 0 && <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Needs you</h2>}
+        {needsYou.length > 0 && <SectionHead title="Needs you" />}
         {needsYou.length > 0 ? (
           <ul className={PANEL}>
             {needsYou.map((row) => (
               <li key={row.id}>
-                <Link href={row.href} className="tap flex items-center justify-between gap-3 px-4 py-3 text-body text-slate-50 hover:bg-slate-50/5">
-                  <span>{row.text}</span>
-                  <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-50/60" />
+                <Link href={row.href} className={cn(ROW, "tap")}>
+                  <span className={cn("min-w-8 text-title font-semibold tabular-nums", row.id === "overdue" ? "text-red-400" : "text-slate-50")}>{row.count}</span>
+                  <span className="min-w-0 flex-1 text-body text-slate-300">{row.text.replace(/^\d+\s+/, "")}</span>
+                  <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-slate-300" />
                 </Link>
               </li>
             ))}
@@ -85,20 +167,12 @@ export default async function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         {/* Schedule */}
-        <div className="grid min-w-0 grid-cols-1 gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-8">
           <HomeHero
             artwork="dusk"
             eyebrow="Today"
-            title={classesToday > 0 ? `${classesToday} ${classesToday === 1 ? "student" : "students"} in class today` : "No classes today"}
-            detail={
-              upcoming
-                ? `${upcoming.startsAt.getTime() > Date.now() ? "Next" : "Now"} at ${timeEt(upcoming.startsAt)}: ${upcoming.students.map((s) => s.name).join(", ")}.`
-                : classesToday > 0
-                  ? "Today's classes are done. Mark anyone you have not marked yet."
-                  : nextDay
-                    ? `Next classes ${nextDay.weekday}: ${nextDay.students} ${nextDay.students === 1 ? "student" : "students"}.`
-                    : "Nothing booked in the next 7 days."
-            }
+            title={heroTitle}
+            detail={heroDetail}
             actions={
               <>
                 <Link href="/admin/today" className={buttonVariants({ size: "lg" })}>
@@ -112,15 +186,48 @@ export default async function AdminOverviewPage() {
             }
           />
 
+          {/* Today's classes come straight after the hero that summarises them: the time is each row's point, the names quieter. */}
+          {today.slots.length > 0 && (
+            <section aria-label="Today's classes" className="min-w-0">
+              <SectionHead
+                title="Today's classes"
+                aside={
+                  <span className="text-small tabular-nums text-slate-500">
+                    {today.slots.length} {today.slots.length === 1 ? "class" : "classes"}
+                  </span>
+                }
+              />
+              <ul className={PANEL}>
+                {today.slots.map((slot) => {
+                  const marked = slot.students.filter((s) => s.attendance).length;
+                  return (
+                    <li key={slot.startsAt.toISOString()}>
+                      <Link href="/admin/today" className={ROW}>
+                        <span className="w-20 shrink-0 text-body font-semibold tabular-nums text-slate-50">{timeEt(slot.startsAt)}</span>
+                        <span className="min-w-0 flex-1 truncate text-small text-slate-400">{slot.students.map((s) => s.name).join(", ")}</span>
+                        <span className={cn("shrink-0 text-small tabular-nums", marked === slot.students.length ? "text-slate-500" : "text-slate-400")}>
+                          {marked}/{slot.students.length} marked
+                        </span>
+                        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           {/* With nothing booked, the hero already says so; the empty strip would repeat it. */}
           {weekStudents > 0 && (
           <section aria-label="The next 7 days" className="min-w-0">
-            <div className="flex items-baseline justify-between gap-3 px-1">
-              <h2 className="text-title font-semibold text-slate-50">Next 7 days</h2>
-              <span className="text-small text-slate-400">
-                {weekStudents} {weekStudents === 1 ? "class" : "classes"}
-              </span>
-            </div>
+            <SectionHead
+              title="Next 7 days"
+              aside={
+                <span className="text-small tabular-nums text-slate-500">
+                  {weekStudents} {weekStudents === 1 ? "class" : "classes"}
+                </span>
+              }
+            />
             <ul className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-2">
               {week.map((d, i) => (
                 <li key={d.dayKey}>
@@ -132,8 +239,8 @@ export default async function AdminOverviewPage() {
                       i === 0 ? "bg-signal/14 ring-signal/30" : "bg-slate-50/4 ring-slate-50/8 hover:bg-slate-50/7",
                     )}
                   >
-                    <span className={cn("text-caption font-medium", i === 0 ? "text-signal-fg" : "text-slate-400")}>{d.weekday}</span>
-                    <span className="text-body font-semibold tabular-nums text-slate-50">{d.day}</span>
+                    <span className={cn("text-caption font-medium", i === 0 ? "text-signal-fg" : "text-slate-500")}>{d.weekday}</span>
+                    <span className={cn("text-body font-semibold tabular-nums", d.students > 0 || i === 0 ? "text-slate-50" : "text-slate-500")}>{d.day}</span>
                     <span aria-hidden className="flex h-1.5 items-center gap-0.5">
                       {d.students === 0 ? (
                         <span className="h-1 w-1 rounded-full bg-slate-50/15" />
@@ -147,106 +254,101 @@ export default async function AdminOverviewPage() {
             </ul>
           </section>
           )}
-
-          {today.slots.length > 0 && (
-            <section aria-label="Today's classes" className="min-w-0">
-              <div className="flex items-baseline justify-between gap-3 px-1">
-                <h2 className="text-title font-semibold text-slate-50">Today&apos;s classes</h2>
-                <span className="text-small text-slate-400">
-                  {today.slots.length} {today.slots.length === 1 ? "class" : "classes"}
-                </span>
-              </div>
-              <ul className={PANEL}>
-                {today.slots.map((slot) => (
-                  <li key={slot.startsAt.toISOString()}>
-                    <HomeRow
-                      href="/admin/today"
-                      icon={<CalendarCheck />}
-                      title={timeEt(slot.startsAt)}
-                      detail={slot.students.map((s) => s.name).join(", ")}
-                      trailing={
-                        <span className="text-small tabular-nums text-slate-400">
-                          {slot.students.filter((s) => s.attendance).length}/{slot.students.length} marked
-                        </span>
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
         </div>
 
         {/* Money, then how it is going */}
         <div className="grid min-w-0 grid-cols-1 gap-8">
           <section aria-label="Money" className="min-w-0">
-            <div className="flex items-baseline justify-between gap-3 px-1">
-              <h2 className="text-title font-semibold text-slate-50">Money</h2>
-              <Link href="/admin/payments" className="tap inline-flex items-center text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
-                Payments
-              </Link>
-            </div>
-            <GlanceTiles
-              columns={2}
-              className="mt-3"
-              items={[
-                {
-                  href: "/admin/payments",
-                  label: "This week",
-                  icon: <Coins />,
-                  value: formatUsdShort(revenue.weekCents),
-                  hint: weekChange ? `${weekChange} vs last week` : "Last 7 days",
-                  bars: { values: revenue.weeks.map((w) => w.cents), label: `Money in, each of the last ${revenue.weeks.length} weeks: ${revenue.weeks.map((w) => formatUsdShort(w.cents)).join(", ")}` },
-                },
-                {
-                  href: "/admin/payments",
-                  label: "This month",
-                  icon: <CalendarDays />,
-                  value: formatUsdShort(revenue.monthCents),
-                  hint: monthChange ? `${monthChange} vs last month` : "So far this month",
-                  bars: { values: revenue.months.map((m) => m.cents), label: `Money in, each of the last ${revenue.months.length} months: ${revenue.months.map((m) => `${m.label} ${formatUsdShort(m.cents)}`).join(", ")}` },
-                },
-              ]}
+            <SectionHead
+              title="Money"
+              aside={
+                <Link href="/admin/payments" className="tap group inline-flex items-center gap-0.5 text-small text-slate-400 hover:text-slate-100">
+                  Payments
+                  <ChevronRight aria-hidden className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                </Link>
+              }
             />
+            {/* The two figures that matter most, big and tabular, each with its period as a small word under it. */}
+            <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+              <MoneyFigure
+                href="/admin/payments"
+                value={formatUsdShort(revenue.weekCents)}
+                label="This week"
+                hint={weekChange ? `${weekChange} vs last week` : "Last 7 days"}
+                bars={{ values: revenue.weeks.map((w) => w.cents), label: `Money in, each of the last ${revenue.weeks.length} weeks: ${revenue.weeks.map((w) => formatUsdShort(w.cents)).join(", ")}` }}
+              />
+              <MoneyFigure
+                href="/admin/payments"
+                value={formatUsdShort(revenue.monthCents)}
+                label="This month"
+                hint={monthChange ? `${monthChange} vs last month` : "So far this month"}
+                bars={{ values: revenue.months.map((m) => m.cents), label: `Money in, each of the last ${revenue.months.length} months: ${revenue.months.map((m) => `${m.label} ${formatUsdShort(m.cents)}`).join(", ")}` }}
+              />
+            </ul>
             <ul className={PANEL}>
               <li>
-                <HomeRow href="/admin/payment-plans" icon={<CreditCard />} title={`${formatUsd(subs.monthlyCents)} every 28 days`} detail={`From ${subs.active} paying ${subs.active === 1 ? "plan" : "plans"}`} />
+                <FigureRow href="/admin/payment-plans" value={formatUsd(subs.monthlyCents)} label={`Every 28 days, from ${subs.active} paying ${subs.active === 1 ? "plan" : "plans"}`} />
               </li>
               <li>
-                <HomeRow
+                <FigureRow
                   href="/admin/payment-plans"
-                  icon={<CalendarClock />}
-                  title={`${formatUsd(dueWeek.totalCents)} due in 7 days`}
-                  detail={`${dueWeek.items.length} ${dueWeek.items.length === 1 ? "bill" : "bills"}${dueWeek.overdue.length > 0 ? ` · ${dueWeek.overdue.length} late (${formatUsd(dueWeek.overdueCents)})` : " · no one is late"}`}
+                  value={formatUsd(dueWeek.totalCents)}
+                  label={
+                    <>
+                      Due in 7 days, {dueWeek.items.length} {dueWeek.items.length === 1 ? "bill" : "bills"}
+                      {dueWeek.overdue.length > 0 ? (
+                        <span className="text-red-400"> · {dueWeek.overdue.length} late ({formatUsd(dueWeek.overdueCents)})</span>
+                      ) : (
+                        " · no one is late"
+                      )}
+                    </>
+                  }
                 />
               </li>
               <li>
-                <HomeRow
+                <FigureRow
                   href="/admin/payments"
-                  icon={<Coins />}
-                  title={`${formatUsd(stats.totalRevenueCents)} in all`}
-                  detail={stats.pendingRevenueCents > 0 ? `Approved so far · ${formatUsd(stats.pendingRevenueCents)} waiting for review` : "Approved so far"}
+                  value={formatUsd(stats.totalRevenueCents)}
+                  label={
+                    stats.pendingRevenueCents > 0 ? (
+                      <>
+                        All time, approved · <span className="text-amber-300">{formatUsd(stats.pendingRevenueCents)} waiting for review</span>
+                      </>
+                    ) : (
+                      "All time, approved"
+                    )
+                  }
                 />
               </li>
             </ul>
           </section>
 
+          {/* A rough look, kept visibly quieter than the money above it: plain rows, no icons, no big figures. */}
           <section aria-label="How it is going" className="min-w-0">
-            <h2 className="px-1 text-title font-semibold text-slate-50">How it&apos;s going</h2>
+            <SectionHead title="How it's going" />
             <ul className={PANEL}>
               <li>
-                <HomeRow href="/admin/payment-plans" icon={<Users />} title={`${subs.active} on a plan`} detail={`${stats.totalUsers.toLocaleString()} accounts · ${subs.overdue} overdue`} />
+                <FigureRow
+                  href="/admin/payment-plans"
+                  value={`${subs.active} on a plan`}
+                  label={
+                    <>
+                      {stats.totalUsers.toLocaleString()} accounts
+                      {subs.overdue > 0 ? <span className="text-red-400"> · {subs.overdue} overdue</span> : " · none overdue"}
+                    </>
+                  }
+                />
               </li>
               <li>
-                <HomeRow href="/admin/users" icon={<PlayCircle />} title={`${stats.curriculumUsers.toLocaleString()} with full lessons`} detail="Can open their scales" />
+                <FigureRow href="/admin/users" value={`${stats.curriculumUsers.toLocaleString()} with full lessons`} label="Can open their scales" />
               </li>
               <li>
                 {/* Progress by scale is slow to work out, so it streams in, folded away: a rough look on request. */}
                 <details className="group">
-                  <summary className="flex min-h-16 cursor-pointer list-none items-center gap-3.5 px-4 py-3 transition hover:bg-slate-50/5 [&::-webkit-details-marker]:hidden">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 transition hover:bg-slate-50/5 [&::-webkit-details-marker]:hidden">
                     <span className="min-w-0 flex-1">
                       <span className="block text-body font-semibold text-slate-50">Progress by scale</span>
-                      <span className="block text-small text-slate-400">Where everyone is, roughly</span>
+                      <span className="block text-small text-slate-500">Where everyone is, roughly</span>
                     </span>
                     <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180" />
                   </summary>

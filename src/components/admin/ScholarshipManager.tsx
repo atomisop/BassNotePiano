@@ -12,6 +12,10 @@ import {
   updateScholarshipAction,
 } from "@/app/(dashboard)/admin/scholarships/actions";
 import { Hint } from "@/components/ui/Hint";
+import { Meta } from "@/components/ui/CardKit";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { InlineConfirm } from "@/components/admin/InlineConfirm";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 export interface ScholarshipRow {
   id: string;
@@ -133,8 +137,8 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={create} className="glass-surface space-y-4 p-6">
-        <h2 className="text-title font-semibold text-slate-50">New scholarship code<Hint className="ml-1.5">For a student who already has an account. The code takes a percent off that account\u2019s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</Hint></h2>
+      <form onSubmit={create} className="glass-surface space-y-4 p-4 md:p-6">
+        <h2 className="text-title font-semibold text-slate-50">New scholarship code<Hint className="ml-1.5">For a student who already has an account. The code takes a percent off that account&rsquo;s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</Hint></h2>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-email">Student email</label>
@@ -144,8 +148,8 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
               {lookup.state === "found" && (
                 <span className="inline-flex items-center gap-2 text-slate-50">
                   <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden className="shrink-0">
-                    <circle cx="12" cy="12" r="11" fill="#22c55e" className="scholarship-pop" />
-                    <path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" pathLength="1" className="scholarship-draw" />
+                    <circle cx="12" cy="12" r="11" className="scholarship-pop fill-emerald-500" />
+                    <path d="M7 12.5l3.2 3.2L17 8.8" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" pathLength="1" className="scholarship-draw stroke-white" />
                   </svg>
                   <span>Account found: {lookup.name ?? lookup.email}{lookup.verified ? "" : " (email not verified yet, they must verify before claiming)"}</span>
                 </span>
@@ -174,7 +178,9 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
           </div>
         </div>
         {error && <p role="alert" className="text-small text-red-400">{error}</p>}
-        <button type="submit" disabled={pending || lookup.state === "missing"} className={buttonVariants({ variant: "primary", className: "text-black" })}>{pending ? "Making…" : "Make code"}</button>
+        <div className="flex justify-end border-t border-slate-50/8 pt-4">
+          <button type="submit" disabled={pending || lookup.state === "missing"} className={buttonVariants({ variant: "primary", className: "text-black" })}>{pending ? "Making…" : "Make code"}</button>
+        </div>
         {fresh && (
           <div className="rounded-xl bg-signal/16 p-4">
             <p className="text-small text-slate-300">Code for {fresh.email}. Send it to them; it is also in the list below.</p>
@@ -184,12 +190,13 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
         )}
       </form>
 
-      <div className="glass-surface p-6">
+      <div className="glass-surface p-4 md:p-6">
         <h2 className="text-title font-semibold text-slate-50">All codes</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className={`mt-3 ${TAB_TRACK}`} role="group" aria-label="Show codes">
           {FILTERS.map((f) => (
-            <button key={f.id} type="button" onClick={() => setFilter(f.id)} aria-pressed={filter === f.id} className={`tap rounded-full px-3 py-1.5 text-small ${filter === f.id ? "bg-signal text-black font-medium" : "text-slate-300 bg-slate-50/8"}`}>
-              {f.label} {counts[f.id]}
+            <button key={f.id} type="button" onClick={() => setFilter(f.id)} aria-pressed={filter === f.id} className={tabItem(filter === f.id)}>
+              {f.label}
+              <span className="tabular-nums text-slate-500">{counts[f.id]}</span>
             </button>
           ))}
         </div>
@@ -198,47 +205,69 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
         {visible.length === 0 ? (
           <p className="mt-3 text-small text-slate-400">{rows.length === 0 ? "No codes yet." : "Nothing matches."}</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-50/10">
-            {visible.map((r) => (
+          // Each code is a row: who it is for (bright), the code and its story quiet, the discount the one figure on the right.
+          <ul className="mt-3 divide-y divide-slate-50/6">
+            {visible.map((r) => {
+              const done = r.status !== "available" && r.status !== "claimed";
+              return (
               <li key={r.id} className="py-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-mono text-body text-slate-50">{r.code}</p>
-                    <p className="truncate text-small text-slate-400">{r.email} · {r.percent}% off the 6 Month plan{r.note ? ` · ${r.note}` : ""}</p>
-                    <p className="text-caption text-slate-500">
-                      {STATUS_LABEL[r.status]}
-                      {r.status === "claimed" && r.claimedAt ? ` ${day(r.claimedAt)}${r.claimedBy ? ` by ${r.claimedBy}` : ""}` : ""}
-                      {r.status === "available" && r.expiresAt ? ` · claim by ${day(r.expiresAt)}` : ""}
-                      {r.status !== "claimed" ? ` · made ${day(r.createdAt)}` : ""}
-                    </p>
+                    <p className={`truncate text-body font-semibold ${done ? "text-slate-400" : "text-slate-50"}`}>{r.email}</p>
+                    <p className="font-mono text-small tracking-wider text-slate-400">{r.code}</p>
+                    <Meta
+                      className="mt-0.5"
+                      items={[
+                        filter === "all" || r.status === "claimed"
+                          ? `${STATUS_LABEL[r.status]}${r.status === "claimed" && r.claimedAt ? ` ${day(r.claimedAt)}${r.claimedBy ? ` by ${r.claimedBy}` : ""}` : ""}`
+                          : null,
+                        r.status === "available" && r.expiresAt ? `claim by ${day(r.expiresAt)}` : null,
+                        r.status !== "claimed" ? `made ${day(r.createdAt)}` : null,
+                        r.note,
+                      ]}
+                    />
                   </div>
-                  {r.status === "claimed" && (
-                    confirmRevoke === r.id ? (
-                      <span className="flex gap-2">
-                        <button type="button" disabled={pending} onClick={() => run(() => revokeScholarshipAction(r.id), () => setConfirmRevoke(null))} className="tap rounded-full bg-red-500 px-3 py-1.5 text-small font-medium text-white">End discount</button>
-                        <button type="button" onClick={() => setConfirmRevoke(null)} className="tap px-3 py-1.5 text-small text-slate-300">Keep</button>
-                      </span>
-                    ) : (
-                      <button type="button" onClick={() => setConfirmRevoke(r.id)} className="tap px-3 py-1.5 text-small text-red-400">End discount</button>
-                    )
-                  )}
-                  {r.status === "available" && (
-                    <span className="flex flex-wrap items-center gap-1">
-                      <button type="button" onClick={() => (editing === r.id ? setEditing(null) : startEdit(r))} className="tap px-3 py-1.5 text-small text-slate-300">Edit</button>
-                      <button type="button" disabled={pending} onClick={() => run(async () => { const res = await regenerateScholarshipAction(r.id); if (res.ok) toast.success(`New code ${res.code}`); return res; })} className="tap px-3 py-1.5 text-small text-slate-300">New digits</button>
-                      {confirmRevoke === r.id ? (
-                        <>
-                          <button type="button" disabled={pending} onClick={() => run(() => revokeScholarshipAction(r.id), () => setConfirmRevoke(null))} className="tap rounded-full bg-red-500 px-3 py-1.5 text-small font-medium text-white">Revoke</button>
-                          <button type="button" onClick={() => setConfirmRevoke(null)} className="tap px-3 py-1.5 text-small text-slate-300">Keep</button>
-                        </>
-                      ) : (
-                        <button type="button" onClick={() => setConfirmRevoke(r.id)} className="tap px-3 py-1.5 text-small text-red-400">Revoke</button>
-                      )}
-                    </span>
-                  )}
+                  <div className="shrink-0 text-right">
+                    <p className={`text-title font-semibold tabular-nums ${done ? "text-slate-400" : "text-slate-50"}`}>{r.percent}%</p>
+                    <p className="text-caption text-slate-500">off 6 Month</p>
+                  </div>
                 </div>
+                {r.status === "claimed" && confirmRevoke !== r.id && (
+                  <div className="mt-1 flex justify-start">
+                    <button type="button" onClick={() => setConfirmRevoke(r.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}>
+                      End discount
+                    </button>
+                  </div>
+                )}
+                {r.status === "available" && confirmRevoke !== r.id && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    <button type="button" onClick={() => (editing === r.id ? setEditing(null) : startEdit(r))} aria-expanded={editing === r.id} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2" })}>
+                      Edit
+                    </button>
+                    <ActionMenu label="More">
+                      <button type="button" disabled={pending} onClick={() => run(async () => { const res = await regenerateScholarshipAction(r.id); if (res.ok) toast.success(`New code ${res.code}`); return res; })} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                        New digits
+                      </button>
+                      <button type="button" onClick={() => setConfirmRevoke(r.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                        Revoke
+                      </button>
+                    </ActionMenu>
+                  </div>
+                )}
+                {confirmRevoke === r.id && (r.status === "claimed" || r.status === "available") && (
+                  <InlineConfirm
+                    className="mt-3"
+                    danger
+                    question={r.status === "claimed" ? `End ${r.percent}% off for ${r.claimedBy ?? r.email}?` : "Revoke this code?"}
+                    confirmLabel={r.status === "claimed" ? "End discount" : "Revoke"}
+                    busyLabel="Saving…"
+                    busy={pending}
+                    onCancel={() => setConfirmRevoke(null)}
+                    onConfirm={() => run(() => revokeScholarshipAction(r.id), () => setConfirmRevoke(null))}
+                  />
+                )}
                 {editing === r.id && r.status === "available" && (
-                  <div className="mt-3 grid gap-3 rounded-xl bg-slate-50/5 p-4 md:grid-cols-3">
+                  <div className="mt-3 grid gap-3 rounded-control bg-slate-50/5 p-4 ring-1 ring-inset ring-slate-50/10 md:grid-cols-3">
                     <label className="block text-small text-slate-300">Discount %
                       <input type="number" min={1} max={100} step={1} value={edit.percent} onChange={(e) => setEdit({ ...edit, percent: e.target.value })} className={`${field} mt-1`} />
                     </label>
@@ -248,14 +277,15 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                     <label className="block text-small text-slate-300">Note
                       <input type="text" maxLength={200} value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} className={`${field} mt-1`} />
                     </label>
-                    <div className="flex gap-2 md:col-span-3">
+                    <div className="flex justify-end gap-2 md:col-span-3">
+                      <button type="button" onClick={() => setEditing(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
                       <button type="button" disabled={pending} onClick={() => run(() => updateScholarshipAction(r.id, { percent: Number(edit.percent), note: edit.note, expiresOn: edit.expiresOn }), () => setEditing(null))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Save</button>
-                      <button type="button" onClick={() => setEditing(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>Cancel</button>
                     </div>
                   </div>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

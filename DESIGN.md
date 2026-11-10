@@ -59,12 +59,40 @@ Marketing pages may use larger display sizes for their hero only.
 | sheet | 24px | `rounded-3xl`, `rounded-sheet` |
 | pill | full | `rounded-full`: buttons, chips, avatars, the dock |
 
-## Quiet cards (2026-11-07, owner: whole app)
+## Hierarchy (2026-11-10, owner: whole app; replaces "Quiet cards")
 
-A card says one thing loudly. The name and the one figure that matters (money, a date, a count) are `text-title` / `text-headline` in `text-slate-50`;
-everything else is one gray line (`text-small text-slate-500`, joined with " · ") or left out. Colour only for what needs action: red for late or
-failed, amber for "check this", orange for the one button. Healthy states get no badge. No label-over-value grids (`dt`/`dd`) for facts a
-sentence can carry; labels like "Email", "Started" and "Submitted" are dropped. Toggles and empty states use two or three words.
+The owner's complaint: "everything looks similar and I can't focus on anything." Every screen now passes the squint test: blur your eyes and one
+thing per card, and one thing per screen, still stands out. The rules come from Nielsen Norman Group (visual hierarchy, cards), Refactoring UI
+("Hierarchy is everything", "labels are a last resort") and the Laws of UX (Von Restorff, Hick, proximity, common region).
+
+1. **One focal point per card.** Exactly one element is loud: the name, or the one figure that matters (money, a date, a count). It is `text-title`
+   (or `text-headline` for a figure that is the point) in `text-slate-50`, semibold. A distinct item only stands out when nothing else does.
+2. **Three sizes, three tones.** Inside a card: title 20, body 16, small 13 (caption 12 for labels). Tones: `slate-50` for what you read,
+   `slate-400` for supporting text, `slate-500` for labels and meta. Never more.
+3. **Emphasize by de-emphasizing.** Quiet the neighbours instead of making the important thing louder. Labels are a last resort: a date, an amount,
+   an email speaks for itself. When a label is needed it sits UNDER its value, `text-caption text-slate-500`, and the value is `text-body
+   font-medium text-slate-100` (`Fact`), one step below the card's title so it never competes with it. Never a label above a value at the
+   same size.
+4. **Group by proximity and common region.** Related facts sit together (`Facts`), a hairline separates the parts of a card (head, facts, actions),
+   and the space between groups is bigger than the space inside one.
+5. **Status: one, top right, and only when it is news.** `StatusDot` with a word. Healthy states (Active, Paid) get no badge on a list already
+   filtered to them. Problems carry colour AND a word: red for late or failed, amber for "check this". A problem the owner must act on is a
+   `Callout` strip, at most one per card.
+6. **Actions: one primary, a few quiet, the rest in More.** At most one filled orange button per card (the thing to do next). One or two quiet
+   (`secondary`) buttons beside it. Everything else, and anything destructive (Ban, Cancel plan, Delete), goes in the card's **More** menu
+   (`ActionMenu`), destructive last and in red, always behind a confirm. A card with only one destructive action may show it as quiet red text
+   at the far left of the foot, away from the everyday buttons. Fewer choices, faster decisions (Hick). Actions sit in the card's foot
+   (`CardFoot`), under a hairline, right-aligned.
+7. **Links look like links only inside sentences.** A name that opens a page is a row with a chevron, or the whole card is the link. No underlined
+   lists of names.
+8. **Similar things are rows, not boxes.** People, payments, plans in a long list read faster as rows (name left, the one figure or status right,
+   one meta line) than as a pile of equal cards. Boxes are for things that differ.
+9. **Show a few, fold the rest.** Three to five items, then "Show N more". Rare details go behind a disclosure.
+10. **One hero per screen.** The page's main thing is top left and biggest; everything else is visibly smaller. No ALL CAPS chips for plain facts
+    (a role is a word in the meta line, not a shouting badge).
+
+Shared pieces (`src/components/ui/CardKit.tsx`): `CardHead` (eyebrow, title, subtitle, status), `Facts` + `Fact` (value over label), `Meta`
+(one quiet line joined with " · "), `Callout` (the one problem), `CardFoot` (the actions). Use them; do not rebuild them per screen.
 
 ## Spacing
 

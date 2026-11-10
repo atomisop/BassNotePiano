@@ -77,8 +77,8 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function AboutTab() {
   return (
     <div className="glass-surface p-6">
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Bass Note Piano</p>
-      <p className="mt-1 text-body text-slate-50 font-semibold">Version {CURRENT_VERSION}</p>
+      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Bass Note Piano</p>
+      <p className="mt-1 text-title text-slate-50 font-semibold">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-small text-slate-400">
         An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye, and Mixolydian
         pentatonics, spelled correctly in every key, with native chords mapped for each one.
@@ -88,26 +88,48 @@ function AboutTab() {
   );
 }
 
+/** Update notes shown before "Show N more" (DESIGN.md, Hierarchy 9: show a few, fold the rest). */
+const UPDATES_SHOWN = 3;
+
+function UpdateEntry({ entry }: { entry: (typeof CHANGELOG)[number] }) {
+  return (
+    <div className="glass-surface p-5 md:p-6">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">v{entry.version}</p>
+        <p className="text-caption text-slate-500">{entry.date}</p>
+      </div>
+      <h2 className="mt-1 text-title text-slate-50 font-semibold">{entry.title}</h2>
+      <ul className="mt-3 space-y-1.5">
+        {entry.items.map((item) => (
+          <li key={item} className="flex gap-2.5 text-small text-slate-300">
+            <CheckIcon className="mt-1 shrink-0 text-slate-500" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function UpdatesTab() {
+  const rest = CHANGELOG.slice(UPDATES_SHOWN);
   return (
     <div className="space-y-4">
-      {CHANGELOG.map((entry) => (
-        <div key={entry.version} className="glass-surface p-6">
-          <div className="flex items-baseline justify-between gap-4">
-            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">v{entry.version}</p>
-            <p className="text-small text-slate-500">{entry.date}</p>
-          </div>
-          <h2 className="mt-1.5 text-title text-slate-50 font-semibold">{entry.title}</h2>
-          <ul className="mt-3 space-y-1.5">
-            {entry.items.map((item) => (
-              <li key={item} className="flex gap-2.5 text-small text-slate-300">
-                <CheckIcon className="mt-1 shrink-0 text-slate-50" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {CHANGELOG.slice(0, UPDATES_SHOWN).map((entry) => (
+        <UpdateEntry key={entry.version} entry={entry} />
       ))}
+      {rest.length > 0 && (
+        <details className="group/more">
+          <summary className="tap flex cursor-pointer list-none items-center px-1 py-2 text-small font-medium text-slate-400 hover:text-slate-200 group-open/more:hidden [&::-webkit-details-marker]:hidden">
+            Show {rest.length} earlier {rest.length === 1 ? "update" : "updates"}
+          </summary>
+          <div className="space-y-4">
+            {rest.map((entry) => (
+              <UpdateEntry key={entry.version} entry={entry} />
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
@@ -116,8 +138,8 @@ function TermsTab() {
   return (
     <div className="glass-surface space-y-6 p-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Legal</p>
-        <p className="mt-1 text-body text-slate-50 font-semibold">Terms &amp; refund policy</p>
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
+        <p className="mt-1 text-title text-slate-50 font-semibold">Terms &amp; refund policy</p>
         <p className="mt-2 text-small text-slate-500">
           Last updated {TERMS_LAST_UPDATED}.
         </p>
@@ -131,8 +153,8 @@ function PrivacyTab() {
   return (
     <div className="glass-surface space-y-6 p-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Legal</p>
-        <p className="mt-1 text-body text-slate-50 font-semibold">Privacy policy</p>
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
+        <p className="mt-1 text-title text-slate-50 font-semibold">Privacy policy</p>
         <p className="mt-2 text-small text-slate-500">
           Last updated {PRIVACY_LAST_UPDATED}.
         </p>

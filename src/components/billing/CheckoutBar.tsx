@@ -35,10 +35,14 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
   return (
     <div className="flex items-center gap-3 rounded-card bg-neu-lift p-4 ring-1 ring-slate-50/10 md:gap-6 md:px-6 md:py-5">
       <div className="min-w-0 flex-1" aria-live="polite">
-        <p className="text-body font-semibold leading-tight text-slate-50 md:text-title">
-          <NumberTicker value={priceCents} format={usd} /> <span className="text-small font-normal text-slate-400">{priceNote}</span>
+        {/* The price is the focal figure of the whole form: the biggest number on it, with what it covers small beside it. */}
+        <p className="leading-tight">
+          <span className="text-title font-semibold tabular-nums text-slate-50 md:text-headline">
+            <NumberTicker value={priceCents} format={usd} />
+          </span>{" "}
+          <span className="text-small text-slate-400">{priceNote}</span>
         </p>
-        {total && <p className="mt-0.5 text-small leading-snug text-slate-400">{total}</p>}
+        {total && <p className="mt-1 text-caption leading-snug text-slate-500">{total}</p>}
       </div>
       {/* Looks off while something is missing, but stays pressable: the press explains what is missing in a popup. */}
       <button

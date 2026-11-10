@@ -74,13 +74,15 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
       </div>
 
       {isOwner && (
-        <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
-          Export CSV
-        </a>
+        <div className="mt-4 flex justify-end">
+          <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Export CSV
+          </a>
+        </div>
       )}
 
       {needsApproval && rows.length > 1 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <BulkConfirmButton
             label={`Approve all ${rows.length} ready`}
             question={`Release the next scale for all ${rows.length} students who are ready? Each one is told only if "Notify students" below is on. Nobody is forced past a rule.`}
@@ -91,7 +93,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-4">
         <UserList rows={rows} initialQuery={query} onApproveNext={approveNextScaleAction} />
       </div>
     </div>
