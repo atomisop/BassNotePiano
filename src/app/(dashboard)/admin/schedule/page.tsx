@@ -24,7 +24,8 @@ import {
   declineBookingRequestAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
-import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { CalendarCheck, CalendarClock, ClipboardCheck, Inbox, Lock } from "@/components/ui/appIcons";
 import { AdminReservations } from "@/components/admin/AdminReservations";
 import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
@@ -53,17 +54,26 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
 
+  // The views are icons (2026-11-10, the owner), the chosen one with its name, so all five fit across a phone.
+  const VIEW_ICONS: Record<ViewValue, React.ReactNode> = {
+    TODAY: <CalendarCheck />,
+    WINDOWS: <CalendarClock />,
+    REQUESTS: <Inbox />,
+    ATTENDANCE: <ClipboardCheck />,
+    RESERVED: <Lock />,
+  };
   const viewSwitcher = (
-    <div className={`mt-6 ${TAB_TRACK}`}>
-      {VIEWS.map((view) => (
-        <Link
-          key={view.value}
-          href={view.value === "WINDOWS" ? "/admin/schedule" : `/admin/schedule?view=${view.value}`}
-          className={tabItem(activeView === view.value)}
-        >
-          {view.label}
-        </Link>
-      ))}
+    <div className="mt-6">
+      <AdminFilterTabs
+        label="Schedule views"
+        iconOnly
+        items={VIEWS.map((view) => ({
+          label: view.label,
+          icon: VIEW_ICONS[view.value],
+          href: view.value === "WINDOWS" ? "/admin/schedule" : `/admin/schedule?view=${view.value}`,
+          active: activeView === view.value,
+        }))}
+      />
     </div>
   );
 
