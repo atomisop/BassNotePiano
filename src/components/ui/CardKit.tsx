@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * The rules behind them are in DESIGN.md, "Hierarchy".
  */
 
-type Tone = "default" | "muted" | "success" | "warning" | "danger";
+type Tone = "default" | "muted" | "success" | "warning" | "danger" | "accent";
 
 const VALUE_TONE: Record<Tone, string> = {
   default: "text-slate-100",
@@ -15,6 +15,7 @@ const VALUE_TONE: Record<Tone, string> = {
   success: "text-emerald-400",
   warning: "text-amber-300",
   danger: "text-red-400",
+  accent: "text-signal-fg",
 };
 
 /**
@@ -61,11 +62,24 @@ export function Facts({ children, className, columns = 4 }: { children: ReactNod
  * last resort, so keep them to one or two words ("Next bill", "Paid"). The label stays first in the markup (a `dt` must come before
  * its `dd`) and is drawn under the value.
  */
-export function Fact({ label, value, tone = "default", className }: { label: ReactNode; value: ReactNode; tone?: Tone; className?: string }) {
+export function Fact({
+  label,
+  value,
+  tone = "default",
+  hero,
+  className,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  tone?: Tone;
+  /** The one figure the card is about (a date, an amount): headline size, so it is the first thing read after the title. At most one per card. */
+  hero?: boolean;
+  className?: string;
+}) {
   return (
     <div className={cn("flex min-w-0 flex-col-reverse", className)}>
       <dt className="mt-0.5 text-caption text-slate-500">{label}</dt>
-      <dd className={cn("truncate text-body font-medium tabular-nums", VALUE_TONE[tone])}>{value}</dd>
+      <dd className={cn("truncate font-medium tabular-nums", hero ? "text-headline font-semibold" : "text-body", VALUE_TONE[tone])}>{value}</dd>
     </div>
   );
 }
