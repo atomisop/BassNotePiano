@@ -53,7 +53,7 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
-  Pricing), People (Accounts, Contacts, Scholarships, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
+  Pricing), People (People, Scholarships, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
   Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
   `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
   waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
@@ -272,7 +272,7 @@ leaving ends the family (members keep the month paid). One family change per `fa
 
 ## Contacts and soft holds (added 2026-10-20)
 
-Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
+Admin > People (`/admin/users`, one page since 2026-11-10: Accounts and Contacts were merged; `/admin/contacts` only redirects, its detail pages and actions stay; `src/lib/contacts.ts`, `DirectorySection`) lists every account, then under "Not signed up yet" the people with no account, with pills Class form and Added and an Add person button. The directory is one list of everyone: accounts (classes taken, next class,
 the weekly time a payment plan reserves), people who sent the class form and have no account (`ClassRegistration`, shown as "Class form" with Call / Text / Email and Remove), and people added by hand (`Contact`, with a status, notes
 and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
 contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. Every admin time picker shows it

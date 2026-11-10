@@ -9,15 +9,16 @@ describe("admin menu", () => {
   it("lists every page once, so no page is missing and none is repeated", () => {
     const hrefs = allAdminPages().map((p) => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(hrefs).toHaveLength(21);
+    expect(hrefs).toHaveLength(20);
     // The pages the old menu had.
-    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/scholarships", "/admin/users", "/admin/contacts", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps", "/admin/data"]) {
+    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/money-check", "/admin/scholarships", "/admin/users", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps", "/admin/data"]) {
       expect(hrefs).toContain(href);
     }
-    // Applicants is gone (2026-11-09): its address only redirects to the class form list on Contacts.
+    // Applicants and Contacts are gone as pages: their addresses only redirect to the class form list on People (2026-11-10).
     expect(hrefs).not.toContain("/admin/students");
-    expect(locateAdminPage("/admin/contacts")?.page).toMatchObject({ label: "Contacts" });
-    expect(locateAdminPage("/admin/contacts")?.page.more).toBeFalsy();
+    expect(hrefs).not.toContain("/admin/contacts");
+    expect(locateAdminPage("/admin/users")?.page).toMatchObject({ label: "People" });
+    expect(locateAdminPage("/admin/users")?.page.more).toBeFalsy();
   });
 
   it("keeps each hub short enough for its tabs to fit across a phone", () => {
@@ -43,8 +44,8 @@ describe("locateAdminPage", () => {
     expect(locateAdminPage("/admin")?.hub.id).toBe("overview");
     expect(locateAdminPage("/admin/users")?.hub.id).toBe("people");
   });
-  it("counts a student's own page as Accounts", () => {
-    expect(locateAdminPage("/admin/users/abc123")?.page.label).toBe("Accounts");
+  it("counts a student's own page as People", () => {
+    expect(locateAdminPage("/admin/users/abc123")?.page.label).toBe("People");
   });
   it("returns null for an address in no hub", () => {
     expect(locateAdminPage("/admin/unknown")).toBeNull();

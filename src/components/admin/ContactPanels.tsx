@@ -527,6 +527,6 @@ export function ClassFormEntry({
 
 export function BackToContacts() {
   return (
-    <PageBack href="/admin/contacts" />
+    <PageBack href="/admin/users?filter=added" />
   );
 }

@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
 export default async function AdminStudentsPage(props: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await props.searchParams;
   const search = typeof q === "string" ? q.trim().slice(0, 200) : "";
-  redirect(`/admin/contacts?show=application${search ? `&q=${encodeURIComponent(search)}` : ""}`);
+  redirect(`/admin/users?filter=classform${search ? `&q=${encodeURIComponent(search)}` : ""}`);
 }

@@ -38,9 +38,8 @@ export const ADMIN_HUBS: AdminHub[] = [
     id: "people",
     label: "People",
     pages: [
-      { href: "/admin/users", label: "Accounts" },
-      // Class applications were removed (2026-11-09): what the class form sends is listed here.
-      { href: "/admin/contacts", label: "Contacts" },
+      // Accounts and Contacts are one list (2026-11-10): accounts first, then people who only sent the class form or were added by hand.
+      { href: "/admin/users", label: "People" },
       { href: "/admin/scholarships", label: "Scholarships" },
       { href: "/admin/employees", label: "Staff", more: true },
     ],
