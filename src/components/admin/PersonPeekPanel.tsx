@@ -7,6 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { personPeekAction, type PersonPeek } from "@/app/(dashboard)/admin/person-peek-actions";
 import { personActionHref } from "@/lib/commandRecents";
 import { QuickMessageButton } from "@/components/admin/QuickMessageButton";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Fact, Facts } from "@/components/ui/CardKit";
 
 /**
  * A side panel beside the Accounts list: the person's key facts and their most used jobs, so the list stays in view while you look.
@@ -42,8 +44,8 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-title font-semibold text-slate-50">{data ? (data.name ?? data.email) : "Loading…"}</p>
-          {data?.name && <p className="truncate text-small text-slate-400">{data.email}</p>}
-          {data?.banned && <p className="mt-1 text-small text-red-300">Banned</p>}
+          {data?.name && <p className="truncate text-small text-slate-500">{data.email}</p>}
+          {data?.banned && <StatusDot tone="danger" className="mt-1.5">Banned</StatusDot>}
         </div>
         <button ref={closeRef} type="button" onClick={onClose} aria-label="Close summary" className="tap rounded-full p-1.5 text-slate-400 hover:text-slate-100">
           <X aria-hidden className="h-5 w-5" />
@@ -53,21 +55,22 @@ export function PersonPeekPanel({ userId, onClose }: { userId: string; onClose: 
       {failed && <p className="mt-4 text-small text-red-300">Could not load this person.</p>}
       {data && (
         <>
-          <dl className="mt-4 divide-y divide-slate-50/10">
-            {data.facts.map((f) => (
-              <div key={f.label} className="flex items-baseline justify-between gap-3 py-2">
-                <dt className="text-small text-slate-500">{f.label}</dt>
-                <dd className={`text-small font-semibold ${f.warn ? "text-amber-300" : "text-slate-50"}`}>{f.value}</dd>
-              </div>
+          {/* Value first, the label small under it; a problem (a late bill, no Discord) is amber. */}
+          <Facts columns={2} className="mt-5 border-t border-slate-50/8 pt-4">
+            {data.facts.map((f, i) => (
+              <Fact key={f.label} label={f.label} value={f.value} tone={f.warn ? "warning" : "default"} className={i === 0 ? "col-span-2" : undefined} />
             ))}
-          </dl>
-          <div className="mt-5 flex flex-wrap gap-2">
+          </Facts>
+          {/* One way in (the full page), Message under it, the other everyday jobs as quiet text buttons. */}
+          <div className="mt-5 flex flex-col gap-2 border-t border-slate-50/8 pt-4">
             <Link href={`/admin/users/${data.id}`} className={buttonVariants({ size: "sm" })}>Open full page</Link>
-            {/* Written right here, beside the list: the same sheet as the Message button on their page. */}
+            {/* Written right here, beside the list: the same sheet as the Message button on their page. The one quiet button. */}
             <QuickMessageButton userId={data.id} name={data.name ?? data.email} />
-            <Link href={personActionHref(data.id, "credits")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Add credits</Link>
-            <Link href={personActionHref(data.id, "book")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Book a class</Link>
-            <Link href={personActionHref(data.id, "plan")} className={`${buttonVariants({ variant: "secondary", size: "sm" })} ${job}`}>Plan tools</Link>
+            <div className="flex flex-wrap justify-center gap-1">
+              <Link href={personActionHref(data.id, "credits")} className={`${buttonVariants({ variant: "ghost", size: "sm" })} ${job}`}>Add credits</Link>
+              <Link href={personActionHref(data.id, "book")} className={`${buttonVariants({ variant: "ghost", size: "sm" })} ${job}`}>Book a class</Link>
+              <Link href={personActionHref(data.id, "plan")} className={`${buttonVariants({ variant: "ghost", size: "sm" })} ${job}`}>Plan tools</Link>
+            </div>
           </div>
         </>
       )}

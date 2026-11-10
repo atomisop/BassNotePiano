@@ -294,8 +294,8 @@ export function CommandMenu({ isAdmin, isOwner = false }: { isAdmin: boolean; is
               Today
               {hint("/admin/today")}
             </CommandItem>
-            <CommandItem value="admin applicants applications students trial" onSelect={() => go("/admin/students", "Applicants")}>
-              Applicants
+            <CommandItem value="admin contacts class form people applicants" onSelect={() => go("/admin/contacts", "Contacts")}>
+              Contacts
             </CommandItem>
             <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments", "Payments")}>
               Payments

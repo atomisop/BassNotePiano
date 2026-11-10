@@ -197,7 +197,9 @@ export function PianoLesson({ initialBest }: { initialBest: PianoBest }) {
             type="button"
             aria-pressed={tab === t.id}
             onClick={() => chooseTab(t.id)}
-            className={buttonVariants({ variant: tab === t.id ? "primary" : "secondary", size: "sm" })}
+            // A choice of mode, not the next step: the chosen one is a raised button, the others quiet, so "Hear it" and "Try again"
+            // stay the only orange buttons here.
+            className={buttonVariants({ variant: tab === t.id ? "secondary" : "ghost", size: "sm", className: tab === t.id ? "" : "text-slate-400" })}
           >
             {t.label}
           </button>
@@ -207,9 +209,9 @@ export function PianoLesson({ initialBest }: { initialBest: PianoBest }) {
 
       {scoring && (
         <div className="mt-5">
-          <div className="mb-1.5 flex items-center justify-between text-small text-slate-50/80">
+          <div className="mb-1.5 flex items-center justify-between text-small text-slate-500">
             <span id="piano-progress-label">Progress</span>
-            <span>
+            <span className="font-medium tabular-nums text-slate-300">
               {scoring.position} of {WARM_UP.notes.length} notes
             </span>
           </div>
@@ -233,19 +235,20 @@ export function PianoLesson({ initialBest }: { initialBest: PianoBest }) {
       {/* Above the keyboard, so on a small phone the result is on screen the moment the exercise ends. */}
       {scoring?.finished && (
         <section aria-label="Your result" className="mt-4 rounded-2xl glass-surface-subtle p-5">
-          <h2 className="text-title font-semibold text-slate-50">Your result</h2>
-          <dl className="mt-3 grid grid-cols-3 gap-3 text-center">
-            <div>
-              <dt className="text-small text-slate-400">Accuracy</dt>
-              <dd className="text-headline font-bold text-slate-50">{accuracyPercent(scoring)}%</dd>
+          <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Your result</h2>
+          {/* Accuracy is the one figure; the other two are quieter facts beside it. */}
+          <dl className="mt-2 grid grid-cols-3 items-end gap-3">
+            <div className="flex flex-col-reverse">
+              <dt className="mt-0.5 text-caption text-slate-500">Accuracy</dt>
+              <dd className="text-headline font-bold tabular-nums text-slate-50">{accuracyPercent(scoring)}%</dd>
             </div>
-            <div>
-              <dt className="text-small text-slate-400">Notes played</dt>
-              <dd className="text-headline font-bold text-slate-50">{scoring.attempts}</dd>
+            <div className="flex flex-col-reverse">
+              <dt className="mt-0.5 text-caption text-slate-500">Notes played</dt>
+              <dd className="text-body font-semibold tabular-nums text-slate-50">{scoring.attempts}</dd>
             </div>
-            <div>
-              <dt className="text-small text-slate-400">Needed a retry</dt>
-              <dd className="text-headline font-bold text-slate-50">{hardest === null ? "None" : midiToName(hardest)}</dd>
+            <div className="flex flex-col-reverse">
+              <dt className="mt-0.5 text-caption text-slate-500">Needed a retry</dt>
+              <dd className="text-body font-semibold text-slate-50">{hardest === null ? "None" : midiToName(hardest)}</dd>
             </div>
           </dl>
           <p role="status" className="mt-3 text-small text-slate-400">
@@ -293,15 +296,15 @@ export function PianoLesson({ initialBest }: { initialBest: PianoBest }) {
             Start over
           </button>
         )}
-        <label className="inline-flex items-center gap-2 text-small text-slate-300">
+        <label className="inline-flex items-center gap-2 text-small text-slate-400">
           <input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal,255_140_66))]" />
           Show note names
         </label>
-        <label className="inline-flex items-center gap-2 text-small text-slate-300">
+        <label className="inline-flex items-center gap-2 text-small text-slate-400">
           <input type="checkbox" checked={audio.muted} onChange={(e) => audio.setMuted(e.target.checked)} className="h-4 w-4" />
           Mute sound
         </label>
-        <label className="inline-flex items-center gap-2 text-small text-slate-300">
+        <label className="inline-flex items-center gap-2 text-small text-slate-400">
           Volume
           <input
             type="range"

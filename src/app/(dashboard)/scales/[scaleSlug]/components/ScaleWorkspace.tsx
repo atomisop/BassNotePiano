@@ -13,10 +13,10 @@ import type { ScaleVariant } from "@/lib/scale-content";
 import { cn } from "@/lib/utils";
 import { QuizModal } from "@/components/progression/QuizModal";
 import { toast } from "@/components/ui/Toaster";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Hero } from "@/components/ui/Hero";
-import { Badge } from "@/components/ui/Badge";
+import { StatusDot } from "@/components/ui/StatusDot";
 import { Dialog } from "@/components/ui/Dialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { WideLayout } from "@/components/layout/PageLayouts";
@@ -315,11 +315,11 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         <div className="mt-4 border-t border-ink/[0.08] pt-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-small font-semibold text-slate-50">Practice</p>
-              <p className="text-small text-slate-400">{practiceCompleted ? "Logged" : "Not logged yet"}</p>
+              <p className="text-small font-semibold text-slate-200">Practice</p>
+              <p className="text-caption text-slate-500">{practiceCompleted ? "Logged" : "Not logged yet"}</p>
             </div>
             {practiceCompleted ? (
-              <Badge tone="success">Done</Badge>
+              <StatusDot tone="success">Done</StatusDot>
             ) : (
               <Button variant="secondary" size="sm" loading={markingPractice} onClick={handlePractice}>
                 Mark done
@@ -330,12 +330,12 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       )}
 
       {freeTrial && (
-        <div className="mt-4 rounded-control p-3 text-small text-slate-300 bg-neu-base shadow-raised-low">
+        <div className="mt-4 border-t border-ink/[0.08] pt-4 text-small text-slate-400">
           <p>
-            <span className="font-semibold text-slate-50">Free trial</span> until{" "}
+            <span className="font-semibold text-slate-200">Free trial</span> until{" "}
             {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
           </p>
-          <Link href="/billing/plans" className="mt-2 inline-block font-semibold text-slate-50 underline underline-offset-4">
+          <Link href="/billing/plans" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2" })}>
             See class plans
           </Link>
         </div>
@@ -376,11 +376,12 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         className={cn(
           "relative flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           layout === "rail" ? "h-14 w-14" : "h-14 min-w-14 flex-1 px-2",
-          active ? "bg-signal/14 text-signal-fg shadow-plane-front" : "text-slate-300 hover:bg-slate-50/6 hover:text-slate-50",
+          // Tools are quiet so the lesson stays the hero: the open one is simply brighter, never orange (the step's own button is).
+          active ? "bg-slate-50/10 text-slate-50" : "text-slate-400 hover:bg-slate-50/6 hover:text-slate-100",
         )}
       >
         <t.Icon className="h-5 w-5" aria-hidden />
-        <span className="text-small leading-none">{t.id === "key" ? root : t.id === "chart" ? "Chart" : t.id === "metronome" ? "Tempo" : t.label}</span>
+        <span className="text-caption leading-none">{t.id === "key" ? root : t.id === "chart" ? "Chart" : t.id === "metronome" ? "Tempo" : t.label}</span>
         {ticking && <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-slate-50 motion-safe:animate-pulse" />}
       </button>
     );
@@ -401,28 +402,27 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             </Button>
           )}
           {!isDesktop && (
-            <Button variant="secondary" size="sm" onClick={() => setOutlineSheet(true)}>
+            <Button variant="ghost" size="sm" onClick={() => setOutlineSheet(true)}>
               <ListChecks className="h-4 w-4" aria-hidden /> Outline · {stepsDone}/{stepTotal}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="relative mt-2 pt-4 md:pt-6">
+      {/* The step's name, a step smaller on phones so the lesson under it, the real hero here, starts on the first screen. A finished
+          lesson says so in one quiet word beside the step label. */}
+      <div className="relative mt-2 pt-3 md:pt-6">
         <div className="relative z-(--z-mid)">
-          <Eyebrow>{stepLabel}</Eyebrow>
-          <Hero className="mt-2">{heroText}</Hero>
-          {lesson?.completed && (
-            <Badge tone="success" className="mt-3">
-              Completed
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Eyebrow>{stepLabel}</Eyebrow>
+            {lesson?.completed && <StatusDot tone="success">Completed</StatusDot>}
+          </div>
+          <Hero className="mt-2 text-headline md:text-hero">{heroText}</Hero>
         </div>
       </div>
 
       {/* The lesson itself */}
-      <div className="relative z-(--z-mid) mt-6">
+      <div className="relative z-(--z-mid) mt-4 md:mt-6">
         {celebrating !== null ? (
           <SectionCompleteCelebration
             hasNextSection={celebrating + 1 < lessons.length}
@@ -452,9 +452,9 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
               {quizQuestions.length} questions. Pass with {Math.round(quizPassThreshold * 100)}% or more.
             </p>
             {quizPassed && quizScore != null && (
-              <Badge tone="success" className="mt-4">
+              <StatusDot tone="success" className="mt-4">
                 Passed {quizScore}/{quizQuestions.length}
-              </Badge>
+              </StatusDot>
             )}
             <div className="mt-5">
               {assessmentUnlocked ? (
@@ -481,15 +481,16 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex gap-2">
+              {/* Moving between lessons is quiet; finishing this one is the step's one primary button. */}
               <Button
-                variant="secondary"
+                variant="ghost"
                 disabled={selection.index === 0}
                 onClick={() => select({ kind: "lesson", index: selection.index - 1 })}
               >
                 Previous
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
                 disabled={!(selection.index + 1 < lessons.length && lesson.completed)}
                 onClick={() => select({ kind: "lesson", index: selection.index + 1 })}
               >
@@ -525,7 +526,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
 
       {/* Tools as a row of icons on phones and tablets */}
       {!isDesktop && (
-        <div className="mt-4 flex gap-1 overflow-x-auto rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] p-1 shadow-plane-mid" role="toolbar" aria-label="Lesson tools">
+        <div className="mt-4 flex gap-1 overflow-x-auto rounded-card bg-slate-50/4 p-1 ring-1 ring-inset ring-slate-50/8" role="toolbar" aria-label="Lesson tools">
           {TOOLS.map((t) => toolButton(t, "row"))}
         </div>
       )}
@@ -543,8 +544,9 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           }}
         >
           <aside className="sticky top-0 overflow-hidden" aria-hidden={!outlineOpen} {...inertWhen(!outlineOpen)}>
+            {/* The outline is a quiet panel, a step below the lesson card beside it. */}
             <div className="max-h-[calc(100svh-9rem)] w-[17.5rem] overflow-y-auto pr-6">
-              <Card>{outline}</Card>
+              <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">{outline}</div>
             </div>
           </aside>
 
@@ -570,7 +572,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           </aside>
 
           <div className="sticky top-0 pl-4" role="toolbar" aria-label="Lesson tools" aria-orientation="vertical">
-            <div className="flex flex-col items-center gap-1 rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] p-1 shadow-plane-mid">
+            <div className="flex flex-col items-center gap-1 rounded-card bg-slate-50/4 p-1 ring-1 ring-inset ring-slate-50/8">
               {TOOLS.map((t) => toolButton(t, "rail"))}
             </div>
           </div>
@@ -624,6 +626,7 @@ function OutlineItem({
   onClick?: () => void;
 }) {
   const StatusIcon = status === "done" ? Check : status === "locked" ? Lock : Circle;
+  // Only the open lesson is bright; finished ones are a quiet tick and a softer title, locked ones quieter still.
   return (
     <button
       type="button"
@@ -639,15 +642,15 @@ function OutlineItem({
       <span
         className={cn(
           "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-          status === "done" ? "bg-slate-50 text-slate-950" : status === "locked" ? "text-slate-500" : "text-transparent bg-neu-base shadow-raised-low",
+          status === "done" ? "bg-slate-50/12 text-slate-300" : status === "locked" ? "text-slate-500" : "text-transparent bg-neu-base shadow-raised-low",
         )}
         aria-hidden
       >
         <StatusIcon className="h-3 w-3" strokeWidth={3} />
       </span>
       <span className="min-w-0">
-        <span className={cn("block text-small font-semibold", active ? "text-signal-fg" : disabled ? "text-slate-500" : "text-slate-50")}>{title}</span>
-        {meta && <span className="block text-small text-slate-400">{meta}</span>}
+        <span className={cn("block text-small font-semibold", active ? "text-slate-50" : disabled ? "text-slate-500" : status === "done" ? "text-slate-300" : "text-slate-100")}>{title}</span>
+        {meta && <span className="block text-caption text-slate-500">{meta}</span>}
         {disabled && lockedReason && <span className="sr-only">{lockedReason}</span>}
       </span>
     </button>

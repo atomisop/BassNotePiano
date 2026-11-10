@@ -14,6 +14,9 @@ import {
 } from "@/app/(dashboard)/admin/messages/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
+import { ViewMore } from "@/components/ui/ViewMore";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 
 interface SentRow {
   id: string;
@@ -133,7 +136,7 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
 
   return (
     <div className="space-y-6">
-      <div className="glass-surface p-6">
+      <div className="glass-surface p-4 md:p-6">
         <h2 className="text-title text-slate-50 font-semibold">New message</h2>
 
         <div className="mt-4 space-y-3">
@@ -220,12 +223,12 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
           />
         </div>
 
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between rounded-lg bg-neu-base px-3 py-2.5 shadow-raised-low">
+        <div className="mt-4 space-y-1 border-t border-slate-50/8 pt-3">
+          <div className="flex items-center justify-between gap-3 py-1">
             <label htmlFor="composer-send-email" className="cursor-pointer text-small font-medium text-slate-200">Send email</label>
             <Switch id="composer-send-email" checked={sendEmail} onCheckedChange={setSendEmail} aria-label="Also send this message by email" />
           </div>
-          <div className="flex items-center justify-between rounded-lg bg-neu-base px-3 py-2.5 shadow-raised-low">
+          <div className="flex items-center justify-between gap-3 py-1">
             <label htmlFor="composer-support-cta" className="cursor-pointer text-small font-medium text-slate-200">Include &ldquo;Click here to contact support&rdquo;</label>
             <Switch id="composer-support-cta" checked={supportCta} onCheckedChange={setSupportCta} aria-label="Include a contact support link" />
           </div>
@@ -245,47 +248,51 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
         </button>
       </div>
 
-      <div className="glass-surface p-6">
-        <h2 className="text-title text-slate-50 font-semibold">History</h2>
-        <div className="mt-4 space-y-3">
-          {sent.length === 0 ? (
-            <p className="text-small text-slate-500">No messages yet.</p>
-          ) : (
-            sent.map((m) => {
+      {/* History as rows, newest first: the title is the line to read, who it went to and when are quiet under it, and whether
+          it was read (or answered, linking to the reply) is one small word at the right. The first few show; the rest fold behind "View more". */}
+      <section aria-label="History">
+        <h2 className="flex items-baseline justify-between gap-3 px-1 text-title font-semibold text-slate-50">
+          History
+          {sent.length > 0 && <span className="text-small font-normal tabular-nums text-slate-500">{sent.length}</span>}
+        </h2>
+        {sent.length === 0 ? (
+          <p className="mt-3 px-1 text-small text-slate-500">No messages yet.</p>
+        ) : (
+          <div className="glass-surface mt-3 divide-y divide-slate-50/8 overflow-hidden">
+            <ViewMore items={sent} initial={8} step={20}>
+            {(m) => {
               const open = openId === m.id;
               return (
-                <div key={m.id} className="relative rounded-xl bg-neu-base shadow-raised-low">
+                <div key={m.id} className="relative">
                   <button
                     type="button"
                     onClick={() => setOpenId(open ? null : m.id)}
                     aria-expanded={open}
-                    className="tap block w-full rounded-xl p-4 pr-24 text-left transition hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap block w-full py-3 pl-4 pr-24 text-left transition hover:bg-slate-50/5"
                   >
-                    <p className="truncate text-small font-medium text-slate-100">{m.title}</p>
-                    <p className="mt-1 text-small text-slate-400">
-                      To {m.recipientName ?? m.recipientEmail}
-                      {m.supportCta ? " · with contact support" : ""}
-                    </p>
-                    <p className="mt-1 text-small text-slate-500">{relativeTime(m.createdAt)}</p>
+                    <p className="min-w-0 truncate text-body font-semibold text-slate-50">{m.title}</p>
+                    <Meta
+                      className="mt-0.5 truncate"
+                      items={[`To ${m.recipientName ?? m.recipientEmail}`, m.supportCta ? "with contact support" : null, relativeTime(m.createdAt)]}
+                    />
                   </button>
-                  {/* A reply opens a Support Chat case: "Replied" goes straight to it. Kept outside the row's button (no link in a button). */}
+                  {/* Read or unread is one small word at the right. A reply opens a Support Chat case, so "Replied" goes straight to it.
+                      Kept outside the row's button (no link inside a button). */}
                   {m.supportCaseId ? (
                     <Link
                       href={`/admin/support/${m.supportCaseId}?filter=all`}
-                      className="tap absolute right-3 top-3 inline-flex items-center rounded-full bg-signal/16 px-2 py-0.5 text-small font-medium text-signal-fg hover:underline"
+                      className="tap absolute right-4 top-3 inline-flex items-center rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      Replied
+                      <StatusDot tone="accent" className="text-caption text-signal-fg">Replied</StatusDot>
                     </Link>
                   ) : (
-                    <span
-                      className={`pointer-events-none absolute right-3 top-3 rounded-full px-2 py-0.5 text-small font-medium ${m.read ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"}`}
-                    >
+                    <StatusDot tone={m.read ? "success" : "neutral"} className="pointer-events-none absolute right-4 top-3.5 text-caption text-slate-400">
                       {m.read ? "Read" : "Unread"}
-                    </span>
+                    </StatusDot>
                   )}
                   <Collapse open={open}>
-                    <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">
-                      <p className="whitespace-pre-wrap text-small text-slate-200">{m.body}</p>
+                    <div className="border-t border-slate-50/8 px-4 pb-4 pt-3">
+                      <p className="whitespace-pre-wrap text-body text-slate-200">{m.body}</p>
                       <p className="mt-3 text-small text-slate-500">
                         {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString()}
                         {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString()}` : ""}
@@ -294,10 +301,11 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
                   </Collapse>
                 </div>
               );
-            })
-          )}
-        </div>
-      </div>
+            }}
+            </ViewMore>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

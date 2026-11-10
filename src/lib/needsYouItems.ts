@@ -105,21 +105,6 @@ export async function getNeedsYouItems(kind: NeedsYouKind, opts: { isOwner: bool
         action: null,
       }));
     }
-    case "applicants": {
-      const rows = await prisma.classRegistration.findMany({
-        where: { status: "PENDING" },
-        orderBy: { createdAt: "asc" },
-        take,
-        select: { id: true, fullName: true, instrument: true, createdAt: true },
-      });
-      return rows.map((r) => ({
-        key: r.id,
-        title: r.fullName,
-        detail: `${r.instrument.charAt(0)}${r.instrument.slice(1).toLowerCase()} · applied ${dateOnly(r.createdAt)}`,
-        href: "/admin/students",
-        action: null,
-      }));
-    }
     case "requests": {
       const rows = await prisma.bookingRequest.findMany({
         where: { status: "PENDING", scheduledAt: { gt: now } },

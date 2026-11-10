@@ -12,7 +12,6 @@ export type NeedsYouKind =
   | "mail"
   | "atom"
   | "support"
-  | "applicants"
   | "requests"
   | "unmarked"
   | "scales";
@@ -55,7 +54,6 @@ const SPECS: [NeedsYouKind, Spec][] = [
   ["mail", { href: "/admin/support?source=email", words: () => "Studio email is not arriving", expandable: false }],
   ["atom", { href: "/admin", words: (_n, label) => label, expandable: false }],
   ["support", { href: "/admin/support", words: (n) => `${plural(n, "chat", "chats")} waiting for a reply`, expandable: true }],
-  ["applicants", { href: "/admin/students", words: (n) => `${plural(n, "applicant", "applicants")} to answer`, expandable: true }],
   ["requests", { href: "/admin/schedule?view=REQUESTS", words: (n) => `${plural(n, "booking request", "booking requests")} to answer`, expandable: true }],
   ["unmarked", { href: "/admin/today", words: (n) => `${plural(n, "class", "classes")} to mark present or no-show`, expandable: true }],
   ["scales", { href: "/admin/users?filter=approval", words: (n) => `${plural(n, "student", "students")} ready for the next scale`, expandable: true }],

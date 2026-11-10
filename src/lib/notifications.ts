@@ -57,7 +57,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
   BANNER_DISCORD: { label: "Connect Discord", url: getAppUrl("/api/discord/connect"), kind: "default" },
   BANNER_PRACTICE: { label: "Start practice", url: getAppUrl("/practice"), kind: "default" },
-  CLASS_REGISTRATION_RECEIVED: { label: "Review registration", url: getAppUrl("/admin/students"), kind: "default" },
+  CLASS_REGISTRATION_RECEIVED: { label: "See their details", url: getAppUrl("/admin/contacts?show=application"), kind: "default" },
   CLASS_REGISTRATION_APPROVED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
   CLASS_REGISTRATION_REJECTED: { label: "View details", url: getAppUrl("/dashboard"), kind: "notice" },
   LESSON_BOOKING_RECEIVED: { label: "Review booking", url: getAppUrl("/admin/schedule?view=ATTENDANCE"), kind: "default" },

@@ -2,11 +2,12 @@
 
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { PianoCat } from "@/components/layout/PianoCat";
 import { submitClassRegistrationAction } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -58,9 +59,7 @@ function Pill({
     >
       {label}
       {comingSoon && (
-        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
-          Coming soon
-        </span>
+        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-caption font-medium text-slate-400">Coming soon</span>
       )}
     </button>
   );
@@ -90,6 +89,11 @@ export function ClassRegistrationForm() {
   const [website, setWebsite] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
+  // The long form shrinks to a short card on success, which can leave it under the top bar: bring it into view.
+  const thanksRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (success) thanksRef.current?.scrollIntoView({ block: "center" });
+  }, [success]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -113,23 +117,22 @@ export function ClassRegistrationForm() {
   }
 
   if (success) {
+    // No review step anymore: the details go straight to the teacher, who gets in touch outside the app. The cat is the
+    // pull-to-refresh mascot (PianoCat), smiling.
     return (
-      <div className="glass-surface-elevated p-8 text-center">
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Request received</p>
-        <h3 className="mt-2 font-serif text-body text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
-        {/* No coming-soon branch here anymore: the instrument pill for
-            Drums/Vocal is disabled now, so `instrument` can never actually
-            hold one of those values by the time this renders. */}
-        <p className="mt-2 text-small text-slate-400">
-          We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
-          We&apos;ll reach out at {email} or {phone} shortly.
+      <div ref={thanksRef} role="status" className="glass-surface-elevated flex flex-col items-center p-8 text-center">
+        <PianoCat size={88} smile />
+        <h3 className="mt-4 font-serif text-title text-slate-50">Thanks, {fullName.split(" ")[0]}!</h3>
+        <p className="mt-2 text-body text-slate-300">An instructor will reach out to you soon.</p>
+        <p className="mt-1 text-small text-slate-400">
+          We&apos;ll contact you at {email} or {phone}.
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-surface-elevated relative space-y-5 p-6 sm:p-8">
+    <form onSubmit={handleSubmit} className="glass-surface-elevated relative space-y-6 p-6 sm:p-8">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="cls-hp">Leave this empty</label>
         <input id="cls-hp" name="bn_trap_x7" type="text" tabIndex={-1} autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" value={website} onChange={(e) => setWebsite(e.target.value)} />
@@ -142,8 +145,10 @@ export function ClassRegistrationForm() {
           label now focuses the field, which is the behaviour people expect on
           a phone where the targets are small. */}
       {/* Two short groups instead of one long form: how to reach you, then what you want to learn. */}
+      {/* Each group's legend is the one heading inside it; the field labels under it stay small and muted, and the space
+          between the groups is bigger than the space inside one. */}
       <fieldset className="space-y-4">
-        <legend className="mb-3 text-body font-semibold text-slate-100">How to reach you</legend>
+        <legend className="mb-3 text-body font-semibold text-slate-50">How to reach you</legend>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="reg-full-name" className="mb-1.5 block text-small font-medium text-slate-400">
@@ -200,8 +205,8 @@ export function ClassRegistrationForm() {
 
       </fieldset>
 
-      <fieldset className="space-y-5 border-t border-(--neu-edge) pt-5">
-        <legend className="float-left mb-3 w-full text-body font-semibold text-slate-100">What you want to learn</legend>
+      <fieldset className="space-y-4 border-t border-(--neu-edge) pt-6">
+        <legend className="float-left mb-3 w-full text-body font-semibold text-slate-50">What you want to learn</legend>
       {/* These two are single-select sets of buttons, not free text, so the
           heading above them can't be a <label> (there is no one field to point
           at). role="group" + aria-labelledby is the equivalent: it tells a
@@ -209,7 +214,7 @@ export function ClassRegistrationForm() {
           asking, instead of reading six unrelated buttons in a row. */}
       <div role="group" aria-labelledby="reg-instrument-label">
         <p id="reg-instrument-label" className="mb-1.5 text-small font-medium text-slate-400">
-          Instrument you want to learn
+          Instrument
         </p>
         <div className="flex flex-wrap gap-2">
           {INSTRUMENTS.map((opt) => (
@@ -226,7 +231,7 @@ export function ClassRegistrationForm() {
 
       <div role="group" aria-labelledby="reg-skill-label">
         <p id="reg-skill-label" className="mb-1.5 text-small font-medium text-slate-400">
-          Current skill level
+          Skill level
         </p>
         <div className="flex flex-wrap gap-2">
           {SKILL_LEVELS.map((opt) => (
@@ -237,7 +242,7 @@ export function ClassRegistrationForm() {
 
       <div>
         <label htmlFor="reg-notes" className="mb-1.5 block text-small font-medium text-slate-400">
-          Anything else we should know? (optional)
+          Anything else we should know? <span className="font-normal text-slate-500">(optional)</span>
         </label>
         <textarea
           id="reg-notes"
@@ -262,7 +267,7 @@ export function ClassRegistrationForm() {
         className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-        {submitting ? "Submitting…" : "Request to register"}
+        {submitting ? "Sending…" : "Send"}
       </button>
 
       {/* No account is created by this form (see ClassRegistration's own
@@ -273,7 +278,7 @@ export function ClassRegistrationForm() {
           this page pointing them at how it's handled. */}
       <p className="text-center text-small text-slate-500">
         By submitting, you agree to our{" "}
-        <Link href="/privacy" target="_blank" className="text-slate-50 underline hover:opacity-70">
+        <Link href="/privacy" target="_blank" className="text-slate-300 underline underline-offset-4 transition hover:text-slate-50">
           Privacy policy
         </Link>
         .

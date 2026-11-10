@@ -100,18 +100,19 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {viewSwitcher}
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-small text-slate-400"><Hint>A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</Hint></p>
-          <AdminCloseDay />
-        </div>
-
         <div className="mt-6">
-          {/* ?name=&email=&phone= (from Applicants and elsewhere) fills in the customer, so keeping a time for them is one step. */}
+          {/* ?name=&email=&phone= (from People and elsewhere) fills in the customer, so keeping a time for them is one step. */}
           <AdminReservations
             hours={hours}
             reservations={reservations}
             initial={{ name: (searchParams.name ?? "").slice(0, 120), email: (searchParams.email ?? "").slice(0, 200), phone: (searchParams.phone ?? "").slice(0, 40) }}
           />
+        </div>
+
+        {/* Closing a day cancels (or moves) every class on it, so it sits quietly at the end, behind its own confirm, not above the list. */}
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50/8 pt-4">
+          <p className="text-small text-slate-500"><Hint>A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</Hint></p>
+          <AdminCloseDay />
         </div>
       </div>
     );
@@ -162,19 +163,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
       {viewSwitcher}
 
-      {calendarLink && (
-        <a href={calendarLink} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
-          Add my classes to my calendar
-        </a>
-      )}
-      {calendarLink && viewerIsOwner && (
-        <form action={rotateTeacherCalendarLinkAction} className="mt-2">
-          <button type="submit" className="text-small text-slate-50/70 underline">
-            New calendar link
-          </button>
-        </form>
-      )}
-
       <div className="mt-6">
         <AdminScheduleManager
           schedules={schedules.map((s) => ({
@@ -196,6 +184,22 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
           onMoveEveryone={moveWindowWithEveryoneAction}
         />
       </div>
+
+      {/* The calendar feed is a set-once tool, so it sits quietly under the times instead of above them. */}
+      {calendarLink && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-50/8 pt-4">
+          <a href={calendarLink} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            Add my classes to my calendar
+          </a>
+          {viewerIsOwner && (
+            <form action={rotateTeacherCalendarLinkAction}>
+              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
+                New calendar link
+              </button>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }

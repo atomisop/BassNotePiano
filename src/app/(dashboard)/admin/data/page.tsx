@@ -7,6 +7,8 @@ import { ChevronRight } from "@/components/ui/appIcons";
 import { getCollectedInventory, getInsightInputs, getPeopleRows, getScaleReport, type CellState, type PersonRow, type ScaleReportRow } from "@/lib/adminData";
 import { buildInsights, MIN_SAMPLE, STALL_DAYS, type Insight } from "@/lib/adminInsightsRules";
 import { Hint } from "@/components/ui/Hint";
+import { Fact, Facts } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export const metadata = { title: "Admin: Data" };
 
@@ -141,13 +143,17 @@ function ScaleCard({ scale: s }: { scale: ScaleReportRow }) {
     <Card className="grid gap-4">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-small text-slate-500">
+          <p className="text-caption text-slate-500">
             {s.code}
             {s.roadmap ? `, ${s.roadmap}` : ""}
           </p>
-          <h3 className="truncate text-body font-semibold text-slate-50">{s.title}</h3>
+          <h3 className="truncate text-title font-semibold text-slate-50">{s.title}</h3>
         </div>
-        <p className="shrink-0 text-small tabular-nums text-slate-400">{s.unlocked} open</p>
+        {/* How many have it open is the figure the rest of the card is out of, so it is the one number that stands out. */}
+        <p className="shrink-0 text-right">
+          <span className="block text-title font-semibold tabular-nums text-slate-50">{s.unlocked}</span>
+          <span className="block text-caption text-slate-500">open</span>
+        </p>
       </div>
 
       {s.unlocked === 0 ? (
@@ -156,7 +162,7 @@ function ScaleCard({ scale: s }: { scale: ScaleReportRow }) {
         <ul className="grid gap-2.5" aria-label={`${s.code} checklist`}>
           {steps.map((step, i) => (
             <li key={step.label} className="grid grid-cols-[7rem_minmax(0,1fr)_4.5rem] items-center gap-3 text-small">
-              <span className="text-slate-300">{step.label}</span>
+              <span className="text-slate-400">{step.label}</span>
               <span className="h-2 overflow-hidden rounded-full bg-neu-lift" aria-hidden>
                 <span className={`block h-full origin-left rounded-full ${i === steps.length - 1 ? "bg-signal" : "bg-slate-400"}`} style={{ transform: `scaleX(${s.unlocked ? step.value / s.unlocked : 0})` }} />
               </span>
@@ -168,12 +174,13 @@ function ScaleCard({ scale: s }: { scale: ScaleReportRow }) {
         </ul>
       )}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-(--neu-edge) pt-3 text-small sm:grid-cols-4">
-        <Fact label="Stuck" value={s.stalled ? `${s.stalled}` : "None"} warn={s.stalled > 0} />
-        <Fact label="First-try pass" value={s.quizTakers ? `${s.quizFirstTryPassed} of ${s.quizTakers}` : "No quiz yet"} />
-        <Fact label="Average quiz" value={s.avgQuizScore === null ? "No quiz yet" : `${s.avgQuizScore}%`} />
-        <Fact label="Days to finish" value={s.medianDaysToFinish === null ? "None yet" : `${s.medianDaysToFinish} (median)`} />
-      </dl>
+      {/* Value first, label small under it (DESIGN.md, Hierarchy rule 3); a value that is "none yet" is muted. */}
+      <Facts className="border-t border-(--neu-edge) pt-3">
+        <Fact label="Stuck" value={s.stalled ? `${s.stalled}` : "None"} tone={s.stalled > 0 ? "warning" : "muted"} />
+        <Fact label="First-try pass" value={s.quizTakers ? `${s.quizFirstTryPassed} of ${s.quizTakers}` : "No quiz yet"} tone={s.quizTakers ? "default" : "muted"} />
+        <Fact label="Average quiz" value={s.avgQuizScore === null ? "No quiz yet" : `${s.avgQuizScore}%`} tone={s.avgQuizScore === null ? "muted" : "default"} />
+        <Fact label="Days to finish, median" value={s.medianDaysToFinish === null ? "None yet" : `${s.medianDaysToFinish}`} tone={s.medianDaysToFinish === null ? "muted" : "default"} />
+      </Facts>
 
       {s.lessons.length > 0 && (
         <details className="group">
@@ -348,12 +355,12 @@ async function PeopleView({ q }: { q: string }) {
                   </Link>
                   {GROUPS.map((g) => (
                     <div key={g.title} className="border-t border-(--neu-edge) pt-2.5">
-                      <p className="text-small font-semibold text-slate-200">{g.title}</p>
+                      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">{g.title}</p>
                       <dl className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-small">
                         {g.cols.map((c) => (
-                          <div key={c.label} className="flex justify-between gap-2">
-                            <dt className="text-slate-500">{c.label}</dt>
-                            <dd className="tabular-nums text-slate-200">{c.value(p)}</dd>
+                          <div key={c.label} className="flex min-w-0 justify-between gap-2">
+                            <dt className="truncate text-slate-500">{c.label}</dt>
+                            <dd className="shrink-0 font-medium tabular-nums text-slate-100">{c.value(p)}</dd>
                           </div>
                         ))}
                       </dl>
@@ -390,7 +397,7 @@ async function CollectedView() {
                     <p className="text-small text-slate-500">{item.detail}</p>
                     {item.kept && <p className="mt-0.5 text-small text-slate-400">{item.kept}</p>}
                   </div>
-                  <p className="shrink-0 text-small tabular-nums text-slate-300">{item.rows.toLocaleString("en-US")}</p>
+                  <p className="shrink-0 text-body font-semibold tabular-nums text-slate-50">{item.rows.toLocaleString("en-US")}</p>
                 </li>
               ))}
             </ul>
@@ -410,6 +417,7 @@ const TONE: Record<Insight["tone"], { label: string; chip: string }> = {
   watch: { label: "Worth a look", chip: "bg-amber-300/15 text-amber-300" },
   good: { label: "Going well", chip: "bg-emerald-400/15 text-emerald-400" },
 };
+const TONE_DOT: Record<Insight["tone"], "danger" | "warning" | "success"> = { fix: "danger", watch: "warning", good: "success" };
 
 async function InsightsView() {
   const report = await getScaleReport();
@@ -428,21 +436,24 @@ async function InsightsView() {
       ) : (
         groups.map((g) => (
           <section key={g.tone} aria-labelledby={`insights-${g.tone}`} className="grid gap-3">
-            <h2 id={`insights-${g.tone}`} className="text-title font-semibold text-slate-50">
-              {TONE[g.tone].label} <span className="text-slate-500">({g.items.length})</span>
+            {/* The group carries the tone once (a dot and its word, with the count), so each finding below can lead with its own title. */}
+            <h2 id={`insights-${g.tone}`} className="flex items-center gap-2 text-title font-semibold text-slate-50">
+              <StatusDot tone={TONE_DOT[g.tone]} className="text-title font-semibold text-slate-50">
+                {TONE[g.tone].label}
+              </StatusDot>
+              <span className={`rounded-full px-2 py-0.5 text-small font-semibold tabular-nums ${TONE[g.tone].chip}`}>{g.items.length}</span>
             </h2>
             <div className="grid gap-3 lg:grid-cols-2">
               {g.items.map((i) => (
                 <Card key={i.id} className="grid content-start gap-2">
-                  <span className={`w-fit rounded-full px-2.5 py-0.5 text-small font-medium ${TONE[i.tone].chip}`}>{TONE[i.tone].label}</span>
                   <h3 className="text-body font-semibold text-slate-50">{i.title}</h3>
-                  <p className="text-small text-slate-300">{i.evidence}</p>
+                  <p className="text-small text-slate-400">{i.evidence}</p>
                   <p className="text-small text-slate-400">
                     <span className="font-medium text-slate-200">Try this: </span>
                     {i.tryThis}
                   </p>
                   {i.href && (
-                    <Link href={i.href} className="tap mt-1 inline-flex w-fit items-center gap-1 text-small font-medium text-signal-fg hover:underline">
+                    <Link href={i.href} className="tap mt-1 inline-flex w-fit items-center gap-1 text-small font-medium text-slate-300 hover:text-slate-50">
                       Open it
                       <ChevronRight aria-hidden className="h-4 w-4" />
                     </Link>
@@ -476,20 +487,12 @@ async function InsightsView() {
 
 // ---------------------------------------------------------------------------
 
+/** A headline figure: the number first and big, its label small and muted under it (the `dt` stays first in the markup). */
 function Figure({ label, value }: { label: string; value: number }) {
   return (
-    <Card className="grid gap-1 !p-4">
-      <dt className="text-small text-slate-400">{label}</dt>
+    <Card className="flex min-w-0 flex-col-reverse gap-1 !p-4">
+      <dt className="text-caption text-slate-500">{label}</dt>
       <dd className="text-headline font-semibold tabular-nums text-slate-50">{value}</dd>
     </Card>
-  );
-}
-
-function Fact({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className={`truncate tabular-nums ${warn ? "text-amber-300" : "text-slate-200"}`}>{value}</dd>
-    </div>
   );
 }

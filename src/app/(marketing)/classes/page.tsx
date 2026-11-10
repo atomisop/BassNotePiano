@@ -8,7 +8,7 @@ import { SeeItWork } from "@/components/marketing/SeeItWork";
 export const metadata: Metadata = pageMetadata({
   title: "Register for a class",
   description:
-    "Register for classes learning Ethiopian scales on piano, guitar, or bass, at any level, with drums and voice coming soon. No account needed to apply.",
+    "Register for classes learning Ethiopian scales on piano, guitar, or bass, at any level, with drums and voice coming soon. Send your details and an instructor will reach out.",
   path: "/classes",
 });
 

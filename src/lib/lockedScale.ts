@@ -32,8 +32,7 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
         "Every plan includes live classes with your teacher and all of the lessons. Pick a plan and your first scale opens right away.",
       ],
       primary: { label: "Choose a plan", href: "/billing/plans" },
-      // Home asks for the free class right there from the account (no second form), so this goes to Home, not the public /classes form.
-      secondary: { label: "Try a free class first", href: "/dashboard" },
+      secondary: { label: "Try a free class first", href: "/classes" },
       canAsk: false,
     };
   }
@@ -77,12 +76,6 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
 
 export interface GettingStartedInput {
   kind: "ADMIN" | "PAID" | "COMPED" | "TRIAL" | "NONE";
-  /** The student has applied for a class and nobody has answered yet. */
-  applicationPending: boolean;
-  /** Length of the free trial in days, from Settings. 0 or missing means the copy does not mention a trial by length (default 3). */
-  trialDays?: number;
-  /** Their free trial already ran (it is once per person): offer plans, never a second trial. */
-  trialUsed?: boolean;
   /** How many children this person manages in parent mode. A parent who only pays for children is not a new student. */
   children?: number;
 }
@@ -95,19 +88,12 @@ export interface GettingStartedStep {
   secondary?: { href: string; cta: string };
 }
 
-/** What a student with no access yet should do next. Null for anyone who already has access. */
+/**
+ * What a student with no access should do next. Null for anyone who already has access. Every new account starts on the free
+ * trial, so NONE means it ended (or trials are off): the way on is a plan, or a word with an instructor through the class form.
+ */
 export function gettingStartedStep(input: GettingStartedInput): GettingStartedStep | null {
   if (input.kind !== "NONE") return null;
-  const trialDays = input.trialDays ?? 3;
-  if (input.applicationPending) {
-    return {
-      action: "Your class application is being reviewed",
-      detail: "We will email you as soon as it is approved, and your first lessons open right away. In the meantime you can look at class plans.",
-      href: "/billing/plans",
-      cta: "See class plans",
-      secondary: { href: "/practice", cta: "Try finger exercises" },
-    };
-  }
   if ((input.children ?? 0) > 0) {
     return {
       action: input.children === 1 ? "Your child's classes" : "Your children's classes",
@@ -117,22 +103,11 @@ export function gettingStartedStep(input: GettingStartedInput): GettingStartedSt
       secondary: { href: "/billing/plans", cta: "Lessons for me" },
     };
   }
-  if (input.trialUsed) {
-    return {
-      action: "Pick a plan to keep going",
-      detail: "Your free trial has ended. Choose a class plan to keep your weekly class and open your lessons again.",
-      href: "/billing/plans",
-      cta: "See class plans",
-      secondary: { href: "/practice", cta: "Try finger exercises" },
-    };
-  }
   return {
-    action: "Two ways to start",
-    detail: trialDays > 0
-      ? `Apply for a free trial class and get the first lessons for ${trialDays} days, or choose a class plan and start right away.`
-      : "Apply for classes, or choose a class plan and start right away.",
-    href: "/classes",
-    cta: trialDays > 0 ? "Apply for a free trial class" : "Apply for classes",
-    secondary: { href: "/billing/plans", cta: "See class plans" },
+    action: "Choose a class plan",
+    detail: "Your lessons open as soon as your first payment is approved. Want to talk first? Send your details and an instructor will reach out.",
+    href: "/billing/plans",
+    cta: "See class plans",
+    secondary: { href: "/classes", cta: "Talk to an instructor" },
   };
 }

@@ -50,9 +50,10 @@ export function MetronomePanel({ metronome }: { metronome: Metronome }) {
           <Button variant="secondary" size="icon" aria-label="Slower" onClick={() => setBpm(bpm - 1)}>
             <Minus className="h-4 w-4" />
           </Button>
+          {/* The tempo is the panel's one figure. */}
           <p className="text-center">
-            <span className="block text-body font-semibold tabular-nums text-slate-50">{bpm}</span>
-            <span className="text-small text-slate-400">beats per minute</span>
+            <span className="block text-headline font-bold leading-none tabular-nums text-slate-50">{bpm}</span>
+            <span className="mt-1 block text-caption text-slate-500">beats per minute</span>
           </p>
           <Button variant="secondary" size="icon" aria-label="Faster" onClick={() => setBpm(bpm + 1)}>
             <Plus className="h-4 w-4" />
@@ -175,7 +176,8 @@ export function FilesPanel({ lessons }: { lessons: CourseLessonWithProgress[] })
   }
 
   return (
-    <ul className="space-y-2">
+    // Files as rows with hairlines, not a stack of raised boxes: the title is what you read, the kind a quiet word at the end.
+    <ul className="-mx-1 divide-y divide-slate-50/8">
       {unlocked.map((lesson) => {
         const Icon = lesson.type === "VIDEO" ? FileVideo : FileText;
         return (
@@ -184,11 +186,11 @@ export function FilesPanel({ lessons }: { lessons: CourseLessonWithProgress[] })
               href={lesson.fileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-9 items-center gap-3 rounded-control px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="flex min-h-11 items-center gap-3 rounded-control px-1 py-2 transition-colors hover:bg-slate-50/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
               <span className="min-w-0 flex-1 truncate text-small font-semibold text-slate-50">{lesson.title}</span>
-              <span className="shrink-0 text-small text-slate-400">{lesson.type === "VIDEO" ? "Video" : "PDF"}</span>
+              <span className="shrink-0 text-caption text-slate-500">{lesson.type === "VIDEO" ? "Video" : "PDF"}</span>
             </a>
           </li>
         );

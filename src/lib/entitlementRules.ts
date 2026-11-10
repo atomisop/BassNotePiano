@@ -4,8 +4,8 @@
 //
 // The curriculum is no longer sold on its own. It comes with live classes:
 // an active Payment Plan opens it, one scale at a time, as the teacher
-// approves each next scale. An approved class applicant gets a short trial
-// that opens only the first few lessons of the first scale.
+// approves each next scale. Every new account gets a short trial (once per
+// person) that opens only the first few lessons of the first scale.
 
 export type CurriculumAccessKind = "ADMIN" | "PAID" | "COMPED" | "TRIAL" | "NONE";
 

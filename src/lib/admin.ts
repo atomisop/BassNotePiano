@@ -484,9 +484,8 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom, mailProblem, bookingRequests] = await Promise.all([
+  const [payments, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom, mailProblem, bookingRequests] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: hoursAgo(3) } } }),
     getAdminProgressOverview(""),
@@ -521,7 +520,6 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       count: atom ? 1 : 0,
       href: atom?.note === "busy" ? "/admin" : GEMINI_BILLING_URL,
     },
-    { id: "applicants", label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
     { id: "support", label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
     { id: "unmarked", label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/today" },
     { id: "scales", label: readyScales === 1 ? "Student ready for the next scale" : "Students ready for the next scale", count: readyScales, href: "/admin/users?filter=approval" },
@@ -534,14 +532,13 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
 export const getAdminNavBadges = cache(readAdminNavBadges);
 
 async function readAdminNavBadges(): Promise<Record<string, number>> {
-  const [payments, applications, chats, unmarked, requests] = await Promise.all([
+  const [payments, chats, unmarked, requests] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(Date.now() - 3 * 3_600_000) } } }),
     prisma.bookingRequest.count({ where: { status: "PENDING", scheduledAt: { gt: new Date() } } }),
   ]);
-  return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked + requests };
+  return { "/admin/payments": payments, "/admin/support": chats, "/admin/schedule": unmarked + requests };
 }
 
 /**

@@ -194,6 +194,9 @@ export function AdminAttendanceQuickPanel() {
 
   const gatedClass =
     "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
+  // Absent is the rarer answer, so it is flat red text beside the raised Present: one obvious tap per row.
+  const quietGatedClass =
+    "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition hover:bg-slate-50/6 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -243,7 +246,7 @@ export function AdminAttendanceQuickPanel() {
               <Link
                 href="/admin/schedule?view=ATTENDANCE"
                 onClick={() => setOpen(false)}
-                className="tap shrink-0 text-small font-medium text-signal-fg transition hover:opacity-70"
+                className="tap inline-flex shrink-0 items-center text-small font-medium text-slate-400 transition hover:text-slate-100"
               >
                 Full view
               </Link>
@@ -268,11 +271,9 @@ export function AdminAttendanceQuickPanel() {
                         type="button"
                         onClick={() => setToggled((prev) => ({ ...prev, [group.key]: !expanded }))}
                         aria-expanded={expanded}
-                        className={`tap flex w-full items-center gap-2 rounded-xl bg-neu-base px-3 py-2.5 text-left transition ${
-                          expanded ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid"
-                        }`}
+                        className="tap flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left transition hover:bg-slate-50/5"
                       >
-                        <span className="text-small font-semibold text-slate-100">{group.label}</span>
+                        <span className="text-body font-semibold text-slate-50">{group.label}</span>
                         <span className="text-small text-slate-500">
                           {group.rows.length} class{group.rows.length === 1 ? "" : "es"}
                         </span>
@@ -289,14 +290,14 @@ export function AdminAttendanceQuickPanel() {
                       </button>
 
                       <Collapse open={expanded}>
-                        <div className="mt-1.5 space-y-1.5 rounded-xl bg-neu-base p-1.5 shadow-pressed-low">
+                        <div className="mt-1 divide-y divide-slate-50/8 overflow-hidden rounded-xl bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
                           {group.rows.map((r) => {
                             if (r.awaitingPayment) {
                               return (
-                                <div key={r.bookingId} className="flex items-center gap-2 rounded-lg bg-neu-base p-2.5 shadow-raised-low">
+                                <div key={r.bookingId} className="flex items-center gap-2 px-3 py-2.5">
                                   <div className="min-w-0 flex-1">
-                                    <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
-                                    <p className="truncate text-small text-slate-500">
+                                    <p className="truncate text-small font-semibold text-slate-50">{r.studentName ?? r.studentEmail}</p>
+                                    <p className="truncate text-small tabular-nums text-slate-500">
                                       {timeOf(r.scheduledAt)}
                                       {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
                                     </p>
@@ -314,11 +315,11 @@ export function AdminAttendanceQuickPanel() {
                             const ready = isReady(r.scheduledAt);
                             const busy = busyId === r.bookingId;
                             return (
-                              <div key={r.bookingId} className="rounded-lg bg-neu-base p-2.5 shadow-raised-low">
+                              <div key={r.bookingId} className="px-3 py-2.5">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <div className="min-w-[8rem] flex-1">
-                                    <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
-                                    <p className="truncate text-small text-slate-500">
+                                    <p className="truncate text-small font-semibold text-slate-50">{r.studentName ?? r.studentEmail}</p>
+                                    <p className="truncate text-small tabular-nums text-slate-500">
                                       {timeOf(r.scheduledAt)}
                                       {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""}
                                     </p>
@@ -329,7 +330,7 @@ export function AdminAttendanceQuickPanel() {
                                     disabled={!ready || busy}
                                     onClick={() => handleMark(r.bookingId, "PRESENT")}
                                     title={ready ? "Mark present" : `Opens ${ATTENDANCE_OPENS_MIN_BEFORE} minutes before class`}
-                                    className={`${gatedClass} text-slate-100`}
+                                    className={`${gatedClass} font-semibold text-slate-50`}
                                   >
                                     {busy ? <MorphingSquare size={11} /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
                                     Present
@@ -339,7 +340,7 @@ export function AdminAttendanceQuickPanel() {
                                     disabled={!ready || busy}
                                     onClick={() => handleMark(r.bookingId, "NO_SHOW")}
                                     title={ready ? "Mark absent" : `Opens ${ATTENDANCE_OPENS_MIN_BEFORE} minutes before class`}
-                                    className={`${gatedClass} text-red-400`}
+                                    className={`${quietGatedClass} text-red-400`}
                                   >
                                     {busy ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                                     Absent

@@ -12,6 +12,8 @@ import { toast } from "@/components/ui/Toaster";
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import type { WindowMovePreview } from "@/lib/weeklyWindowMove";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 
 interface ScheduleRow {
   id: string;
@@ -101,7 +103,7 @@ function WindowMovePanel({ scheduleId, input, preview, onMoveEveryone, onClose }
   }
 
   return (
-    <div className="mt-3 grid gap-3 rounded-xl bg-neu-base p-3 shadow-pressed-low">
+    <div className="mt-3 grid gap-3 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
       <p className="flex flex-wrap items-center gap-1.5 text-small font-medium text-slate-100">
         {preview.from} <ArrowRight aria-hidden className="h-3.5 w-3.5" /> {preview.to}
       </p>
@@ -259,7 +261,7 @@ function ScheduleForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
           >
             Cancel
           </button>
@@ -349,7 +351,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {byDay.length === 0 && (
         <EmptyState icon={<CalendarPlus />} title="No weekly times yet" description="Add the days and hours you teach, and students can book them." />
       )}
@@ -357,12 +359,13 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
       {grouped
         .filter((g) => g.rows.length > 0)
         .map((group) => (
-          <div key={group.day} className="glass-surface p-5">
-            <h2 className="text-title text-slate-50 font-semibold">{group.label}</h2>
-            <div className="mt-3 space-y-2">
+          <section key={group.day} aria-label={group.label}>
+            {/* The day is a quiet group title; each time inside it is the thing to read. */}
+            <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{group.label}</h2>
+            <ul className="mt-2 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-mid">
               {group.rows.map((row) =>
                 editingId === row.id ? (
-                  <div key={row.id} className="rounded-xl border border-slate-50/30 bg-neu-base shadow-pressed-low p-3">
+                  <li key={row.id} className="p-4">
                     <ScheduleForm
                       initial={{
                         dayOfWeek: row.dayOfWeek,
@@ -390,24 +393,26 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                     {movePreview?.scheduleId === row.id && (
                       <WindowMovePanel scheduleId={row.id} input={movePreview.input} preview={movePreview.preview} onMoveEveryone={onMoveEveryone} onClose={stopEditing} />
                     )}
-                  </div>
+                  </li>
                 ) : (
-                  <div
-                    key={row.id}
-                    className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${
-                      row.active ? "border-transparent bg-neu-base shadow-raised-low" : "border-transparent opacity-50 bg-neu-base shadow-raised-low"
-                    }`}
-                  >
-                    <div>
-                      <p className="text-small text-slate-100">
-                        {formatTimeLabel(row.startTime)} to {formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
-                        {row.label && ` · ${row.label}`}
+                  <li key={row.id} className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <div className={row.active ? "min-w-0" : "min-w-0 opacity-60"}>
+                      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="text-title font-semibold tabular-nums text-slate-50">
+                          {formatTimeLabel(row.startTime)} to {formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
+                        </span>
+                        {/* Open is the normal state, so it gets no badge; Off is the news. */}
+                        {!row.active && <StatusDot tone="neutral">Off</StatusDot>}
                       </p>
-                      <p className="mt-0.5 text-small text-slate-500">
-                        {row.durationMin} min · {classesInWindow(row.durationMin)} {classesInWindow(row.durationMin) === 1 ? "slot" : "slots"} ·{" "}
-                        <span className={row.active ? "font-medium text-signal-fg" : "text-slate-500"}>{row.active ? "Open for booking" : "Off"}</span>
-                        {row.upcomingBookings > 0 && ` · ${row.upcomingBookings} booked`}
-                      </p>
+                      <Meta
+                        className="mt-0.5"
+                        items={[
+                          row.label,
+                          `${row.durationMin} min`,
+                          `${classesInWindow(row.durationMin)} ${classesInWindow(row.durationMin) === 1 ? "slot" : "slots"}`,
+                          row.upcomingBookings > 0 ? <span className="text-slate-300">{row.upcomingBookings} booked</span> : null,
+                        ]}
+                      />
                       {row.holders.length > 0 && (
                         <p className="mt-0.5 text-small text-slate-400">
                           Weekly plans:{" "}
@@ -421,7 +426,19 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => (row.active && (row.upcomingBookings > 0 || row.holders.length > 0) ? setConfirmOffId(row.id) : handleToggleActive(row))}
+                        disabled={busyId === row.id}
+                        className={buttonVariants({
+                          variant: row.active ? "ghost" : "secondary",
+                          size: "sm",
+                          className: row.active ? "text-red-300 hover:text-red-200" : undefined,
+                        })}
+                      >
+                        {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
@@ -432,21 +449,9 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       >
                         Edit
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => (row.active && (row.upcomingBookings > 0 || row.holders.length > 0) ? setConfirmOffId(row.id) : handleToggleActive(row))}
-                        disabled={busyId === row.id}
-                        className={`tap flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                          row.active
-                            ? "border-red-400/20 text-red-400 hover:border-red-400/40 hover:text-red-300"
-                            : "border-slate-50/30 text-slate-100 hover:bg-slate-50/10"
-                        }`}
-                      >
-                        {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
-                      </button>
                     </div>
                     {confirmOffId === row.id && (
-                      <div className="w-full rounded-lg border border-red-400/20 bg-neu-base shadow-pressed-low p-3 text-small text-slate-300 sm:basis-full">
+                      <div className="w-full rounded-control bg-red-400/10 p-3 text-small text-slate-300 ring-1 ring-inset ring-red-400/20 sm:basis-full">
                         {row.holders.length > 0 && (
                           <p className="mb-1.5">
                             <PeopleLinks people={row.holders.map((h) => ({ key: `${h.userId}:${h.chunkIndex}`, name: h.name, href: `/admin/users/${h.userId}` }))} />{" "}
@@ -474,15 +479,15 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         </div>
                       </div>
                     )}
-                  </div>
+                  </li>
                 ),
               )}
-            </div>
-          </div>
+            </ul>
+          </section>
         ))}
 
       {adding ? (
-        <div className="glass-surface p-5">
+        <div className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
           <h2 className="mb-3 text-title text-slate-50 font-semibold">New weekly slot</h2>
           <ScheduleForm
             initial={{ dayOfWeek: 1, startTime: "11:00", endTime: "13:00", label: null }}

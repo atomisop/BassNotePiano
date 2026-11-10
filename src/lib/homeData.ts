@@ -5,7 +5,6 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatusOnce, type FingerPracticeStatus } from "@/lib/fingerPractice";
 import { putFingerPracticeFirst, resolveNextStep, summariseProgress, type NextStep } from "@/lib/next-step";
 import { gettingStartedStep } from "@/lib/lockedScale";
-import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { BADGES } from "@/lib/badges";
 import { STREAK_GOALS } from "@/lib/streakRules";
 import { minutesThisWeek, pickCelebration, weekDayMinutes, weekDayIndex, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
@@ -13,7 +12,6 @@ import { roadmapsForViewer } from "@/lib/roadmaps";
 import { storedToCredits } from "@/lib/classCreditPricing";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
 import { claimParentInvites, listLinkedChildren, listLinksToChild } from "@/lib/parentLinks";
-import { getTrialApplyFacts, type TrialApplyFacts } from "@/lib/trialApplication";
 import { claimFriendEmailAsks } from "@/lib/social";
 
 /** One child a parent manages, as a Home row: the next class and this week's practice, one tap into their page. */
@@ -26,14 +24,12 @@ export interface HomeChild {
 
 export interface HomeData {
   name: string | null;
-  /** No plan and no trial yet (and not the admin): Home shows the free trial welcome instead of the student cards. */
+  /** No access (no plan, and the free trial over or off) and not the admin: Home shows the getting-started step instead of the student cards. */
   isNew: boolean;
   /** Children this person manages in parent mode (accepted links). A parent who only pays for them is shown them, not a trial pitch. */
   children: HomeChild[];
   /** Parents asking to link to this account, answered right on Home. */
   parentRequests: { linkId: string; parentName: string }[];
-  /** Set when Home can send a free trial class request from the account in place (what is still missing is asked there). */
-  trialApply: TrialApplyFacts | null;
   nextStep: NextStep;
   /** Progress through the roadmap the student is on now. */
   progress: ReturnType<typeof summariseProgress>;
@@ -74,10 +70,10 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   await claimParentInvites(userId, user.email).catch((err) => console.error("Claiming parent requests failed (non-blocking):", err));
   await claimFriendEmailAsks(userId, user.email).catch((err) => console.error("Claiming book-together asks failed (non-blocking):", err));
 
-  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
+  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true, trialEndsAt: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
     getFingerPracticeStatusOnce(userId),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
     prisma.classBooking.findFirst({
@@ -86,9 +82,6 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       select: { scheduledAt: true, creditsSpent: true, discordChannelId: true, inPerson: true },
     }),
     getCurriculumEntitlement(userId),
-    prisma.classRegistration.count({
-      where: { status: "PENDING", OR: [{ userId }, { email: { equals: user.email ?? "", mode: "insensitive" } }] },
-    }),
     prisma.fingerPracticeDay.findMany({ where: { userId, day: { gte: weekStartKey(today), lte: today } }, select: { day: true, seconds: true } }),
     prisma.userBadge.findMany({ where: { userId, earnedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }, select: { code: true, earnedAt: true } }),
     prisma.scaleProgress.findMany({
@@ -115,16 +108,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   ];
   const showChecklist = !isAdmin && entitlement.kind !== "NONE" && checklist.some((c) => !c.done);
 
-  const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
-  const starting = gettingStartedStep({
-    kind: entitlement.kind,
-    applicationPending: pendingApplication > 0,
-    trialDays,
-    trialUsed: Boolean(profile?.trialEndsAt),
-    children: children.length,
-  });
-  // The free trial pitch is the one Home answers in place: only when that is the step it shows.
-  const trialApply = !isAdmin && starting?.href === "/classes" ? await getTrialApplyFacts(userId) : null;
+  // A parent who only manages children gets Parent mode as their step, not the plan pitch.
+  const starting = gettingStartedStep({ kind: entitlement.kind, children: children.length });
   const resolved = resolveNextStep(roadmap);
   const nextStep: NextStep = starting
     ? { ...resolved, ...starting }
@@ -174,7 +159,6 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     isNew: entitlement.kind === "NONE" && !isAdmin,
     children,
     parentRequests: toMe.requests,
-    trialApply,
     nextStep,
     progress: summariseProgress(inCurrent),
     roadmap: { name: currentRoadmap?.name ?? "Scales", artwork: currentRoadmap?.artwork ?? "dusk" },

@@ -103,7 +103,7 @@ export function EndChildPlanButton({ childId }: { childId: string }) {
     router.refresh();
   }
   return (
-    <button type="button" onClick={() => void end()} disabled={busy} aria-label={sure ? "Tap again to end this plan" : "End this plan"} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+    <button type="button" onClick={() => void end()} disabled={busy} aria-label={sure ? "Tap again to end this plan" : "End this plan"} className={buttonVariants({ variant: sure ? "danger" : "ghost", size: "sm", className: sure ? undefined : "-ml-2 text-red-300 hover:text-red-200" })}>
       {busy && <MorphingSquare size={12} className="mr-1.5" />}
       {sure ? "Sure? End the plan" : "End this plan"}
     </button>

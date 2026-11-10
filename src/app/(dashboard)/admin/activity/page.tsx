@@ -6,6 +6,7 @@ import { accountAuditWhere } from "@/lib/accountAudit";
 import { AUDIT_KIND_LABEL, AUDIT_PAGE_SIZE, auditKind, auditLabel } from "@/lib/auditView";
 import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 export const metadata = { title: "Admin: Activity" };
 
@@ -105,22 +106,29 @@ export default async function AdminActivityPage(props: { searchParams: Promise<{
       </p>
 
       {rows.length > 0 && (
-        <ul className="glass-surface mt-2 divide-y divide-slate-50/10 px-4">
+        <ul className="glass-surface mt-2 divide-y divide-slate-50/8 px-4">
           {rows.map((r) => (
             <li key={r.id} className="py-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-                <p className="text-body font-medium text-slate-50">{auditLabel(r.action)}</p>
-                <p className="text-small text-slate-500">{when(r.createdAt)}</p>
+              {/* What changed first and brightest; the details under it; who did it and when are quiet. */}
+              <div className="flex items-baseline justify-between gap-x-4">
+                <p className="min-w-0 text-body font-semibold text-slate-50">{auditLabel(r.action)}</p>
+                <p className="shrink-0 text-caption tabular-nums text-slate-500">{when(r.createdAt)}</p>
               </div>
               {r.detail && <p className="mt-0.5 break-words text-small text-slate-300">{r.detail}</p>}
-              <p className="mt-0.5 text-small text-slate-500">
-                {r.actorEmail ?? "The system"}
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
+                <span className="min-w-0 break-all">{r.actorEmail ?? "The system"}</span>
                 {r.targetType === "User" && r.targetId && (
                   <>
-                    {" · "}
-                    <Link href={`/admin/users/${r.targetId}`} className="underline underline-offset-4 hover:text-slate-300">Open the account</Link>
-                    {" · "}
-                    <Link href={link({ user: r.targetId, page: 1 })} className="underline underline-offset-4 hover:text-slate-300">All changes to it</Link>
+                    <span aria-hidden>·</span>
+                    <Link href={`/admin/users/${r.targetId}`} className="tap inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-100">
+                      Open the account
+                      <ChevronRight aria-hidden className="h-3 w-3" />
+                    </Link>
+                    <span aria-hidden>·</span>
+                    <Link href={link({ user: r.targetId, page: 1 })} className="tap inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-100">
+                      All changes to it
+                      <ChevronRight aria-hidden className="h-3 w-3" />
+                    </Link>
                   </>
                 )}
               </p>

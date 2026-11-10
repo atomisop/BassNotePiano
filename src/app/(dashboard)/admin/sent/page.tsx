@@ -3,6 +3,7 @@ import { Hint } from "@/components/ui/Hint";
 import { prisma } from "@/lib/prisma";
 import { groupSentNotices, listSentNotices, NOTICE_PAGE_SIZE, type NoticeAudience, type NoticeChannel } from "@/lib/adminNotices";
 import { buttonVariants } from "@/components/ui/button";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 export const metadata = { title: "Admin: Sent" };
 
@@ -16,13 +17,17 @@ const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_Yor
 const whenDay = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" });
 const field = "h-11 w-full rounded-lg bg-neu-base px-2.5 sm:px-3 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 const CHANNEL_LABEL = { bell: "Bell", mail: "Mail", email: "Email" } as const;
-const CHANNEL_TONE = { bell: "bg-slate-800 text-slate-300", mail: "bg-signal/15 text-signal-fg", email: "bg-sky-500/15 text-sky-300" } as const;
-/** An email's outcome, colored: green when it arrived or was opened, red when it bounced, failed or was marked as spam, amber otherwise. */
+/**
+ * An email's outcome: quiet when it arrived or was opened (the normal case needs no colour), red when it bounced, failed or was marked
+ * as spam, amber otherwise. Colour is kept for the rows that need a look (DESIGN.md, Hierarchy rule 5).
+ */
 function deliveryTone(status: string): string {
-  if (status === "OPENED" || status === "CLICKED" || status === "DELIVERED") return "text-emerald-300";
-  if (status === "BOUNCED" || status === "COMPLAINED" || status === "FAILED") return "text-red-300";
+  if (status === "OPENED" || status === "CLICKED" || status === "DELIVERED") return "text-slate-400";
+  if (status === "BOUNCED" || status === "COMPLAINED" || status === "FAILED") return "font-medium text-red-300";
   return "text-amber-300";
 }
+/** A small quiet link at the end of a meta line (no underline: it is not inside a sentence). */
+const metaLink = "tap inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-100";
 
 /** Admin > Inbox > Sent: which notice went to whom, from the bell, Mail and email, and whether they got it. */
 export default async function AdminSentPage(props: { searchParams: Promise<{ q?: string; channel?: string; who?: string; days?: string; user?: string; view?: string; page?: string }> }) {
@@ -121,27 +126,36 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
             {total === 0 ? "Nothing matches." : `${total.toLocaleString("en-US")} sent${pageCount > 1 ? `, page ${page} of ${pageCount}` : ""}`}
           </p>
           {list.rows.length > 0 && (
-            <ul className="glass-surface mt-2 divide-y divide-slate-50/10 px-4">
+            <ul className="glass-surface mt-2 divide-y divide-slate-50/8 px-4">
               {list.rows.map((r) => (
                 <li key={`${r.channel}-${r.id}`} className="py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-                    <p className="min-w-0 text-body font-medium text-slate-50">
+                  {/* Who it went to first, then what it was; when and where are quiet. */}
+                  <div className="flex items-baseline justify-between gap-x-4">
+                    <p className="min-w-0 truncate text-body font-semibold text-slate-50">
                       {r.userId ? (
-                        <Link href={`/admin/users/${r.userId}`} className="tap inline-flex items-center underline-offset-4 hover:underline">{r.name ?? r.email}</Link>
+                        <Link href={`/admin/users/${r.userId}`} className="tap inline-flex max-w-full items-center underline-offset-4 hover:underline">
+                          <span className="truncate">{r.name ?? r.email}</span>
+                        </Link>
                       ) : (
                         <span>{r.email}</span>
                       )}
-                      {r.isAdmin && <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 align-middle text-small font-medium text-slate-300">Admin</span>}
                     </p>
-                    <p className="text-small text-slate-500">{when(r.at)}</p>
+                    <p className="shrink-0 text-caption tabular-nums text-slate-500">{when(r.at)}</p>
                   </div>
-                  <p className="mt-0.5 text-small font-semibold text-slate-100">{r.title}</p>
-                  {r.body && <p className="mt-0.5 line-clamp-2 break-words text-small text-slate-300">{r.body}</p>}
+                  <p className="mt-0.5 text-small font-medium text-slate-200">{r.title}</p>
+                  {r.body && <p className="mt-0.5 line-clamp-2 break-words text-small text-slate-400">{r.body}</p>}
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
-                    <span className={`rounded-full px-2 py-0.5 font-medium ${CHANNEL_TONE[r.channel]}`}>{CHANNEL_LABEL[r.channel]}</span>
+                    <span>{CHANNEL_LABEL[r.channel]}</span>
+                    {r.isAdmin && (
+                      <>
+                        <span aria-hidden>·</span>
+                        <span>Admin</span>
+                      </>
+                    )}
+                    <span aria-hidden>·</span>
                     {r.delivery ? (
                       <>
-                        <span className={`font-medium ${deliveryTone(r.delivery.status)}`}>{r.delivery.label}</span>
+                        <span className={deliveryTone(r.delivery.status)}>{r.delivery.label}</span>
                         {r.delivery.detail && <span>({r.delivery.detail})</span>}
                         {r.delivery.openedAt && <span>· opened {when(r.delivery.openedAt)}</span>}
                       </>
@@ -149,11 +163,15 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                       <>
                         <span>{r.kind}</span>
                         <span aria-hidden>·</span>
-                        <span className={r.read ? "text-slate-500" : "text-amber-300"}>{r.read ? "Read" : "Not read yet"}</span>
+                        <span className={r.read ? "text-slate-500" : "text-slate-400"}>{r.read ? "Read" : "Not read yet"}</span>
                         {r.supportCaseId && (
                           <>
                             <span aria-hidden>·</span>
-                            <Link href={`/admin/support/${r.supportCaseId}?filter=all`} className="tap inline-flex items-center font-medium text-signal-fg underline underline-offset-4">Replied</Link>
+                            {/* They answered: the one bit of news on the row, so it keeps the accent and goes straight to the reply. */}
+                            <Link href={`/admin/support/${r.supportCaseId}?filter=all`} className="tap inline-flex items-center gap-0.5 font-medium text-signal-fg hover:underline">
+                              Replied
+                              <ChevronRight aria-hidden className="h-3 w-3" />
+                            </Link>
                           </>
                         )}
                       </>
@@ -161,7 +179,10 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
                     {r.userId && (
                       <>
                         <span aria-hidden>·</span>
-                        <Link href={link({ user: r.userId, page: 1 })} className="tap inline-flex items-center underline underline-offset-4 hover:text-slate-300">All sent to them</Link>
+                        <Link href={link({ user: r.userId, page: 1 })} className={metaLink}>
+                          All sent to them
+                          <ChevronRight aria-hidden className="h-3 w-3" />
+                        </Link>
                       </>
                     )}
                   </p>
@@ -185,18 +206,24 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
             {groups.length === 0 ? "Nothing matches." : `${groups.length} different message${groups.length === 1 ? "" : "s"}`}
           </p>
           {groups.length > 0 && (
-            <ul className="glass-surface mt-2 divide-y divide-slate-50/10 px-4">
+            <ul className="glass-surface mt-2 divide-y divide-slate-50/8 px-4">
               {groups.map((g) => (
                 <li key={`${g.channel}-${g.title}`} className="py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-                    <p className="min-w-0 text-body font-medium text-slate-50">{g.title}</p>
-                    <p className="text-small font-semibold tabular-nums text-slate-100">{g.count.toLocaleString("en-US")} sent</p>
+                  <div className="flex items-baseline justify-between gap-x-4">
+                    <p className="min-w-0 text-body font-semibold text-slate-50">{g.title}</p>
+                    <p className="shrink-0 text-small text-slate-500">
+                      <span className="text-body font-semibold tabular-nums text-slate-50">{g.count.toLocaleString("en-US")}</span> sent
+                    </p>
                   </div>
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
-                    <span className={`rounded-full px-2 py-0.5 font-medium ${CHANNEL_TONE[g.channel]}`}>{CHANNEL_LABEL[g.channel]}</span>
+                    <span>{CHANNEL_LABEL[g.channel]}</span>
+                    <span aria-hidden>·</span>
                     <span>{whenDay(g.firstAt) === whenDay(g.lastAt) ? whenDay(g.lastAt) : `${whenDay(g.firstAt)} to ${whenDay(g.lastAt)}`}</span>
                     <span aria-hidden>·</span>
-                    <Link href={link({ q: g.title, view: "people", page: 1, channel: g.channel })} className="tap inline-flex items-center underline underline-offset-4 hover:text-slate-300">Who got it</Link>
+                    <Link href={link({ q: g.title, view: "people", page: 1, channel: g.channel })} className={metaLink}>
+                      Who got it
+                      <ChevronRight aria-hidden className="h-3 w-3" />
+                    </Link>
                   </p>
                 </li>
               ))}

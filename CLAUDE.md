@@ -53,7 +53,7 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
-  Pricing), People (Accounts, Applicants, Contacts, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
+  Pricing), People (Accounts, Contacts, Scholarships, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
   Activity, Roadmaps, Data). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
   `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
   waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word; four tabs, or five when one is as short as "Data", must fit
@@ -234,9 +234,9 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   previous scale's checklist is complete and 7+ days passed since the last
   unlock; the admin can force past both. Approval sets
   `ScaleProgress.unlockedAt`, which only counts while entitlement is active.
-- **Free trial**: approving a class application sets `User.trialEndsAt` (3
-  days, once per person, never cleared) or it starts at registration if they
-  had no account yet. Trial opens only Scale 1's first 3 lessons
+- **Free trial**: every new account starts it at sign-up (`startTrialForEmail` in
+  the register route; decided 2026-11-09): `User.trialEndsAt` (3 days, once per
+  person and per inbox, never cleared; off with `trial.enabled`). Trial opens only Scale 1's first 3 lessons
   (`TRIAL_LESSON_COUNT`), no practice/quiz; locked lessons are sent to the
   client as titles only.
 - **Yearly (`TERM_12`) is retired** for new enrollments
@@ -273,12 +273,19 @@ leaving ends the family (members keep the month paid). One family change per `fa
 ## Contacts and soft holds (added 2026-10-20)
 
 Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
-the weekly time a payment plan reserves), applicants with no account (`ClassRegistration`), and people added by hand (`Contact`, with a status, notes
+the weekly time a payment plan reserves), people who sent the class form and have no account (`ClassRegistration`, shown as "Class form" with Call / Text / Email and Remove), and people added by hand (`Contact`, with a status, notes
 and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
 contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. Every admin time picker shows it
 ("Held for X") and asks before taking it: Book a class and Reschedule on the student page, Set up plan and Weekly time (`holdAppliesTo` in
 `slotHolds.ts`). A hold for the same email is preselected in Set up plan and released when the plan is set up. Admin only; students never see a
 contact's name. A contact with an account appears once in the list (merged by email).
+
+## No class applications (removed 2026-11-09)
+
+The public class form (`/classes`, `submitClassRegistration`) only collects details: there is no approve or reject, no Applicants page
+(`/admin/students` redirects to `/admin/contacts?show=application`), no auto-approve switch, and nothing counts "applications" anymore.
+The visitor sees the smiling `PianoCat` ("An instructor will reach out to you soon"), the owner gets the `NEW_REGISTRATION` alert, and the
+teacher reaches out outside the app from the Contacts entry. The free trial no longer waits on an approval: every new account gets it.
 
 ## Daily practice in the admin (added 2026-10-14)
 
@@ -322,7 +329,8 @@ proves nothing about the line being active or theirs; only a text code or a paid
   Plivo keys in production it can never turn on (`smsAvailable()`), so nobody gets locked out. In development
   the code is printed to the server log. There is NO free production SMS service.
 - Settings (`/account`) has one "Account" choice that holds every account item in groups (profile, contact,
-  sign-in and security, connected accounts, privacy and data incl. download, delete). The content is rendered
+  sign-in and security, connected accounts, classes and reminders, family and offers, privacy and data incl. download, delete;
+  regrouped 2026-11-10, each card showing its current value under its title). The content is rendered
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
@@ -358,7 +366,7 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
   (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
   Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
 - **Follow-ups** (`adminFollowUps.ts`, People > Accounts (`FollowUpList`) + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
-  expiring, stale applications. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
+  expiring, Discord not linked. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
 - **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
 - **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
 - **Top banners** never ask for what the screen already shows (`alreadyShown` in `TopBanners.tsx`): no Discord banner on Lessons or at desktop width (the sidebar card
@@ -445,8 +453,8 @@ their panels, and they report their counts, through window events (`topBarEvents
 
 ## Account bans (added 2026-10-10)
 
-`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button
-top right of the Account card on the student page, with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
+`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, the red "Ban" item at the end
+of the Account card's "Manage" menu on the student page (moved there 2026-11-10 so the rarest action is no longer the loudest), with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
 `user.unban`). Never for an admin or for yourself. A ban bumps `sessionVersion` (ends every open session) and
 `getServerAuthSession` also refuses a banned account on its next request. Every sign-in route ends in the credentials
 `authorize` in `auth.ts`, which throws `BANNED` for a banned account; `loginStepOneAction` says it after the right password
@@ -495,6 +503,12 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   history includes a dedicated cleanup commit for stray ones).
 
 ## Design system (added 2026-10-29, `DESIGN.md`)
+
+**Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
+(one focal point per card, three sizes and tones, value first with the label under it, status only when it is news, one primary button and
+the rest in a More/Manage `ActionMenu`, destructive quiet, rows for lists, show a few and fold the rest). Build cards from
+`src/components/ui/CardKit.tsx` (`CardHead`, `Facts`/`Fact`, `Meta`, `Callout`, `CardFoot`). `buttonVariants` now runs through `cn`, so a
+caller's `className` (for example `text-red-300` on a ghost button) always beats the variant's own classes.
 
 `DESIGN.md` at the repo root is the design system every screen follows: type scale (`text-caption` 12, `text-small` 13, `text-body` 16,
 `text-title` 20, `text-headline` 24, `text-hero`, `text-figure`), corners (8 small, 12 controls and rows, 16 cards, 24 sheets, pills for
@@ -750,9 +764,9 @@ The owner's rule: one job, one screen. Never answer "go to X first"; fix the cau
 - **Weekly times in one step** (`weeklyTimeOptions.ts`, `weeklyTimeRules.ts`, `weeklyWindowMove.ts`): Set up plan, Weekly time and the plan builder list every time no other live plan keeps (`getWeeklyTimeOptions`; `getReservableSlots` stays the students' list), with clashes named ("Sam has Dec 2", fixed by starting after it or `moveClashClassAction`), holds and waitlists. "Another time…" makes a 45 minute window in the same transaction (`ensureWeeklyWindow`, audited `schedule.add-time`). Editing a window that moves people refuses naming them, with "Move everyone with it" (`moveWindowWithEveryone`). Close a day can move its classes instead (`moveClosedDayClasses`). `AdminPlanSetupButton` opens on the `bnp-open-plan-setup` event (`detail.slot` as "scheduleId:chunkIndex" or `{ scheduleId, chunkIndex }`).
 - **Student page does everything**: `?do=credits|book|plan|payments|setup|message|note|scale|support|discord` (`personActionHref` in `commandRecents.ts`; Cmd-K person jobs come from `personActionsFor`). The Money section is `PaymentQueue personView` (approve, reject, Mark paid, refund with "also cancel their classes", cancel bill, fix, receipt) with its own Notify switch on by default (place `payments`), because a payment result is something the student waits for. The Plan menu adds Resend bill, Record payment, Settle late payment, Cancel plan, a personal discount in Plan settings, and Group for every group the person pays for (`AdminPlanMoneyTools.tsx`). **Mark paid** (`markBillPaid`, owner, audited `payment.mark-paid`) records money that came another way. `/admin/payments?user=` / `?id=` / `?q=` via `adminPaymentLinks.ts`. Unmatched bank emails: "Find the student" (`attachReceiptToStudent`) opens their next bill when they paid early; amounts must still match, and when a group's freshly opened total differs every bill that open made is put back exactly as it was (`undoOpenedBills`, serializable, only ever restoring a bill still unsent and open), so nothing is left open early.
 - **Today, Needs you, support**: `/admin/today?day=YYYY-MM-DD` (`teachingDayRules.ts`); each class row has a More menu (`ClassRowMenu`: Reschedule, Cancel, Message, Note, In person, next scale with "Release anyway" via `releaseNextScaleAction`, audited `scale.release`), "Send Discord steps", "Message this class" and a "Still to mark" group; Attendance and the top-bar panel reuse `ClassMoveCancelButtons`. Needs you is built from `getAttentionItems` plus overdue follow-ups (`buildNeedsYou`); expandable rows act in place (`NeedsYouList`). A support thread shows `SupportAccountPanel` (payments, classes, scale) and "Next open chat". Admin alerts link to the exact person or payment. The raw scale Unlock sends the same notice as approval (`sendScaleUnlockedNotice`).
-- **People**: Applicants find the account by email and offer Set up plan / Book first class, or Send sign-up link (`sendRegisterInvite(..., { fromStudio: true })`: no referral code, `/register?email=`) and Hold a time; staff are told when an approved applicant registers. Follow-ups expand in place, "Remind all N", and headings open filtered lists (Accounts `?filter=trial|credits|discord`). A group or parent bill's reminder and Resend bill go to the payer, for the combined bill (`planBillTarget` in `planBillPayer.ts`). Staff > Add staff (`staffAdd.ts`). `/admin/messages?to=<id>,<id>` (`messageComposeHref`) opens a filled composer (Accounts bulk bar, side summary). A person's change history matches their plans', groups', payments' and classes' ids too (`accountAuditWhere`, `accountAudit.ts`). Sent messages show "Replied". System > Automatic tasks has owner-only Run now (`runJobNow`, `jobRunNow.ts`): every scheduled function exports `runX = () => runJob(...)` and is listed in `RUNNERS`. Admin > Lessons lists the database scales (`listScalesForLessons`), so a scale added on Roadmaps gets lessons.
+- **People**: a Contacts class form entry has a More menu with Send sign-up link (`sendRegisterInvite(..., { fromStudio: true })`: no referral code, `/register?email=`) and Hold a time (Schedule > Reserved filled in); a contact with an account offers Set up plan with their held time. Follow-ups expand in place, "Remind all N", and headings open filtered lists (Accounts `?filter=trial|credits|discord`). A group or parent bill's reminder and Resend bill go to the payer, for the combined bill (`planBillTarget` in `planBillPayer.ts`). Staff > Add staff (`staffAdd.ts`). `/admin/messages?to=<id>,<id>` (`messageComposeHref`) opens a filled composer (Accounts bulk bar, side summary). A person's change history matches their plans', groups', payments' and classes' ids too (`accountAuditWhere`, `accountAudit.ts`). Sent messages show "Replied". System > Automatic tasks has owner-only Run now (`runJobNow`, `jobRunNow.ts`): every scheduled function exports `runX = () => runJob(...)` and is listed in `RUNNERS`. Admin > Lessons lists the database scales (`listScalesForLessons`), so a scale added on Roadmaps gets lessons.
 - **Students** (`inPlaceLinks.ts`): `/billing/plans?slot=` preselects a weekly time and `?who=parent&child=` a linked child; `/lessons?changeTime=` opens the weekly-time picker; `/billing/history?pay=<id>` opens that payment's sheet (rows have Pay / Resubmit); the approval notice opens `/billing/receipt/<id>`; a parent group's bill notice goes to `/parent`, and a rejected bill that someone else pays (a parent or group payer) is reported to that payer with a link to where they pay (`rejectZellePayment`), never to the child. Onboarding keeps `?next=` through the phone-confirmation step too. Sign-up and onboarding carry `callbackUrl` / `?next=` (`safeCallbackPath` for every redirect taken from a URL). Discord connect returns to where it started (path signed into the OAuth state, `makeState` / `readState`); `JoinClassButton` becomes "Connect Discord and join". A group member with no weekly time lands on "Book a class"; a group plan's time is changed by asking (Atom), never self-changed. Billing > Plans has Pause, Change length and Cancel rows (`PlanControls`). A scholarship code can be claimed on the 6 Months card.
-- **Parents and invites**: friend requests, parent links and group invites (`GROUP_INVITE`, bell not Mail) carry `?answer=<id>` (`bellAnswers.ts`) so the bell shows Accept / Decline (`answerFromBellAction`, same functions as their pages); a Mail row in the bell opens its target directly. A parent's request for an email with no account is saved (`ParentLinkInvite`, 30 days, same answer either way) and claimed when that account confirms its email (`claimParentInvites`). Home shows "Your child(ren)" and Parent mode in the sidebar and profile menu (never the dock); a paying parent is not pitched a trial. "Ask my parent to move or skip this" (`parentAsk.ts`, `PARENT_CLASS_ASK`) opens `/parent/<child>?move=<booking>`. Home's signed-in "Ask for a free trial class" (`trialApplication.ts`). "Ask to book together" sends a friend request by email (`askToBookTogether`). Every ask is a `FriendEmailAsk` row (account or not), and the sender's /friends "Sent requests" lists asks only as the typed email and "Waiting" (`getEmailAsksSent`; the linked friend request is left out of `getPendingRequestsSent`), so the list never tells whether an address has an account; an accepted ask becomes a friend, a declined one still reads "Waiting" until it is 30 days old. An ask only makes (and owns) a request when no request row of any status exists between the two people and neither blocks the other (`makeAskRequest`); everything else is left exactly as it was. A request later sent by username stops being the ask's, ask-made requests skip and do not count toward the hourly friend request cap, withdrawing an ask deletes its request unless accepted, and the data export lists asks only by the typed email (an ask-made request appears once accepted). So no screen, limit or export changes depending on whether an asked email has an account (`tests/db/askPrivacy.test.ts`). A request to someone you are already friends with is refused, never a reset to waiting. An ask to an address with no account becomes a real request once that account confirms its email (`claimFriendEmailAsks`, next to `claimParentInvites`). Withdraw removes the ask and its unanswered request.
+- **Parents and invites**: friend requests, parent links and group invites (`GROUP_INVITE`, bell not Mail) carry `?answer=<id>` (`bellAnswers.ts`) so the bell shows Accept / Decline (`answerFromBellAction`, same functions as their pages); a Mail row in the bell opens its target directly. A parent's request for an email with no account is saved (`ParentLinkInvite`, 30 days, same answer either way) and claimed when that account confirms its email (`claimParentInvites`). Home shows "Your child(ren)" and Parent mode in the sidebar and profile menu (never the dock); a paying parent is not pitched a trial. "Ask my parent to move or skip this" (`parentAsk.ts`, `PARENT_CLASS_ASK`) opens `/parent/<child>?move=<booking>`. "Ask to book together" sends a friend request by email (`askToBookTogether`). Every ask is a `FriendEmailAsk` row (account or not), and the sender's /friends "Sent requests" lists asks only as the typed email and "Waiting" (`getEmailAsksSent`; the linked friend request is left out of `getPendingRequestsSent`), so the list never tells whether an address has an account; an accepted ask becomes a friend, a declined one still reads "Waiting" until it is 30 days old. An ask only makes (and owns) a request when no request row of any status exists between the two people and neither blocks the other (`makeAskRequest`); everything else is left exactly as it was. A request later sent by username stops being the ask's, ask-made requests skip and do not count toward the hourly friend request cap, withdrawing an ask deletes its request unless accepted, and the data export lists asks only by the typed email (an ask-made request appears once accepted). So no screen, limit or export changes depending on whether an asked email has an account (`tests/db/askPrivacy.test.ts`). A request to someone you are already friends with is refused, never a reset to waiting. An ask to an address with no account becomes a real request once that account confirms its email (`claimFriendEmailAsks`, next to `claimParentInvites`). Withdraw removes the ask and its unanswered request.
 
 ## Bill bar and the non-payment lock (added 2026-11-02)
 

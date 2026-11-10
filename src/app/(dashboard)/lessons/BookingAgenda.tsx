@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Clock } from "@/components/ui/appIcons";
+import { Check } from "@/components/ui/appIcons";
 import { dayKey } from "./BookingCalendar";
 
 /**
@@ -124,7 +124,15 @@ export function BookingAgenda({
                 <div className="flex flex-wrap gap-2">
                   {list.map((r) => {
                     const picked = pickedKeys.has(r.key);
-                    const tone = r.isBooked ? "bg-slate-50/6 text-slate-500" : picked ? "tint-green" : r.reservedForYou ? "tint-peach" : "tint-blue";
+                    // The time is what you read; whether it is open is a quiet state, so only the exceptions get a word or a colour.
+                    const tone = r.isBooked
+                      ? "bg-transparent text-slate-500 ring-1 ring-inset ring-slate-50/8"
+                      : picked
+                        ? "bg-signal/16 text-slate-50 ring-1 ring-inset ring-signal/60"
+                        : r.reservedForYou
+                          ? "tint-peach"
+                          : "bg-slate-50/6 text-slate-100 hover:bg-slate-50/10";
+                    const state = r.isBooked ? "Taken" : picked ? "Picked" : r.reservedForYou ? "Reserved for you" : null;
                     return (
                       <button
                         key={r.key}
@@ -132,17 +140,12 @@ export function BookingAgenda({
                         disabled={r.isBooked}
                         aria-pressed={picked}
                         onClick={() => onPick(r.key, key)}
-                        className={`tap flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition disabled:cursor-not-allowed ${tone} ${r.isBooked ? "" : "hover:brightness-110"}`}
+                        className={`tap flex min-h-9 items-center gap-1.5 rounded-control px-3 py-1.5 text-left transition disabled:cursor-not-allowed ${tone}`}
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50/12">
-                          <Clock aria-hidden className="h-4 w-4" strokeWidth={1.75} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-small font-semibold leading-tight">{timeLabel(r.scheduledAt)}</span>
-                          <span className="block text-caption leading-tight opacity-80">
-                            {r.isBooked ? "Taken" : picked ? "Picked" : r.reservedForYou ? "Reserved for you" : `Open · ${r.durationMin} min`}
-                          </span>
-                        </span>
+                        {picked && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-signal-fg" strokeWidth={2.5} />}
+                        <span className={`text-small font-semibold leading-tight tabular-nums ${r.isBooked ? "line-through decoration-slate-600" : ""}`}>{timeLabel(r.scheduledAt)}</span>
+                        {state && <span className="text-caption leading-tight opacity-80">{state}</span>}
+                        {!state && <span className="sr-only">Open, {r.durationMin} min</span>}
                       </button>
                     );
                   })}

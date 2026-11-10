@@ -9,7 +9,7 @@ export function HomeDemo() {
       <h2 id="home-demo" className="text-center font-serif text-headline text-slate-50">
         Book a class in one tap
       </h2>
-      <p className="mx-auto mt-3 max-w-xl text-center text-body text-slate-50/80">
+      <p className="mx-auto mt-3 max-w-xl text-center text-body text-slate-400">
         Pick a time and it is booked, with a notice on your phone.
       </p>
       <div className="mt-10">

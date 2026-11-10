@@ -147,8 +147,8 @@ export function ParentLinksPanel() {
                     // The whole row opens the child's page, so there is no small button to find.
                     <Link href={`/parent/${c.childId}`} className="press-soft group flex min-w-0 flex-1 items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-3 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                       <span className="min-w-0">
-                        <span className="block truncate text-small font-medium text-slate-100">{c.name}</span>
-                        <span className="block truncate text-small text-slate-500">Linked · open their progress, practice and classes</span>
+                        <span className="block truncate text-body font-medium text-slate-100">{c.name}</span>
+                        <span className="block truncate text-small text-slate-500">Linked</span>
                       </span>
                       <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5" />
                     </Link>
@@ -158,7 +158,7 @@ export function ParentLinksPanel() {
                         <span className="block truncate text-small font-medium text-slate-300">{c.name}</span>
                         <span className="block truncate text-small text-slate-500">{c.awaitingAccount ? "Waiting for them to create an account" : `Waiting for them to accept · ${c.email}`}</span>
                       </span>
-                      <button type="button" disabled={busy === `cancel:${c.linkId}`} onClick={() => void run(`cancel:${c.linkId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      <button type="button" disabled={busy === `cancel:${c.linkId}`} onClick={() => void run(`cancel:${c.linkId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
                         Withdraw
                       </button>
                     </div>
@@ -201,8 +201,8 @@ export function ParentLinksPanel() {
               <ul className="mt-2 divide-y divide-slate-50/10">
                 {state.parents.map((p) => (
                   <li key={p.parentId} className="flex items-center justify-between gap-3 py-2.5">
-                    <p className="min-w-0 truncate text-small text-slate-100">{p.name}</p>
-                    <button type="button" disabled={busy === `end:${p.parentId}`} onClick={() => void run(`end:${p.parentId}`, () => endParentLinkAction(p.parentId), "Link ended")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    <p className="min-w-0 truncate text-body font-medium text-slate-100">{p.name}</p>
+                    <button type="button" disabled={busy === `end:${p.parentId}`} onClick={() => void run(`end:${p.parentId}`, () => endParentLinkAction(p.parentId), "Link ended")} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}>
                       End link
                     </button>
                   </li>

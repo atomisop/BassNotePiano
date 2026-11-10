@@ -13,6 +13,9 @@ import { MessageSupportButton } from "@/components/lessons/MessageSupportButton"
 import { buttonVariants } from "@/components/ui/button";
 import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { ChevronDown } from "@/components/ui/appIcons";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { Meta } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -138,6 +141,11 @@ export function groupByMonth(list: BookingRow[]): { key: string; label: string; 
   return groups;
 }
 
+/**
+ * One booked class as a row (DESIGN.md, Hierarchy 8): the day and time are the line you read, one quiet line under it, and every
+ * change (calendar, reschedule, support, cancel) behind one "More" menu so the list stays calm. Cancel is last and red, and still
+ * asks first. Rendered inside a list with hairlines between the rows (see the Upcoming tab and MonthGroup).
+ */
 export function BookingCard({
   booking,
   cancellationCutoffHours,
@@ -159,6 +167,7 @@ export function BookingCard({
 }) {
   const b = booking;
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [supportError, setSupportError] = useState<string | null>(null);
   const start = new Date(b.scheduledAt);
   const hoursUntil = (start.getTime() - Date.now()) / 3_600_000;
   // Self-cancel and self-reschedule share one rule (see cancelClassBooking and
@@ -174,37 +183,31 @@ export function BookingCard({
   const canceling = cancelingId === b.id;
   const freeUntil = new Date(start.getTime() - cancellationCutoffHours * 3_600_000);
   const minutes = Math.round((b.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES);
+  const noShow = b.status === "COMPLETED" && b.attendance === "NO_SHOW";
 
   return (
-    <div className="glass-surface p-4 sm:p-5">
-      <div className="flex items-start gap-4">
-        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-neu-base shadow-pressed-low">
-          <span className="text-small font-medium uppercase tracking-wide text-slate-500">
-            {start.toLocaleDateString(undefined, { weekday: "short" })}
-          </span>
-          <span className="text-title font-bold leading-none text-slate-50">{start.getDate()}</span>
-          <span className="text-small text-slate-500">{start.toLocaleDateString(undefined, { month: "short" })}</span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-body font-semibold text-slate-50">{b.label ?? "Class"}</p>
-            {b.reserved && scheduled && (
-              <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-400 shadow-raised-low">Your weekly class</span>
-            )}
-            {!scheduled && (
-              <span className={`rounded-full px-2.5 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
-                {STATUS_LABEL[b.status]}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-small text-slate-200">
-            {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} to {formatEndTime(b.scheduledAt, b.creditsSpent)}
+    <div className="py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-body font-semibold tabular-nums ${scheduled ? "text-slate-50" : "text-slate-300"}`}>
+            {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+            <span aria-hidden className="text-slate-500"> · </span>
+            {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
           </p>
-          <p className="mt-0.5 text-small text-slate-500">
-            {creditsLabel(b.creditsSpent)} · {minutes} min
-          </p>
+          <Meta
+            className="mt-0.5"
+            items={[
+              b.label ?? "Class",
+              `to ${formatEndTime(b.scheduledAt, b.creditsSpent)}`,
+              `${minutes} min`,
+              b.creditsSpent !== CREDITS_PER_CLASS && creditsLabel(b.creditsSpent),
+              b.reserved && scheduled && "Your weekly class",
+              b.inPerson && scheduled && "In person",
+              b.status === "COMPLETED" && b.attendance === "PRESENT" && "Attended",
+            ]}
+          />
           {changeEligible && (
-            <p className="mt-1 text-small text-slate-500">
+            <p className="mt-0.5 text-caption text-slate-500">
               Free to change until {freeUntil.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
             </p>
           )}
@@ -213,54 +216,54 @@ export function BookingCard({
               Starts within {cancellationCutoffHours} hours, so changes now go through the team. Message support and they will sort it out.
             </p>
           )}
-          {b.status === "COMPLETED" && b.attendance && (
-            <p className={`mt-1 text-small ${b.attendance === "PRESENT" ? "text-slate-50" : "text-red-400"}`}>
-              {b.attendance === "PRESENT" ? "Attended" : "Marked no-show, still charged"}
-            </p>
+          {noShow && <p className="mt-1 text-small text-red-400">Marked no-show, still charged</p>}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Status only when it is news: a canceled class says so; a healthy one needs no word. */}
+          {b.status === "CANCELED" && <StatusDot tone="neutral">{STATUS_LABEL[b.status]}</StatusDot>}
+          {scheduled && hoursUntil > -1 && hoursUntil <= 0.5 && !b.inPerson && (
+            // With Discord not connected it reads "Connect Discord and join" and opens this class's call once connected.
+            <JoinClassButton href={b.discordUrl ?? DISCORD_INVITE_URL} bookingId={b.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
+          )}
+          {scheduled && hoursUntil > -1 && !(cancelEligible && confirmingCancel) && (
+            <ActionMenu label="More" align="right">
+              {hoursUntil > 0 && (
+                <a href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${minutes}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Add to calendar
+                </a>
+              )}
+              {rescheduleEligible && (
+                <button
+                  type="button"
+                  onClick={() => onStartReschedule(b)}
+                  disabled={canceling}
+                  aria-pressed={isBeingRescheduled}
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: isBeingRescheduled ? "text-signal-fg" : undefined })}
+                >
+                  {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
+                </button>
+              )}
+              <MessageSupportButton bookingId={b.id} onError={setSupportError} className={buttonVariants({ variant: "ghost", size: "sm" })} />
+              {cancelEligible && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingCancel(true)}
+                  disabled={canceling}
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                >
+                  {b.reserved ? "Skip" : "Cancel"}
+                </button>
+              )}
+            </ActionMenu>
           )}
         </div>
       </div>
 
-      {scheduled && hoursUntil > -1 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {b.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
-          {hoursUntil <= 0.5 && !b.inPerson && (
-            <JoinClassButton href={b.discordUrl ?? DISCORD_INVITE_URL} bookingId={b.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
-          )}
-          {rescheduleEligible && (
-            <button
-              type="button"
-              onClick={() => onStartReschedule(b)}
-              disabled={canceling}
-              className={`tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isBeingRescheduled
-                  ? "bg-slate-50/10 text-slate-50 shadow-pressed-low"
-                  : "bg-neu-base text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-              }`}
-            >
-              {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
-            </button>
-          )}
-          {cancelEligible && !confirmingCancel && (
-            <button
-              type="button"
-              onClick={() => setConfirmingCancel(true)}
-              disabled={canceling}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
-            >
-              {b.reserved ? "Skip" : "Cancel"}
-            </button>
-          )}
-          {hoursUntil > 0 && (
-            <a
-              href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${minutes}`}
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
-            >
-              Add to calendar
-            </a>
-          )}
-          <MessageSupportButton bookingId={b.id} />
-        </div>
+      {supportError && (
+        <p role="alert" className="mt-2 text-small text-red-400">
+          {supportError}
+        </p>
       )}
 
       {cancelEligible && confirmingCancel && (
@@ -322,27 +325,28 @@ export function MonthGroup({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="glass-surface overflow-hidden">
+    <div className="overflow-hidden rounded-card bg-neu-base shadow-raised-low">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full justify-between" })}
+        aria-expanded={open}
+        className="tap flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-slate-50/4 sm:px-5"
       >
-        <span className="text-small font-medium text-slate-200">{group.label}</span>
-        <span className="flex items-center gap-2 text-small text-slate-500">
-          {group.bookings.length} booking{group.bookings.length === 1 ? "" : "s"}
+        <span className="text-body font-medium text-slate-100">{group.label}</span>
+        <span className="flex items-center gap-2 text-small tabular-nums text-slate-500">
+          {group.bookings.length} {group.bookings.length === 1 ? "class" : "classes"}
           <ChevronIcon open={open} />
         </span>
       </button>
       <Collapse open={open}>
-        <div className="space-y-2 border-t border-ink/10 p-3">
+        <div className="divide-y divide-slate-50/8 border-t border-slate-50/8 px-4 sm:px-5">
           {group.bookings.map((b) => (
             <BookingCard
               key={b.id}
               booking={b}
               cancellationCutoffHours={cancellationCutoffHours}
-                    canCancel={canCancel}
-                    canReschedule={canReschedule}
+              canCancel={canCancel}
+              canReschedule={canReschedule}
               cancelingId={cancelingId}
               reschedulingBookingId={reschedulingBookingId}
               onCancel={onCancel}

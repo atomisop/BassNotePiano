@@ -128,12 +128,12 @@ export function SlotCalendarPicker({
           {offDay && <p className="mb-2 text-small text-amber-300">You don&apos;t usually teach {DAY_NAMES[weekdayOf(day) ?? 0]}s.</p>}
           {daySlots.length > 0 && (
             <>
-              <p className="mb-1.5 text-small font-medium text-slate-200">Open times</p>
+              <p className="mb-1.5 text-caption font-medium text-slate-500">Open times</p>
               <div className="flex flex-wrap gap-1.5">
                 {daySlots.map((s) => {
                   const active = picked ? slotKey(picked) === slotKey(s) : false;
                   // A time kept for this student, or a contact's soft hold, says so on the chip itself.
-                  const tint = s.reservedForThem ? "bg-signal/16 text-signal-fg" : s.heldFor ? "bg-amber-300/10 text-amber-200" : "bg-neu-base text-slate-100 shadow-raised-low";
+                  const tint = s.reservedForThem ? "bg-signal/16 text-signal-fg" : s.heldFor ? "bg-amber-300/10 text-amber-200" : "bg-neu-base text-slate-50 shadow-raised-low";
                   return (
                     <button
                       key={slotKey(s)}
@@ -144,7 +144,7 @@ export function SlotCalendarPicker({
                         onPick(s);
                         onOwnTime("");
                       }}
-                      className={`tap rounded-lg px-3 py-1.5 text-small font-medium transition ${active ? "bg-signal text-slate-950" : tint}`}
+                      className={`tap rounded-lg px-3 py-1.5 text-small font-semibold tabular-nums transition ${active ? "bg-signal text-slate-950" : tint}`}
                     >
                       {timeOf(s.scheduledAt)}
                       {s.reservedForThem ? " · Reserved for them" : s.heldFor ? ` · Held for ${s.heldFor.split(" ")[0]}` : ""}
@@ -156,7 +156,7 @@ export function SlotCalendarPicker({
           )}
           {dayHeld.length > 0 && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
-              <p className="mb-1.5 flex items-center gap-1 text-small font-medium text-slate-200">
+              <p className="mb-1.5 flex items-center gap-1 text-caption font-medium text-slate-500">
                 Kept by a plan
                 <Hint label="About plan times">Free this week, but another student&apos;s weekly plan keeps this time. You can still use it; you will be asked first.</Hint>
               </p>
@@ -173,7 +173,7 @@ export function SlotCalendarPicker({
                         onPick(s);
                         onOwnTime("");
                       }}
-                      className={`tap rounded-lg px-3 py-1.5 text-small font-medium transition ${active ? "bg-amber-300 text-slate-950" : "bg-amber-300/10 text-amber-200"}`}
+                      className={`tap rounded-lg px-3 py-1.5 text-small font-medium tabular-nums transition ${active ? "bg-amber-300 text-slate-950" : "bg-amber-300/10 text-amber-200"}`}
                     >
                       {timeOf(s.scheduledAt)} · {(s.heldBy ?? "").split(" ")[0]}
                       {namedHolds ? "'s weekly time" : ""}
@@ -185,10 +185,10 @@ export function SlotCalendarPicker({
           )}
           {dayBooked.length > 0 && (
             <div className={daySlots.length > 0 || dayHeld.length > 0 ? "mt-3" : ""}>
-              <p className="mb-1.5 text-small font-medium text-slate-200">Already booked</p>
+              <p className="mb-1.5 text-caption font-medium text-slate-500">Already booked</p>
               <div className="flex flex-wrap gap-1.5">
                 {dayBooked.map((b) => (
-                  <span key={b.id} className="rounded-lg bg-red-400/10 px-2.5 py-1 text-small text-red-300" title={b.name}>
+                  <span key={b.id} className="rounded-lg bg-slate-50/5 px-2.5 py-1 text-small tabular-nums text-slate-400" title={b.name}>
                     {timeOf(b.scheduledAt)} to {timeOf(new Date(new Date(b.scheduledAt).getTime() + CLASS_MS).toISOString())} · {b.name.split(" ")[0]}
                   </span>
                 ))}
@@ -198,7 +198,7 @@ export function SlotCalendarPicker({
           {allowAnyDay && daySlots.length === 0 && dayHeld.length === 0 && <p className="mb-2 text-small text-slate-500"><Hint>No weekly times that day. Type a start time to create one.</Hint></p>}
           {allowAnyDay && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
-              <p className="mb-1.5 flex items-center gap-1 text-small font-medium text-slate-200">
+              <p className="mb-1.5 flex items-center gap-1 text-caption font-medium text-slate-500">
                 {daySlots.length > 0 ? "Or any start time" : "Start time (Eastern)"}
                 <Hint label="About custom times">The class is 45 minutes and only has to not overlap another class. Back to back is fine.</Hint>
               </p>

@@ -106,8 +106,8 @@ export function ChildClasses({
   return (
     <section className="mt-6" aria-label="Classes">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-small text-slate-400">
-          Credits <span className="tabular-nums text-slate-50">{creditsLabel}</span>
+        <p className="text-small text-slate-500">
+          Credits <span className="font-medium tabular-nums text-slate-100">{creditsLabel}</span>
         </p>
         <button type="button" onClick={() => void openPicker("book")} className={buttonVariants({ variant: "primary", size: "sm" })}>
           <CalendarPlus aria-hidden className="mr-1.5 h-4 w-4" />
@@ -118,19 +118,20 @@ export function ChildClasses({
       {upcoming.length === 0 ? (
         <p className="mt-3 rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No classes coming up.</p>
       ) : (
-        <ul className="mt-3 space-y-2" aria-label="Upcoming classes">
+        // Rows, not boxes: the day and time to read, and the two changes quiet beside it (cancel in red, still two taps).
+        <ul className="mt-3 divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low md:px-5" aria-label="Upcoming classes">
           {upcoming.map((c) => (
-            <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl bg-neu-base p-4 shadow-raised-low">
+            <li key={c.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-3">
               <div className="min-w-0">
-                <p className="text-small font-medium text-slate-100">{formatDateTime(c.scheduledAt)}</p>
-                {c.label && <p className="mt-0.5 truncate text-small text-slate-500">{c.label}</p>}
+                <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(c.scheduledAt)}</p>
+                {c.label && <p className="truncate text-small text-slate-500">{c.label}</p>}
               </div>
-              <div className="flex shrink-0 gap-2">
-                <button type="button" onClick={() => void openPicker(c.id)} aria-label={`Move the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              <div className="-mr-2 flex shrink-0 gap-1">
+                <button type="button" onClick={() => void openPicker(c.id)} aria-label={`Move the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                   <MoveRight aria-hidden className="mr-1.5 h-3.5 w-3.5" />
                   Move
                 </button>
-                <button type="button" onClick={() => void cancel(c.id)} disabled={busy === c.id} aria-label={sure === c.id ? "Tap again to cancel this class" : `Cancel the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                <button type="button" onClick={() => void cancel(c.id)} disabled={busy === c.id} aria-label={sure === c.id ? "Tap again to cancel this class" : `Cancel the ${formatDateTime(c.scheduledAt)} class`} className={buttonVariants({ variant: sure === c.id ? "danger" : "ghost", size: "sm", className: sure === c.id ? undefined : "text-red-300 hover:text-red-200" })}>
                   {busy === c.id ? <MorphingSquare size={12} className="mr-1.5" /> : <X aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
                   {sure === c.id ? "Sure?" : "Cancel"}
                 </button>
@@ -142,12 +143,13 @@ export function ChildClasses({
 
       {recent.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-small font-medium text-slate-300">Recent</h3>
-          <ul className="mt-2 divide-y divide-slate-50/10" aria-label="Recent classes">
+          <h3 className="px-1 text-small font-semibold uppercase tracking-caps text-slate-400">Recent</h3>
+          <ul className="mt-2 divide-y divide-slate-50/8 px-1" aria-label="Recent classes">
             {recent.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-small">
-                <span className="text-slate-300">{formatDateTime(c.scheduledAt)}</span>
-                <span className={c.attended === true ? "text-emerald-400" : c.attended === false ? "text-amber-300" : "text-slate-500"}>{c.attended === true ? "Attended" : c.attended === false ? "Missed" : "Not marked"}</span>
+                <span className="tabular-nums text-slate-300">{formatDateTime(c.scheduledAt)}</span>
+                {/* Attended is the healthy state, so it stays a quiet word; a missed class carries the colour. */}
+                <span className={c.attended === false ? "font-medium text-amber-300" : "text-slate-500"}>{c.attended === true ? "Attended" : c.attended === false ? "Missed" : "Not marked"}</span>
               </li>
             ))}
           </ul>

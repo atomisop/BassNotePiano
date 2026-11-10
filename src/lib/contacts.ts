@@ -246,7 +246,7 @@ export interface DirectoryRow {
   phone: string | null;
   /** Instrument for contacts and applications; empty for accounts. */
   detail: string | null;
-  /** Status in the person's own list (an application's review state, a contact's stage). */
+  /** Status in the person's own list (a contact's stage). */
   status: string | null;
   href: string;
   classesTaken: number;
@@ -254,11 +254,13 @@ export interface DirectoryRow {
   nextClass: Date | null;
   /** The weekly time kept for them: a plan's reserved hour, or the contact's holds. */
   reserved: string | null;
+  /** What someone sent through the public class form (kind APPLICATION only), so the teacher can reach out outside the app. */
+  form?: { id: string; skillLevel: string; notes: string | null; sentAt: Date };
 }
 
 /**
  * Everyone the teacher deals with, in one list: accounts (with the classes they took and booked and any reserved
- * weekly time), people who applied through the form and have no account yet, and people added by hand.
+ * weekly time), people who sent the public class form and have no account yet, and people added by hand.
  */
 export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"): Promise<DirectoryRow[]> {
   const q = query.trim();
@@ -306,30 +308,34 @@ export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"
   }
 
   if (kind === "ALL" || kind === "APPLICATION") {
-    const applications = await prisma.classRegistration.findMany({
+    // Rows rejected back when applications were still reviewed stay out of the list.
+    const forms = await prisma.classRegistration.findMany({
       where: { status: { not: "REJECTED" }, ...(like ? { OR: [{ fullName: like }, { email: like }, { phone: { contains: q } }] } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
-    const emails = await prisma.user.findMany({ where: { email: { in: applications.map((a) => a.email) } }, select: { email: true } });
+    const emails = await prisma.user.findMany({ where: { email: { in: forms.map((a) => a.email) } }, select: { email: true } });
     for (const e of emails) accountEmails.add(e.email.toLowerCase());
-    for (const app of applications) {
-      // Someone who already has an account is listed once, as that account.
-      if (accountEmails.has(app.email.toLowerCase())) continue;
+    const seen = new Set<string>();
+    for (const form of forms) {
+      // Someone who already has an account is listed once, as that account; someone who sent the form twice, once (the newest).
+      const email = form.email.toLowerCase();
+      if (accountEmails.has(email) || seen.has(email)) continue;
+      seen.add(email);
       rows.push({
-        key: `application:${app.id}`,
+        key: `application:${form.id}`,
         kind: "APPLICATION",
-        name: app.fullName,
-        email: app.email,
-        phone: app.phone,
-        detail: app.instrument,
-        status: app.status,
-        // Opens the tab they are on (Applicants opens on Pending, where an approved one is not listed), searched to them.
-        href: `/admin/students?status=${app.status}&q=${encodeURIComponent(app.email)}`,
+        name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        detail: form.instrument,
+        status: null,
+        href: `/admin/contacts?show=application&q=${encodeURIComponent(form.email)}`,
         classesTaken: 0,
         lastClass: null,
         nextClass: null,
         reserved: null,
+        form: { id: form.id, skillLevel: form.skillLevel, notes: form.notes, sentAt: form.createdAt },
       });
     }
   }
@@ -361,5 +367,7 @@ export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"
     }
   }
 
+  // The class form view is a queue of people to call back: newest first. Everything else is a directory: by name.
+  if (kind === "APPLICATION") return rows.sort((a, b) => (b.form?.sentAt.getTime() ?? 0) - (a.form?.sentAt.getTime() ?? 0));
   return rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 }

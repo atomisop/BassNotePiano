@@ -10,6 +10,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Search } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
+import { Meta } from "@/components/ui/CardKit";
 
 export interface DiscordMemberRow {
   id: string;
@@ -88,6 +89,11 @@ export function DiscordMembersList({
 
   return (
     <div>
+      {/* The one figure that matters here: how many have connected. Everything below is the list behind it. */}
+      <p className="mb-4 flex flex-wrap items-baseline gap-x-2 px-1">
+        <span className="text-headline font-bold tabular-nums text-slate-50">{connected}</span>
+        <span className="text-small text-slate-500">of {rows.length} connected</span>
+      </p>
       <NotifyToggle on={tellStudent} onChange={setTellStudent} label="Notify the student when I disconnect them" className="mb-3" />
       <div role="group" aria-label="Show" className="mb-4 flex w-fit max-w-full flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
         {tabs.map((t) => (
@@ -114,22 +120,19 @@ export function DiscordMembersList({
       {visible.length === 0 ? (
         <EmptyState icon={<Search />} title="No one found" description="Try another name, email or Discord name." />
       ) : (
-        <ul className="glass-surface divide-y divide-slate-50/10 px-4">
+        <ul className="glass-surface divide-y divide-slate-50/8 px-4">
           <ViewMore items={visible} initial={15} step={20}>
           {(row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3.5">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-body text-slate-50">
-                  {row.name ?? row.email}
-                  {row.isAdmin && <span className="ml-2 text-small text-slate-400">Admin</span>}
-                </p>
-                {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
+                <p className="truncate text-body font-semibold text-slate-50">{row.name ?? row.email}</p>
+                <Meta className="truncate" items={[row.name ? row.email : null, row.isAdmin ? "Admin" : null]} />
               </div>
 
               {row.discordUsername ? (
                 <>
-                  <span className="shrink-0 text-small text-slate-300">
-                    <span className="text-slate-500">Connected as </span>
+                  <span className="min-w-0 shrink truncate text-small text-slate-400">
+                    <span className="text-slate-500">as </span>
                     {row.discordUsername}
                   </span>
                   {asking === row.id ? (
@@ -143,14 +146,19 @@ export function DiscordMembersList({
                       </button>
                     </span>
                   ) : (
-                    <button type="button" onClick={() => setAsking(row.id)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+                    <button
+                      type="button"
+                      onClick={() => setAsking(row.id)}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
+                    >
                       Disconnect
                     </button>
                   )}
                 </>
               ) : (
                 <>
-                  <span className="shrink-0 text-small text-slate-500">Not connected</span>
+                  {/* Not connected is the problem on this list, so it is the coloured word; connected rows need no badge. */}
+                  <span className="shrink-0 text-small font-medium text-amber-300">Not connected</span>
                   {!row.banned && (
                     <button
                       type="button"

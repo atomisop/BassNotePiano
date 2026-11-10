@@ -50,9 +50,10 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
   return (
     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 sm:max-w-[34rem]">
-        <p className="text-body font-medium text-slate-100">
+        {/* The setting's name is the line to read; "Changed" is a quiet word beside it, not an orange flag on every touched row. */}
+        <p className="text-body font-semibold text-slate-50">
           {def.label}
-          {changed && <StatusDot tone="accent" className="ml-2">Changed</StatusDot>}
+          {changed && <StatusDot tone="neutral" className="ml-2 text-caption text-slate-400">Changed</StatusDot>}
         </p>
         <p className="mt-0.5 text-small text-slate-500">{def.help}</p>
         {error && <p className="mt-1 text-small text-red-400">{error}</p>}
@@ -87,7 +88,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
             Save
           </button>
         )}
-        {saved && <span className="text-small text-signal-fg">Saved</span>}
+        {saved && <span className="text-small text-emerald-400">Saved</span>}
         {changed && !dirty && (
           <button
             type="button"
@@ -143,7 +144,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
         </button>
         {/* From md up the whole list shows, with these to jump around it. */}
         {categories.map((c) => (
-          <a key={c.id} href={`#settings-${c.id}`} className="tap hidden items-center rounded-full bg-neu-base px-3 py-1 text-small text-slate-400 shadow-raised-low hover:text-slate-100 md:inline-flex">
+          <a key={c.id} href={`#settings-${c.id}`} className="tap hidden items-center rounded-full px-3 py-1 text-small text-slate-400 hover:bg-slate-50/6 hover:text-slate-100 md:inline-flex">
             {c.label}
           </a>
         ))}
@@ -184,7 +185,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
           <section key={c.id} id={`settings-${c.id}`} className={`glass-surface p-5 ${browsing && active !== c.id ? "hidden md:block" : ""}`}>
             <h2 className="text-title font-semibold text-slate-50">{c.label}</h2>
             <p className="text-small text-slate-500">{c.blurb}</p>
-            <div className="mt-2 divide-y divide-slate-700/40">
+            <div className="mt-2 divide-y divide-slate-50/8">
               {rows.map((d) => (
                 <Row key={d.key} def={d} value={initial[d.key] ?? d.default} onSave={onSave} onReset={onReset} />
               ))}

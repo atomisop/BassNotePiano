@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = {
   "user.payment-unlock": "Lifted a payment lock",
   "user.role": "Changed a role",
   "access.grant": "Gave complimentary access",
+  "registration.remove": "Removed a class form",
   "access.revoke": "Removed complimentary access",
   "setting.set": "Changed a setting",
   "setting.reset": "Reset a setting",

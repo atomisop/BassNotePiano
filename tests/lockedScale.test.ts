@@ -35,40 +35,27 @@ describe("describeLockedScale", () => {
 });
 
 describe("gettingStartedStep", () => {
-  it("offers a free trial class or a plan to a new student", () => {
-    const s = gettingStartedStep({ kind: "NONE", applicationPending: false });
-    expect(s?.href).toBe("/classes");
-    expect(s?.secondary?.href).toBe("/billing/plans");
-  });
-  it("tells a student whose application is waiting that it is being reviewed", () => {
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: true })?.action).toContain("being reviewed");
+  it("points someone with no access (trial over) at a plan, or a word with an instructor", () => {
+    const s = gettingStartedStep({ kind: "NONE" });
+    expect(s?.href).toBe("/billing/plans");
+    expect(s?.secondary?.href).toBe("/classes");
+    // Class applications were removed (2026-11-09): nothing is "being reviewed" any more.
+    expect(`${s?.action} ${s?.detail}`).not.toMatch(/apply|application|review/i);
   });
   it("stays out of the way of anyone with access", () => {
-    for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind, applicationPending: false })).toBeNull();
+    for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind })).toBeNull();
   });
 });
 
-describe("getting started copy follows the trial length", () => {
-  it("names the configured number of days, or leaves the trial out when it is off", () => {
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 5 })?.detail).toContain("5 days");
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 0 })?.detail).not.toMatch(/trial|days/);
-  });
-});
-
-describe("Home for a parent and for someone whose trial ran", () => {
+describe("Home for a parent", () => {
   it("never pitches a free trial to a parent who only manages children: it opens Parent mode", () => {
-    const one = gettingStartedStep({ kind: "NONE", applicationPending: false, children: 1 });
+    const one = gettingStartedStep({ kind: "NONE", children: 1 });
     expect(one?.href).toBe("/parent");
     expect(one?.action).toBe("Your child's classes");
     expect(`${one?.cta} ${one?.detail}`).not.toMatch(/trial/i);
-    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, children: 2 })?.action).toBe("Your children's classes");
+    expect(gettingStartedStep({ kind: "NONE", children: 2 })?.action).toBe("Your children's classes");
   });
   it("a parent learning too (with access) is not given the parent step", () => {
-    expect(gettingStartedStep({ kind: "PAID", applicationPending: false, children: 2 })).toBeNull();
-  });
-  it("after the free trial ran, offers plans instead of a second trial", () => {
-    const s = gettingStartedStep({ kind: "NONE", applicationPending: false, trialUsed: true, trialDays: 3 });
-    expect(s?.href).toBe("/billing/plans");
-    expect(s?.cta).not.toMatch(/trial/i);
+    expect(gettingStartedStep({ kind: "PAID", children: 2 })).toBeNull();
   });
 });

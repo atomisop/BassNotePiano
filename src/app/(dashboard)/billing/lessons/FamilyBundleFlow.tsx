@@ -45,7 +45,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // uses for e.g. formatTimeLabel. There is one plan length now: a 45-minute
 // class a week, so no cadence to choose.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
-  { value: "MONTHLY", label: "Monthly" },
+  { value: "MONTHLY", label: "1 Month" },
   { value: "TERM_3", label: "3 Months" },
   { value: "TERM_6", label: "6 Months" },
 ];

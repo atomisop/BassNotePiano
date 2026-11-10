@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageBack } from "@/components/ui/BackLink";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { CalendarPlus, Mail, MessageSquare, Phone, Send } from "@/components/ui/appIcons";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/Card";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import type { ContactInput, HoldChoice } from "@/lib/contacts";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
-import { CalendarPlus, Send } from "@/components/ui/appIcons";
 import { DAY_NAMES } from "@/lib/weeklyTimeRules";
+import { personActionHref } from "@/lib/commandRecents";
+import { Fact, Facts, Meta } from "@/components/ui/CardKit";
 
 const STATUS_LABEL: Record<string, string> = { INTERESTED: "Interested", TRIAL: "Trial", ACTIVE: "Active", PAUSED: "Paused" };
 const selectClass =
@@ -184,23 +187,21 @@ export function ContactHolds({
   return (
     <Card>
       <h2 className="text-title font-semibold text-slate-50">Reserved times<Hint className="ml-1.5">A reminder only. When you book someone into one of these times from Schedule, you are asked first. Nothing is blocked.</Hint></h2>
-      <ul className="mt-4 grid gap-2">
-        {active.length === 0 && <li className="text-small text-slate-500">No reserved times.</li>}
+      {/* Each kept time is a row: the day and time bright, how long and why quiet, Release a quiet text button. */}
+      <ul className="mt-3 divide-y divide-slate-50/6">
+        {active.length === 0 && <li className="py-2.5 text-small text-slate-500">No reserved times.</li>}
         {active.map((hold) => (
-          <li key={hold.id} className="flex items-center justify-between gap-3 rounded-control bg-neu-base px-3 py-2 shadow-raised-low">
+          <li key={hold.id} className="flex min-h-12 items-center justify-between gap-3 py-2.5">
             <div className="min-w-0">
-              <p className="text-small font-medium text-slate-100">{hold.label}</p>
-              <p className="text-small text-slate-400">
-                {hold.until ? `Until ${hold.until}` : "Until released"}
-                {hold.note ? ` · ${hold.note}` : ""}
-              </p>
+              <p className="text-body font-medium text-slate-50">{hold.label}</p>
+              <Meta items={[hold.until ? `Until ${hold.until}` : "Until released", hold.note]} />
             </div>
-            <Button type="button" size="sm" variant="secondary" onClick={() => release(hold.id)} disabled={pending}>Release</Button>
+            <Button type="button" size="sm" variant="ghost" className="shrink-0" onClick={() => release(hold.id)} disabled={pending}>Release</Button>
           </li>
         ))}
       </ul>
       {past.length > 0 && (
-        <p className="mt-3 text-small text-slate-500">{past.length} released earlier: {past.map((hold) => hold.label).join(", ")}</p>
+        <p className="mt-2 text-small text-slate-500">{past.length} released earlier: {past.map((hold) => hold.label).join(", ")}</p>
       )}
       <form action={add} className="mt-5 grid gap-3 border-t border-(--neu-edge) pt-4">
         <Field label="Weekly time">
@@ -242,6 +243,12 @@ export function ContactHolds({
       </form>
     </Card>
   );
+}
+
+/** Set up plan on their page with a kept time ("scheduleId:chunkIndex") already chosen. */
+function setupHref(userId: string, slotKey: string): string {
+  const [scheduleId, chunk] = slotKey.split(":");
+  return personActionHref(userId, "setup", { slot: { scheduleId, chunkIndex: Number(chunk) } });
 }
 
 /**
@@ -286,14 +293,15 @@ export function ContactAccountCard({
             .
           </p>
           <div className="flex flex-wrap gap-2">
-            {heldTimes.map((t) => (
-              <Link key={t.key} href={`/admin/users/${account.id}?do=setup&slot=${t.key}`} className={buttonVariants({ size: "sm" })}>
+            {/* One primary: the first kept time. Any other kept time is a quiet choice beside it. */}
+            {heldTimes.map((t, i) => (
+              <Link key={t.key} href={setupHref(account.id, t.key)} className={buttonVariants({ variant: i === 0 ? "primary" : "secondary", size: "sm" })}>
                 <CalendarPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
                 Set up plan with {t.label}
               </Link>
             ))}
             {heldTimes.length === 0 && (
-              <Link href={`/admin/users/${account.id}?do=setup`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              <Link href={personActionHref(account.id, "setup")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                 <CalendarPlus aria-hidden className="mr-1.5 h-3.5 w-3.5" />
                 Set up their plan
               </Link>
@@ -367,18 +375,31 @@ export function ContactSessions({
   return (
     <Card>
       <h2 className="text-title font-semibold text-slate-50">Classes taken</h2>
-      <p className="mt-1 text-small text-slate-400">{sessions.length === 0 ? "None logged yet." : `${attended} attended, ${sessions.length - attended} missed.`}</p>
-      <ul className="mt-4 grid gap-2">
-        {sessions.map((session) => (
-          <li key={session.id} className="flex items-center justify-between gap-3 rounded-control bg-neu-base px-3 py-2 shadow-raised-low">
-            <div className="min-w-0">
-              <p className="text-small font-medium text-slate-100">{session.day}{session.attended ? "" : " (missed)"}</p>
-              {session.note && <p className="truncate text-small text-slate-400">{session.note}</p>}
-            </div>
-            <Button type="button" size="sm" variant="ghost" onClick={() => remove(session.id)} disabled={pending} aria-label={`Remove ${session.day}`}>Remove</Button>
-          </li>
-        ))}
-      </ul>
+      {/* The count is the point of the card, so it leads; a miss is amber. */}
+      {sessions.length === 0 ? (
+        <p className="mt-1 text-small text-slate-400">None logged yet.</p>
+      ) : (
+        <Facts columns={2} className="mt-3">
+          <Fact label="Attended" value={attended} />
+          <Fact label="Missed" value={sessions.length - attended} tone={sessions.length - attended > 0 ? "warning" : "muted"} />
+        </Facts>
+      )}
+      {sessions.length > 0 && (
+        <ul className="mt-3 divide-y divide-slate-50/6 border-t border-slate-50/8">
+          {sessions.map((session) => (
+            <li key={session.id} className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0">
+                <p className={`text-body font-medium tabular-nums ${session.attended ? "text-slate-50" : "text-slate-400"}`}>
+                  {session.day}
+                  {session.attended ? "" : <span className="text-amber-300"> (missed)</span>}
+                </p>
+                {session.note && <p className="truncate text-small text-slate-500">{session.note}</p>}
+              </div>
+              <Button type="button" size="sm" variant="ghost" className="shrink-0 text-red-300 hover:text-red-200" onClick={() => remove(session.id)} disabled={pending} aria-label={`Remove ${session.day}`}>Remove</Button>
+            </li>
+          ))}
+        </ul>
+      )}
       <form action={add} className="mt-5 grid gap-3 border-t border-(--neu-edge) pt-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Day">
@@ -397,6 +418,110 @@ export function ContactSessions({
         </div>
       </form>
     </Card>
+  );
+}
+
+/**
+ * One person who sent the public class form (there is no review step): what they typed and one tap to call, text or email them
+ * outside the app. More holds the in-app next steps: the studio's sign-up link and keeping a time for them (Schedule > Reserved,
+ * filled in with their details). Remove takes the entry off the list, with a few seconds to undo.
+ */
+export function ClassFormEntry({
+  id,
+  name,
+  email,
+  phone,
+  instrument,
+  level,
+  notes,
+  sent,
+  onRemove,
+  onSendSignUp,
+}: {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  instrument: string;
+  level: string;
+  notes: string | null;
+  sent: string;
+  onRemove: (registrationId: string) => Promise<Result>;
+  /** "Send sign-up link": the studio's own invitation to make an account with the address on the form. */
+  onSendSignUp?: (registrationId: string) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [sending, startSending] = useTransition();
+  const [linkSent, setLinkSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dial = phone.replace(/[^\d+]/g, "");
+  const action = buttonVariants({ variant: "secondary", size: "sm", className: "tap gap-1.5" });
+  const menuItem = buttonVariants({ variant: "ghost", size: "sm", className: "justify-start gap-1.5" });
+  // Schedule > Reserved with a new reservation already filled in for them.
+  const holdHref = `/admin/schedule?${new URLSearchParams({ view: "RESERVED", name, email, phone }).toString()}`;
+
+  function sendSignUp() {
+    if (!onSendSignUp) return;
+    setError(null);
+    startSending(async () => {
+      const result = await onSendSignUp(id).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+      if (!result.ok) return void toast.warning(result.error);
+      setLinkSent(true);
+      toast.success(result.message);
+    });
+  }
+
+  function remove() {
+    setError(null);
+    start(async () => {
+      const hold = await toast.held(`Removing ${name}`, () => onRemove(id));
+      if (hold.undone) return;
+      const result = hold.value;
+      if (!result.ok) return setError(result.error);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="rounded-card bg-neu-base px-4 py-3 shadow-raised-low">
+      <p className="flex items-center gap-2">
+        <span className="truncate text-body font-semibold text-slate-50">{name}</span>
+        <span className="shrink-0 rounded-full bg-slate-700/40 px-2 py-0.5 text-small font-medium text-slate-200">Class form</span>
+      </p>
+      <p className="text-small text-slate-400">
+        {instrument} · {level} · <span className="whitespace-nowrap">sent {sent}</span>
+      </p>
+      <p className="mt-2 break-words text-small text-slate-300">
+        {phone} · {email}
+      </p>
+      {notes && <p className="mt-1 whitespace-pre-line break-words text-small text-slate-400">&ldquo;{notes}&rdquo;</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a href={`tel:${dial}`} className={action}>
+          <Phone className="h-4 w-4" aria-hidden /> Call
+        </a>
+        <a href={`sms:${dial}`} className={action}>
+          <MessageSquare className="h-4 w-4" aria-hidden /> Text
+        </a>
+        <a href={`mailto:${email}?subject=${encodeURIComponent("Your Bass Note Piano classes")}`} className={action}>
+          <Mail className="h-4 w-4" aria-hidden /> Email
+        </a>
+        <ActionMenu label="More">
+          {onSendSignUp && (
+            <button type="button" className={menuItem} onClick={sendSignUp} disabled={sending || linkSent}>
+              <Send className="h-4 w-4" aria-hidden /> {linkSent ? "Sign-up link sent" : sending ? "Sending…" : "Send sign-up link"}
+            </button>
+          )}
+          <Link href={holdHref} className={menuItem}>
+            <CalendarPlus className="h-4 w-4" aria-hidden /> Hold a time
+          </Link>
+        </ActionMenu>
+        <Button type="button" size="sm" variant="ghost" className="tap ml-auto" onClick={remove} disabled={pending} aria-label={`Remove ${name}`}>
+          Remove
+        </Button>
+      </div>
+      <ErrorLine error={error} />
+    </div>
   );
 }
 

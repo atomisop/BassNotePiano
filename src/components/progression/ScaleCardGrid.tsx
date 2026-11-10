@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import type { ScaleAccessState } from "@/lib/access";
 import { ctaLabel } from "@/lib/ctaLabel";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/Badge";
-import { Checklist, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
+import { Checklist, ScaleStateLabel, scaleState } from "@/components/progression/scaleStatusUi";
 import { ArrowRight } from "@/components/ui/appIcons";
 import { ScaleArt } from "@/components/progression/ScaleArt";
 
@@ -31,14 +30,12 @@ export interface ScaleCardGridProps {
 }
 
 /**
- * The learning path as a grid of middle-plane cards (STEP 2B). Each whole
- * card is one tap target. Color follows STEP 2C:
- * - the "you're here" card is the selected item, so it alone carries the
- *   signal outline;
- * - status (completed, not started) is a neutral badge with an icon;
- * - locked scales are gray, never green.
- * The section's one green button is "Continue" in the next-step card above,
- * so card actions here stay quiet text.
+ * The learning path as a grid of middle-plane cards (STEP 2B). Each whole card is one tap target, and each reads in one order
+ * (DESIGN.md, Hierarchy): the scale's name is the one loud line, its state is one word at the top right ("You're here", "Done",
+ * "Waiting for teacher", "Locked"; a plain open scale needs none), progress is one figure, and the action is a quiet line at the foot.
+ * - the "you're here" card is the selected item, so it alone carries the signal outline;
+ * - locked scales are gray and quieter all through, never green.
+ * The section's one green button is "Continue" in the next-step card above, so card actions here stay quiet text.
  */
 export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFrom, artBase = null }: ScaleCardGridProps) {
   return (
@@ -51,7 +48,9 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
       {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
-        const isCompleted = scale.status === "COMPLETED";
+        const state = scaleState(scale, isCurrent);
+        // A closed scale's state word already says what it is waiting for; only a missing plan gets a line of its own.
+        const cta = locked ? (scale.lockedBecause === "not-yet-approved" ? null : ctaLabel(scale)) : ctaLabel(scale);
 
         return (
           <motion.li key={scale.scaleGroup.slug} variants={gridItem} className={cn("deck-card", phoneHiddenFrom !== undefined && index >= phoneHiddenFrom && "max-md:hidden")}>
@@ -67,40 +66,31 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
               )}
             >
               {artBase && <ScaleArt src={`${artBase}/${scale.scaleGroup.slug}.jpg`} locked={locked} />}
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-small font-semibold uppercase tracking-caps text-slate-400">
-                  {scale.scaleGroup.code}
-                </p>
-                {isCurrent ? (
-                  <Badge className="tint-peach shadow-none">You&apos;re here</Badge>
-                ) : isCompleted ? (
-                  <Badge tone="success">{STATUS_LABEL[scale.status]}</Badge>
-                ) : locked ? null : (
-                  <span className="text-small text-slate-400">{STATUS_LABEL[scale.status]}</span>
-                )}
+              <div className="flex items-start justify-between gap-3">
+                <p className="pt-0.5 text-caption font-medium uppercase tracking-caps text-slate-500">{scale.scaleGroup.code}</p>
+                {state && <ScaleStateLabel state={state} className="shrink-0" />}
               </div>
 
-              <h3 className={cn("mt-2 text-title font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
+              <h3 className={cn("mt-1 text-title font-semibold text-balance", locked ? "text-slate-400" : "text-slate-50")}>
                 {scale.scaleGroup.title}
               </h3>
-              {scale.scaleGroup.kinitName && <p className="mt-0.5 text-small text-slate-400">{scale.scaleGroup.kinitName}</p>}
-
-              {!locked && <Checklist scale={scale} emphasised={isCurrent} />}
+              {scale.scaleGroup.kinitName && <p className={cn("mt-0.5 text-small", locked ? "text-slate-500" : "text-slate-400")}>{scale.scaleGroup.kinitName}</p>}
 
               <div className="flex-1" />
 
-              <span
-                className={cn(
-                  "mt-4 inline-flex w-fit items-center gap-1.5 text-small font-semibold transition-colors",
-                  locked ? "text-slate-500" : "text-slate-200 group-hover:text-slate-50",
-                )}
-              >
-                {locked && <LockIcon />}
-                {ctaLabel(scale)}
-                {!locked && (
-                  <ArrowRight className="transition-transform group-hover:translate-x-0.5" size={14} />
-                )}
-              </span>
+              {!locked && <Checklist scale={scale} emphasised={isCurrent} />}
+
+              {cta && (
+                <span
+                  className={cn(
+                    "mt-4 inline-flex w-fit items-center gap-1.5 text-small font-semibold transition-colors",
+                    locked ? "text-slate-500" : isCurrent ? "text-slate-50" : "text-slate-300 group-hover:text-slate-50",
+                  )}
+                >
+                  {cta}
+                  {!locked && <ArrowRight className="transition-transform group-hover:translate-x-0.5" size={14} />}
+                </span>
+              )}
             </button>
           </motion.li>
         );

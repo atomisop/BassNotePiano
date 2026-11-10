@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { sendRegisterInvite } from "@/lib/registerInvite";
 import { RateLimitError } from "@/lib/rateLimit";
+import { removeClassRegistration } from "@/lib/classRegistration";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -19,10 +20,10 @@ async function requireAdmin() {
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-async function run<T extends object>(work: () => Promise<T>): Promise<Result<T>> {
-  await requireAdmin();
+async function run<T extends object>(work: (adminId: string) => Promise<T>): Promise<Result<T>> {
+  const admin = await requireAdmin();
   try {
-    const value = await work();
+    const value = await work(admin.id);
     revalidatePath("/", "layout");
     return { ok: true, ...value };
   } catch (err) {
@@ -39,6 +40,14 @@ export async function createContactAction(input: ContactInput): Promise<Result<{
 export async function updateContactAction(contactId: string, input: ContactInput): Promise<Result> {
   return run(async () => {
     await updateContact(contactId, input);
+    return {};
+  });
+}
+
+/** Takes a class form entry off the list (spam, or someone already reached). */
+export async function removeClassFormAction(registrationId: string): Promise<Result> {
+  return run(async (adminId) => {
+    await removeClassRegistration(registrationId, adminId);
     return {};
   });
 }
@@ -63,27 +72,40 @@ export async function addHoldAction(contactId: string, scheduleId: string, chunk
   });
 }
 
+/** Emails `email` the studio's own sign-up invitation (no referral, their address filled in), and says how it went. */
+async function sendStudioSignUp(adminId: string, email: string): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  try {
+    const result = await sendRegisterInvite(adminId, email, { fromStudio: true });
+    if (result === "sent") return { ok: true, message: `Sign-up link sent to ${email}` };
+    if (result === "exists") return { ok: false, error: "That email already has an account. Refresh to set up their plan." };
+    if (result === "recent") return { ok: false, error: "A sign-up link already went to that email today. Give it a little time." };
+    if (result === "invalid") return { ok: false, error: "That email does not look right." };
+    return { ok: false, error: "The email could not be sent. Try again later." };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false, error: err.message };
+    reportError(err, "Studio sign-up link");
+    return { ok: false, error: "Something went wrong." };
+  }
+}
+
 /**
  * "Send sign-up link" on a contact: emails them an invitation to create an account with the email on file (the studio's wording, no
- * referral). Never to an address that already has an account, at most once every 14 days per address (sendRegisterInvite).
+ * referral). Never to an address that already has an account, at most once a day per address (sendRegisterInvite).
  */
 export async function sendContactSignUpAction(contactId: string): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
   const admin = await requireAdmin();
   const contact = await prisma.contact.findUnique({ where: { id: String(contactId) }, select: { email: true } });
   if (!contact) return { ok: false, error: "That person was not found." };
   if (!contact.email) return { ok: false, error: "Add their email first, then send the link." };
-  try {
-    const result = await sendRegisterInvite(admin.id, contact.email, { fromStudio: true });
-    if (result === "sent") return { ok: true, message: `Sign-up link sent to ${contact.email}` };
-    if (result === "exists") return { ok: false, error: "That email already has an account. Refresh to set up their plan." };
-    if (result === "recent") return { ok: false, error: "A sign-up link went to that email in the last 14 days. Give it a little time." };
-    if (result === "invalid") return { ok: false, error: "That email does not look right. Fix it in Details first." };
-    return { ok: false, error: "The email could not be sent. Try again later." };
-  } catch (err) {
-    if (err instanceof RateLimitError) return { ok: false, error: err.message };
-    reportError(err, "Contact sign-up link");
-    return { ok: false, error: "Something went wrong." };
-  }
+  return sendStudioSignUp(admin.id, contact.email);
+}
+
+/** The same "Send sign-up link" on a class form entry, to the address they typed on the form. */
+export async function sendClassFormSignUpAction(registrationId: string): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  const form = await prisma.classRegistration.findUnique({ where: { id: String(registrationId) }, select: { email: true } });
+  if (!form) return { ok: false, error: "That class form entry is gone." };
+  return sendStudioSignUp(admin.id, form.email);
 }
 
 export async function releaseHoldAction(holdId: string): Promise<Result> {

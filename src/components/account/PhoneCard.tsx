@@ -123,33 +123,28 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   const shown = mode === "view" && state.phone ? formatPhone(state.phone) : null;
 
   return (
-    <div ref={ref} data-phone-card className="glass-surface p-6">
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
-          Phone number
-          <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
-        </h2>
-        {mode === "view" && state.phone && (
-          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
-            {state.verified ? "Verified" : "Saved"}
-          </span>
-        )}
-      </div>
+    <div ref={ref} data-phone-card className="glass-surface p-5 md:p-6">
+      <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
+        Phone number
+        <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
+      </h2>
 
       <div className="mt-4 space-y-3">
           {done && <p role="status" className="text-small text-signal-fg">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
 
           {mode === "view" && (
             <>
-              <p className="flex items-center gap-2 text-body text-slate-100">
+              {/* The number is the value you read; "Verified" is a quiet word beside it, never a badge (the healthy state). */}
+              <p className="flex flex-wrap items-center gap-x-2 text-body font-semibold tabular-nums text-slate-50">
                 <Phone className="h-4 w-4 text-slate-500" strokeWidth={1.5} /> {shown}
+                {state.phone && <span className="text-small font-normal text-slate-500">{state.verified ? "Verified" : "Saved"}</span>}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button type="button" className={plainBtn} onClick={() => { setDone(false); setNumber(""); setMode("number"); }}>
                   Change number
                 </button>
                 {!state.required && (
-                  <button type="button" className={`${plainBtn} text-red-400`} disabled={busy} onClick={remove}>
+                  <button type="button" className="tap rounded-full px-3 py-2 text-small font-medium text-red-300 transition hover:text-red-200 disabled:opacity-50" disabled={busy} onClick={remove}>
                     Remove
                   </button>
                 )}

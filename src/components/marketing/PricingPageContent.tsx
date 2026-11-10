@@ -31,7 +31,7 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-3xl px-6 pb-10 pt-28 text-center"
+        className="relative mx-auto max-w-3xl px-6 pb-4 pt-28 text-center"
       >
         <motion.h1
           variants={item}
@@ -49,9 +49,11 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
         id="plans"
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >
+        {/* The page title above is the one headline; this is its quiet subtitle, so the prices in the cards are the next
+            thing the eye lands on. */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly classes</p>
-          <h2 className="mt-1.5 font-serif text-body text-slate-50">Live one-on-one coaching on Discord</h2>
+          <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Weekly classes</p>
+          <h2 className="mt-1 text-body text-slate-400">Live one-on-one coaching on Discord</h2>
         </div>
 
         <div className="mt-10">

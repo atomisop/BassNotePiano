@@ -1,29 +1,45 @@
 import Link from "next/link";
-import { Plus } from "@/components/ui/appIcons";
+import { ChevronRight, Plus } from "@/components/ui/appIcons";
 import { listDirectory, type PersonKind } from "@/lib/contacts";
-import { INSTRUMENT_LABEL } from "@/lib/classRegistrationLabels";
+import { Meta } from "@/components/ui/CardKit";
+import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { Card } from "@/components/ui/Card";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
-import { ContactForm } from "@/components/admin/ContactPanels";
-import { createContactAction } from "./actions";
+import { ClassFormEntry, ContactForm } from "@/components/admin/ContactPanels";
+import { createContactAction, removeClassFormAction, sendClassFormSignUpAction } from "./actions";
 
 export const metadata = { title: "Admin: Contacts" };
 
 const FILTERS: { label: string; value: PersonKind | "ALL" }[] = [
-  { label: "Everyone", value: "ALL" },
+  // Short labels, so the four fit across a 320px phone without running off the edge.
+  { label: "All", value: "ALL" },
   { label: "Accounts", value: "ACCOUNT" },
-  { label: "Applied", value: "APPLICATION" },
-  { label: "Added by you", value: "ADDED" },
+  { label: "Class form", value: "APPLICATION" },
+  { label: "Added", value: "ADDED" },
 ];
 
-const KIND_TAG: Record<PersonKind, { label: string; className: string }> = {
-  ACCOUNT: { label: "Account", className: "bg-signal/16 text-signal-fg" },
-  APPLICATION: { label: "Applied", className: "bg-slate-700/40 text-slate-200" },
-  ADDED: { label: "Added", className: "bg-slate-700/40 text-slate-200" },
+// What kind of entry a row is: a quiet word in its meta line (a fact, not a coloured badge), and only on the All tab.
+const KIND_LABEL: Record<PersonKind, string> = {
+  ACCOUNT: "Account",
+  APPLICATION: "Class form",
+  ADDED: "Added",
 };
 
 function day(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+}
+
+type Person = Awaited<ReturnType<typeof listDirectory>>[number];
+
+/** Splits the list into runs, in order: each class-form entry on its own, and the people between them together. */
+function runs(people: Person[]): { form: boolean; people: Person[] }[] {
+  const out: { form: boolean; people: Person[] }[] = [];
+  for (const person of people) {
+    const last = out[out.length - 1];
+    if (!person.form && last && !last.form) last.people.push(person);
+    else out.push({ form: !!person.form, people: [person] });
+  }
+  return out;
 }
 
 export default async function AdminContactsPage(props: { searchParams: Promise<{ q?: string; show?: string }> }) {
@@ -65,37 +81,57 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
         />
       </form>
 
-      <ul className="mt-5 grid gap-2">
-        {people.length === 0 && (
-          <li className="rounded-card bg-neu-base px-4 py-8 text-center text-small text-slate-400 shadow-raised-low">
-            {q ? `Nobody matches "${q}".` : "Nobody here yet. Tap Add person."}
-          </li>
+      {people.length === 0 && (
+        <p className="mt-5 rounded-card bg-neu-base px-4 py-8 text-center text-small text-slate-400 shadow-raised-low">
+          {q ? `Nobody matches "${q}".` : active === "APPLICATION" ? "Nobody has sent the class form yet." : "Nobody here yet. Tap Add person."}
+        </p>
+      )}
+      {/* People are rows in one box (name first, the facts in one quiet line, the next class on the right). Someone who sent the class
+          form is its own card between them, because it carries what they typed and the buttons to reach them. Order is kept. */}
+      <div className="mt-5 grid gap-2">
+        {runs(people).map((run) =>
+          run.form ? (
+            <ClassFormEntry
+              key={run.people[0].key}
+              id={run.people[0].form!.id}
+              name={run.people[0].name}
+              email={run.people[0].email ?? ""}
+              phone={run.people[0].phone ?? ""}
+              instrument={INSTRUMENT_LABEL[run.people[0].detail as keyof typeof INSTRUMENT_LABEL] ?? "Not said"}
+              level={SKILL_LABEL[run.people[0].form!.skillLevel as keyof typeof SKILL_LABEL] ?? run.people[0].form!.skillLevel}
+              notes={run.people[0].form!.notes}
+              sent={day(run.people[0].form!.sentAt)}
+              onRemove={removeClassFormAction}
+              onSendSignUp={sendClassFormSignUpAction}
+            />
+          ) : (
+            <ul key={run.people[0].key} className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-neu-base shadow-raised-low">
+              {run.people.map((person) => {
+                const instrument = person.detail ? (INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? null) : null;
+                return (
+                  <li key={person.key}>
+                    <Link href={person.href} className="group flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body font-semibold text-slate-50">{person.name}</p>
+                        <Meta className="truncate" items={[active === "ALL" ? KIND_LABEL[person.kind] : null, person.reserved, instrument, person.phone, person.email]} />
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={`text-body font-semibold tabular-nums ${person.nextClass || person.classesTaken > 0 ? "text-slate-50" : "text-slate-500"}`}>
+                          {person.nextClass ? day(person.nextClass) : person.classesTaken > 0 ? person.classesTaken : "None"}
+                        </p>
+                        <p className="text-caption text-slate-500">
+                          {person.nextClass ? "Next class" : person.classesTaken > 0 ? (person.classesTaken === 1 ? "class" : "classes") : "Classes"}
+                        </p>
+                      </div>
+                      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ),
         )}
-        {people.map((person) => {
-          const tag = KIND_TAG[person.kind];
-          const sub = [person.detail ? (INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? null) : null, person.phone, person.email].filter(Boolean).join(" · ");
-          return (
-            <li key={person.key}>
-              <Link href={person.href} className="press-soft flex flex-col gap-1.5 rounded-card bg-neu-base px-4 py-3 shadow-raised-low hover:shadow-raised-mid sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2">
-                    <span className="truncate text-body font-semibold text-slate-50">{person.name}</span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${tag.className}`}>{tag.label}</span>
-                  </p>
-                  {sub && <p className="truncate text-small text-slate-400">{sub}</p>}
-                </div>
-                <div className="shrink-0 text-small text-slate-400 sm:text-right">
-                  {person.reserved && <p className="font-medium text-signal-fg">{person.reserved}</p>}
-                  <p>
-                    {person.classesTaken > 0 ? `${person.classesTaken} ${person.classesTaken === 1 ? "class" : "classes"}` : "No classes yet"}
-                    {person.nextClass ? ` · next ${day(person.nextClass)}` : person.lastClass ? ` · last ${day(person.lastClass)}` : ""}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      </div>
     </div>
   );
 }

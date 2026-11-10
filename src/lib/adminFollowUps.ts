@@ -24,7 +24,7 @@ export interface FollowUp {
   href: string;
 }
 
-/** The reasons that name people (applications are counted, not named). */
+/** The reasons to follow up on, each naming its people. */
 export type FollowUpPeopleKind = "overdue" | "atRisk" | "trial" | "credits" | "discord";
 
 /** The Accounts list filters that show exactly one follow-up reason's people (`/admin/users?filter=...`). */
@@ -107,26 +107,12 @@ const REASONS: { key: FollowUpPeopleKind; title: string; hint: string; href: str
 ];
 
 export async function getFollowUps(now = new Date()): Promise<FollowUp[]> {
-  const t = now.getTime();
-  const [lists, staleApps] = await Promise.all([
-    Promise.all(REASONS.map(async (r) => ({ ...r, all: await getFollowUpPeople(r.key, now) }))),
-    prisma.classRegistration.count({ where: { status: "PENDING", createdAt: { lt: new Date(t - DAY) } } }),
-  ]);
-
+  const lists = await Promise.all(REASONS.map(async (r) => ({ ...r, all: await getFollowUpPeople(r.key, now) })));
   const named: FollowUp[] = lists.map(({ all, ...r }) => ({
     ...r,
     total: all.length,
     people: all.slice(0, SHOWN),
     more: all.slice(SHOWN, SHOWN + MORE_CAP),
   }));
-  const apps: FollowUp = {
-    key: "apps",
-    title: "Applications waiting over a day",
-    hint: "Applicants hear back faster than they expect to.",
-    total: staleApps,
-    people: [],
-    more: [],
-    href: "/admin/students",
-  };
-  return [...named, apps].filter((l) => l.total > 0);
+  return named.filter((l) => l.total > 0);
 }

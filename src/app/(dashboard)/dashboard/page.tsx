@@ -24,7 +24,6 @@ import { PathCard, ShelfCard } from "@/components/home/ShelfCards";
 import { Shelf, ShelfItem } from "@/components/ui/Shelf";
 import { BADGES } from "@/lib/badges";
 import { ParentRequestCard } from "@/components/home/ParentRequestCard";
-import { TrialApplyButton } from "@/components/home/TrialApplyButton";
 
 export const metadata = { title: "Home" };
 
@@ -41,7 +40,7 @@ function untilLabel(when: Date): string {
 
 /**
  * Home: a welcome and the one thing to do today, as one hero and quiet rows (2026-10-30, the owner picked "one hero, then rows"). A new account (no plan, no trial) gets the free trial class and how the studio
- * works (the trial request is sent right here, from the account); a parent who only manages children gets Parent mode and their
+ * works; a parent who only manages children gets Parent mode and their
  * children instead of a trial pitch; a student gets today's step, their roadmap, the next class, practice, a tip and their friends, plus
  * their children when they are a parent too. A parent asking to link shows on top with Accept and Decline. The course itself lives on
  * the Roadmap screen (/roadmap). Design: docs/superpowers/specs/2026-10-29-new-home-and-roadmaps-design.md.
@@ -73,15 +72,10 @@ export default async function HomePage() {
               detail={data.nextStep.detail}
               actions={
                 <>
-                  {/* The free trial request is sent right here from the account, not on the public form. */}
-                  {data.trialApply ? (
-                    <TrialApplyButton label={data.nextStep.cta} facts={data.trialApply} />
-                  ) : (
-                    <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
-                      {data.nextStep.cta}
-                      <ArrowRight aria-hidden className="h-4 w-4" />
-                    </Link>
-                  )}
+                  <Link href={data.nextStep.href} className={buttonVariants({ size: "lg" })}>
+                    {data.nextStep.cta}
+                    <ArrowRight aria-hidden className="h-4 w-4" />
+                  </Link>
                   {data.nextStep.secondary && (
                     <Link href={data.nextStep.secondary.href} className={buttonVariants({ variant: "secondary", size: "lg" })}>
                       {data.nextStep.secondary.cta}
@@ -206,7 +200,9 @@ export default async function HomePage() {
                 href="/lessons"
                 icon={<CalendarCheck />}
                 title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
-                detail={nextClass ? `${untilLabel(nextClass.scheduledAt)}. ${joinReadiness({ scheduledAt: nextClass.scheduledAt, inPerson: nextClass.inPerson, now: new Date() }).text}` : "Book your weekly class"}
+                detail={nextClass ? joinReadiness({ scheduledAt: nextClass.scheduledAt, inPerson: nextClass.inPerson, now: new Date() }).text : "Book your weekly class"}
+                // One trailing figure: how soon it is (the row's title already says when).
+                trailing={nextClass ? <span className="text-small font-medium tabular-nums text-slate-400">{untilLabel(nextClass.scheduledAt)}</span> : undefined}
               />
             </li>
           </HomeRows>

@@ -32,9 +32,10 @@ export function DiscordBotTest({
   return (
     <div className="mt-6 rounded-2xl bg-neu-base p-4 shadow-raised-low">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-small font-semibold text-slate-50">Discord class calls</p>
+        <p className="text-body font-semibold text-slate-50">Discord class calls</p>
+        {/* Test the bot is the reason this card exists; the two setup helpers beside it are quiet. */}
         <div className="flex flex-wrap gap-2">
-          <DiscordConnectLink className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          <DiscordConnectLink className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Connect my Discord
           </DiscordConnectLink>
           <button
@@ -48,7 +49,7 @@ export function DiscordBotTest({
               }
             }}
             disabled={making}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             {making && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {making ? "Creating…" : "Make a test call I can see"}
@@ -73,7 +74,7 @@ export function DiscordBotTest({
         <ul className="mt-3 space-y-1.5">
           {result.checks.map((c) => (
             <li key={c.step} className="text-small">
-              <span className={c.ok ? "text-slate-200" : "text-red-300"}>{c.ok ? "OK" : "Problem"}: {c.step}.</span>{" "}
+              <span className={c.ok ? "text-slate-200" : "font-medium text-red-300"}>{c.ok ? "OK" : "Problem"}: {c.step}.</span>{" "}
               <span className="text-slate-500">{c.detail}</span>
             </li>
           ))}

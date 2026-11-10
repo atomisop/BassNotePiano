@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -108,7 +108,7 @@ function ResetPasswordForm() {
       >
         <p className="text-small text-slate-400">
           Missing email.{" "}
-          <Link href="/forgot-password" className="text-slate-50 transition hover:opacity-70">
+          <Link href="/forgot-password" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
             Start over
           </Link>
           .
@@ -138,8 +138,8 @@ function ResetPasswordForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Reset password</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Choose a new password</h1>
+      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Reset password</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Choose a new password</h1>
       <p className="mt-1.5 text-small text-slate-500 sm:mt-2">
         Code sent to <span className="text-slate-300">{email}</span>.
       </p>
@@ -224,7 +224,7 @@ function ResetPasswordForm() {
           </p>
         )}
         {resent && (
-          <p role="status" className="text-small text-slate-50">
+          <p role="status" className="text-small text-slate-300">
             If this address has an account, a new code is on its way. It can take a minute, and it may land in spam.
           </p>
         )}
@@ -238,13 +238,13 @@ function ResetPasswordForm() {
         type="button"
         onClick={handleResend}
         disabled={cooldown.secondsLeft > 0}
-        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2 w-full sm:mt-4" })}
+        className="tap mt-3 block w-full text-center text-small text-slate-400 transition hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-4"
       >
         {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
       </button>
       {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
         <p className="mt-3 text-center text-small text-slate-500">
-          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
         </p>
       )}
     </motion.div>

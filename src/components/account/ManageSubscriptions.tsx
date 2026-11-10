@@ -15,6 +15,8 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Hint } from "@/components/ui/Hint";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { planProgress } from "@/lib/planProgress";
+import { Fact, Facts } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -212,65 +214,56 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
       {activePlan && progress && view === "summary" && (
         <div className="space-y-4">
-          <div className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
-            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Your plan</p>
-            <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <p className="font-serif text-hero text-slate-50">{currentLabel}</p>
-              {activePlan.installmentAmountCents !== undefined && (
-                <p className="text-small text-slate-400">
-                  {formatUsd(activePlan.installmentAmountCents)} every 28 days · {CADENCE_LABELS[activePlan.cadence]}
-                </p>
+          {/* Already inside the settings card, so no second box: the plan's name is the one loud line, its facts small under it. */}
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Your plan</p>
+                <p className="mt-1 text-title font-semibold text-slate-50">{currentLabel}</p>
+                {activePlan.installmentAmountCents !== undefined && (
+                  <p className="mt-0.5 text-small text-slate-400">
+                    {formatUsd(activePlan.installmentAmountCents)} every 28 days · {CADENCE_LABELS[activePlan.cadence]}
+                  </p>
+                )}
+              </div>
+              {(activePlan.pausedIndefinitely || activePlan.pausedUntil) && (
+                <StatusDot tone="warning" className="shrink-0 pt-0.5">
+                  {activePlan.pausedUntil ? `Paused to ${new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Paused"}
+                </StatusDot>
               )}
             </div>
 
-            <div className="mt-5" role="img" aria-label={`${progress.billsPaid} of ${progress.billsTotal} bills paid`}>
-              <div className="flex gap-1.5">
+            <div className="mt-4" role="img" aria-label={`${progress.billsPaid} of ${progress.billsTotal} bills paid`}>
+              <div className="flex gap-1">
                 {Array.from({ length: progress.billsTotal }, (_, i) => (
-                  <span key={i} className={`h-2.5 min-w-0 flex-1 rounded-full ${i < progress.billsPaid ? "bg-signal" : "bg-slate-700"}`} />
+                  <span key={i} className={`h-1.5 min-w-0 flex-1 rounded-full ${i < progress.billsPaid ? "bg-signal" : "bg-slate-50/10"}`} />
                 ))}
               </div>
-              <p className="mt-2 text-small font-medium text-slate-100">
-                {progress.billsPaid} of {progress.billsTotal} bills paid
-              </p>
             </div>
 
-            <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
-                <dd className="text-body font-semibold text-slate-50">
-                  {progress.daysCovered}
-                  <span className="text-small font-normal text-slate-500"> of {progress.daysTotal}</span>
-                </dd>
-                <dt className="text-small text-slate-400">days paid</dt>
-              </div>
-              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
-                <dd className="text-body font-semibold text-slate-50">{progress.billsLeft}</dd>
-                <dt className="text-small text-slate-400">{progress.billsLeft === 1 ? "bill left" : "bills left"}</dt>
-              </div>
-              <div className="rounded-xl bg-neu-base px-2 py-3 shadow-pressed-low">
-                <dd className="text-body font-semibold text-slate-50">
-                  {progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
-                </dd>
-                <dt className="text-small text-slate-400">next bill</dt>
-              </div>
-            </dl>
+            <Facts className="mt-4">
+              <Fact label="Bills paid" value={`${progress.billsPaid} of ${progress.billsTotal}`} />
+              <Fact label={progress.billsLeft === 1 ? "Bill left" : "Bills left"} value={progress.billsLeft} />
+              <Fact label="Days paid" value={`${progress.daysCovered} of ${progress.daysTotal}`} />
+              <Fact
+                label="Next bill"
+                value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                tone={progress.nextBillAt ? "default" : "muted"}
+              />
+            </Facts>
 
             {activePlan.pausedIndefinitely && <p className="mt-3 text-small text-amber-300">Paused until the studio resumes it.</p>}
-            {activePlan.pausedUntil && (
-              <p className="mt-3 text-small text-amber-300">
-                Paused until {new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
-              </p>
-            )}
 
             {canSwitch && (
-              <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "primary", className: "mt-5 w-full sm:w-auto" })}>
+              <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
                 Switch plan
               </button>
             )}
           </div>
 
           {activePlan.family && (
-            <div className="rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
-              <p className="flex items-center gap-1 font-semibold text-slate-50">
+            <div className="border-t border-slate-50/8 pt-4 text-small text-slate-400">
+              <p className="flex items-center gap-1 font-semibold text-slate-100">
                 Group plan
                 <Hint>The length and weekly time of a group plan are changed by the teacher.</Hint>
               </p>
@@ -292,7 +285,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
             <ArrowLeft aria-hidden className="h-4 w-4" />
             Back to your plan
           </button>
-          <p className="mb-6 text-center font-serif text-hero text-slate-50">Switch your plan</p>
+          <p className="mb-5 text-title font-semibold text-slate-50">Switch your plan</p>
           <PaymentPlanTierGrid
             narrow
             pricing={pricing}
@@ -353,14 +346,15 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
       {activePlan && view === "summary" && (
         <div className="border-t border-ink/10 pt-4">
           {activePlan.family && cancelStage === "idle" && (
-            <p className="mb-3 text-small text-slate-400">
+            <p className="mb-2 text-small text-slate-500">
               {activePlan.family.isPayer
                 ? "You pay for this family. If you cancel, the group plan ends for everyone. Each person keeps the 28 days already paid, with its credits and booked classes."
                 : "If you cancel, only you leave the family. If one person is left, they pay the solo price from their next bill."}
             </p>
           )}
+          {/* The one destructive action: quiet red words at the end, still behind its reason step and confirm. */}
           {cancelStage === "idle" && (
-            <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}>
               Cancel subscription
             </button>
           )}

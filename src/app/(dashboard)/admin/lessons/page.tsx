@@ -5,6 +5,7 @@ import { listScalesForLessons } from "@/lib/roadmaps";
 import { lessonScaleLabel, pickLessonScale } from "@/lib/lessonScales";
 import { isObjectStorageConfigured } from "@/lib/storage";
 import { AdminLessonManager } from "@/components/admin/AdminLessonManager";
+import { Callout } from "@/components/ui/CardKit";
 import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction, updateLessonTextAction } from "./actions";
 
 export const metadata = { title: "Admin: Lessons" };
@@ -25,10 +26,10 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
       <h1 className="sr-only">Lessons</h1>
 
       {!storageConfigured && (
-        <div className="mt-6 rounded-xl border border-slate-50/30 bg-neu-base shadow-pressed-low px-4 py-3 text-small text-slate-50">
+        <Callout tone="warning" className="mt-6">
           Object storage isn&apos;t configured. Set the <code className="font-mono text-small">R2_*</code> env vars
           before uploading.
-        </div>
+        </Callout>
       )}
 
       {!activeScale ? (

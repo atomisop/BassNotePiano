@@ -35,18 +35,11 @@ const markerKey = (email: string) => `register-invite:${createHash("sha256").upd
 /** The studio may send an applicant the sign-up link again the next day (a student's invitation waits 14). */
 const STUDIO_RESEND_AFTER_MS = 24 * 60 * 60 * 1000;
 
-/** When an invitation (a student's or the studio's) last went to each address (lowercased), in one query. Shown on the applicant cards. */
-export async function registerInvitesSentAt(rawEmails: string[]): Promise<Map<string, Date>> {
-  const byKey = new Map(rawEmails.map((e) => [markerKey(e.trim().toLowerCase()), e.trim().toLowerCase()]));
-  const rows = byKey.size ? await prisma.appSetting.findMany({ where: { key: { in: [...byKey.keys()] } }, select: { key: true, value: true } }) : [];
-  return new Map(rows.filter((r) => Number.isFinite(Number(r.value))).map((r) => [byKey.get(r.key)!, new Date(Number(r.value))]));
-}
-
 /**
  * Emails someone who has no account yet an invitation to create one, from a student who is setting up a family plan or booking for the
  * family. Never to an address that already has an account, at most one invitation to the same address every 14 days (whoever sends it),
  * and a daily limit per sender, so it cannot be used to mail strangers. The invitation carries the sender's own invite link.
- * `fromStudio`: the studio sending an approved applicant the sign-up link (Applicants). It comes from Bass Note Piano, opens sign-up with
+ * `fromStudio`: the studio sending someone from the class form the sign-up link (Contacts). It comes from Bass Note Piano, opens sign-up with
  * their address filled in, carries no referral code, and may go again after a day.
  */
 export async function sendRegisterInvite(senderId: string, rawEmail: string, opts: { fromStudio?: boolean; purpose?: RegisterInvitePurpose } = {}): Promise<RegisterInviteResult> {
@@ -64,7 +57,7 @@ export async function sendRegisterInvite(senderId: string, rawEmail: string, opt
   const sender = await prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { name: true, email: true } });
   try {
     if (opts.fromStudio) {
-      // From the studio itself (Applicants): no referral code, the address filled in.
+      // From the studio itself (Contacts): no referral code, the address filled in.
       await sendPersonalEmail(email, "Create your Bass Note Piano account", "Your classes at Bass Note Piano are ready to set up. Create an account with this email address and we can choose your weekly time.", {
         link: { label: "Create your account", url: getAppUrl(`/register?email=${encodeURIComponent(email)}`) },
       });

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -139,7 +140,7 @@ export function AdminCancelPlanButton({ planId, label, compact = false }: { plan
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={buttonVariants({ variant: "destructive", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
+      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: cn("text-red-300 hover:text-red-200", compact ? "h-8 px-2.5" : "") })}>
         <Ban aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Cancel plan
       </button>

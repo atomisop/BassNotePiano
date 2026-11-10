@@ -84,12 +84,6 @@ export default async function AdminPaymentsPage(
           )}
         </div>
       )}
-      {total > 0 && (
-        <p className="mt-2 text-small text-slate-500">
-          {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-          {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
-        </p>
-      )}
 
       <div className="mt-6">
         <AdminFilterTabs
@@ -103,14 +97,27 @@ export default async function AdminPaymentsPage(
         />
       </div>
 
-      {isOwner && (
-        <a href="/api/admin/export?type=payments" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
-          Export CSV
-        </a>
+      {/* The count and the export share one quiet line, so the payments themselves are the first loud thing on the page. */}
+      {(total > 0 || isOwner) && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-small tabular-nums text-slate-500">
+            {total > 0 && (
+              <>
+                {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
+                {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
+              </>
+            )}
+          </p>
+          {isOwner && (
+            <a href="/api/admin/export?type=payments" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              Export CSV
+            </a>
+          )}
+        </div>
       )}
 
       {activeFilter === "UNCHECKED" && total > 0 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <BulkConfirmButton
             label={`Mark all ${total} as checked`}
             question={`Mark all ${total} auto-approved payment${total === 1 ? "" : "s"} as checked? Do this after you have looked through them.`}
@@ -120,7 +127,7 @@ export default async function AdminPaymentsPage(
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-4">
         <PaymentQueue
           payments={payments}
           onApprove={approvePaymentAction}

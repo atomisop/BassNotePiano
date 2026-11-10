@@ -316,7 +316,7 @@ export function ScaleReleaseDialog({
 }
 
 const iconBtn =
-  "tap inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-50 hover:shadow-raised-mid active:shadow-pressed-low";
+  "tap inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50/6 hover:text-slate-200";
 
 /**
  * Reschedule and Cancel as two small round buttons, for lists that show many classes (Schedule > Attendance, the top bar's class panel,

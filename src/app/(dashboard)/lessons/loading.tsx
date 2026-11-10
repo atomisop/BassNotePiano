@@ -79,8 +79,8 @@ export default function LessonsLoading() {
                           <Skeleton delay={i * 0.05} className="h-3 w-24 rounded-full" />
                         ) : (
                           <div className="flex gap-2">
-                            <Skeleton delay={i * 0.05} className="h-11 w-36 rounded-xl" />
-                            {i % 2 === 0 && <Skeleton delay={i * 0.05 + 0.1} className="h-11 w-36 rounded-xl" />}
+                            <Skeleton delay={i * 0.05} className="h-9 w-20 rounded-control" />
+                            {i % 2 === 0 && <Skeleton delay={i * 0.05 + 0.1} className="h-9 w-20 rounded-control" />}
                           </div>
                         )}
                       </li>

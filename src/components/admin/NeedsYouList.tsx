@@ -40,11 +40,21 @@ export function NeedsYouList({ rows }: { rows: NeedsYouRow[] }) {
   );
 }
 
+/** Each row leads with its count, so the owner reads "3" before reading what it is (overdue bills in red). */
+function RowLabel({ row }: { row: NeedsYouRow }) {
+  return (
+    <>
+      <span className={cn("min-w-8 text-title font-semibold tabular-nums", row.id === "overdue" ? "text-red-400" : "text-slate-50")}>{row.count}</span>
+      <span className="min-w-0 flex-1 text-body text-slate-300">{row.text.replace(/^\d+\s+/, "")}</span>
+    </>
+  );
+}
+
 function PlainRow({ row }: { row: NeedsYouRow }) {
   return (
-    <Link href={row.href} className="tap flex items-center justify-between gap-3 px-4 py-3 text-body text-slate-50 hover:bg-slate-50/5">
-      <span>{row.text}</span>
-      <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-50/60" />
+    <Link href={row.href} className="group tap flex items-center gap-3 px-4 py-3 hover:bg-slate-50/5">
+      <RowLabel row={row} />
+      <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-slate-300" />
     </Link>
   );
 }
@@ -82,10 +92,10 @@ function OpenableRow({ row }: { row: NeedsYouRow }) {
         onClick={toggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="tap flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-body text-slate-50 hover:bg-slate-50/5"
+        className="tap flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/5"
       >
-        <span>{row.text}</span>
-        <ChevronDown aria-hidden className={cn("h-4 w-4 shrink-0 text-slate-50/60 transition-transform", open && "rotate-180")} />
+        <RowLabel row={row} />
+        <ChevronDown aria-hidden className={cn("h-4 w-4 shrink-0 text-slate-500 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
         <div id={panelId} className="space-y-2 px-4 pb-4">

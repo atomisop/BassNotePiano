@@ -34,13 +34,13 @@ export default async function MailDetailPage(props: { params: Promise<{ mailId: 
         <Card>
           <Eyebrow>{KIND_LABEL[mail.kind]}</Eyebrow>
           <h1 className="mt-2 text-title font-semibold text-slate-50">{mail.title}</h1>
-          <p className="mt-1 text-small text-slate-500">
+          <p className="mt-1 text-caption text-slate-500">
             {mail.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })} ET
           </p>
-          <p className="mt-4 whitespace-pre-wrap text-small text-slate-200">{mail.body}</p>
+          <p className="mt-4 whitespace-pre-wrap text-body text-slate-200">{mail.body}</p>
 
           {(action || canContact) && (
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-50/8 pt-4">
               {action && (
                 <Link href={action.href} className={cn(buttonVariants())}>
                   {action.label}

@@ -74,10 +74,9 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
 }
 
 /**
- * Starts a student's one-time free trial, keyed by email so it works whether
- * the applicant already has an account or registers afterward. A no-op if
- * they've ever had a trial (trialEndsAt is never cleared), which is what
- * makes it one per person rather than one per application.
+ * Starts a student's one-time free trial (every new account, at sign-up). A
+ * no-op if they've ever had a trial (trialEndsAt is never cleared), and the
+ * trial-used marker keeps it one per inbox even after an account is deleted.
  */
 export async function startTrialForEmail(email: string, db: Db = prisma): Promise<boolean> {
   if (!(await getBoolSetting("trial.enabled"))) return false;
@@ -109,13 +108,4 @@ export async function startTrialForEmail(email: string, db: Db = prisma): Promis
     throw err;
   }
   return true;
-}
-
-/** Whether an email has an APPROVED class application on file, used at registration to start the trial for people who apply before they sign up. */
-export async function hasApprovedRegistration(email: string, db: Db = prisma): Promise<boolean> {
-  const row = await db.classRegistration.findFirst({
-    where: { email: { equals: email.trim(), mode: "insensitive" }, status: "APPROVED" },
-    select: { id: true },
-  });
-  return row !== null;
 }

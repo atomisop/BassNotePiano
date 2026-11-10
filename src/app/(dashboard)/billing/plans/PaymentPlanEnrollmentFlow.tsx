@@ -33,6 +33,8 @@ import { claimScholarshipAction } from "../../account/scholarship-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { Hint } from "@/components/ui/Hint";
+import { CardHead, Meta } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -157,18 +159,20 @@ function SwitchToFamilyPanel({
 
   if (!open) {
     return (
-      <div className="mt-6 rounded-xl bg-neu-base p-4 shadow-raised-low">
-        <p className="text-small font-semibold text-slate-50">Joining others? Switch to a group plan</p>
-        <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
-          Add group members
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="tap group flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-small font-medium text-slate-200 transition hover:text-slate-50"
+      >
+        Switch to a group plan
+        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
+      </button>
     );
   }
 
   return (
-    <div className="mt-6 space-y-3 rounded-xl bg-neu-base p-4 shadow-raised-low">
-      <p className="text-small font-semibold text-slate-50">Switch to a group plan</p>
+    <div className="space-y-3 p-4">
+      <p className="text-body font-semibold text-slate-50">Switch to a group plan</p>
       {step === "people" ? (
         <>
           {emails.map((email, i) => (
@@ -387,17 +391,18 @@ export function PaymentPlanEnrollmentFlow({
     // arrives. Say which of those two states this is, in plain words, at the top of the card.
     const waitingForFirstPayment = plan.installmentsPaid === 0;
     const firstAmount = installment ? (installment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" }) : null;
-    const planState = !waitingForFirstPayment
-      ? { label: "Active", tone: "bg-emerald-400/15 text-emerald-300", note: null }
+    // Status only when it is news (DESIGN.md, Hierarchy 5): a running plan gets no badge, the waiting and problem states do.
+    const planState: { label: string | null; tone: "warning" | "danger"; note: string | null } = !waitingForFirstPayment
+      ? { label: null, tone: "warning", note: null }
       : memberView
-        ? { label: "Waiting for the first payment", tone: "bg-amber-400/15 text-amber-300", note: null }
+        ? { label: "Waiting for the first payment", tone: "warning", note: null }
         : installment?.status === "PENDING_REVIEW"
-          ? { label: "Payment sent, we are checking it", tone: "bg-amber-400/15 text-amber-300", note: "Thanks. Your plan starts as soon as we confirm it." }
+          ? { label: "Payment sent, we are checking it", tone: "warning", note: "Thanks. Your plan starts as soon as we confirm it." }
           : installment?.status === "REJECTED"
-            ? { label: "Payment problem", tone: "bg-red-400/15 text-red-300", note: "We could not match your payment. See below to try again." }
+            ? { label: "Payment problem", tone: "danger", note: "We could not match your payment. See below to try again." }
             : {
                 label: "Waiting for your first payment",
-                tone: "bg-amber-400/15 text-amber-300",
+                tone: "warning",
                 note: `Your weekly time is held for you${plan.heldUntil ? ` until ${new Date(plan.heldUntil).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}` : ""}. Your plan, credits and classes start when your first payment${firstAmount ? ` of ${firstAmount}` : ""} arrives. Send it below, or the time is released to someone else.`,
               };
 
@@ -405,7 +410,7 @@ export function PaymentPlanEnrollmentFlow({
       <div className="mx-auto max-w-2xl">
         {pendingSwitch && (
           <div className="mb-6">
-            <p className="mb-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
+            <p className="mb-3 px-1 text-small text-slate-400">
               Switching to a group plan of {pendingSwitch.memberCount} people. Your current plan below keeps running until this combined first payment is approved, then it
               is replaced by the group plan at the same weekly time. If it does not arrive in time, nothing changes.
             </p>
@@ -422,19 +427,23 @@ export function PaymentPlanEnrollmentFlow({
             />
           </div>
         )}
-        <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-small text-slate-100">{planLabel}</p>
-            <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${planState.tone}`}>{planState.label}</span>
+        {/* The plan card above (MyPlanSummary) already names the plan and its next bill, so this card only appears while there is
+            news: the plan was just started here, or it is still waiting for its first payment. The pay button is its one primary. */}
+        {(planState.label || !initialPlan) && (
+          <div className="mb-4 rounded-card bg-neu-base p-5 shadow-raised-mid">
+            <CardHead
+              as="p"
+              eyebrow={planLabel}
+              title={planState.label ?? `${plan.installmentsPaid} of ${plan.termMonths} bills paid`}
+              status={planState.label ? <StatusDot tone={planState.tone}>{planState.tone === "danger" ? "Problem" : "Waiting"}</StatusDot> : undefined}
+            />
+            {planState.note && !memberView && <p className="mt-2 text-small text-slate-400">{planState.note}</p>}
+            {planState.label && <Meta className="mt-2" items={[`${plan.installmentsPaid} of ${plan.termMonths} bills paid`]} />}
+            <ProgressBar className="mt-3" value={progressPercent} label="Bills paid" />
           </div>
-          {planState.note && !memberView && <p className="mt-2 text-small text-slate-300">{planState.note}</p>}
-          <p className="mt-1 text-small text-slate-500">
-            {plan.installmentsPaid} of {plan.termMonths} installments paid
-          </p>
-          <ProgressBar className="mt-2" value={progressPercent} label="Installments paid" />
-        </div>
+        )}
         {fam && (
-          <p className="mb-4 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
+          <p className="mb-4 px-1 text-small text-slate-400">
             {memberView
               ? fam.waitingForStart
                 ? `This is a group plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
@@ -450,7 +459,7 @@ export function PaymentPlanEnrollmentFlow({
           <ZelleUnlockGate
             status={installment.status}
             rejectionReason={installment.rejectionReason}
-            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : installment.isBundle ? `One bill for ${fam?.memberCount ?? "everyone in the"} accounts` : `Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : installment.isBundle ? `One bill for ${fam?.memberCount ?? "everyone in the"} accounts` : `Bill ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
             scaleTitle={planLabel}
             eyebrowLabel={fam ? "Group plan" : "Payment Plan"}
             amountCents={installment.amountCents}
@@ -459,52 +468,54 @@ export function PaymentPlanEnrollmentFlow({
             onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
           />
         ) : (
-          // Between installments, on purpose: one Zelle payment a month is
-          // the actual product, not "pay as many months as you want,
-          // whenever you want," see getOrCreateOpenInstallmentPayment's own
-          // comment. This is the normal, expected state for most of every
-          // month, not an error.
-          <div className="rounded-xl p-4 text-center bg-neu-base shadow-raised-low">
-            <p className="text-small text-slate-100">{waitingForFirstPayment ? "Nothing to pay right now." : "You\u2019re all paid up for now."}</p>
-            {waitingForFirstPayment && <p className="mt-1 text-small text-slate-500">Your plan starts when the first payment arrives.</p>}
-            {!waitingForFirstPayment && nextInstallmentDueDate && (
-              <p className="mt-1 text-small text-slate-500">
-                {`Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                })}.`}
-              </p>
-            )}
+          // Between bills, on purpose: one payment every 28 days is the actual product, not "pay as many as you want, whenever you
+          // want" (see getOrCreateOpenInstallmentPayment). This is the normal state for most of every cycle, so it is one quiet line.
+          <div className="flex items-center gap-2 px-1 text-small text-slate-400" role="status">
+            <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${waitingForFirstPayment ? "bg-slate-500" : "bg-emerald-400"}`} />
+            <p>
+              <span className="font-medium text-slate-100">{waitingForFirstPayment ? "Nothing to pay right now." : "You\u2019re all paid up."}</span>
+              {waitingForFirstPayment
+                ? " Your plan starts when the first payment arrives."
+                : nextInstallmentDueDate
+                  ? ` Your next bill opens on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
+                  : ""}
+            </p>
           </div>
         )}
-        {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
-          <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
+        {familyBills.length > 0 && (
+          <section aria-label="Other members' 28-day bills" className="mt-6 space-y-3">
+            <p className="px-1 text-small font-semibold uppercase tracking-caps text-slate-400">Other members&apos; 28-day bills</p>
+            {familyBills.map((bill) => (
+              <div key={bill.payment.id} className="rounded-card bg-neu-base p-4 shadow-raised-low">
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.memberName}</p>
+                  <p className="shrink-0 text-small text-slate-500">Bill {bill.payment.installmentNumber ?? "?"}</p>
+                </div>
+                <ZelleUnlockGate
+                  status={bill.payment.status}
+                  rejectionReason={bill.payment.rejectionReason}
+                  scaleCode={`${bill.memberName}: bill ${bill.payment.installmentNumber ?? "?"}`}
+                  scaleTitle={planLabel}
+                  eyebrowLabel="Group plan"
+                  amountCents={bill.payment.amountCents}
+                  zelleHandle={zelleHandle}
+                  paymentId={bill.payment.id}
+                  onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.payment.id)}
+                />
+              </div>
+            ))}
+          </section>
         )}
-        <div className="mt-6 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
-          <Link href="/billing/plans?who=parent" className="tap flex items-center justify-between gap-3 text-small font-medium text-slate-100 hover:text-slate-50">
+        {/* Plan changes are quiet rows at the end, one hairline apart, never competing with the bill. */}
+        <div className="mt-8 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
+          {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
+            <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
+          )}
+          <Link href="/billing/plans?who=parent" className="tap group flex items-center justify-between gap-3 px-4 py-3 text-small font-medium text-slate-200 hover:text-slate-50">
             Pay for your child&apos;s plan
-            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500" />
+            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
           </Link>
         </div>
-        {familyBills.length > 0 && (
-          <div className="mt-6 space-y-4">
-            <p className="text-small font-medium text-slate-400">Other members&apos; 28-day bills</p>
-            {familyBills.map((bill) => (
-              <ZelleUnlockGate
-                key={bill.payment.id}
-                status={bill.payment.status}
-                rejectionReason={bill.payment.rejectionReason}
-                scaleCode={`${bill.memberName}: installment ${bill.payment.installmentNumber ?? "?"}`}
-                scaleTitle={planLabel}
-                eyebrowLabel="Group plan"
-                amountCents={bill.payment.amountCents}
-                zelleHandle={zelleHandle}
-                paymentId={bill.payment.id}
-                onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.payment.id)}
-              />
-            ))}
-          </div>
-        )}
       </div>
     );
   }

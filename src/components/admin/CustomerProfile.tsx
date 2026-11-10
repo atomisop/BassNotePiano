@@ -1,11 +1,11 @@
 "use client";
 
 import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
-import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
+import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CalendarPlus, ChevronDown, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
+import { CalendarPlus, ChevronDown, ChevronRight, Coins, CreditCard, Hammer } from "@/components/ui/appIcons";
 import { OPEN_QUICK_MESSAGE_EVENT, QuickMessageButton } from "@/components/admin/QuickMessageButton";
 import { notifyDiscordAction } from "@/app/(dashboard)/admin/discord/actions";
 import { parseSlotParam } from "@/lib/commandRecents";
@@ -23,6 +23,9 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
+import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
+import { CardFoot, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
+import { StatusDot } from "@/components/ui/StatusDot";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -71,16 +74,49 @@ function formatDateTime(d: Date | string) {
   return formatEtShort(d, { weekday: false });
 }
 
+/**
+ * One card inside a section. Its name is a quiet eyebrow (the section bar above it is the heading people scan), so the first loud thing
+ * in the card is what it holds: the email, the balance, the last payment (DESIGN.md, Hierarchy rules 1 and 3). `id` lets a `?do=` job
+ * scroll to it.
+ */
 function SectionCard({ id, title, action, children }: { id?: string; title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div id={id} className="glass-surface scroll-mt-28 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
+    <div id={id} className="glass-surface scroll-mt-28 p-4 md:p-5">
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>
         {action}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-3">{children}</div>
     </div>
   );
+}
+
+/** "Nov 3", with the year only when it is not this year: a date in a row speaks for itself. */
+function shortDate(d: Date | string) {
+  const date = new Date(d);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}
+
+/** A payment's purpose in plain words: "Payment plan installment". */
+function purposeLabel(purpose: string) {
+  const words = purpose.replace(/_/g, " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const PAYMENT_STATUS: Record<string, { label: string; tone: "warning" | "danger" | "neutral" }> = {
+  AWAITING_TRANSFER: { label: "Awaiting transfer", tone: "neutral" },
+  PENDING_REVIEW: { label: "Pending review", tone: "warning" },
+  REJECTED: { label: "Rejected", tone: "danger" },
+  EXPIRED: { label: "Expired", tone: "neutral" },
+  REFUNDED: { label: "Refunded", tone: "neutral" },
+};
+
+/** A payment's status as a dot and a word, only when it is news: a paid one shows its receipt instead. */
+function PaymentStatus({ status }: { status: string }) {
+  const s = PAYMENT_STATUS[status];
+  if (!s) return null;
+  return <StatusDot tone={s.tone}>{s.label}</StatusDot>;
 }
 
 /** Collapsed until the Notes button is pressed: the teacher's permanent notes on this student. */
@@ -109,7 +145,7 @@ function NotesSection({ studentId }: { studentId: string }) {
           aria-expanded={open}
           className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
-          {open ? "Close notes" : "Notes"}
+          {open ? "Close notes" : "Open notes"}
         </button>
       }
     >
@@ -129,17 +165,21 @@ function formatPracticeDay(day: string) {
   return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-/** Last 30 days of the daily 10-minute finger practice: a dot per day, oldest first. */
+/** Last 30 days of the daily 10-minute finger practice: this week's figure first, then a dot per day, oldest first. */
 function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"] }) {
+  const idle = practice.doneLast7 === 0;
   return (
     <div>
-      <p className="text-small text-slate-400">
-        <span className="tabular-nums text-slate-50">{practice.doneLast7}/7</span> days this week ·{" "}
-        <span className="tabular-nums text-slate-50">{practice.minutesLast7}</span> min · streak{" "}
-        <span className="tabular-nums text-slate-50">{practice.streak}</span> · last full day{" "}
-        <span className="text-slate-50">{practice.lastDoneDay ? formatPracticeDay(practice.lastDoneDay) : "never"}</span>
-      </p>
-      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Daily practice, last 30 days, oldest first">
+      <div className="flex items-baseline gap-2">
+        <p className={`text-headline font-semibold tabular-nums ${idle ? "text-amber-300" : "text-slate-50"}`}>{practice.doneLast7}/7</p>
+        <p className="text-small text-slate-400">days this week</p>
+      </div>
+      <Facts columns={3} className="mt-3">
+        <Fact label="This week" value={`${practice.minutesLast7} min`} tone={practice.minutesLast7 > 0 ? "default" : "muted"} />
+        <Fact label="Streak" value={`${practice.streak} ${practice.streak === 1 ? "day" : "days"}`} tone={practice.streak > 0 ? "default" : "muted"} />
+        <Fact label="Last full day" value={practice.lastDoneDay ? formatPracticeDay(practice.lastDoneDay) : "Never"} tone={practice.lastDoneDay ? "default" : "muted"} />
+      </Facts>
+      <ul className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-50/8 pt-4" aria-label="Daily practice, last 30 days, oldest first">
         {practice.strip.map((d) => (
           <li
             key={d.day}
@@ -152,7 +192,7 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-small text-slate-500">
+      <p className="mt-2 text-caption text-slate-500">
         {practice.doneLast30} of 30 days done. Green is the full 10 minutes, yellow is part of it, grey is none.
       </p>
     </div>
@@ -482,35 +522,9 @@ export function CustomerProfile({
     router.refresh();
   }
 
-  const banButton = user.bannedAt ? (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => setConfirmingUnban((o) => !o)}
-      aria-expanded={confirmingUnban}
-      className={buttonVariants({ variant: "secondary", size: "sm" })}
-    >
-      Lift ban
-    </button>
-  ) : user.role === "ADMIN" ? null : (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => setConfirmingBan((o) => !o)}
-      aria-expanded={confirmingBan}
-      className={buttonVariants({ variant: "danger", size: "sm" })}
-    >
-      <Hammer className="h-4 w-4" aria-hidden />
-      Ban
-    </button>
-  );
-
-
   return (
     <div className="space-y-5">
-      {error && (
-        <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
-      )}
+      {error && <Callout tone="danger">{error}</Callout>}
 
       {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
@@ -558,19 +572,43 @@ export function CustomerProfile({
         <SectionHeader id="overview" label="Overview" open={isOpen("overview")} onToggle={() => toggleSection("overview")} />
         <div hidden={!isOpen("overview")} className="space-y-5">
           {/* Identity + account-level quick actions */}
-          <SectionCard title="Account" action={banButton}>
+          <SectionCard title="Account">
             {user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
-                <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
+              <Callout
+                tone="danger"
+                className="mb-4"
+                action={
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setConfirmingUnban((o) => !o)}
+                    aria-expanded={confirmingUnban}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    Lift ban
+                  </button>
+                }
+              >
+                <p className="font-semibold">Banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
-                {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
-              </div>
+                {user.bannedReason && <p className="mt-1 opacity-80">Your note: {user.bannedReason}</p>}
+              </Callout>
             )}
             {user.paymentLockedAt && !user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
+              <Callout
+                tone="danger"
+                className="mb-4"
+                action={
+                  confirmingUnlock ? null : (
+                    <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      Lift payment lock
+                    </button>
+                  )
+                }
+              >
                 <p className="font-semibold">Locked for non-payment on {formatDate(user.paymentLockedAt)}. They cannot sign in.</p>
                 <p className="mt-1">Their plan was canceled when the bill went unpaid. Lift the lock once it is sorted out.</p>
-                {confirmingUnlock ? (
+                {confirmingUnlock && (
                   <InlineConfirm
                     className="mt-3"
                     question="Lift the payment lock?"
@@ -581,12 +619,8 @@ export function CustomerProfile({
                     onCancel={() => setConfirmingUnlock(false)}
                     onConfirm={() => void handleLiftLock()}
                   />
-                ) : (
-                  <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={`${buttonVariants({ variant: "secondary", size: "sm" })} mt-3`}>
-                    Lift payment lock
-                  </button>
                 )}
-              </div>
+              </Callout>
             )}
             {confirmingUnban && user.bannedAt && (
               <InlineConfirm
@@ -600,10 +634,142 @@ export function CustomerProfile({
                 onConfirm={() => void handleUnban()}
               />
             )}
+
+            {/* Who this is: the email is the one bright line (the name is already the page title), the rest is quiet. */}
+            <p className="break-all text-body font-semibold text-slate-50">{user.email}</p>
+            <Meta
+              className="mt-0.5"
+              items={[
+                user.username ? `@${user.username}` : null,
+                user.role === "ADMIN" ? "Admin" : "Student",
+                user.hasCurriculumAccess && user.role !== "ADMIN" ? "Complimentary access" : null,
+              ]}
+            />
+
+            <Facts className="mt-4">
+              <Fact label="Joined" value={formatDate(user.createdAt)} />
+              <Fact label="Last active" value={user.lastActivityAt ? formatDate(user.lastActivityAt) : "Never"} tone={user.lastActivityAt ? "default" : "muted"} />
+              <Fact label="Streak" value={`${user.currentStreak} ${user.currentStreak === 1 ? "day" : "days"}`} tone={user.currentStreak > 0 ? "default" : "muted"} />
+              <Fact label={user.phone && user.phoneVerifiedAt ? "Phone, verified" : "Phone"} value={user.phone ? formatPhone(user.phone) : "None"} tone={user.phone ? "default" : "muted"} />
+            </Facts>
+
+            <Meta
+              className="mt-3"
+              items={[
+                user.emailVerified ? "Email verified" : <span className="text-amber-300">Email not verified</span>,
+                user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed",
+              ]}
+            />
+
+            <CardFoot>
+              {/* One menu instead of eight equal buttons: everyday tools first, rare ones grouped, Ban last and in red. Each item that
+                  needs a yes opens its confirmation under this row, never inside the menu. */}
+              <ActionMenu label="Manage" align="right">
+                {accountTools}
+                <ActionMenuLabel>Access</ActionMenuLabel>
+                <button type="button" disabled={busy} onClick={() => setPendingAction("curriculum")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
+                </button>
+                <button type="button" disabled={busy} onClick={() => setPendingAction("role")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
+                </button>
+                <ActionMenuLabel>Clean up</ActionMenuLabel>
+                {user.phone && (
+                  <button type="button" disabled={busy} onClick={() => setConfirmingClearPhone(true)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Clear phone number
+                  </button>
+                )}
+                <button type="button" disabled={busy} onClick={() => setPendingAction("history")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Clear Atom history
+                </button>
+                <button type="button" disabled={busy} onClick={() => setConfirmingSignOut(true)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Sign out everywhere
+                </button>
+                {!user.bannedAt && user.role !== "ADMIN" && (
+                  <>
+                    <ActionMenuLabel>Danger</ActionMenuLabel>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmingBan(true)}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                    >
+                      <Hammer className="h-4 w-4" aria-hidden />
+                      Ban
+                    </button>
+                  </>
+                )}
+              </ActionMenu>
+            </CardFoot>
+
+            {/* The confirmations the menu opens, one at a time, right under it. */}
+            {pendingAction === "curriculum" && (
+              <InlineConfirm
+                className="mt-3"
+                question={user.hasCurriculumAccess ? "Remove complimentary access?" : "Give complimentary curriculum access?"}
+                confirmLabel="Confirm"
+                busyLabel="Applying…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
+              />
+            )}
+            {pendingAction === "role" && (
+              <InlineConfirm
+                className="mt-3"
+                question={user.role === "ADMIN" ? "Remove admin access from this account?" : "Make this account an admin?"}
+                detail={user.role === "ADMIN" ? "They are signed out right away." : "They will be able to manage payments, users and credits."}
+                confirmLabel="Confirm"
+                busyLabel="Applying…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
+              />
+            )}
+            {pendingAction === "history" && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Permanently delete this account's stored Atom history?"
+                confirmLabel="Delete it"
+                busyLabel="Deleting…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
+              />
+            )}
+            {confirmingSignOut && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Sign out every device this account is logged into?"
+                confirmLabel="Sign them out"
+                busyLabel="Signing out…"
+                busy={busy}
+                onCancel={() => setConfirmingSignOut(false)}
+                onConfirm={() => void withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
+              />
+            )}
+            {confirmingClearPhone && user.phone && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Clear this phone number?"
+                detail="It frees the number so its real owner can add it to their own account."
+                confirmLabel="Yes, clear it"
+                busyLabel="Clearing…"
+                busy={busy}
+                onCancel={() => setConfirmingClearPhone(false)}
+                onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
+              />
+            )}
             {confirmingBan && !user.bannedAt && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
+              <div className="mt-3 rounded-control bg-red-400/10 p-4 ring-1 ring-inset ring-red-400/20">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
-                <p className="mt-1 text-small text-slate-300"><Hint>This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint></p>
+                <p className="mt-1 text-small text-slate-300">
+                  They are signed out for good, their plan and booked classes are canceled, and they leave your Discord.{" "}
+                  <Hint>Their trial and free access end too. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint>
+                </p>
                 <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
                   Private note for yourself (optional)
                 </label>
@@ -616,7 +782,7 @@ export function CustomerProfile({
                   className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
                   placeholder="Why, so you remember"
                 />
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Not yet
                   </button>
@@ -627,178 +793,6 @@ export function CustomerProfile({
                 </div>
               </div>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="text-small text-slate-400">
-                <p>{user.email}</p>
-                {user.username && <p className="mt-0.5 text-slate-500">@{user.username}</p>}
-                <p className="mt-1 text-small text-slate-500">
-                  Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
-                </p>
-                <p className="mt-1 text-small text-slate-500">
-                  {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
-                  {user.phone && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingClearPhone((o) => !o)}
-                      aria-expanded={confirmingClearPhone}
-                      className="tap ml-2 text-slate-50 underline hover:opacity-70"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </p>
-                {confirmingClearPhone && user.phone && (
-                  <InlineConfirm
-                    className="mt-2"
-                    danger
-                    question="Clear this phone number?"
-                    detail="It frees the number so its real owner can add it to their own account."
-                    confirmLabel="Yes, clear it"
-                    busyLabel="Clearing…"
-                    busy={busy}
-                    onCancel={() => setConfirmingClearPhone(false)}
-                    onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
-                  />
-                )}
-                <p className="mt-1 text-small text-slate-500">
-                  {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
-                </p>
-                <p className="mt-1 text-small text-slate-500">
-                  {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
-                  {user.currentStreak}-day streak
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-slate-50/15 text-slate-50" : "bg-neu-base shadow-pressed-low text-slate-400"
-                  }`}
-                >
-                  {user.role}
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
-                  }`}
-                >
-                  {user.hasCurriculumAccess ? "Comped" : "Not comped"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
-              {accountTools}
-              {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
-                  {user.hasCurriculumAccess
-                    ? "Remove complimentary access?"
-                    : "Give complimentary curriculum access?"}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Applying…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("curriculum")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
-                </button>
-              )}
-
-              {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
-                  {user.role === "ADMIN"
-                    ? "Remove admin access from this account? They are signed out right away."
-                    : "Make this account an admin? They will be able to manage payments, users and credits."}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Applying…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("role")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
-                </button>
-              )}
-
-              {pendingAction === "history" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
-                  Permanently delete this account&apos;s stored Atom history?
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Deleting…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("history")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  Clear Atom history
-                </button>
-              )}
-
-              {!confirmingSignOut ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setConfirmingSignOut(true)}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  Sign out everywhere
-                </button>
-              ) : (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
-                  Sign out every device this account is logged into?
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    Confirm
-                  </button>
-                  <button type="button" onClick={() => setConfirmingSignOut(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              )}
-            </div>
           </SectionCard>
 
         </div>
@@ -811,38 +805,59 @@ export function CustomerProfile({
           </SectionCard>
 
           <SectionCard id="cp-curriculum" title="Curriculum">
-            <div className="space-y-2">
-              {profile.roadmap.map((scale) => (
-                <div key={scale.scaleGroup.id} className="flex items-center justify-between gap-3 rounded-xl p-3 bg-neu-base shadow-raised-low">
-                  <div className="min-w-0">
-                    <p className="text-small text-slate-100">
-                      {scale.scaleGroup.code} · {scale.scaleGroup.kinitName ?? scale.scaleGroup.title}
-                    </p>
-                    <p className="mt-0.5 text-small text-slate-500">
-                      {scale.status === "LOCKED"
-                        ? "Locked"
-                        : [
-                            scale.moduleRead ? "Module read" : "Module unread",
-                            scale.practiceCompleted ? "Practice logged" : "Practice pending",
-                            scale.quizPassed ? `Quiz passed${scale.quizScore !== null ? ` (${scale.quizScore})` : ""}` : "Quiz pending",
-                          ].join(" · ")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED", notify))}
-                    className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
-                      scale.status === "LOCKED"
-                        ? "border-slate-50/30 text-slate-50 hover:bg-slate-50/10"
-                        : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
-                    }`}
-                  >
-                    {scale.status === "LOCKED" ? "Unlock" : "Lock"}
-                  </button>
-                </div>
-              ))}
-            </div>
+            {(() => {
+              // The scales opened so far and the next one are shown; the locked ones after that are folded away (rule 9).
+              const lastOpen = profile.roadmap.reduce((last, scale, i) => (scale.status === "LOCKED" ? last : i), -1);
+              const shownCount = Math.min(profile.roadmap.length, lastOpen + 2);
+              const scaleRow = (scale: (typeof profile.roadmap)[number]) => {
+                const locked = scale.status === "LOCKED";
+                return (
+                  <li key={scale.scaleGroup.id} className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className={`truncate text-body font-medium ${locked ? "text-slate-400" : "text-slate-50"}`}>
+                        {scale.scaleGroup.code} · {scale.scaleGroup.kinitName ?? scale.scaleGroup.title}
+                      </p>
+                      <Meta
+                        className="mt-0.5"
+                        items={
+                          locked
+                            ? ["Locked"]
+                            : [
+                                scale.moduleRead ? "Module read" : "Module unread",
+                                scale.practiceCompleted ? "Practice logged" : "Practice pending",
+                                scale.quizPassed ? `Quiz passed${scale.quizScore !== null ? ` (${scale.quizScore})` : ""}` : "Quiz pending",
+                              ]
+                        }
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, locked, notify))}
+                      className={buttonVariants({ variant: locked ? "secondary" : "ghost", size: "sm", className: "shrink-0" })}
+                    >
+                      {locked ? "Unlock" : "Lock"}
+                    </button>
+                  </li>
+                );
+              };
+              const rest = profile.roadmap.slice(shownCount);
+              return (
+                <ul className="divide-y divide-slate-50/6">
+                  {profile.roadmap.slice(0, shownCount).map(scaleRow)}
+                  {rest.length > 0 && (
+                    <li>
+                      <details className="group/more">
+                        <summary className="tap flex cursor-pointer list-none items-center py-2.5 text-small font-medium text-slate-400 hover:text-slate-200 group-open/more:hidden [&::-webkit-details-marker]:hidden">
+                          Show {rest.length} more locked
+                        </summary>
+                        <ul className="divide-y divide-slate-50/6">{rest.map(scaleRow)}</ul>
+                      </details>
+                    </li>
+                  )}
+                </ul>
+              );
+            })()}
           </SectionCard>
 
           <NotesSection studentId={user.id} />
@@ -851,11 +866,17 @@ export function CustomerProfile({
 
         <SectionHeader id="classes" label="Classes" open={isOpen("classes")} onToggle={() => toggleSection("classes")} />
         <div hidden={!isOpen("classes")} className="space-y-5">
-          {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`} action={creditTools}>
-            <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
+          {/* Credits + bookings: the balance is the card's one loud figure, the form to change it sits under a hairline. */}
+          <SectionCard title="Class credits" action={creditTools}>
+            <div className="flex items-baseline gap-2">
+              <p className={`text-headline font-semibold tabular-nums ${user.classCredits > 0 ? "text-slate-50" : "text-slate-400"}`}>
+                {formatCredits(storedToCredits(user.classCredits))}
+              </p>
+              <p className="text-small text-slate-400">{storedToCredits(user.classCredits) === 1 ? "credit" : "credits"} available</p>
+            </div>
+            <form onSubmit={handleReviewCredits} className="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-50/8 pt-4">
               <div>
-                <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
+                <label htmlFor="cp-amount" className="text-small font-medium text-slate-400">
                   Amount
                 </label>
                 <input
@@ -869,8 +890,8 @@ export function CustomerProfile({
                   className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
-              <div className="flex-1">
-                <label htmlFor="cp-reason" className="text-small font-medium uppercase tracking-wide text-slate-500">
+              <div className="min-w-40 flex-1">
+                <label htmlFor="cp-reason" className="text-small font-medium text-slate-400">
                   Reason
                 </label>
                 <input
@@ -894,23 +915,25 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
-                {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
-                <span className="font-semibold text-slate-50">
-                  {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
-                </span>
-                ? Reason: &ldquo;{creditReason}&rdquo;
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-control bg-slate-50/5 px-3 py-2.5 text-small text-slate-300 ring-1 ring-inset ring-slate-50/10">
+                <p className="mr-auto min-w-0">
+                  {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
+                  <span className="font-semibold text-slate-50">
+                    {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
+                  </span>
+                  ? Reason: &ldquo;{creditReason}&rdquo;
+                </p>
+                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  Edit
+                </button>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  className={buttonVariants({ variant: "primary", size: "sm" })}
                 >
                   {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
-                </button>
-                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                  Edit
                 </button>
               </div>
             )}
@@ -926,13 +949,15 @@ export function CustomerProfile({
 
         <SectionHeader id="money" label="Money" open={isOpen("money")} onToggle={() => toggleSection("money")} />
         <div hidden={!isOpen("money")} className="space-y-5">
-          {/* Payments: acted on right here when the page passes the full list (approve, mark paid, refund, cancel bill, fix). */}
+          {/* Payments: acted on right here when the page passes the full list (approve, mark paid, refund, cancel bill, fix). Without it,
+              the last one leads (amount, what for, when) and the earlier ones are rows under it. */}
           {paymentsPanel ? (
             <SectionCard
               title="Payments"
               action={
-                <Link href={`/admin/payments?user=${user.id}`} className="tap inline-flex items-center text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">
+                <Link href={`/admin/payments?user=${user.id}`} className="tap inline-flex shrink-0 items-center gap-1 rounded-sm text-small font-medium text-slate-400 hover:text-slate-200">
                   In Billing
+                  <ChevronRight aria-hidden className="h-3.5 w-3.5" />
                 </Link>
               }
             >
@@ -941,40 +966,54 @@ export function CustomerProfile({
           ) : (
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
-            <div className="space-y-2">
-              <ViewMore items={profile.payments} initial={4}>
-              {(p) => (
-                <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
-                  <div>
-                    <p className="text-slate-100">
-                      {formatUsd(p.amountCents)} · {p.purpose.replace(/_/g, " ").toLowerCase()}
-                    </p>
-                    <p className="mt-0.5 text-small text-slate-500">
-                      {formatDate(p.createdAt)}
-                      {p.scaleGroup ? ` · ${p.scaleGroup.code}` : ""}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      p.status === "VERIFIED"
-                        ? "bg-slate-50/15 text-slate-100"
-                        : p.status === "REJECTED"
-                          ? "bg-red-400/15 text-red-400"
-                          : "bg-neu-base shadow-pressed-low text-slate-400"
-                    }`}
-                  >
-                    {p.status.replace(/_/g, " ").toLowerCase()}
-                  </span>
+            {(() => {
+              const [latest, ...earlier] = profile.payments;
+              if (!latest) return null;
+              const tools = (p: (typeof profile.payments)[number]) => (
+                <>
                   {p.status === "VERIFIED" && canEditPayments && <AdminEditPaymentButton paymentId={p.id} amountCents={p.amountCents} paidAt={p.reviewedAt ?? p.updatedAt} />}
                   {p.status === "VERIFIED" && (
-                    <Link href={`/billing/receipt/${p.id}`} className="tap inline-flex shrink-0 items-center text-small font-medium text-signal-fg hover:underline">
+                    <Link href={`/billing/receipt/${p.id}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}>
                       Receipt
                     </Link>
                   )}
-                </div>
-              )}
-              </ViewMore>
-            </div>
+                </>
+              );
+              return (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(latest.amountCents)}</p>
+                      <Meta className="mt-0.5" items={[purposeLabel(latest.purpose), latest.scaleGroup?.code, formatDate(latest.createdAt)]} />
+                    </div>
+                    <div className="shrink-0 pt-1.5">
+                      <PaymentStatus status={latest.status} />
+                    </div>
+                  </div>
+                  {latest.status === "VERIFIED" && <div className="mt-2 flex flex-wrap items-center gap-1">{tools(latest)}</div>}
+                  {earlier.length > 0 && (
+                    <div className="mt-4 border-t border-slate-50/8 pt-2">
+                      <div className="divide-y divide-slate-50/6">
+                        <ViewMore items={earlier} initial={4}>
+                          {(p) => (
+                            <div key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-body font-semibold tabular-nums text-slate-50">{formatUsd(p.amountCents)}</p>
+                                <Meta className="mt-0.5" items={[purposeLabel(p.purpose), p.scaleGroup?.code, shortDate(p.createdAt)]} />
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <PaymentStatus status={p.status} />
+                                {tools(p)}
+                              </div>
+                            </div>
+                          )}
+                        </ViewMore>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </SectionCard>
           )}
 
@@ -983,70 +1022,66 @@ export function CustomerProfile({
             {profile.payerAliases.length === 0 && (
               <Empty>None. When you attach a bank email from a different name to this student&apos;s payment, that name is remembered here and clears their future payments by itself.</Empty>
             )}
-            <div className="space-y-2">
-              {profile.payerAliases.map((alias) => (
-                <div key={alias.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
-                  <span className="min-w-0 truncate text-slate-100">{alias.name}</span>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await onForgetPayerName(user.id, alias.id);
-                        router.refresh();
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    Forget
-                  </button>
-                </div>
-              ))}
-            </div>
+            {profile.payerAliases.length > 0 && (
+              <ul className="divide-y divide-slate-50/6">
+                {profile.payerAliases.map((alias) => (
+                  <li key={alias.id} className="flex min-h-12 items-center justify-between gap-3 py-2">
+                    <span className="min-w-0 truncate text-body font-medium text-slate-50">{alias.name}</span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          await onForgetPayerName(user.id, alias.id);
+                          router.refresh();
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
+                    >
+                      Forget
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
         </div>
 
         <SectionHeader id="support" label="Support" open={isOpen("support")} onToggle={() => toggleSection("support")} />
         <div hidden={!isOpen("support")} className="space-y-5">
-          {/* Support history */}
+          {/* Support history: each conversation is a row that opens it (chevron), the last message first, an open one marked. */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}
-            <div className="space-y-2">
-              {profile.supportThreads.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/admin/support/${t.id}?filter=all`}
-                  className="block rounded-xl p-3 transition bg-neu-base shadow-raised-low"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-slate-50/15 text-slate-50" : "bg-slate-50/15 text-slate-100"
-                      }`}
-                    >
-                      {t.status === "OPEN" ? "Open" : "Resolved"}
-                    </span>
-                  </div>
-                  {t.lastMessage && <p className="mt-1.5 truncate text-small text-slate-400">{t.lastMessage.body}</p>}
-                </Link>
-              ))}
-            </div>
+            {profile.supportThreads.length > 0 && (
+              <ul className="divide-y divide-slate-50/6">
+                {profile.supportThreads.map((t) => (
+                  <li key={t.id}>
+                    <Link href={`/admin/support/${t.id}?filter=all`} className="group flex items-center gap-3 rounded-sm py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body text-slate-100 group-hover:text-slate-50">{t.lastMessage?.body ?? "No messages"}</p>
+                        <p className="mt-0.5 text-small text-slate-500">{formatDate(t.createdAt)}</p>
+                      </div>
+                      {t.status === "OPEN" && <StatusDot tone="warning" className="shrink-0">Open</StatusDot>}
+                      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
 
           {/* Activity timeline */}
           <SectionCard title="Activity">
             {profile.timeline.length === 0 && <Empty>Nothing recorded yet.</Empty>}
-            <div className="space-y-3">
+            <div className="divide-y divide-slate-50/6">
               <ViewMore items={profile.timeline} initial={6}>
               {(event, i) => (
-                <div key={i} className="border-l-2 border-ink/10 pl-3">
-                  <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
-                  <p className="text-small text-slate-200">{event.label}</p>
-                  {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
+                <div key={i} className="py-2.5">
+                  <p className="text-small font-medium text-slate-100">{event.label}</p>
+                  <Meta className="mt-0.5" items={[event.detail, formatDateTime(event.at)]} />
                 </div>
               )}
               </ViewMore>

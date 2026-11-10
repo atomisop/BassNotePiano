@@ -8,6 +8,7 @@ import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
 import { Hint } from "@/components/ui/Hint";
+import { CardFoot } from "@/components/ui/CardKit";
 
 export const metadata = { title: "Admin: System" };
 
@@ -64,7 +65,7 @@ export default async function AdminSecurityPage() {
           {visits.length === 0 ? (
             <p className="text-small text-slate-500">No views yet.</p>
           ) : (
-            <ul className="divide-y divide-slate-50/10">
+            <ul className="divide-y divide-slate-50/8">
               {visits.map((v) => (
                 <li key={v.path} className="flex items-center justify-between gap-3 py-2.5 text-small">
                   <span className="min-w-0 truncate text-slate-200">{v.path}</span>
@@ -79,27 +80,42 @@ export default async function AdminSecurityPage() {
       <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy<Hint className="ml-1.5">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</Hint></h2>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">
-        <h2 className="text-title font-semibold text-slate-50">Is it safe to turn on?</h2>
+        {/* The answer is the card's focal point; the question is its quiet eyebrow and the reasons follow in muted text. */}
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Is it safe to turn on?</p>
         {rows.length === 0 ? (
-          <p className="mt-2 text-small text-slate-300"><Hint>No reports yet. Reports arrive as people use the site; check again after a few days of normal use.</Hint></p>
+          <>
+            <h2 className="mt-1 text-title font-semibold text-slate-50">No reports yet</h2>
+            <p className="mt-1 text-small text-slate-400"><Hint>Reports arrive as people use the site; check again after a few days of normal use.</Hint></p>
+          </>
         ) : realRecent.length === 0 ? (
-          <p className="mt-2 text-small text-slate-300">
-            <span className="font-semibold text-signal-fg">Looking good.</span> No real findings in the last 3 days
-            {watchedDays >= 3 ? ` (reports have been collected for ${watchedDays} days)` : `, but reports have only been collected for ${watchedDays} day${watchedDays === 1 ? "" : "s"}, so give it a few more`}. Tell me and I will turn enforcement on.
-          </p>
+          <>
+            <h2 className="mt-1 text-title font-semibold text-emerald-400">Looking good</h2>
+            <p className="mt-1 text-small text-slate-400">
+              No real findings in the last 3 days
+              {watchedDays >= 3 ? ` (reports have been collected for ${watchedDays} days)` : `, but reports have only been collected for ${watchedDays} day${watchedDays === 1 ? "" : "s"}, so give it a few more`}. Tell me and I will turn enforcement on.
+            </p>
+          </>
         ) : (
-          <p className="mt-2 text-small text-amber-300">
-            {realRecent.length} real finding{realRecent.length === 1 ? "" : "s"} in the last 3 days (below). Turning enforcement on now would block {realRecent.length === 1 ? "it" : "them"} for visitors. Fix or allow {realRecent.length === 1 ? "it" : "them"} first.
-          </p>
+          <>
+            <h2 className="mt-1 text-title font-semibold tabular-nums text-amber-300">
+              {realRecent.length} real finding{realRecent.length === 1 ? "" : "s"}
+            </h2>
+            <p className="mt-1 text-small text-slate-400">
+              In the last 3 days (below). Turning enforcement on now would block {realRecent.length === 1 ? "it" : "them"} for visitors. Fix or allow {realRecent.length === 1 ? "it" : "them"} first.
+            </p>
+          </>
         )}
         <p className="mt-2 text-small text-slate-500">{noiseCount} report group{noiseCount === 1 ? "" : "s"} came from visitors&apos; own browser extensions or tools and can be ignored.</p>
-        <div className="mt-3">
+        <CardFoot className="justify-start">
           <CspClearButton onClear={clearCspViolationsAction} />
-        </div>
+        </CardFoot>
       </section>
 
       <section className="glass-surface mt-5 p-5" aria-label="Reports">
-        <h2 className="text-title font-semibold text-slate-50">Reports</h2>
+        <h2 className="flex items-baseline justify-between gap-3 text-title font-semibold text-slate-50">
+          Reports
+          {rows.length > 0 && <span className="text-small font-normal tabular-nums text-slate-500">{rows.length}</span>}
+        </h2>
         {rows.length === 0 ? (
           <p className="mt-2 text-small text-slate-500">Nothing yet.</p>
         ) : (

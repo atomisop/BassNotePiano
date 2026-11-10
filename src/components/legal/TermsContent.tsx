@@ -5,20 +5,20 @@
 // can never quietly drift out of sync with each other.
 
 
-export const TERMS_LAST_UPDATED = "October 24, 2026";
+export const TERMS_LAST_UPDATED = "November 9, 2026";
 
 function TermsSection({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-6 last:border-b-0 last:pb-0">
-      <h2 className="font-serif text-title text-slate-50">{title}</h2>
-      <div className="mt-2 space-y-2 text-small leading-relaxed text-slate-400">{children}</div>
+    <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-8 last:border-b-0 last:pb-0">
+      <h2 className="text-title font-semibold text-slate-50">{title}</h2>
+      <div className="mt-3 space-y-3 text-small leading-relaxed text-slate-400">{children}</div>
     </div>
   );
 }
 
 export function TermsContent() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <TermsSection title="Your account">
         <p>
           One account per person. Don&apos;t share your login, and don&apos;t share purchased access (curriculum or
@@ -31,7 +31,7 @@ export function TermsContent() {
         <p>
           The curriculum isn&apos;t sold separately. It comes with an active class plan, and your teacher opens it one
           scale at a time as you progress. When a plan ends, curriculum access continues until the end of the 28 days
-          you already paid for, then closes. Approved applicants get a 3-day free trial of the first lessons.
+          you already paid for, then closes. Every new account gets a 3-day free trial of the first lessons, once per person.
         </p>
         <p>
           <span className="font-medium text-slate-50">Payments are final.</span> Curriculum content is digital

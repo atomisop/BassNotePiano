@@ -312,6 +312,17 @@ export function PracticeClient({
   }
 
   const shownSeconds = status.completedToday ? DAILY_GOAL_SECONDS : Math.min(DAILY_GOAL_SECONDS, status.todaySeconds + (running ? localExtra : 0));
+  const minutesToGo = Math.max(1, Math.ceil((DAILY_GOAL_SECONDS - shownSeconds) / 60));
+  // Once today's 10 minutes are done, the next step (back to the lesson) becomes the one primary button and "Practice more" steps back.
+  const doneAndIdle = status.completedToday && !running;
+  const continueLink = (primary: boolean) => (
+    <a
+      href={nextHref ?? "/roadmap"}
+      className={buttonVariants({ variant: primary ? "primary" : "secondary", size: "lg", className: "min-h-12 w-full sm:w-auto sm:px-8" })}
+    >
+      {nextHref ? "Continue to your lesson" : "Go to scales"}
+    </a>
+  );
   const exercises = instrument === "PIANO" ? PIANO_EXERCISES : GUITAR_EXERCISES;
 
   return (
@@ -321,36 +332,39 @@ export function PracticeClient({
         <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
       </div>
 
-      {/* Three blocks, in the order you use them: today's timer and the tempo (side by side on computers), then the exercise. */}
-      <div className="grid gap-4 md:grid-cols-2 md:gap-(--space-group)">
+      {/* Three blocks, in the order you use them: today's timer and the tempo (side by side on computers), then the exercise.
+          The timer is the screen's hero (DESIGN.md, Hierarchy rule 10): wider, raised, with the time as its one big figure and Start as
+          its one primary button. The tempo beside it is a quiet panel. */}
+      <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:gap-(--space-group)">
       {/* ---- Today ---- */}
       <Card className="!p-4 md:!p-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 md:gap-5">
           <ProgressRing
             value={shownSeconds}
             max={DAILY_GOAL_SECONDS}
-            size={96}
+            size={88}
             strokeWidth={8}
             label={`Practice today: ${mmss(shownSeconds)} of ${mmss(DAILY_GOAL_SECONDS)}`}
-            caption={`${mmss(shownSeconds)} / ${mmss(DAILY_GOAL_SECONDS)}`}
           />
           <div className="min-w-0 flex-1">
-            <p className="text-body font-semibold text-slate-50">
-              {status.completedToday ? "Done for today" : running ? "Practicing" : "10 minutes to go"}
+            <p className="text-figure font-bold leading-none tabular-nums text-slate-50">{mmss(shownSeconds)}</p>
+            <p className="mt-2 text-small text-slate-400">
+              {status.completedToday ? "Done for today" : running ? `Practicing · ${minutesToGo} min to go` : `${minutesToGo} min to go today`}
             </p>
-            <p className="mt-1 text-small text-slate-400">{status.streak} day streak</p>
+            <p className="mt-0.5 text-caption text-slate-500">{status.streak} day streak</p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex">
-          <button type="button" onClick={toggle} className={buttonVariants({ size: "lg", className: "min-h-12 w-full sm:w-auto sm:px-8" })}>
+        <div className="mt-5 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+          {doneAndIdle && continueLink(true)}
+          <button
+            type="button"
+            onClick={toggle}
+            className={buttonVariants({ variant: doneAndIdle ? "secondary" : "primary", size: "lg", className: "min-h-12 w-full sm:w-auto sm:px-8" })}
+          >
             {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
           </button>
-          {status.completedToday && (
-            <a href={nextHref ?? "/roadmap"} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
-              {nextHref ? "Continue to your lesson" : "Go to scales"}
-            </a>
-          )}
+          {status.completedToday && running && continueLink(false)}
         </div>
         {running && !status.completedToday && (
           <p className="mt-3 text-small text-slate-500" role="status">
@@ -369,8 +383,8 @@ export function PracticeClient({
         )}
       </Card>
 
-      {/* ---- Metronome ---- */}
-      <Card className="!p-4 md:!p-6">
+      {/* ---- Metronome ---- a quiet panel, a step below the timer. */}
+      <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8 md:p-6">
         <div className="flex items-center justify-between gap-3">
           <Eyebrow>Tempo</Eyebrow>
           <div className="flex items-center gap-1.5" aria-hidden>
@@ -391,9 +405,9 @@ export function PracticeClient({
           >
             <Minus className="h-4 w-4" />
           </button>
-          <div className="flex-1 rounded-xl bg-neu-base py-2 text-center shadow-pressed-low">
-            <p className="text-body font-semibold tabular-nums text-slate-50">{metronome.bpm}</p>
-            <p className="text-small text-slate-500">BPM</p>
+          <div className="flex-1 py-1 text-center">
+            <p className="text-title font-semibold leading-none tabular-nums text-slate-50">{metronome.bpm}</p>
+            <p className="mt-1 text-caption text-slate-500">BPM</p>
           </div>
           <button
             type="button"
@@ -408,12 +422,12 @@ export function PracticeClient({
           type="button"
           onClick={() => (metronome.running ? metronome.stop() : metronome.start())}
           disabled={!metronome.supported}
-          className={`${raisedKey} mt-3 min-h-12 w-full`}
+          className={buttonVariants({ variant: "ghost", size: "sm", className: "mt-3 w-full" })}
         >
           {metronome.running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           {metronome.running ? "Stop the beat" : "Beat only, no timer"}
         </button>
-      </Card>
+      </div>
       </div>
 
       {/* ---- Exercises ---- */}
@@ -436,8 +450,9 @@ export function PracticeClient({
               type="button"
               onClick={() => chooseExercise(e.id, e.bpm)}
               aria-pressed={e.id === exerciseId}
-              className={`tap shrink-0 snap-start scroll-mx-4 rounded-full px-4 py-2.5 text-small font-semibold transition ${
-                e.id === exerciseId ? "bg-signal/16 text-signal-fg" : "bg-neu-base text-slate-300 hover:text-slate-100"
+              // A choice, not the next step: the chosen exercise is bright and outlined, the others quiet, and none of them orange.
+              className={`tap shrink-0 snap-start scroll-mx-4 rounded-full px-4 py-2.5 text-small font-medium transition ${
+                e.id === exerciseId ? "bg-slate-50/10 text-slate-50 ring-1 ring-inset ring-slate-50/20" : "bg-slate-50/4 text-slate-400 hover:text-slate-200"
               }`}
             >
               {e.title}

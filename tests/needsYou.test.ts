@@ -47,8 +47,13 @@ describe("buildNeedsYou", () => {
   });
 
   it("uses the singular for one", () => {
-    expect(buildNeedsYou([item("applicants", 1)], [])[0].text).toBe("1 applicant to answer");
+    expect(buildNeedsYou([item("support", 1)], [])[0].text).toBe("1 chat waiting for a reply");
     expect(buildNeedsYou([item("jobs", 1)], [])[0].text).toBe("An automatic task stopped");
+  });
+
+  it("has no applicants row (class applications were removed)", () => {
+    expect(buildNeedsYou([item("applicants", 2, "/admin/students")], [])).toEqual([]);
+    expect(isNeedsYouKind("applicants")).toBe(false);
   });
 
   it("knows its own kinds and nothing else", () => {

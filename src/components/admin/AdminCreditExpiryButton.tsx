@@ -48,7 +48,7 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <button type="button" onClick={() => void show()} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm" })}>
         <Hourglass aria-hidden className="h-4 w-4" />
         Credit expiry
       </button>
@@ -67,11 +67,11 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
               const date = dates[g.id] ?? "";
               const changed = date !== (g.expiresAt ? ymd(g.expiresAt) : "");
               return (
-                <li key={g.id} className="rounded-xl bg-neu-base p-3 shadow-pressed-low">
-                  <p className="text-small font-medium text-slate-200">
-                    {creditsLabelFromStored(g.remaining)} left · {SOURCE[g.source] ?? "Credits"}
+                <li key={g.id} className="rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
+                  <p className="text-body font-semibold tabular-nums text-slate-50">{creditsLabelFromStored(g.remaining)} left</p>
+                  <p className="mt-0.5 text-small text-slate-500">
+                    {SOURCE[g.source] ?? "Credits"} · {g.expiresAt ? `expires ${pretty(g.expiresAt)}` : "never expires"}
                   </p>
-                  <p className="mt-0.5 text-small text-slate-400">{g.expiresAt ? `Expires ${pretty(g.expiresAt)}` : "Never expires"}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <input
                       type="date"
@@ -80,7 +80,7 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
                       onChange={(e) => setDates((d) => ({ ...d, [g.id]: e.target.value }))}
                       className="h-11 rounded-control border border-(--field-edge) bg-neu-base px-3 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
-                    <button type="button" disabled={!!busy || !date || !changed} onClick={() => void save(g, date)} className={buttonVariants({ variant: "primary", size: "sm" })}>
+                    <button type="button" disabled={!!busy || !date || !changed} onClick={() => void save(g, date)} className={buttonVariants({ variant: changed && date ? "primary" : "secondary", size: "sm" })}>
                       {busy === g.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       Save date
                     </button>

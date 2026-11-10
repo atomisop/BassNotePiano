@@ -17,7 +17,7 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   FRIEND_REQUEST_ACCEPTED: "/friends",
   NEW_MESSAGE: "/dashboard",
   PRACTICE_REMINDER: "/practice",
-  CLASS_REGISTRATION_RECEIVED: "/admin/students",
+  CLASS_REGISTRATION_RECEIVED: "/admin/contacts?show=application",
   CLASS_REGISTRATION_APPROVED: "/dashboard",
   CLASS_REGISTRATION_REJECTED: "/dashboard",
   LESSON_BOOKING_RECEIVED: "/admin/schedule?view=ATTENDANCE",

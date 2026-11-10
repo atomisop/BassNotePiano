@@ -69,13 +69,12 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "cancel.studentCanReschedule", category: "cancellation", type: "toggle", default: true, label: "Students can reschedule their own classes", help: "Off: students must message you to move a class." },
 
   // ---- Trial and access
-  { key: "trial.enabled", category: "trial", type: "toggle", default: true, label: "Free trial for new students", help: "Off: approving an application or registering no longer starts a trial." },
+  { key: "trial.enabled", category: "trial", type: "toggle", default: true, label: "Free trial for new students", help: "On: every new account starts with the free trial (once per person). Off: new accounts get none; you can still give one from a student's page." },
   { key: "trial.days", category: "trial", type: "number", default: 3, min: 1, max: 30, unit: "days", label: "Trial length", help: "How long a new trial lasts. The app and Atom follow this number; the public Terms and FAQ pages still say 3 days." },
   { key: "trial.lessonCount", category: "trial", type: "number", default: 3, min: 1, max: 20, unit: "lessons", label: "Lessons open during the trial", help: "How many of Scale 1's first lessons a trial student can open." },
   { key: "access.planGraceDays", category: "trial", type: "number", default: 3, min: 0, max: 30, unit: "days", label: "Grace period after a plan's paid cycle", help: "Curriculum access continues this long after the paid period ends." },
   { key: "access.scaleUnlockIntervalDays", category: "trial", type: "number", default: 7, min: 0, max: 60, unit: "days", label: "Days between scale unlocks", help: "A student becomes eligible for the next scale this long after the last unlock." },
   { key: "access.autoApproveScales", category: "trial", type: "toggle", default: false, storageKey: "auto_approve_scales", label: "Release the next scale automatically", help: "When a student is ready, skip your approval click." },
-  { key: "access.autoApproveApplications", category: "trial", type: "toggle", default: false, storageKey: "auto_approve_applications", label: "Approve class applications automatically", help: "New applications are accepted without review." },
 
   // ---- Sign-up
   { key: "signup.open", category: "signup", type: "toggle", default: true, label: "Allow new sign-ups", help: "Off: the register form refuses new accounts. Existing students are unaffected." },

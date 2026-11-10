@@ -1,55 +1,10 @@
-import Link from "next/link";
-import type { ClassRegistrationStatus } from "@prisma/client";
-import { getAdminClassRegistrations } from "@/lib/classRegistration";
-import { StudentQueue } from "@/components/admin/StudentQueue";
-import { approveRegistrationAction, rejectRegistrationAction, sendApplicantSignUpLinkAction } from "./actions";
-import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { redirect } from "next/navigation";
 
-const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
-  { label: "Pending", value: "PENDING" },
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
-  { label: "All", value: "ALL" },
-];
-
-export const metadata = { title: "Admin: Applications" };
-
-export default async function AdminStudentsPage(props: { searchParams: Promise<{ status?: string; q?: string }> }) {
-  const searchParams = await props.searchParams;
-  const requested = searchParams.status?.toUpperCase();
-  const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING";
-  const registrations = await getAdminClassRegistrations(activeFilter === "ALL" ? undefined : activeFilter);
-  const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
-
-  return (
-    <div>
-      <h1 className="sr-only">Applicants</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {registrations.length} registration{registrations.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-      </p>
-
-      <div className={`mt-6 ${TAB_TRACK}`}>
-        {FILTERS.map((filter) => (
-          <Link
-            key={filter.value}
-            href={filter.value === "PENDING" ? "/admin/students" : `/admin/students?status=${filter.value}`}
-            className={tabItem(activeFilter === filter.value)}
-          >
-            {filter.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-6">
-        <StudentQueue
-          registrations={registrations}
-          onApprove={approveRegistrationAction}
-          onReject={rejectRegistrationAction}
-          onSendSignUpLink={sendApplicantSignUpLinkAction}
-          initialQuery={searchParams.q?.slice(0, 200) ?? ""}
-          emptyMessage={activeFilter === "PENDING" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} registrations.`}
-        />
-      </div>
-    </div>
-  );
+// Class applications were removed (2026-11-09): the class form now just sends the person's details, which are listed on
+// People > Contacts. This address stays so a link in an old email or notification still lands somewhere useful (searched to the
+// person when the old link carried their email).
+export default async function AdminStudentsPage(props: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await props.searchParams;
+  const search = typeof q === "string" ? q.trim().slice(0, 200) : "";
+  redirect(`/admin/contacts?show=application${search ? `&q=${encodeURIComponent(search)}` : ""}`);
 }

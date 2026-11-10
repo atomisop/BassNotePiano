@@ -195,7 +195,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     <>
       {heading}
       {card}
-      <MyPlanSummary userId={session.user.id} />
+      <MyPlanSummary userId={session.user.id} variant="row" />
     <ParentLockedArea locked={parentControlled}>
     <LessonsHub
       initialTab={searchParams.tab === "extra" || (booksOwnClasses && !wantsTimeChange && searchParams.tab !== "weekly") ? "extra" : "weekly"}

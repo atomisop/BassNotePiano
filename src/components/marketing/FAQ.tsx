@@ -20,7 +20,7 @@ const faqs = (extraClassCents: number) => [
   },
   {
     q: "Can I buy the curriculum without live classes?",
-    a: "No. The curriculum comes with live classes. Your teacher opens it one scale at a time as you progress, so you always learn each scale with guidance. Approved applicants get a 3-day free trial of the first lessons.",
+    a: "No. The curriculum comes with live classes. Your teacher opens it one scale at a time as you progress, so you always learn each scale with guidance. Every new account gets a 3-day free trial of the first lessons.",
   },
   {
     q: "How do live lessons work?",

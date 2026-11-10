@@ -151,8 +151,8 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
             return (
               <section key={group} className="glass-surface p-2">
                 <div className="flex items-center justify-between gap-4 px-3 pb-1 pt-2">
-                  <h2 className="text-small font-semibold text-slate-100">{group}</h2>
-                  <div className="flex shrink-0 gap-6 text-small text-slate-500">
+                  <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{group}</h2>
+                  <div className="flex shrink-0 gap-6 text-caption text-slate-500">
                     <span className="w-11 text-center">You</span>
                     <span className="w-11 text-center">Staff</span>
                   </div>

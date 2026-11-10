@@ -347,7 +347,7 @@ export function ZellePaymentModal({
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+                  <p className="text-caption font-medium uppercase tracking-caps text-slate-500">
                     {scaleCode} · {eyebrowLabel}
                   </p>
                   <h2 id="zelle-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
@@ -493,24 +493,11 @@ export function ZellePaymentModal({
                       </>
                     )}
 
-                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
+                    {/* The amount is the sheet's one big figure; the handle and the code are what you copy, each its value over a small label. */}
+                    <div className="mt-4 flex items-end justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-small uppercase tracking-wide text-slate-500">{method === "VENMO" ? "Venmo" : "Zelle handle"}</p>
-                        <p className="truncate font-mono text-small text-slate-100">{method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyHandle}
-                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
-                      >
-                        {copied ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
-                      <div className="min-w-0">
-                        <p className="text-small uppercase tracking-wide text-slate-500">Exact amount</p>
-                        <p className="truncate font-mono text-small text-slate-100">{formatUsd(amountCents)}</p>
+                        <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(amountCents)}</p>
+                        <p className="mt-0.5 text-caption text-slate-500">Send exactly this amount</p>
                       </div>
                       <button
                         type="button"
@@ -521,11 +508,26 @@ export function ZellePaymentModal({
                       </button>
                     </div>
 
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
+                      <div className="min-w-0">
+                        <p className="truncate font-mono text-body text-slate-100">{method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle}</p>
+                        <p className="text-caption text-slate-500">{method === "VENMO" ? "Venmo" : "Zelle handle"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyHandle}
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
+                      >
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+
+
                     {reference && method === "ZELLE" && (
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                         <div className="min-w-0">
-                          <p className="text-small uppercase tracking-wide text-slate-500"><Hint>Put this in the message</Hint></p>
-                          <p className="truncate font-mono text-small text-slate-100">{reference}</p>
+                          <p className="truncate font-mono text-body text-slate-100">{reference}</p>
+                          <p className="text-caption text-slate-500"><Hint>Put this in the message</Hint></p>
                         </div>
                         <button
                           type="button"
