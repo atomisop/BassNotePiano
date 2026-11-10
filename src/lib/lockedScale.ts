@@ -32,7 +32,7 @@ export function describeLockedScale(f: LockedScaleFacts, locale = "en-US"): Lock
         "Every plan includes live classes with your teacher and all of the lessons. Pick a plan and your first scale opens right away.",
       ],
       primary: { label: "Choose a plan", href: "/billing/plans" },
-      secondary: { label: "Try a free class first", href: "/classes" },
+      secondary: { label: "Talk to an instructor", href: "/classes" },
       canAsk: false,
     };
   }
