@@ -14,6 +14,8 @@ import {
 } from "@/app/(dashboard)/admin/announcements/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { CardFoot, Meta } from "@/components/ui/CardKit";
 
 const editField = "h-11 w-full rounded-control border border-(--field-edge) bg-neu-base px-4 text-body text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -70,7 +72,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
   }
 
   return (
-    <div className="glass-surface p-6">
+    <div className="glass-surface p-4 md:p-6">
       <h2 className="text-title text-slate-50 font-semibold">New announcement</h2>
 
       <div className="mt-4 space-y-3">
@@ -92,7 +94,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-lg px-3 py-2.5 bg-neu-base shadow-raised-low">
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-50/8 pt-3">
         <div>
           <p className="text-small font-medium text-slate-200">Send email</p>
         </div>
@@ -108,7 +110,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
 
       {confirmingEmail ? (
-        <div className="mt-4 space-y-2 rounded-lg p-3 bg-neu-base shadow-raised-low">
+        <div className="mt-4 space-y-2 rounded-control bg-amber-300/10 p-3 ring-1 ring-inset ring-amber-300/20">
           <p className="text-small text-slate-50">
             This will email all {totalUsers} account{totalUsers === 1 ? "" : "s"}. Send it?
           </p>
@@ -117,7 +119,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => setConfirmingEmail(false)}
               disabled={submitting}
-              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className={buttonVariants({ variant: "secondary", className: "flex-1" })}
             >
               Cancel
             </button>
@@ -193,25 +195,16 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   if (gone) return null;
 
   return (
-    <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
+    <div className="px-4 py-4">
+      {/* The title is the line to read; whether it is showing now is one word at the right, and the rest is quiet. */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-small font-medium text-slate-100">{announcement.title}</p>
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${
-                announcement.active ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"
-              }`}
-            >
-              {announcement.active ? "Active" : "Inactive"}
-            </span>
-          </div>
-          <p className="mt-1 text-small text-slate-400">{announcement.body}</p>
-          <p className="mt-2 text-small text-slate-500">
-            {relativeTime(announcement.createdAt)} · {announcement.dismissedCount} of {totalUsers} dismissed
-          </p>
-        </div>
+        <p className="min-w-0 text-body font-semibold text-slate-50">{announcement.title}</p>
+        <StatusDot tone={announcement.active ? "success" : "neutral"} className="shrink-0 text-slate-400">
+          {announcement.active ? "Active" : "Inactive"}
+        </StatusDot>
       </div>
+      <p className="mt-1 text-small text-slate-400">{announcement.body}</p>
+      <Meta className="mt-2" items={[relativeTime(announcement.createdAt), `${announcement.dismissedCount} of ${totalUsers} dismissed`]} />
 
       {editing ? (
         <div className="mt-3 grid gap-3">
@@ -253,7 +246,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={() => setDeleting(false)}
               disabled={busy}
-              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
             >
               Cancel
             </button>
@@ -261,7 +254,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+              className={buttonVariants({ variant: "danger", size: "sm", className: "flex-1" })}
             >
               {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}
@@ -269,28 +262,31 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
           </div>
         </div>
       ) : (
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleToggleActive}
-            disabled={busy}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-          >
-            {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
-            {announcement.active ? "Deactivate" : "Reactivate"}
-          </button>
-          <button type="button" onClick={() => setEditing(true)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-            Edit
-          </button>
+        <CardFoot className="mt-3 justify-between border-t-0 pt-0">
+          {/* Delete is quiet red text at the far left, away from the everyday buttons, behind its confirm. */}
           <button
             type="button"
             onClick={() => setDeleting(true)}
             disabled={busy}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}
           >
             Delete
           </button>
-        </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button type="button" onClick={() => setEditing(true)} disabled={busy} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleActive}
+              disabled={busy}
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+            >
+              {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+              {announcement.active ? "Deactivate" : "Reactivate"}
+            </button>
+          </div>
+        </CardFoot>
       )}
     </div>
   );
@@ -313,19 +309,21 @@ export function AnnouncementManager({
     <div className="space-y-6">
       <ComposeForm totalUsers={totalUsers} onPublished={refresh} />
 
-      <div className="glass-surface p-6">
-        <h2 className="text-title text-slate-50 font-semibold">History</h2>
-
-        <div className="mt-4 space-y-3">
-          {initialAnnouncements.length === 0 ? (
-            <p className="text-small text-slate-500">No announcements yet.</p>
-          ) : (
-            initialAnnouncements.map((a) => (
+      <section aria-label="History">
+        <h2 className="flex items-baseline justify-between gap-3 px-1 text-title font-semibold text-slate-50">
+          History
+          {initialAnnouncements.length > 0 && <span className="text-small font-normal tabular-nums text-slate-500">{initialAnnouncements.length}</span>}
+        </h2>
+        {initialAnnouncements.length === 0 ? (
+          <p className="mt-3 px-1 text-small text-slate-500">No announcements yet.</p>
+        ) : (
+          <div className="glass-surface mt-3 divide-y divide-slate-50/8 overflow-hidden">
+            {initialAnnouncements.map((a) => (
               <AnnouncementRow key={a.id} announcement={a} totalUsers={totalUsers} onChanged={refresh} />
-            ))
-          )}
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

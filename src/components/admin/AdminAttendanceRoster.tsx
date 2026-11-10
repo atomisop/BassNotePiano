@@ -11,6 +11,7 @@ import { CalendarCog } from "@/components/ui/appIcons";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardCheck } from "@/components/ui/appIcons";
 import { NotifyPlaceToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
+import { Meta } from "@/components/ui/CardKit";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -73,25 +74,21 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
   const active = occ.roster.filter((r) => r.status !== "CANCELED");
   const isFamily = active.length > 0 && active[0]!.familyBookingGroupId !== null;
   return (
-    <div className="glass-surface p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-body font-semibold text-slate-50">{formatEtShort(occ.scheduledAt)}</p>
-        <div className="flex items-center gap-1.5">
-          {occ.label && <span className="text-small text-slate-500">{occ.label}</span>}
-          {active.length > 0 && (
-            <span className="rounded-full bg-neu-base px-2.5 py-0.5 text-small font-medium text-slate-300 shadow-raised-low">{isFamily ? `Family · ${active.length}` : "1:1"}</span>
-          )}
-        </div>
+    <div className="overflow-hidden rounded-card bg-neu-base shadow-raised-mid">
+      {/* The class time is the card's heading; what kind of class it is steps back beside it as quiet words, not a raised chip. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pb-2 pt-3">
+        <p className="text-body font-semibold tabular-nums text-slate-50">{formatEtShort(occ.scheduledAt)}</p>
+        <Meta items={[occ.label, active.length > 0 ? (isFamily ? `Family · ${active.length}` : "1:1") : null]} />
       </div>
-      <div className="mt-2 space-y-1.5">
+      <ul className="divide-y divide-slate-50/8 border-t border-slate-50/8">
         {active.map((entry) => {
           const name = entry.studentName ?? "Student";
           return (
-            <div key={entry.bookingId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-xl bg-neu-base p-2 shadow-raised-low">
-              <div className="flex min-w-0 items-center gap-2">
+            <li key={entry.bookingId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
                 <Avatar image={entry.studentImage} label={name} size="sm" className="h-8 w-8" />
                 <div className="min-w-0">
-                  <p className="flex items-center gap-1 truncate text-small font-medium text-slate-100">
+                  <p className="flex items-center gap-1 truncate text-body font-semibold text-slate-50">
                     {name}
                     <Hint label={`More about ${name}'s class`}>
                       {entry.studentEmail}
@@ -100,7 +97,7 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                     </Hint>
                   </p>
                   {entry.focus.scaleLabel && (
-                    <p className="truncate text-small text-slate-50">
+                    <p className="truncate text-small text-slate-400">
                       {entry.focus.scaleLabel}
                       {entry.focus.action ? ` · ${entry.focus.action}` : ""}
                     </p>
@@ -124,16 +121,16 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                     href={`/admin/users/${entry.studentId}#scheduler`}
                     aria-label={`Open ${name}'s account to move or cancel`}
                     title="Move or cancel in the account"
-                    className="tap inline-flex h-8 w-8 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50/6 hover:text-slate-200"
                   >
                     <CalendarCog aria-hidden className="h-4 w-4" />
                   </Link>
                 )}
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -154,8 +151,14 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAtt
       <NotifyPlaceToggle place="attendance" label="Notify students when I mark, undo or switch in person" />
       {SECTIONS.filter((s) => buckets[s.id].length > 0).map((s) => (
         <section key={s.id}>
-          <h2 className="mb-2 flex items-center gap-1 text-small font-semibold uppercase tracking-wide text-slate-400">
-            {s.title} · {buckets[s.id].length}
+          {/* A quiet group title with its count; the classes that still need a call get the one warm count. */}
+          <h2 className="mb-2 flex items-center gap-1.5 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">
+            {s.title}
+            <span
+              className={`min-w-6 rounded-full px-1.5 py-0.5 text-center text-caption font-semibold normal-case tabular-nums ${s.id === "needs" ? "bg-amber-300/15 text-amber-300" : "bg-slate-50/8 text-slate-300"}`}
+            >
+              {buckets[s.id].length}
+            </span>
             <Hint label={`About ${s.title}`}>{s.hint}</Hint>
           </h2>
           <div className="space-y-2">

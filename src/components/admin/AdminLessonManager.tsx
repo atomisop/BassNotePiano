@@ -301,8 +301,9 @@ export function AdminLessonManager({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-small text-slate-400">
-          {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+        <p className="flex items-baseline gap-1.5">
+          <span className="text-title font-semibold tabular-nums text-slate-50">{lessons.length}</span>
+          <span className="text-small text-slate-500">{lessons.length === 1 ? "lesson" : "lessons"}</span>
         </p>
         <button
           type="button"
@@ -367,11 +368,11 @@ export function AdminLessonManager({
       {lessons.length === 0 ? (
         <EmptyState icon={<FileText />} title="No lessons for this scale yet" description="Upload a PDF or video and it appears in the scale's lesson list." />
       ) : (
-        <Reorder.Group as="div" axis="y" values={items} onReorder={setItems} className="glass-surface divide-y divide-slate-50/10 px-4">
+        <Reorder.Group as="div" axis="y" values={items} onReorder={setItems} className="glass-surface divide-y divide-slate-50/8 px-4">
           {items.map((lesson, index) => (
             <DragRow key={lesson.id} lesson={lesson} index={index} onDrop={handleDrop}>
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-title text-slate-50">{lesson.title}</h2>
+                <h2 className="truncate text-body font-semibold text-slate-50">{lesson.title}</h2>
                 <p className="truncate text-small text-slate-500">
                   {lesson.type === "VIDEO" ? "Video" : "PDF"}
                   {lesson.fileSizeBytes != null && ` · ${formatBytes(lesson.fileSizeBytes)}`}
@@ -400,13 +401,14 @@ export function AdminLessonManager({
                   </button>
                 </div>
               ) : (
+                // Quiet, flat tools so the lesson's name is what you read; Delete is last and red, behind Keep / Delete.
                 <div className="flex shrink-0 items-center">
                   <button
                     type="button"
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                    className={buttonVariants({ variant: "ghost", size: "iconSm", className: "text-slate-400" })}
                   >
                     <ChevronUp className="h-4 w-4" />
                   </button>
@@ -415,7 +417,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                    className={buttonVariants({ variant: "ghost", size: "iconSm", className: "text-slate-400" })}
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -423,7 +425,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => startEdit(lesson)}
                     aria-label={`Rename ${lesson.title}`}
-                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                    className={buttonVariants({ variant: "ghost", size: "iconSm", className: "text-slate-400" })}
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -431,7 +433,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
                     aria-label={`Delete ${lesson.title}`}
-                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
+                    className={buttonVariants({ variant: "ghost", size: "iconSm", className: "text-red-300 hover:text-red-200" })}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

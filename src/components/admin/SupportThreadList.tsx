@@ -10,13 +10,9 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LifeBuoy } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 
 const LIST_POLL_MS = 15_000;
-
-const STATUS_STYLE: Record<string, string> = {
-  OPEN: "bg-slate-50/15 text-slate-50",
-  RESOLVED: "bg-slate-50/15 text-slate-100",
-};
 
 function relativeTime(iso: Date | string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -41,35 +37,43 @@ export interface SupportThreadListProps {
 function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummary; href: string; currentAdminId: string }) {
   const isEmail = thread.source === "EMAIL";
   const assignedToMe = thread.assignedTo?.id === currentAdminId;
+  const resolved = thread.status === "RESOLVED";
+  // Unread threads stand out (a dot and a bold, bright name); resolved ones step back. Open is the normal state, so it gets no badge.
+  const unread = thread.hasUnread && !resolved;
   return (
-    <Link href={href} className="tap flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-ink/5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-small font-medium text-slate-100">
-          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-50" />}
+    <Link href={href} className="tap flex w-full flex-col gap-0.5 px-4 py-3 text-left transition hover:bg-slate-50/5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className={`flex min-w-0 items-center gap-2 truncate text-body ${unread || thread.hasUnread ? "font-semibold text-slate-50" : resolved ? "font-medium text-slate-400" : "font-medium text-slate-100"}`}>
+          {thread.hasUnread && (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-slate-50">
+              <span className="sr-only">Unread</span>
+            </span>
+          )}
           <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-1.5">
-          {isEmail && <StatusDot>Email</StatusDot>}
-          <span className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
-            {thread.status === "OPEN" ? "Open" : "Resolved"}
-          </span>
-        </span>
+        <span className="shrink-0 text-caption tabular-nums text-slate-500">{relativeTime(thread.createdAt)}</span>
       </div>
-      {thread.subject && <p className="truncate text-small text-slate-300">{thread.subject}</p>}
+      {thread.subject && <p className={`truncate text-small ${thread.hasUnread ? "text-slate-200" : "text-slate-400"}`}>{thread.subject}</p>}
       {thread.lastMessage && (
         <p className="truncate text-small text-slate-500">
           {thread.lastMessage.sender === "SUPPORT" ? "You: " : thread.lastMessage.sender === "ATOM" ? "Atom: " : ""}
           {thread.lastMessage.body}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
-        <span>{relativeTime(thread.createdAt)}</span>
-        {thread.assignedTo && (
-          <span className={assignedToMe ? "font-medium text-slate-50" : "text-slate-400"}>
-            · {assignedToMe ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
-          </span>
-        )}
-      </div>
+      {(isEmail || resolved || thread.assignedTo) && (
+        <Meta
+          className="mt-0.5 text-caption"
+          items={[
+            isEmail ? <StatusDot className="text-caption text-slate-400">Email</StatusDot> : null,
+            resolved ? "Resolved" : null,
+            thread.assignedTo ? (
+              <span className={assignedToMe ? "font-medium text-slate-200" : undefined}>
+                {assignedToMe ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
+              </span>
+            ) : null,
+          ]}
+        />
+      )}
     </Link>
   );
 }
@@ -112,7 +116,7 @@ export function SupportThreadList({ initialThreads, source, filter, currentAdmin
       {threads.length === 0 ? (
         <EmptyState icon={<LifeBuoy />} title={emptyMessage.replace(/\.$/, "")} description="New chats and emails from students land here." />
       ) : (
-        <div data-stagger="" className="glass-surface divide-y divide-ink/10 overflow-hidden">
+        <div data-stagger="" className="glass-surface divide-y divide-slate-50/8 overflow-hidden">
           <ViewMore items={threads} initial={12} step={20}>
           {(thread) => (
             <ThreadRow key={thread.id} thread={thread} href={hrefFor(thread)} currentAdminId={currentAdminId} />

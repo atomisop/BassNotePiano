@@ -66,7 +66,8 @@ export function TodayAttendance({
     return (
       <div className="flex items-center gap-2">
         <StatusDot tone={mark === "PRESENT" ? "success" : "danger"}>{mark === "PRESENT" ? "Present" : "No-show"}</StatusDot>
-        <button type="button" onClick={() => void undo()} disabled={busy !== null} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        {/* Undo is the quiet way back from a slip, so it never looks like the next thing to do. */}
+        <button type="button" onClick={() => void undo()} disabled={busy !== null} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
           {busy === "undo" && <MorphingSquare size={12} className="mr-1 shrink-0" />}
           Undo
         </button>

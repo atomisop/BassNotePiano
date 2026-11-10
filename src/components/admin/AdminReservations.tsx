@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/Toaster";
 import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction } from "@/app/(dashboard)/admin/schedule/actions";
 import type { ReservableHour, ReservationGroup } from "@/lib/ownerReservationsAdmin";
 import { Hint } from "@/components/ui/Hint";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { Meta } from "@/components/ui/CardKit";
 
 const field =
   "h-11 w-full min-w-0 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
@@ -176,44 +178,50 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
       </form>
 
       <section className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
-        <h2 className="text-title font-semibold text-slate-50">Kept for customers</h2>
+        <h2 className="flex items-baseline justify-between gap-3 text-title font-semibold text-slate-50">
+          Kept for customers
+          {reservations.length > 0 && <span className="text-small font-normal tabular-nums text-slate-500">{reservations.length}</span>}
+        </h2>
         {reservations.length === 0 ? (
           <p className="mt-3 text-small text-slate-500">Nothing is reserved.</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-50/10">
-            {reservations.map((r) => (
+          <ul className="mt-2 divide-y divide-slate-50/8">
+            {reservations.map((r) => {
+              // Where the reservation stands, as one quiet status word (green only once the customer has booked), not an orange caps line.
+              const state = r.booked
+                ? { tone: "success" as const, text: "Booked by the customer" }
+                : r.account === "verified"
+                  ? { tone: "neutral" as const, text: "Reserved: the customer can book it" }
+                  : r.account === "unverified"
+                    ? { tone: "warning" as const, text: "Reserved: their email is not verified yet" }
+                    : { tone: "neutral" as const, text: "Reserved: waiting for them to sign up" };
+              return (
               <li key={r.groupId} className="flex items-start justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <p className="text-small font-medium text-slate-100">
-                    {r.dayLabel} <span className="font-normal text-slate-400">· {r.what}</span>
+                  <p className="text-body font-semibold text-slate-50">
+                    {r.dayLabel} <span className="text-small font-normal text-slate-400">· {r.what}</span>
                   </p>
-                  <p className="mt-0.5 text-caption uppercase tracking-wide text-signal-fg">
-                    {r.booked
-                      ? "Booked by the customer"
-                      : r.account === "verified"
-                        ? "Reserved: the customer can book it"
-                        : r.account === "unverified"
-                          ? "Reserved: their email is not verified yet"
-                          : "Reserved: waiting for them to sign up"}
-                  </p>
-                  <p className="mt-1 break-words text-small text-slate-300">{r.name}</p>
-                  <p className="break-words text-small text-slate-500">
-                    {r.email} · {r.phone}
-                  </p>
+                  <p className="mt-0.5 break-words text-small text-slate-300">{r.name}</p>
+                  <Meta className="break-words" items={[r.email, r.phone]} />
                   {r.note && <p className="mt-0.5 text-small text-slate-500">{r.note}</p>}
+                  <StatusDot tone={state.tone} className="mt-1.5 text-slate-400">
+                    {state.text}
+                  </StatusDot>
                 </div>
+                {/* Release frees the time for anyone, so it is quiet red text that asks "Sure?" on the first tap. */}
                 <button
                   type="button"
                   onClick={() => void release(r.groupId)}
                   disabled={releasing === r.groupId}
                   aria-label={sure === r.groupId ? "Tap again to release" : `Release ${r.dayLabel}`}
-                  className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}
                 >
                   {releasing === r.groupId ? <MorphingSquare size={12} className="mr-1.5" /> : <Trash2 aria-hidden className="mr-1.5 h-3.5 w-3.5" />}
                   {sure === r.groupId ? "Sure?" : "Release"}
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

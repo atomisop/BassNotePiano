@@ -23,6 +23,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { BackLink, PageBack } from "@/components/ui/BackLink";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { toast } from "@/components/ui/Toaster";
+import { ChevronRight } from "@/components/ui/appIcons";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -37,7 +38,7 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   if (message.sender === "INTERNAL") {
     return (
       <div className="flex flex-col items-center">
-        <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
+        <span className="mb-1 px-1 text-caption text-slate-500">
           Internal note{message.sentByName ? ` · ${message.sentByName}` : ""} · only admins see this
         </span>
         <div className="max-w-[90%] rounded-2xl border border-dashed border-slate-600 bg-slate-800/40 px-3.5 py-2 text-body text-slate-300">
@@ -49,7 +50,8 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
+      {/* Who said it is a small quiet line; the message itself is the thing to read. */}
+      <span className="mb-1 px-1 text-caption text-slate-500">
         {isVisitor ? visitorLabel : SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>
@@ -58,8 +60,8 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
           isVisitor
             ? "bg-slate-50 text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-slate-50/30 bg-neu-base shadow-pressed-low text-slate-100"
-              : "text-slate-300 bg-neu-base shadow-raised-low"
+              ? "bg-slate-50/10 text-slate-50"
+              : "bg-slate-50/4 text-slate-300 ring-1 ring-inset ring-slate-50/8"
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{message.body}</p>
@@ -190,9 +192,9 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
 
       {/* Tall enough to use the screen, short enough that the reply box ends above the floating dock. */}
       <div className="glass-surface flex h-[calc(100dvh-21rem)] min-h-[360px] min-w-0 flex-col overflow-hidden lg:h-[calc(100dvh-19rem)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-50/8 px-4 py-3">
           <div className="min-w-0">
-            <p className="truncate text-small font-semibold text-slate-50">{title}</p>
+            <p className="truncate text-body font-semibold text-slate-50">{title}</p>
             <p className="truncate text-small text-slate-500">
               {!isEmail && thread.subject ? `${thread.subject} · ` : ""}
               {isEmail && thread.contactName ? `${thread.contactName} · ` : ""}
@@ -201,14 +203,15 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 <>
                   {" · "}
                   {/* Straight to their account (plan, credits, classes) without searching for them. */}
-                  <Link href={`/admin/users/${thread.user.id}`} className="font-medium text-slate-300 underline underline-offset-4 hover:text-slate-50">
+                  <Link href={`/admin/users/${thread.user.id}`} className="group inline-flex items-center gap-0.5 font-medium text-slate-300 hover:text-slate-50">
                     Open their account{thread.user.username ? ` (@${thread.user.username})` : ""}
+                    <ChevronRight aria-hidden className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                   </Link>
                 </>
               )}
             </p>
             {thread.assignedTo && (
-              <p className="mt-0.5 truncate text-small font-medium text-slate-50">
+              <p className="mt-0.5 truncate text-small font-medium text-slate-300">
                 {thread.assignedTo.id === currentAdminId ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
               </p>
             )}
@@ -227,10 +230,11 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
             ) : (
               <StatusDot tone="success">Resolved</StatusDot>
             )}
+            {/* Delete is quiet, red and last, behind the confirm below. */}
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
+              className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
             >
               Delete
             </button>
@@ -238,7 +242,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
         </div>
 
         {confirmingDelete && (
-          <div className="space-y-2 border-b border-ink/10 bg-red-500/5 px-4 py-3">
+          <div className="space-y-2 border-b border-slate-50/8 bg-red-500/5 px-4 py-3">
             <p className="text-small text-slate-400">
               Permanently deletes this {isEmail ? "email thread" : "conversation"} and everything the {isEmail ? "customer" : "visitor"} shared
               through it: their name, email, and every message, including internal notes. This can&apos;t be undone.
@@ -249,7 +253,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
                 disabled={deleting}
-                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
               >
                 Never mind
               </button>
@@ -257,7 +261,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className={buttonVariants({ variant: "danger", size: "sm", className: "flex-1" })}
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Delete permanently"}
@@ -282,18 +286,18 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
         </div>
 
         {error && (
-          <p role="alert" className="border-t border-ink/10 bg-red-500/5 px-4 py-2 text-small text-red-400">
+          <p role="alert" className="border-t border-slate-50/8 bg-red-500/5 px-4 py-2 text-small text-red-400">
             {error}
           </p>
         )}
         {notice && !error && (
-          <p role="status" className="border-t border-ink/10 bg-slate-50/8 px-4 py-2 text-small text-slate-200">
+          <p role="status" className="border-t border-slate-50/8 bg-slate-50/8 px-4 py-2 text-small text-slate-200">
             {notice}
           </p>
         )}
 
         {options.length > 0 && (
-          <ul role="listbox" aria-label="Transfer this case to" className="max-h-48 divide-y divide-ink/10 overflow-y-auto border-t border-ink/10 bg-slate-900/60">
+          <ul role="listbox" aria-label="Transfer this case to" className="max-h-48 divide-y divide-slate-50/8 overflow-y-auto border-t border-slate-50/8 bg-slate-900/60">
             {options.map((o) => (
               <li key={o.id}>
                 <button
@@ -306,7 +310,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                     setReply(`/${o.handle} `);
                     inputRef.current?.focus();
                   }}
-                  className="tap flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-small transition hover:bg-ink/5"
+                  className="tap flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-small transition hover:bg-slate-50/5"
                 >
                   <span className="font-medium text-slate-100">{o.label}</span>
                   <span className="shrink-0 text-slate-400">{o.hint}</span>
@@ -316,7 +320,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </ul>
         )}
 
-        <div className="flex gap-1.5 overflow-x-auto border-t border-ink/10 px-3 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Saved replies">
+        <div className="flex gap-1.5 overflow-x-auto border-t border-slate-50/8 px-3 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Saved replies">
           {CANNED_REPLIES.map((c) => (
             <button
               key={c.label}
@@ -326,7 +330,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 setReply(c.text);
                 inputRef.current?.focus();
               }}
-              className="tap shrink-0 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-raised-low transition hover:text-slate-50 hover:shadow-raised-mid"
+              className="tap shrink-0 rounded-full bg-slate-50/6 px-3 py-1 text-small text-slate-400 transition hover:bg-slate-50/10 hover:text-slate-50"
             >
               {c.label}
             </button>

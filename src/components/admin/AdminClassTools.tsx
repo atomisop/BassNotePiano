@@ -42,7 +42,8 @@ export function AdminCancelAllButton({ userId, firstName, upcoming }: { userId: 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={buttonVariants({ variant: "secondary", size: "sm", className: "h-8 px-2.5" })}>
+      {/* Destructive, so quiet red text, never the loudest button in the row; the dialog is the confirm. */}
+      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5 text-red-300 hover:text-red-200" })}>
         <X aria-hidden className="mr-1.5 h-3.5 w-3.5" />
         Cancel all upcoming
       </button>
@@ -120,7 +121,7 @@ export function AdminCloseDay() {
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={buttonVariants({ variant: "secondary", size: "sm" })}
+        className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
       >
         <CalendarCog aria-hidden className="h-4 w-4" />
         Close a day
