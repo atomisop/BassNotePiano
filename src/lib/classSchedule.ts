@@ -433,7 +433,7 @@ async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: str
  * A live owner reservation on a one-off time (kept at a typed start time on a day with no weekly times) that overlaps this class
  * and is not for this student. Weekly-slot reservations are checked by findOwnerReservation; these have no weekly slot to match.
  */
-async function oneOffReservationClash(db: Prisma.TransactionClient, occurrenceDate: Date, scheduledAt: Date, studentId?: string) {
+async function oneOffReservationClash(db: Prisma.TransactionClient | typeof prisma, occurrenceDate: Date, scheduledAt: Date, studentId?: string) {
   const rows = await db.ownerReservation.findMany({ where: { releasedAt: null, occurrenceDate, schedule: { label: ONE_OFF_LABEL } }, include: { schedule: true } });
   if (rows.length === 0) return null;
   const user = studentId ? await db.user.findUnique({ where: { id: studentId }, select: { email: true, emailVerified: true } }) : null;
@@ -1339,6 +1339,8 @@ export async function bookFamilyClass(
         if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
         if (await oneOffOverlap(tx, scheduledAt, "")) throw new ClassBookingError("This time was just booked. Pick another slot.");
         if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
+        // A time the owner kept on a day off (a typed time) blocks an overlapping family class too.
+        if (await oneOffReservationClash(tx, occurrenceDate, scheduledAt)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         // Same defense-in-depth as bookClass's own guard (see its comment),
         // a family booking never coincides with a solo Payment Plan
@@ -1553,6 +1555,8 @@ export async function createReservedBookingIfAbsent(
   if (planRow && !planMayBookAt(planRow, scheduledAt)) return null;
   // A day the owner is keeping for someone else: the plan's class is simply not booked that week.
   if (planRow?.reservedChunkIndex != null && (await findOwnerReservation(db, scheduleId, occurrenceDate, planRow.reservedChunkIndex, studentId))) return null;
+  // The same for a time the owner kept at a typed start time on that day (a weekly time added later can overlap it).
+  if (await oneOffReservationClash(db, occurrenceDate, scheduledAt, studentId)) return null;
 
   const existing = await db.classBooking.findUnique({
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
@@ -1644,6 +1648,7 @@ export async function bookExtraSessionOccurrence(
   const extraSchedule = await db.classSchedule.findUnique({ where: { id: scheduleId } });
   const extraChunk = extraSchedule ? chunksForSchedule(extraSchedule).find((c) => computeScheduledAt(extraSchedule, occurrenceDate, c).getTime() === scheduledAt.getTime()) : undefined;
   if (extraChunk && (await findOwnerReservation(db, scheduleId, occurrenceDate, extraChunk.chunkIndex, studentId))) return false;
+  if (await oneOffReservationClash(db, occurrenceDate, scheduledAt, studentId)) return false;
 
   const conflict = await db.classBooking.findFirst({
     where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },

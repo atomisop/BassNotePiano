@@ -22,7 +22,7 @@ import { addBillingCycles } from "@/lib/billingCycle";
 import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { sendPaymentReceipt } from "@/lib/paymentReceipt";
-import { payAgainPath, receiptPath } from "@/lib/inPlaceLinks";
+import { groupBillPath, payAgainPath, receiptPath } from "@/lib/inPlaceLinks";
 import { reportError } from "@/lib/reportError";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -1401,6 +1401,25 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     where: { id: paymentId },
     data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: reviewerId, rejectionReason: reason },
   });
+
+  // A group or parent plan's bill is sent in by whoever pays it (a member, a child, cannot), so the payer is the one told, and sent to
+  // where they pay it: the Parent page or Billing > Plans. Everyone else's bill goes back to them, with its pay sheet open.
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
+    const { planBillTarget } = await import("@/lib/planBillPayer");
+    const target = await planBillTarget(payment.paymentPlanId).catch(() => null);
+    if (target?.paysForSomeoneElse) {
+      await createNotification({
+        userId: target.payer.id,
+        type: "PAYMENT_REJECTED",
+        title: "Payment rejected",
+        body: `The payment for ${target.member.name}'s plan couldn't be verified: ${reason}. Tap Resubmit to send it again.`,
+        emailCategory: "payments",
+        alwaysEmail: true,
+        cta: { label: "Resubmit", path: groupBillPath(target.groupKind) },
+      });
+      return;
+    }
+  }
 
   await createNotification({
     userId: payment.userId,

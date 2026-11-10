@@ -1018,6 +1018,7 @@ model User {
 
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
+  friendEmailAsks        FriendEmailAsk[]     @relation("FriendEmailAskSender")
   blocksMade             Block[]              @relation("BlockedBy")
   blocksReceived         Block[]              @relation("BlockedUser")
   messagesSent           Message[]            @relation("MessageSender")
@@ -2254,6 +2255,21 @@ model ParentLink {
 // A parent asked to link an email that had no account yet. Nothing is shared and nobody is told but the invited address (an email
 // asking them to make an account). Once an account with this email exists and has confirmed its email, the request becomes a waiting
 // ParentLink the child accepts or declines, and this row is removed. Rows older than PARENT_INVITE_DAYS are ignored and cleared.
+// "Ask to book together" by email (social.ts askToBookTogether): one row per sender and typed address, whether or not the address has an
+// account, so the sender's Sent list shows every ask the same way (the typed email, never a profile) and cannot tell who has an account.
+// requestId is the friend request the ask became (the address had an account, or one was made with it later). Kept 30 days.
+model FriendEmailAsk {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation("FriendEmailAskSender", fields: [senderId], references: [id], onDelete: Cascade)
+  email     String
+  requestId String?  @unique
+  createdAt DateTime @default(now())
+
+  @@unique([senderId, email])
+  @@index([email])
+}
+
 model ParentLinkInvite {
   id        String   @id @default(cuid())
   parentId  String

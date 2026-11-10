@@ -242,20 +242,61 @@ export async function previewReceiptForStudent(receiptId: string, userId: string
  */
 export async function attachReceiptToStudent(input: { receiptId: string; userId: string; admin: { id: string; email: string | null } }): Promise<{ paymentId: string; openedEarly: boolean }> {
   const target = await previewReceiptForStudent(input.receiptId, input.userId);
+  const receipt = await openReceipt(input.receiptId);
   const plan = await planPaidBy(input.userId);
   if (!plan) throw new ReceiptError("Their plan just changed. Refresh and try again.");
   let bill = await openBillOf(plan);
   let openedEarly = false;
   if (!bill) {
     const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+    // A group's next total is only known once its bills open, so the open bills are noted first: if the amounts then differ, everything
+    // this opened is put back exactly as it was, and nothing is left open early.
+    const before = await openBillRows(plan);
     // Asked as of the due date, which is always inside the window a bill opens in: one bill, for the next installment, never two.
     const asOf = new Date(Math.max(Date.now(), plan.nextDueDate.getTime()));
     bill = (await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle, asOf)).payment;
     openedEarly = true;
+    if (bill && bill.amountCents !== receipt.amountCents) {
+      await undoOpenedBills(plan, before);
+      throw new ReceiptError(amountMismatch(bill.amountCents, receipt.amountCents));
+    }
   }
   if (!bill || !isOpen(bill.status)) throw new ReceiptError(`${target.studentName}'s plan has nothing to pay right now.`);
   await matchReceiptToPayment({ receiptId: input.receiptId, paymentId: bill.id, admin: input.admin, note: openedEarly ? "they paid before the bill opened, so it was opened now" : "found by student" });
   return { paymentId: bill.id, openedEarly };
+}
+
+type OpenBillRow = { id: string; status: ZellePayment["status"]; amountCents: number; bundleId: string | null; purpose: ZellePayment["purpose"]; submittedAt: Date | null };
+
+/** Every open bill this plan's payment could touch: the plan's own, or for a group every member's bill and its combined bill. */
+async function openBillRows(plan: PaymentPlan): Promise<OpenBillRow[]> {
+  return prisma.zellePayment.findMany({
+    where: {
+      status: { in: [...OPEN_STATUSES] },
+      OR: plan.familyGroupId
+        ? [{ paymentPlan: { familyGroupId: plan.familyGroupId } }, { familyGroupId: plan.familyGroupId, purpose: "FAMILY_PLAN_INSTALLMENT" }]
+        : [{ paymentPlanId: plan.id }],
+    },
+    select: { id: true, status: true, amountCents: true, bundleId: true, purpose: true, submittedAt: true },
+  });
+}
+
+/**
+ * Puts a plan's (or group's) bills back exactly as they were before an early open: bills that open made are removed (nothing was sent
+ * or paid on them, and nobody was told), and the bills that were already open get back their status, amount and combined bill.
+ */
+async function undoOpenedBills(plan: PaymentPlan, before: OpenBillRow[]): Promise<void> {
+  const beforeIds = new Set(before.map((r) => r.id));
+  const made = (await openBillRows(plan)).filter((r) => !beforeIds.has(r.id) && r.submittedAt === null);
+  const madeIds = made.map((r) => r.id);
+  await prisma.$transaction(async (tx) => {
+    if (madeIds.length > 0) await tx.zellePayment.updateMany({ where: { bundleId: { in: madeIds } }, data: { bundleId: null } });
+    for (const r of before) await tx.zellePayment.update({ where: { id: r.id }, data: { status: r.status, amountCents: r.amountCents, bundleId: r.bundleId } });
+    const members = made.filter((r) => r.purpose !== "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
+    const combined = made.filter((r) => r.purpose === "FAMILY_PLAN_INSTALLMENT").map((r) => r.id);
+    if (members.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: members }, submittedAt: null } });
+    if (combined.length > 0) await tx.zellePayment.deleteMany({ where: { id: { in: combined }, submittedAt: null } });
+  });
 }
 
 /** Marks an email as having nothing to do with a payment, so it stops being counted. */

@@ -3,7 +3,7 @@
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
-import { Ban, ChevronDown } from "@/components/ui/appIcons";
+import { Ban, ChevronDown, Mail } from "@/components/ui/appIcons";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";
@@ -11,6 +11,7 @@ import {
   searchUsersAction,
   sendFriendRequestAction,
   respondToFriendRequestAction,
+  withdrawEmailAskAction,
   blockUserAction,
   unblockUserAction,
 } from "./actions";
@@ -35,6 +36,8 @@ interface FriendsClientProps {
   friends: PublicProfile[];
   receivedRequests: { id: string; sender: PublicProfile }[];
   sentRequests: { id: string; receiver: PublicProfile }[];
+  /** "Ask to book together" by email: shown as the typed email only, whether or not it has an account. */
+  emailAsks: { id: string; email: string }[];
   blocked: { id: string; user: PublicProfile }[];
 }
 
@@ -79,7 +82,7 @@ function SectionCard({
   );
 }
 
-export function FriendsClient({ username, friends: allFriends, receivedRequests: allReceived, sentRequests, blocked: allBlocked }: FriendsClientProps) {
+export function FriendsClient({ username, friends: allFriends, receivedRequests: allReceived, sentRequests, emailAsks: allEmailAsks, blocked: allBlocked }: FriendsClientProps) {
   const router = useRouter();
   // Optimistic: a row the person just answered, blocked or unblocked leaves its list at once; if the server refuses, it comes back.
   const [gone, setGone] = useState<Set<string>>(new Set());
@@ -93,6 +96,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
   const friends = allFriends.filter((f) => !gone.has(`block:${f.id}`));
   const receivedRequests = allReceived.filter((r) => !gone.has(`req:${r.id}`));
   const blocked = allBlocked.filter((b) => !gone.has(`unblock:${b.user.id}`));
+  const emailAsks = allEmailAsks.filter((a) => !gone.has(`ask:${a.id}`));
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PublicProfile[]>([]);
   const action = useAction();
@@ -153,6 +157,18 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
       return true;
     }, `${accept ? "accept" : "reject"}:${requestId}`);
     if (!done) unhide(`req:${requestId}`);
+  }
+
+  async function handleWithdraw(askId: string) {
+    if (!(await toast.hold("Withdrawing the ask"))) return;
+    hide(`ask:${askId}`);
+    const result = await withdrawEmailAskAction(askId).catch(() => ({ ok: false as const, error: "Something went wrong." }));
+    if (!result.ok) {
+      unhide(`ask:${askId}`);
+      toast.warning(result.error);
+      return;
+    }
+    router.refresh();
   }
 
   async function handleBlock(userId: string) {
@@ -396,9 +412,28 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             </SectionCard>
           )}
 
-          {sentRequests.length > 0 && (
+          {(sentRequests.length > 0 || emailAsks.length > 0) && (
             <SectionCard title="Sent requests">
               <div className="space-y-2">
+                {emailAsks.map((ask) => (
+                  <div key={ask.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50/10 text-slate-300">
+                        <Mail className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-small font-medium text-slate-100">{ask.email}</p>
+                        <p className="text-caption text-slate-500">Asked to book together</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-small text-slate-500">Waiting</span>
+                      <button type="button" onClick={() => void handleWithdraw(ask.id)} className="tap inline-flex items-center px-1 text-small text-slate-300 underline underline-offset-4 hover:text-slate-50">
+                        Withdraw
+                      </button>
+                    </div>
+                  </div>
+                ))}
                 {sentRequests.map((req) => (
                   <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-slate-50/5">
                     <div className="flex min-w-0 items-center gap-3">

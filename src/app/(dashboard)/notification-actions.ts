@@ -12,6 +12,7 @@ import { claimParentInvites, ParentLinkError, respondToParentLink } from "@/lib/
 import { FamilyInviteError, inviteIsFresh, respondToFamilyInvite } from "@/lib/familyInvites";
 import { respondToFriendRequest, SocialError } from "@/lib/social";
 import { RateLimitError } from "@/lib/rateLimit";
+import { claimFriendEmailAsks } from "@/lib/social";
 
 export interface NotificationRow {
   id: string;
@@ -37,6 +38,7 @@ export async function fetchNotificationsAction(): Promise<{
   const userId = session.user.id;
   // A parent's request made before this account existed reaches it as soon as the account is in use (one indexed lookup, usually empty).
   await claimParentInvites(userId, session.user.email).catch((err) => console.error("Claiming parent requests failed (non-blocking):", err));
+  await claimFriendEmailAsks(userId, session.user.email).catch((err) => console.error("Claiming book-together asks failed (non-blocking):", err));
 
   const [unreadCount, rows, mailUnreadCount, mailRows] = await Promise.all([
     getUnreadCount(userId),

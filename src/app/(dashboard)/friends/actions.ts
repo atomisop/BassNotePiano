@@ -8,6 +8,7 @@ import {
   respondToFriendRequest,
   blockUser,
   unblockUser,
+  withdrawEmailAsk,
   SocialError,
 } from "@/lib/social";
 import { sendNudge } from "@/lib/nudge";
@@ -44,6 +45,18 @@ export async function respondToFriendRequestAction(requestId: string, accept: bo
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+/** Takes back an "ask to book together" by email (only the sender's own). */
+export async function withdrawEmailAskAction(askId: string) {
+  try {
+    const userId = await requireUserId();
+    await withdrawEmailAsk(userId, String(askId));
+    revalidatePath("/friends");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
   }
 }
 

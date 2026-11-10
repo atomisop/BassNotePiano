@@ -14,6 +14,7 @@ import { storedToCredits } from "@/lib/classCreditPricing";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
 import { claimParentInvites, listLinkedChildren, listLinksToChild } from "@/lib/parentLinks";
 import { getTrialApplyFacts, type TrialApplyFacts } from "@/lib/trialApplication";
+import { claimFriendEmailAsks } from "@/lib/social";
 
 /** One child a parent manages, as a Home row: the next class and this week's practice, one tap into their page. */
 export interface HomeChild {
@@ -71,6 +72,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const isAdmin = user.role === "ADMIN";
   // A parent's request made before this account existed reaches it here, on the first Home visit after the email is confirmed.
   await claimParentInvites(userId, user.email).catch((err) => console.error("Claiming parent requests failed (non-blocking):", err));
+  await claimFriendEmailAsks(userId, user.email).catch((err) => console.error("Claiming book-together asks failed (non-blocking):", err));
 
   const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
     getRoadmap(userId),

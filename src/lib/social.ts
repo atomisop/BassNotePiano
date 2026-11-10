@@ -175,13 +175,21 @@ export async function askToBookTogether(senderId: string, rawEmail: string): Pro
     prisma.user.findUnique({ where: { email }, select: { id: true, role: true, bannedAt: true } }),
   ]);
   if (sender.email.toLowerCase() === email) throw new SocialError("That is your own email.");
+  // Every ask is remembered the same way, account or not, so the sender's Sent list shows the typed email and nothing else.
+  const ask = await prisma.friendEmailAsk.upsert({
+    where: { senderId_email: { senderId, email } },
+    update: {},
+    create: { senderId, email },
+    select: { id: true },
+  });
   try {
     if (!receiver) {
       await sendRegisterInvite(senderId, email);
     } else if (receiver.role === "STUDENT" && !receiver.bannedAt) {
-      const waiting = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId: receiver.id } }, select: { status: true } });
+      const waiting = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId: receiver.id } }, select: { id: true, status: true } });
       // Already asked and not answered yet: they are not told twice.
-      if (waiting?.status !== "PENDING") await requestFriendship(senderId, receiver.id, "booking");
+      const request = waiting?.status === "PENDING" ? waiting : await requestFriendship(senderId, receiver.id, "booking");
+      await linkAskToRequest(ask.id, request.id);
     }
     // A banned or admin account is treated like any other address: nothing is sent, and the answer is the same.
   } catch (err) {
@@ -190,6 +198,72 @@ export async function askToBookTogether(senderId: string, rawEmail: string): Pro
     if (!(err instanceof SocialError)) throw err;
   }
   return "asked";
+}
+
+/** Links an ask to the friend request it became. A request can only belong to one ask (the unique key), so a clash is ignored. */
+async function linkAskToRequest(askId: string, requestId: string): Promise<void> {
+  await prisma.friendEmailAsk.update({ where: { id: askId }, data: { requestId } }).catch(() => undefined);
+}
+
+/** How long an ask by email stays on the sender's list (and can still turn into a request when the address gets an account). */
+export const EMAIL_ASK_DAYS = 30;
+const emailAskCutoff = () => new Date(Date.now() - EMAIL_ASK_DAYS * 86_400_000);
+
+/**
+ * The sender's asks by email, shown as the email they typed and "waiting", never as a profile, until the other person accepts (then they
+ * are a friend like any other). A declined request, an address with no account and a banned or admin address all look the same: waiting,
+ * until the ask is 30 days old.
+ */
+export async function getEmailAsksSent(userId: string): Promise<{ id: string; email: string; createdAt: Date }[]> {
+  const asks = await prisma.friendEmailAsk.findMany({
+    where: { senderId: userId, createdAt: { gt: emailAskCutoff() } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, email: true, createdAt: true, requestId: true },
+  });
+  const linked = asks.map((a) => a.requestId).filter((id): id is string => Boolean(id));
+  const accepted = new Set(
+    linked.length === 0 ? [] : (await prisma.friendRequest.findMany({ where: { id: { in: linked }, status: "ACCEPTED" }, select: { id: true } })).map((r) => r.id),
+  );
+  return asks.filter((a) => !a.requestId || !accepted.has(a.requestId)).map(({ id, email, createdAt }) => ({ id, email, createdAt }));
+}
+
+/** The sender takes back an ask by email: the ask goes, and so does its friend request if nobody has answered it yet. */
+export async function withdrawEmailAsk(userId: string, askId: string): Promise<void> {
+  const ask = await prisma.friendEmailAsk.findFirst({ where: { id: askId, senderId: userId }, select: { id: true, requestId: true } });
+  if (!ask) return;
+  await prisma.$transaction([
+    prisma.friendEmailAsk.delete({ where: { id: ask.id } }),
+    ...(ask.requestId ? [prisma.friendRequest.deleteMany({ where: { id: ask.requestId, senderId: userId, status: "PENDING" } })] : []),
+  ]);
+}
+
+/**
+ * Turns asks by email into friend requests once an account with that address exists and has confirmed it (the same moment a saved
+ * parent request is claimed). Each ask becomes at most one request; anything that would refuse a request (a block, already friends, a
+ * banned sender, a limit) simply leaves the ask as it is.
+ */
+export async function claimFriendEmailAsks(userId: string, rawEmail: string | null | undefined): Promise<number> {
+  const email = rawEmail?.trim().toLowerCase();
+  if (!email) return 0;
+  const asks = await prisma.friendEmailAsk.findMany({ where: { email, requestId: null, createdAt: { gt: emailAskCutoff() } }, select: { id: true, senderId: true } });
+  if (asks.length === 0) return 0;
+  const me = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, emailVerified: true, role: true, bannedAt: true } });
+  if (!me || me.email.toLowerCase() !== email || !me.emailVerified || me.role !== "STUDENT" || me.bannedAt) return 0;
+  let made = 0;
+  for (const ask of asks) {
+    if (ask.senderId === userId) continue;
+    const sender = await prisma.user.findUnique({ where: { id: ask.senderId }, select: { bannedAt: true } });
+    if (!sender || sender.bannedAt) continue;
+    try {
+      const existing = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId: ask.senderId, receiverId: userId } }, select: { id: true, status: true } });
+      const request = existing?.status === "PENDING" ? existing : await requestFriendship(ask.senderId, userId, "booking");
+      await linkAskToRequest(ask.id, request.id);
+      made++;
+    } catch (err) {
+      if (!(err instanceof SocialError) && !(err instanceof RateLimitError)) throw err;
+    }
+  }
+  return made;
 }
 
 export async function respondToFriendRequest(userId: string, requestId: string, accept: boolean) {
@@ -257,8 +331,12 @@ export async function getPendingRequestsReceived(userId: string) {
 }
 
 export async function getPendingRequestsSent(userId: string) {
+  // A request that came from an ask by email is listed as that ask (the typed email), never with the other person's profile.
+  const fromAsks = (await prisma.friendEmailAsk.findMany({ where: { senderId: userId, requestId: { not: null } }, select: { requestId: true } }))
+    .map((a) => a.requestId)
+    .filter((id): id is string => Boolean(id));
   return prisma.friendRequest.findMany({
-    where: { senderId: userId, status: "PENDING" },
+    where: { senderId: userId, status: "PENDING", ...(fromAsks.length > 0 ? { id: { notIn: fromAsks } } : {}) },
     include: { receiver: { select: publicProfileSelect } },
     orderBy: { createdAt: "desc" },
   });
