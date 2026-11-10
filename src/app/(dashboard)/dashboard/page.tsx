@@ -196,7 +196,9 @@ export default async function HomePage() {
                 href="/lessons"
                 icon={<CalendarCheck />}
                 title={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
-                detail={nextClass ? `${untilLabel(nextClass.scheduledAt)}. ${joinReadiness({ scheduledAt: nextClass.scheduledAt, inPerson: nextClass.inPerson, now: new Date() }).text}` : "Book your weekly class"}
+                detail={nextClass ? joinReadiness({ scheduledAt: nextClass.scheduledAt, inPerson: nextClass.inPerson, now: new Date() }).text : "Book your weekly class"}
+                // One trailing figure: how soon it is (the row's title already says when).
+                trailing={nextClass ? <span className="text-small font-medium tabular-nums text-slate-400">{untilLabel(nextClass.scheduledAt)}</span> : undefined}
               />
             </li>
           </HomeRows>

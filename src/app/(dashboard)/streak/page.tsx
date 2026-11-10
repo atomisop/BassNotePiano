@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, Flame, Trophy, CalendarDays, Sparkles } from "@/components/ui/appIcons";
+import { Check, Flame } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { STREAK_GOALS, longestStreak, nextStreakGoal, practicedThisMonth, streakCalendar } from "@/lib/streakRules";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Card, Eyebrow } from "@/components/ui/Card";
+import { Fact, Facts } from "@/components/ui/CardKit";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PageBack } from "@/components/ui/BackLink";
@@ -70,16 +71,17 @@ export default async function StreakPage() {
                   strokeWidth={1.8}
                 />
               </div>
+              {/* The one figure on the screen; its label is a quiet word under it. */}
               <div className="min-w-0">
                 <p className="text-figure font-bold tabular-nums text-slate-50">{status.streak}</p>
-                <p className="mt-1 text-body font-semibold text-slate-200">day streak</p>
+                <p className="mt-1 text-body text-slate-400">{status.streak === 1 ? "day" : "days"} in a row</p>
               </div>
             </div>
-            <p className="mt-5 text-body text-slate-300">{headline}</p>
+            <p className="mt-5 text-body text-slate-400">{headline}</p>
             <div className="mt-4">
-              <div className="flex items-center justify-between text-small text-slate-400">
+              <div className="flex items-center justify-between text-small text-slate-500">
                 <span>Today</span>
-                <span className="tabular-nums">
+                <span className="font-medium tabular-nums text-slate-300">
                   {Math.min(minutesDone, goalMinutes)} of {goalMinutes} minutes
                 </span>
               </div>
@@ -142,26 +144,31 @@ export default async function StreakPage() {
         </div>
 
         <div className="grid min-w-0 content-start gap-3">
-          <Card className="deck-card grid grid-cols-3 gap-2 p-4 md:p-5">
-            <Fact icon={<Trophy aria-hidden className="h-4 w-4" />} value={best} label="Best streak" />
-            <Fact icon={<CalendarDays aria-hidden className="h-4 w-4" />} value={practicedThisMonth(days, today)} label="This month" />
-            <Fact icon={<Sparkles aria-hidden className="h-4 w-4" />} value={days.length} label="All time" />
+          {/* Supporting figures, a step quieter than the streak itself: value first, a small label under it. */}
+          <Card className="deck-card p-4 md:p-5">
+            <Facts columns={3} className="grid-cols-3">
+              <Fact label="Best streak" value={dayCount(best)} />
+              <Fact label="This month" value={dayCount(practicedThisMonth(days, today))} />
+              <Fact label="All time" value={dayCount(days.length)} />
+            </Facts>
           </Card>
 
           <Card className="deck-card p-5">
             <Eyebrow>{goal ? "Next goal" : "Every goal reached"}</Eyebrow>
             {goal ? (
               <>
-                <p className="mt-2 text-body font-semibold text-slate-50">
-                  {goal} days in a row <span className="font-normal text-slate-400">({goal - status.streak} to go)</span>
-                </p>
+                <div className="mt-2 flex items-baseline justify-between gap-3">
+                  <p className="text-title font-semibold tabular-nums text-slate-50">{goal} days in a row</p>
+                  <p className="shrink-0 text-small tabular-nums text-slate-400">{goal - status.streak} to go</p>
+                </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low">
                   <div className="h-full rounded-full bg-signal" style={{ width: `${Math.round((status.streak / goal) * 100)}%` }} />
                 </div>
               </>
             ) : (
-              <p className="mt-2 text-body font-semibold text-slate-50">A full year in a row.</p>
+              <p className="mt-2 text-title font-semibold text-slate-50">A full year in a row.</p>
             )}
+            {/* The goals as quiet marks: reached ones ticked, the next one outlined, the rest faint. Only the bar above is orange. */}
             <ul className="mt-4 flex flex-wrap gap-2">
               {STREAK_GOALS.map((g) => {
                 const reached = best >= g;
@@ -169,8 +176,8 @@ export default async function StreakPage() {
                   <li
                     key={g}
                     className={cn(
-                      "inline-flex h-8 items-center gap-1 rounded-full px-3 text-small font-semibold tabular-nums",
-                      reached ? "bg-signal/16 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low",
+                      "inline-flex h-8 items-center gap-1 rounded-full px-3 text-small font-medium tabular-nums",
+                      reached ? "bg-slate-50/8 text-slate-200" : g === goal ? "text-slate-50 ring-1 ring-inset ring-signal/60" : "text-slate-500 ring-1 ring-inset ring-slate-50/8",
                     )}
                   >
                     {reached && <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={3} />}
@@ -187,12 +194,7 @@ export default async function StreakPage() {
   );
 }
 
-function Fact({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <span className="text-slate-400">{icon}</span>
-      <span className="mt-1.5 text-headline font-bold leading-none tabular-nums text-slate-50">{value}</span>
-      <span className="mt-1 text-small text-slate-400">{label}</span>
-    </div>
-  );
+/** "1 day", "12 days". */
+function dayCount(n: number): string {
+  return `${n} ${n === 1 ? "day" : "days"}`;
 }

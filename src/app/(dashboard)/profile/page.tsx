@@ -57,7 +57,7 @@ export default async function ProfilePage() {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Profile</p>
+          <p className="text-small font-medium uppercase tracking-caps text-slate-400">Profile</p>
           <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">{user.name ?? "Student"}</h1>
           {user.username && <p className="text-small text-slate-500">@{user.username}</p>}
         </div>
@@ -75,20 +75,18 @@ export default async function ProfilePage() {
         />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="glass-surface p-5">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
-            {practice.streak > 0 ? `${practice.streak} day streak` : "Streak"}
+      {/* One practice card instead of two equal boxes: the streak is the line you read, the longest run a quiet figure beside it. */}
+      <div className="mt-8 glass-surface p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className="text-title font-semibold tabular-nums text-slate-50">
+            {practice.streak > 0 ? `${practice.streak} day streak` : "No streak right now"}
           </p>
-          {/* The same practice streak as Home and the Streak page (one number everywhere, 2026-10-30). */}
-          <StreakDots currentStreak={practice.streak} />
-        </div>
-        <div className="glass-surface p-5">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Longest streak</p>
-          <p className="mt-2 text-body text-slate-50 font-semibold">
-            {practice.longest ?? 0} day{practice.longest === 1 ? "" : "s"}
+          <p className="text-small tabular-nums text-slate-400">
+            Longest {practice.longest ?? 0} day{practice.longest === 1 ? "" : "s"}
           </p>
         </div>
+        {/* The same practice streak as Home and the Streak page (one number everywhere, 2026-10-30). */}
+        <StreakDots currentStreak={practice.streak} />
       </div>
 
       <div className="mt-8">

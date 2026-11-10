@@ -20,9 +20,9 @@ export type Glance = {
 };
 
 /**
- * Three figures under the hero, at a glance (Home and the admin Overview): each a small panel with its icon and label, one big number,
- * a quiet line and a tiny chart, so the page has something to read before the rows without turning back into a wall of cards. Every
- * tile opens the page behind it.
+ * Three figures under the hero, at a glance (Home and the admin Overview). Each tile has one focal point, its number (DESIGN.md,
+ * Hierarchy rules 1 and 3): the figure comes first and biggest, the label sits small and muted under it with a quiet icon, then one
+ * quieter line and a tiny chart. Every tile opens the page behind it.
  */
 export function GlanceTiles({ items, columns = 3, className }: { items: Glance[]; columns?: 2 | 3; className?: string }) {
   return (
@@ -33,17 +33,20 @@ export function GlanceTiles({ items, columns = 3, className }: { items: Glance[]
             href={g.href}
             className="group flex h-full min-w-0 flex-col rounded-card bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8 transition hover:bg-slate-50/7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
           >
-            <span className="flex min-w-0 items-center gap-1.5 text-caption font-medium text-slate-400">
-              <span aria-hidden className="shrink-0 text-signal-fg [&_svg]:h-3.5 [&_svg]:w-3.5">
-                {g.icon}
+            {/* The label stays first in the markup, so the link still reads "Streak, 12 days", and is drawn under the figure. */}
+            <span className="flex min-w-0 flex-col-reverse">
+              <span className="mt-1.5 flex min-w-0 items-center gap-1 text-small font-medium text-slate-400">
+                <span aria-hidden className="shrink-0 text-slate-500 [&_svg]:h-3.5 [&_svg]:w-3.5">
+                  {g.icon}
+                </span>
+                <span className="truncate">{g.label}</span>
               </span>
-              <span className="truncate">{g.label}</span>
+              <span className="flex min-w-0 items-baseline gap-1">
+                <span className={cn("truncate text-headline font-bold leading-none tabular-nums", g.alert ? "text-signal-fg" : "text-slate-50")}>{g.value}</span>
+                {g.unit && <span className="shrink-0 text-small text-slate-400">{g.unit}</span>}
+              </span>
             </span>
-            <span className="mt-2 flex min-w-0 items-baseline gap-1">
-              <span className={cn("truncate text-headline font-bold leading-none tabular-nums", g.alert ? "text-signal-fg" : "text-slate-50")}>{g.value}</span>
-              {g.unit && <span className="shrink-0 text-small text-slate-400">{g.unit}</span>}
-            </span>
-            {g.hint && <span className="mt-1 truncate text-caption text-slate-500">{g.hint}</span>}
+            {g.hint && <span className="mt-0.5 truncate text-caption text-slate-500">{g.hint}</span>}
             <span className="mt-auto block pt-3">
               {g.bars && <MiniBars {...g.bars} />}
               {g.meter && <Meter {...g.meter} />}
@@ -63,7 +66,8 @@ function MiniBars({ values, current, label }: { values: number[]; current?: numb
       {values.map((v, i) => (
         <span
           key={i}
-          className={cn("block flex-1 rounded-[2px]", i === at ? "bg-signal" : v > 0 ? "bg-signal/40" : "bg-slate-50/10")}
+          // Only the current bar is orange; the others are quiet, so the chart supports the figure instead of competing with it.
+          className={cn("block flex-1 rounded-[2px]", i === at ? "bg-signal" : v > 0 ? "bg-slate-50/25" : "bg-slate-50/10")}
           style={{ height: `${Math.max(12, Math.round((v / max) * 100))}%` }}
         />
       ))}

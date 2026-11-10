@@ -32,6 +32,7 @@ export function ShelfCard({ href, icon, title, detail }: { href: string; icon: R
 /**
  * One step of the path shelf (Duolingo style): the scale's number in a circle that is ticked when done, lit orange where you are,
  * and locked while it is still closed. An open scale opens its lessons; a closed one opens the Roadmap, which explains why.
+ * Only the step you are on is lit (DESIGN.md, Hierarchy rule 3): finished steps are a quiet tick, closed ones quieter still.
  */
 export function PathCard({ step, code, title, done, open, current, slug }: { step: number; code: string; title: string; done: boolean; open: boolean; current: boolean; slug: string }) {
   return (
@@ -49,13 +50,15 @@ export function PathCard({ step, code, title, done, open, current, slug }: { ste
         aria-hidden
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-full text-body font-bold tabular-nums",
-          done ? "bg-signal text-white" : current ? "bg-signal/20 text-signal-fg ring-2 ring-signal" : open ? "bg-slate-50/10 text-slate-200" : "bg-slate-50/6 text-slate-500",
+          current ? "bg-signal/20 text-signal-fg ring-2 ring-signal" : done ? "bg-slate-50/8 text-slate-300" : open ? "bg-slate-50/10 text-slate-200" : "bg-slate-50/4 text-slate-500",
         )}
       >
         {done ? <Check className="h-5 w-5" /> : open ? step : <Lock className="h-4 w-4" />}
       </span>
-      <span className={cn("mt-auto block pt-4 text-caption font-medium", open ? "text-slate-400" : "text-slate-300")}>{current ? "You're here" : code}</span>
-      <span className={cn("mt-0.5 block text-small font-semibold leading-snug line-clamp-2", open ? "text-slate-50" : "text-slate-200")}>{title}</span>
+      <span className={cn("mt-auto block pt-4 text-caption font-medium", current ? "text-signal-fg" : "text-slate-500")}>{current ? "You're here" : code}</span>
+      <span className={cn("mt-0.5 block text-small font-semibold leading-snug line-clamp-2", current ? "text-slate-50" : done ? "text-slate-300" : open ? "text-slate-100" : "text-slate-400")}>
+        {title}
+      </span>
     </Link>
   );
 }

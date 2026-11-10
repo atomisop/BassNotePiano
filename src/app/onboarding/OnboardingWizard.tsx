@@ -85,7 +85,8 @@ function RadioOption({
       />
       <span>{label}</span>
       {comingSoon && (
-        <span id={describedBy} className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
+        // A plain fact, so a quiet word, not a shouting chip (DESIGN.md, Hierarchy rule 10).
+        <span id={describedBy} className="shrink-0 text-caption text-slate-500">
           Coming soon
         </span>
       )}
@@ -201,7 +202,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
         <Stepper orientation="horizontal" current={step} steps={STEP_TITLES.map((title) => ({ title }))} />
       </div>
 
-      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
+      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">
         Step {step + 1} of {STEP_TITLES.length}
       </p>
       <h1 ref={headingRef} tabIndex={-1} className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 outline-none">
@@ -294,7 +295,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
 
       <div className="mt-6 flex items-center gap-2">
         {step > 0 && (
-          <button type="button" onClick={handleBack} disabled={busy} className={buttonVariants({ variant: "secondary" })}>
+          <button type="button" onClick={handleBack} disabled={busy} className={buttonVariants({ variant: "ghost" })}>
             Back
           </button>
         )}
