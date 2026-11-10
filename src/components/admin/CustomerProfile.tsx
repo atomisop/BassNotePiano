@@ -21,6 +21,8 @@ import { ViewMore } from "@/components/ui/ViewMore";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
+import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
+import { CardFoot, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -402,30 +404,6 @@ export function CustomerProfile({
     router.refresh();
   }
 
-  const banButton = user.bannedAt ? (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => setConfirmingUnban((o) => !o)}
-      aria-expanded={confirmingUnban}
-      className={buttonVariants({ variant: "secondary", size: "sm" })}
-    >
-      Lift ban
-    </button>
-  ) : user.role === "ADMIN" ? null : (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => setConfirmingBan((o) => !o)}
-      aria-expanded={confirmingBan}
-      className={buttonVariants({ variant: "danger", size: "sm" })}
-    >
-      <Hammer className="h-4 w-4" aria-hidden />
-      Ban
-    </button>
-  );
-
-
   return (
     <div className="space-y-5">
       {error && (
@@ -478,19 +456,43 @@ export function CustomerProfile({
         <SectionHeader id="overview" label="Overview" open={isOpen("overview")} onToggle={() => toggleSection("overview")} />
         <div hidden={!isOpen("overview")} className="space-y-5">
           {/* Identity + account-level quick actions */}
-          <SectionCard title="Account" action={banButton}>
+          <SectionCard title="Account">
             {user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
-                <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
+              <Callout
+                tone="danger"
+                className="mb-4"
+                action={
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setConfirmingUnban((o) => !o)}
+                    aria-expanded={confirmingUnban}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    Lift ban
+                  </button>
+                }
+              >
+                <p className="font-semibold">Banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
-                {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
-              </div>
+                {user.bannedReason && <p className="mt-1 opacity-80">Your note: {user.bannedReason}</p>}
+              </Callout>
             )}
             {user.paymentLockedAt && !user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
+              <Callout
+                tone="danger"
+                className="mb-4"
+                action={
+                  confirmingUnlock ? null : (
+                    <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      Lift payment lock
+                    </button>
+                  )
+                }
+              >
                 <p className="font-semibold">Locked for non-payment on {formatDate(user.paymentLockedAt)}. They cannot sign in.</p>
                 <p className="mt-1">Their plan was canceled when the bill went unpaid. Lift the lock once it is sorted out.</p>
-                {confirmingUnlock ? (
+                {confirmingUnlock && (
                   <InlineConfirm
                     className="mt-3"
                     question="Lift the payment lock?"
@@ -501,12 +503,8 @@ export function CustomerProfile({
                     onCancel={() => setConfirmingUnlock(false)}
                     onConfirm={() => void handleLiftLock()}
                   />
-                ) : (
-                  <button type="button" disabled={busy} onClick={() => setConfirmingUnlock(true)} className={`${buttonVariants({ variant: "secondary", size: "sm" })} mt-3`}>
-                    Lift payment lock
-                  </button>
                 )}
-              </div>
+              </Callout>
             )}
             {confirmingUnban && user.bannedAt && (
               <InlineConfirm
@@ -520,10 +518,142 @@ export function CustomerProfile({
                 onConfirm={() => void handleUnban()}
               />
             )}
+
+            {/* Who this is: the email is the one bright line (the name is already the page title), the rest is quiet. */}
+            <p className="break-all text-body font-semibold text-slate-50">{user.email}</p>
+            <Meta
+              className="mt-0.5"
+              items={[
+                user.username ? `@${user.username}` : null,
+                user.role === "ADMIN" ? "Admin" : "Student",
+                user.hasCurriculumAccess && user.role !== "ADMIN" ? "Complimentary access" : null,
+              ]}
+            />
+
+            <Facts className="mt-4">
+              <Fact label="Joined" value={formatDate(user.createdAt)} />
+              <Fact label="Last active" value={user.lastActivityAt ? formatDate(user.lastActivityAt) : "Never"} tone={user.lastActivityAt ? "default" : "muted"} />
+              <Fact label="Streak" value={`${user.currentStreak} ${user.currentStreak === 1 ? "day" : "days"}`} tone={user.currentStreak > 0 ? "default" : "muted"} />
+              <Fact label={user.phone && user.phoneVerifiedAt ? "Phone, verified" : "Phone"} value={user.phone ? formatPhone(user.phone) : "None"} tone={user.phone ? "default" : "muted"} />
+            </Facts>
+
+            <Meta
+              className="mt-3"
+              items={[
+                user.emailVerified ? "Email verified" : <span className="text-amber-300">Email not verified</span>,
+                user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed",
+              ]}
+            />
+
+            <CardFoot>
+              {/* One menu instead of eight equal buttons: everyday tools first, rare ones grouped, Ban last and in red. Each item that
+                  needs a yes opens its confirmation under this row, never inside the menu. */}
+              <ActionMenu label="Manage" align="right">
+                {accountTools}
+                <ActionMenuLabel>Access</ActionMenuLabel>
+                <button type="button" disabled={busy} onClick={() => setPendingAction("curriculum")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
+                </button>
+                <button type="button" disabled={busy} onClick={() => setPendingAction("role")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
+                </button>
+                <ActionMenuLabel>Clean up</ActionMenuLabel>
+                {user.phone && (
+                  <button type="button" disabled={busy} onClick={() => setConfirmingClearPhone(true)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Clear phone number
+                  </button>
+                )}
+                <button type="button" disabled={busy} onClick={() => setPendingAction("history")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Clear Atom history
+                </button>
+                <button type="button" disabled={busy} onClick={() => setConfirmingSignOut(true)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Sign out everywhere
+                </button>
+                {!user.bannedAt && user.role !== "ADMIN" && (
+                  <>
+                    <ActionMenuLabel>Danger</ActionMenuLabel>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmingBan(true)}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}
+                    >
+                      <Hammer className="h-4 w-4" aria-hidden />
+                      Ban
+                    </button>
+                  </>
+                )}
+              </ActionMenu>
+            </CardFoot>
+
+            {/* The confirmations the menu opens, one at a time, right under it. */}
+            {pendingAction === "curriculum" && (
+              <InlineConfirm
+                className="mt-3"
+                question={user.hasCurriculumAccess ? "Remove complimentary access?" : "Give complimentary curriculum access?"}
+                confirmLabel="Confirm"
+                busyLabel="Applying…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
+              />
+            )}
+            {pendingAction === "role" && (
+              <InlineConfirm
+                className="mt-3"
+                question={user.role === "ADMIN" ? "Remove admin access from this account?" : "Make this account an admin?"}
+                detail={user.role === "ADMIN" ? "They are signed out right away." : "They will be able to manage payments, users and credits."}
+                confirmLabel="Confirm"
+                busyLabel="Applying…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
+              />
+            )}
+            {pendingAction === "history" && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Permanently delete this account's stored Atom history?"
+                confirmLabel="Delete it"
+                busyLabel="Deleting…"
+                busy={busy}
+                onCancel={() => setPendingAction(null)}
+                onConfirm={() => void withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
+              />
+            )}
+            {confirmingSignOut && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Sign out every device this account is logged into?"
+                confirmLabel="Sign them out"
+                busyLabel="Signing out…"
+                busy={busy}
+                onCancel={() => setConfirmingSignOut(false)}
+                onConfirm={() => void withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
+              />
+            )}
+            {confirmingClearPhone && user.phone && (
+              <InlineConfirm
+                className="mt-3"
+                danger
+                question="Clear this phone number?"
+                detail="It frees the number so its real owner can add it to their own account."
+                confirmLabel="Yes, clear it"
+                busyLabel="Clearing…"
+                busy={busy}
+                onCancel={() => setConfirmingClearPhone(false)}
+                onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
+              />
+            )}
             {confirmingBan && !user.bannedAt && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
+              <div className="mt-3 rounded-control bg-red-400/10 p-4 ring-1 ring-inset ring-red-400/20">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
-                <p className="mt-1 text-small text-slate-300"><Hint>This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint></p>
+                <p className="mt-1 text-small text-slate-300">
+                  They are signed out for good, their plan and booked classes are canceled, and they leave your Discord.{" "}
+                  <Hint>Their trial and free access end too. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint>
+                </p>
                 <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
                   Private note for yourself (optional)
                 </label>
@@ -536,7 +666,7 @@ export function CustomerProfile({
                   className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
                   placeholder="Why, so you remember"
                 />
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Not yet
                   </button>
@@ -547,178 +677,6 @@ export function CustomerProfile({
                 </div>
               </div>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="text-small text-slate-400">
-                <p>{user.email}</p>
-                {user.username && <p className="mt-0.5 text-slate-500">@{user.username}</p>}
-                <p className="mt-1 text-small text-slate-500">
-                  Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
-                </p>
-                <p className="mt-1 text-small text-slate-500">
-                  {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
-                  {user.phone && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingClearPhone((o) => !o)}
-                      aria-expanded={confirmingClearPhone}
-                      className="tap ml-2 text-slate-50 underline hover:opacity-70"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </p>
-                {confirmingClearPhone && user.phone && (
-                  <InlineConfirm
-                    className="mt-2"
-                    danger
-                    question="Clear this phone number?"
-                    detail="It frees the number so its real owner can add it to their own account."
-                    confirmLabel="Yes, clear it"
-                    busyLabel="Clearing…"
-                    busy={busy}
-                    onCancel={() => setConfirmingClearPhone(false)}
-                    onConfirm={() => void withBusy(() => toast.held("Clearing the phone number", () => onClearPhone(user.id, notify))).then(() => setConfirmingClearPhone(false))}
-                  />
-                )}
-                <p className="mt-1 text-small text-slate-500">
-                  {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
-                </p>
-                <p className="mt-1 text-small text-slate-500">
-                  {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
-                  {user.currentStreak}-day streak
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-slate-50/15 text-slate-50" : "bg-neu-base shadow-pressed-low text-slate-400"
-                  }`}
-                >
-                  {user.role}
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
-                  }`}
-                >
-                  {user.hasCurriculumAccess ? "Comped" : "Not comped"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
-              {accountTools}
-              {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
-                  {user.hasCurriculumAccess
-                    ? "Remove complimentary access?"
-                    : "Give complimentary curriculum access?"}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess, notify))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Applying…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("curriculum")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
-                </button>
-              )}
-
-              {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
-                  {user.role === "ADMIN"
-                    ? "Remove admin access from this account? They are signed out right away."
-                    : "Make this account an admin? They will be able to manage payments, users and credits."}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Changing the role", () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN", notify), { mail: notify }))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Applying…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("role")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
-                </button>
-              )}
-
-              {pendingAction === "history" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
-                  Permanently delete this account&apos;s stored Atom history?
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Clearing Atom chat history", () => onClearAssistantHistory(user.id)))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
-                    {busy ? "Deleting…" : "Confirm"}
-                  </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setPendingAction("history")}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  Clear Atom history
-                </button>
-              )}
-
-              {!confirmingSignOut ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setConfirmingSignOut(true)}
-                  className={buttonVariants({ variant: "secondary", size: "sm" })}
-                >
-                  Sign out everywhere
-                </button>
-              ) : (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
-                  Sign out every device this account is logged into?
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => withBusy(() => toast.held("Signing them out everywhere", () => onForceSignOut(user.id))).then(() => setConfirmingSignOut(false))}
-                    className={buttonVariants({ variant: "secondary", size: "sm" })}
-                  >
-                    Confirm
-                  </button>
-                  <button type="button" onClick={() => setConfirmingSignOut(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                    Never mind
-                  </button>
-                </span>
-              )}
-            </div>
           </SectionCard>
 
         </div>

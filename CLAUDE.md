@@ -451,8 +451,8 @@ their panels, and they report their counts, through window events (`topBarEvents
 
 ## Account bans (added 2026-10-10)
 
-`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button
-top right of the Account card on the student page, with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
+`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, the red "Ban" item at the end
+of the Account card's "Manage" menu on the student page (moved there 2026-11-10 so the rarest action is no longer the loudest), with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
 `user.unban`). Never for an admin or for yourself. A ban bumps `sessionVersion` (ends every open session) and
 `getServerAuthSession` also refuses a banned account on its next request. Every sign-in route ends in the credentials
 `authorize` in `auth.ts`, which throws `BANNED` for a banned account; `loginStepOneAction` says it after the right password
@@ -501,6 +501,12 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   history includes a dedicated cleanup commit for stray ones).
 
 ## Design system (added 2026-10-29, `DESIGN.md`)
+
+**Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
+(one focal point per card, three sizes and tones, value first with the label under it, status only when it is news, one primary button and
+the rest in a More/Manage `ActionMenu`, destructive quiet, rows for lists, show a few and fold the rest). Build cards from
+`src/components/ui/CardKit.tsx` (`CardHead`, `Facts`/`Fact`, `Meta`, `Callout`, `CardFoot`). `buttonVariants` now runs through `cn`, so a
+caller's `className` (for example `text-red-300` on a ghost button) always beats the variant's own classes.
 
 `DESIGN.md` at the repo root is the design system every screen follows: type scale (`text-caption` 12, `text-small` 13, `text-body` 16,
 `text-title` 20, `text-headline` 24, `text-hero`, `text-figure`), corners (8 small, 12 controls and rows, 16 cards, 24 sheets, pills for
