@@ -60,7 +60,7 @@ function Pill({
       {label}
       {comingSoon && (
         // A plain fact, so a quiet word and not a chip inside a chip (DESIGN.md, Hierarchy rule 10); the same as onboarding.
-        <span className="text-caption text-slate-400">Coming soon</span>
+        <span className="whitespace-nowrap text-caption text-slate-400">Coming soon</span>
       )}
     </button>
   );
