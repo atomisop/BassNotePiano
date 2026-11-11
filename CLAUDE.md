@@ -406,6 +406,12 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
   21st.dev, which has no pull-to-refresh component of its own). It refreshes the page's data in place (`router.refresh`) and tells the badges to look again. Always check a screen built for
   the computer at phone width too (390px and 320px) before calling it done.
 
+## Rolling numbers, plan cards and "i" hints (added 2026-11-11)
+
+- **Rolling numbers** (`RollingNumber`, `NumberTicker`): each digit is a CSS reel, a transition on `transform` (the compositor runs it), never a framer-motion spring per digit: a pricing grid holds a hundred digits and the Just me / Group flip changes most of them, and as springs it froze the switch. A reel owns a hidden "0" in normal flow that gives it its width, height and baseline; with only an absolutely positioned strip inside, the browser takes the BOTTOM of the box as the baseline and every digit rides too high. Clip with `clip-path`, not `overflow` (a box that clips with overflow takes its bottom edge as its baseline too). Every piece shares one line height and `align-items: baseline`. `text-decoration: line-through` does not paint through these boxes, so an old price uses the `strike` prop.
+- **Plan cards** (`PaymentPlanTierGrid`): 3 Months and 6 Months carry their plan colour (tint, ring, pill and solid button, `COLORED_TERMS`, both Just me and Group looks); only 6 Months has the rising stars. The Just me / Group switch reads the picked value while the cards read a `useDeferredValue` copy, so the switch answers at once. In Settings (`narrow`) the plans are stacked, never a swipe carousel; only the public pricing page's phone view is a carousel. The colour fades are `--tier-fade` (320ms).
+- **"i" hints** (`Hint`, `src/lib/hintPlacement.ts`, tested): the popup is a portal with fixed position, placed against the SCREEN (it slides, flips above or below and shrinks), so it can never leave the screen or be cut off by a card; it closes on scroll or resize. Never position a popup by hand with `left-0` or `right-0` next to an "i". The Settings > Membership page has no "i" icons (the owner asked); text that matters there (the cancel warning) is plain text.
+
 ## Pricing and personal discounts (added 2026-10-21)
 
 - **Prices are the owner's numbers** (Admin > Pricing, owner only, `src/app/(dashboard)/admin/pricing/`): monthly plan price, 3 and 6 month discount %, family extra %, extra class price,

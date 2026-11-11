@@ -1,10 +1,66 @@
-/* The reel's digits are drawn by CSS so the page text holds one price, not 0123456789 for every digit. */
+/* Every piece of a rolling number shares one line height and sits on the text baseline, so digits, "$", "," and "." line up. */
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  display: inline-flex;
+  align-items: baseline;
+  user-select: none;
+}
+.symbol {
+  display: inline-block;
+}
+
+/* The old price: text-decoration does not reach inside these boxes, so the line is drawn here, at the middle of the digits. */
+.strike::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 54%;
+  height: 1px;
+  background: currentColor;
+  pointer-events: none;
+}
+
+/* One digit. The hidden "0" is real text in normal flow: it gives the reel its width, its height and, above all, its baseline.
+   clip-path (not overflow) does the clipping, because a box that clips with overflow takes the bottom edge as its baseline. */
+.reel {
+  position: relative;
+  display: inline-block;
+  width: 1ch;
+  text-align: center;
+  clip-path: inset(0);
+}
+.reel::before {
+  content: "0";
+  visibility: hidden;
+}
+
+/* The strip of ten digits, one line each. translateY in percent is a share of the strip's own height, so 10% is one digit. The
+   roll is a transition on transform: the compositor runs it, so a hundred of them cost the page nothing. A newly shown digit
+   has no earlier value, so it lands without rolling. */
 .strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   white-space: pre;
   text-align: center;
-  line-height: 1.15;
   user-select: none;
+  transition: transform 420ms var(--ease-ios, cubic-bezier(0.32, 0.72, 0, 1));
+  will-change: transform;
 }
 .strip::before {
   content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip {
+    transition: none;
+  }
 }
