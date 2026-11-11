@@ -30,7 +30,7 @@ export default function PrivacyPage() {
           #main-content, see terms/page.tsx for why this moved onto a real
           <main> instead of an empty placeholder div. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
-        <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
+        <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-28">
           <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
           <h1 className="mt-1 font-serif text-hero text-slate-50">Privacy policy</h1>
           <p className="mt-3 text-small text-slate-500">Last updated {PRIVACY_LAST_UPDATED}.</p>

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { startNavigation } from "@/lib/navigationState";
+import { AuthHeading } from "@/components/auth/AuthHeading";
 import { confirmPhoneAction, resendPhoneCodeAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
@@ -71,12 +72,11 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Last step</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Verify your phone</h1>
+      <AuthHeading title="Verify your phone" />
 
       {step === "number" && (
         <form onSubmit={submitNumber} className="mt-4 space-y-4">
-          <p className="text-small text-slate-500">We text a 6-digit code to confirm it is really yours. {PHONE_HELP}</p>
+          <p className="text-small text-slate-400">We text a 6-digit code to confirm it is really yours. {PHONE_HELP}</p>
           <div>
             <Label htmlFor="phone" className={fieldLabel}>
               Phone number
@@ -92,7 +92,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
       {step === "send" && number && (
         <div className="mt-4 space-y-4">
-          <p className="text-small text-slate-500">
+          <p className="text-small text-slate-400">
             We will text a 6-digit code to <span className="text-slate-300">{formatPhone(number)}</span>.
           </p>
           {error && <p role="alert" className="text-small text-red-400">{error}</p>}
@@ -107,8 +107,8 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
 
       {step === "code" && number && (
         <>
-          <p className="mt-2 text-small text-slate-500">
-            Code sent to <span className="text-slate-300">{formatPhone(number)}</span>.
+          <p className="mt-1.5 text-small text-slate-400">
+            Code sent to <span className="text-slate-200">{formatPhone(number)}</span>.
           </p>
           <form onSubmit={submitCode} className="mt-6 space-y-4">
             <div>

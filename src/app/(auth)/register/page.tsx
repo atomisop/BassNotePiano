@@ -18,10 +18,10 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { UserPlus } from "@/components/ui/appIcons";
 import { Hint } from "@/components/ui/Hint";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { loginHref } from "@/lib/inPlaceLinks";
+import { AuthHeading } from "@/components/auth/AuthHeading";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -129,13 +129,11 @@ function RegisterForm() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      {/* A flat, quiet mark: the heading under it is the one thing that should stand out before the form. */}
-      <div aria-hidden className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50/5 text-slate-400">
-        <UserPlus className="h-6 w-6" />
-      </div>
-      <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
+      {/* The same plain title as every other sign-in screen: no icon over it and no centering, so moving between Log in and
+          Create account changes the fields and nothing else. */}
+      <AuthHeading title="Create your account" />
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
-        <p className="mt-3 text-center text-small text-slate-300"><Hint>A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</Hint></p>
+        <p className="mt-3 text-small text-slate-300"><Hint>A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</Hint></p>
       )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">

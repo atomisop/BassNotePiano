@@ -34,7 +34,7 @@ export default function TermsPage() {
           for having real content outside any landmark, since that id used
           to sit on an empty placeholder div rather than an actual <main>. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
-        <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
+        <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-28">
           <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
           <h1 className="mt-1 font-serif text-hero text-slate-50">Terms &amp; refund policy</h1>
           <p className="mt-3 text-small text-slate-500">Last updated {TERMS_LAST_UPDATED}.</p>

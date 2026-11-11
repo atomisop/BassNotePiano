@@ -10,7 +10,6 @@ import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIn
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
-import { Stepper } from "@/components/ui/Stepper";
 import { GuardedButton } from "@/components/ui/GuardedButton";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -200,14 +199,19 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <div className="mb-6">
-        <Stepper orientation="horizontal" current={step} steps={STEP_TITLES.map((title) => ({ title }))} />
+      {/* Where you are, said once: two short bars and "Step 1 of 2". The row of numbered markers that used to sit above this
+          repeated the step's name right over the heading, so the name was on screen twice and the count three times. */}
+      <div className="flex items-center gap-3">
+        <div aria-hidden className="flex gap-1.5">
+          {STEP_TITLES.map((title, i) => (
+            <span key={title} className={`h-1 w-8 rounded-full transition-colors ${i <= step ? "bg-signal" : "bg-slate-50/12"}`} />
+          ))}
+        </div>
+        <p className="text-caption font-medium text-slate-500">
+          Step {step + 1} of {STEP_TITLES.length}
+        </p>
       </div>
-
-      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">
-        Step {step + 1} of {STEP_TITLES.length}
-      </p>
-      <h1 ref={headingRef} tabIndex={-1} className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 outline-none">
+      <h1 ref={headingRef} tabIndex={-1} className="font-hero text-headline font-bold text-balance mt-3 text-slate-50 outline-none">
         {STEP_TITLES[step]}
       </h1>
 
@@ -216,7 +220,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
           {step === 0 && (
             <>
               <div>
-                <label htmlFor={`${uid}-username`} className="mb-1.5 block text-small font-medium text-slate-50/80">
+                <label htmlFor={`${uid}-username`} className="mb-1.5 block text-small font-medium text-slate-400">
                   Username
                 </label>
                 <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-slate-50/60">
@@ -245,7 +249,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
               </div>
 
               <fieldset>
-                <legend className="mb-2 text-small font-medium text-slate-50/80">What do you want to learn?</legend>
+                <legend className="mb-2 text-small font-medium text-slate-400">What do you want to learn?</legend>
                 <div className="space-y-2">
                   {INSTRUMENTS.map((opt) => (
                     <RadioOption
@@ -266,7 +270,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
           {step === 1 && (
             <>
               <fieldset>
-                <legend className="mb-2 text-small font-medium text-slate-50/80">Your level</legend>
+                <legend className="mb-2 text-small font-medium text-slate-400">Your level</legend>
                 <div className="space-y-2">
                   {SKILL_LEVELS.map((opt) => (
                     <RadioOption key={opt.value} name={`${uid}-level`} label={opt.label} checked={skillLevel === opt.value} onSelect={() => setSkillLevel(opt.value)} />
@@ -274,7 +278,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
                 </div>
               </fieldset>
               <fieldset>
-                <legend className="mb-2 text-small font-medium text-slate-50/80">Your main goal (optional)</legend>
+                <legend className="mb-2 text-small font-medium text-slate-400">Your main goal (optional)</legend>
                 <div className="space-y-2">
                   {LEARNING_GOALS.map((opt) => (
                     <RadioOption key={opt.value} name={`${uid}-goal`} label={opt.label} checked={goal === opt.value} onSelect={() => setGoal(opt.value)} />

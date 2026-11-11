@@ -76,6 +76,12 @@ export function MarketingNav() {
   const pathname = usePathname();
 
   const [lifted, setLifted] = useState(false);
+  // On the home page the hero carries its own solid "Get started", so while that hero is on screen the bar's copy is a plain
+  // word: one loud button per screen. Past the hero (and on every other page) it is the solid button again.
+  const [pastHero, setPastHero] = useState(false);
+  const ctaClass = pathname === "/" && !pastHero
+    ? "text-slate-200 hover:text-slate-50"
+    : "bg-amber-400 text-black shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low";
   const [menuOpen, setMenuOpen] = useState(false);
   // "Log in" opens a panel over the page instead of navigating to /login, so a
   // visitor sees the form straight away and stays where they were. The links
@@ -107,7 +113,10 @@ export function MarketingNav() {
   // illegible for both. So: bare while the page is at rest, backed the moment
   // anything moves.
   useEffect(() => {
-    const onScroll = () => setLifted(window.scrollY > 8);
+    const onScroll = () => {
+      setLifted(window.scrollY > 8);
+      setPastHero(window.scrollY > window.innerHeight * 0.6);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -256,7 +265,7 @@ export function MarketingNav() {
             {!isLoggedIn && !loadingSession && (
               <Link
                 href={primary.href}
-                className="tap inline-flex h-10 items-center justify-center rounded-full bg-amber-400 px-5 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                className={`tap inline-flex h-10 items-center justify-center rounded-full px-5 text-small font-semibold transition ${ctaClass}`}
               >
                 {primary.label}
               </Link>
@@ -295,7 +304,7 @@ export function MarketingNav() {
                   )}
                   <Link
                     href={primary.href}
-                    className="tap hidden h-9 items-center rounded-full bg-amber-400 px-4 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low min-[360px]:flex"
+                    className={`tap hidden h-9 items-center rounded-full px-4 text-small font-semibold transition min-[360px]:flex ${ctaClass}`}
                   >
                     {primary.label}
                   </Link>

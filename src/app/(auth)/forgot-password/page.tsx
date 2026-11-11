@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fieldLabel } from "@/lib/form-styles";
 import { requestPasswordResetAction } from "./actions";
+import { AuthHeading } from "@/components/auth/AuthHeading";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -34,8 +35,7 @@ export default function ForgotPasswordPage() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Reset password</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Forgot your password?</h1>
+      <AuthHeading title="Forgot your password?">Enter your email and we will send you a 6-digit code.</AuthHeading>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
