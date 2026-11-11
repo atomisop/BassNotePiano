@@ -561,7 +561,8 @@ export async function markPaymentChecked(paymentId: string) {
 
 const paymentWithScaleInclude = {
   scaleGroup: { select: { slug: true, code: true, title: true } },
-  paymentPlan: { select: { cadence: true, term: true, termMonths: true } },
+  // installmentAmountCents: a plan a full scholarship covers (price 0) shows no amount, bill count or Pay in the history.
+  paymentPlan: { select: { cadence: true, term: true, termMonths: true, installmentAmountCents: true } },
 } satisfies Prisma.ZellePaymentInclude;
 
 export type UserPaymentRecord = Prisma.ZellePaymentGetPayload<{ include: typeof paymentWithScaleInclude }>;

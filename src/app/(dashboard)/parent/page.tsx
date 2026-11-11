@@ -13,7 +13,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Hint } from "@/components/ui/Hint";
 import { listChildSummaries, listParentBills } from "@/lib/parentChildren";
 import { submitPlanInstallmentPaymentAction } from "../billing/plans/actions";
-import { formatDateTime } from "@/lib/classScheduleLabels";
+// Eastern: this page is drawn on the server, whose own clock is not the studio's.
+import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels";
 import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Parent mode" };

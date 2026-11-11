@@ -625,7 +625,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
 
       {activePlan && !activePlan.family && (
         <SectionCard title="Pause your plan">
-          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} indefinite={activePlan.pausedIndefinitely ?? false} onPause={pausePaymentPlanAction} />
+          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} indefinite={activePlan.pausedIndefinitely ?? false} covered={activePlan.installmentAmountCents === 0} onPause={pausePaymentPlanAction} />
         </SectionCard>
       )}
 

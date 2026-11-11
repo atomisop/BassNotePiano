@@ -236,7 +236,7 @@ export default async function BillingPlansPage(
                 dueCents={memberView ? (family?.waitingForStart ? null : undefined) : (billInstallment?.amountCents ?? undefined)}
                 headline={planBillState(billPlan, billInstallment, memberView).label}
               >
-                <PlanBillSheet key="bill" planLabel={planLabel} plan={billPlan} installment={billInstallment} group={family} zelleHandle={zelleHandle} nextInstallmentDueDate={nextInstallmentDueDate} />
+                <PlanBillSheet key="bill" planLabel={planLabel} plan={billPlan} installment={billInstallment} group={family} zelleHandle={zelleHandle} nextInstallmentDueDate={nextInstallmentDueDate} covered={activePlan.installmentAmountCents === 0 && !billInstallment} />
               </MyPlanSummary>
               <ActionTiles
                 title="What do you want to do?"

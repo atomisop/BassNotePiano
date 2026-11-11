@@ -38,7 +38,8 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
         {/* The price is the focal figure of the whole form: the biggest number on it, with what it covers small under it. */}
         <p className="leading-tight">
           <span className="block text-headline font-semibold tabular-nums text-slate-50">
-            <NumberTicker value={priceCents} format={usd} />
+            {/* Nothing to pay (a full scholarship): never "$0.00". */}
+            {priceCents === 0 ? "Covered" : <NumberTicker value={priceCents} format={usd} />}
           </span>
           <span className="mt-0.5 block text-small text-slate-400">{priceNote}</span>
         </p>

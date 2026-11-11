@@ -543,7 +543,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             gridTemplateColumns: `${outlineOpen ? "17.5rem" : "0rem"} minmax(0,1fr) ${tool ? "23rem" : "0rem"} 4.5rem`,
           }}
         >
-          <aside className="sticky top-0 overflow-hidden" aria-hidden={!outlineOpen} {...inertWhen(!outlineOpen)}>
+          <aside className="sticky top-0 overflow-hidden" aria-label="Lesson outline" aria-hidden={!outlineOpen} {...inertWhen(!outlineOpen)}>
             {/* The outline is a quiet panel, a step below the lesson card beside it. */}
             <div className="max-h-[calc(100svh-9rem)] w-[17.5rem] overflow-y-auto pr-6">
               <div className="rounded-card bg-neu-base p-4 shadow-raised-low">{outline}</div>

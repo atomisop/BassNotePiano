@@ -177,12 +177,15 @@ export function PaymentPlanTierGrid({
           "Your weekly time reserved",
           isMonthly ? (
             "No commitment, pay every 28\u00a0days"
+          ) : perStudentCents === 0 ? (
+            // A full scholarship: nothing is ever paid, so no "paid every 28 days" and no whole-plan total of $0.00.
+            "Covered by your scholarship. Nothing to pay."
           ) : (
             <>
               Locked in for <NumberTicker value={rate.termMonths * 28} /> days, paid every 28&nbsp;days
             </>
           ),
-          ...(isMonthly ? [] : [<>Whole plan: <NumberTicker value={perStudentCents * rate.termMonths} format={formatUsd} /></>]),
+          ...(isMonthly || perStudentCents === 0 ? [] : [<>Whole plan: <NumberTicker value={perStudentCents * rate.termMonths} format={formatUsd} /></>]),
         ];
 
     // Von Restorff: only the featured plan is lit (its colour, glow and stars) and only its button is solid. The other two are
@@ -244,9 +247,9 @@ export function PaymentPlanTierGrid({
               </p>
               <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
                 <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} tier-price`}>
-                  <NumberTicker value={perStudentCents} format={formatUsd} />
+                  {perStudentCents === 0 ? "Covered" : <NumberTicker value={perStudentCents} format={formatUsd} />}
                 </span>
-                <span className="text-small text-slate-400">{isFamily ? "per student, every 28 days" : "every 28 days"}</span>
+                <span className="text-small text-slate-400">{perStudentCents === 0 ? "by your scholarship" : isFamily ? "per student, every 28 days" : "every 28 days"}</span>
               </p>
             </div>
 

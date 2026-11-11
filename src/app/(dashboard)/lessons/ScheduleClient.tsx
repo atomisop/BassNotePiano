@@ -52,11 +52,22 @@ function formatTimeLabel(hhmm: string): string {
 const LATER_SHOWN = 3;
 
 /** The hero's two big parts: "Wednesday, Nov 12" and "6:00 PM", in the viewer's own clock like formatDateTime. */
-function classDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+function classDay(iso: string, timeZone?: string) {
+  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", timeZone });
 }
-function classTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+function classTime(iso: string, timeZone?: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone });
+}
+
+/**
+ * Times here are shown in the viewer's own clock, which the server cannot know. So the first paint (the server's, and the browser's
+ * matching one) uses the studio's Eastern clock, and the viewer's own clock takes over as soon as the page is alive. Without this
+ * the page failed to hydrate for everyone whose clock is not the server's.
+ */
+function useViewerTimeZone(): string | undefined {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? undefined : "America/New_York";
 }
 
 interface WeeklyTime {
@@ -102,6 +113,7 @@ export function ScheduleClient({
   initialTimeKey = null,
   afterHero,
 }: ScheduleClientProps) {
+  const tz = useViewerTimeZone();
   const router = useRouter();
   // Skipping one class (24+ hours ahead): two taps, then it is gone and its
   // credit stays on the account, to use on a different time under Extra sessions.
@@ -247,10 +259,10 @@ export function ScheduleClient({
       <li key={booking.id} className="py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(booking.scheduledAt)}</p>
+            <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(booking.scheduledAt, tz)}</p>
             <Meta
               className="mt-0.5"
-              items={[booking.label ?? "Weekly class", `ends ${formatEndTime(booking.scheduledAt, booking.creditsSpent)}`, booking.inPerson && "In person", c.lockedNote && "Changes go through the team"]}
+              items={[booking.label ?? "Weekly class", `ends ${formatEndTime(booking.scheduledAt, booking.creditsSpent, tz)}`, booking.inPerson && "In person", c.lockedNote && "Changes go through the team"]}
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -300,12 +312,12 @@ export function ScheduleClient({
       {/* The hero: the next class on a coloured band, its time the biggest thing on the screen, the controls on the sheet under it. */}
       {next && nextState ? (
         <NextClassBand
-          day={classDay(next.scheduledAt)}
-          time={classTime(next.scheduledAt)}
+          day={classDay(next.scheduledAt, tz)}
+          time={classTime(next.scheduledAt, tz)}
           meta={
             <Meta
               items={[
-                `Ends ${formatEndTime(next.scheduledAt, next.creditsSpent)}`,
+                `Ends ${formatEndTime(next.scheduledAt, next.creditsSpent, tz)}`,
                 `${nextState.minutes} min`,
                 next.inPerson ? "In person" : (next.label ?? "Weekly class"),
                 hasClassThisWeek && "This week is booked",

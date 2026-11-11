@@ -14,6 +14,7 @@ export function PlanBillSheet({
   group,
   zelleHandle,
   nextInstallmentDueDate,
+  covered = false,
 }: {
   planLabel: string;
   plan: PlanBillPlan;
@@ -22,6 +23,8 @@ export function PlanBillSheet({
   zelleHandle: string;
   /** ISO. Set when nothing is payable yet: the day the next bill opens. */
   nextInstallmentDueDate?: string;
+  /** A full scholarship covers the plan: nothing is ever owed, so the line says that and names no bill. */
+  covered?: boolean;
 }) {
   const memberView = group !== null && !group.isPayer;
   const waitingForFirstPayment = plan.installmentsPaid === 0;
@@ -49,8 +52,10 @@ export function PlanBillSheet({
         <div className="flex items-center gap-2 text-small text-slate-400" role="status">
           <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${waitingForFirstPayment ? "bg-slate-500" : "bg-emerald-400"}`} />
           <p>
-            <span className="font-medium text-slate-100">{waitingForFirstPayment ? "Nothing to pay right now." : "You’re all paid up."}</span>
-            {waitingForFirstPayment
+            <span className="font-medium text-slate-100">{covered ? "Nothing to pay." : waitingForFirstPayment ? "Nothing to pay right now." : "You’re all paid up."}</span>
+            {covered
+              ? " Your scholarship covers your plan, and your classes go on as they are."
+              : waitingForFirstPayment
               ? " Your plan starts when the first payment arrives."
               : nextInstallmentDueDate
                 ? ` Your next bill opens on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`

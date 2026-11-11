@@ -11,11 +11,20 @@ const SCHOLARSHIP_TERM = "TERM_6";
 /** How many 28-day cycles are added each time a fully covered plan continues: another 6 Months. */
 export const SCHOLARSHIP_RENEWAL_CYCLES = 6;
 
+/** What a fully covered plan or cycle shows wherever an amount or a bill would be: never "$0.00", never "pay". */
+export const COVERED_BY_SCHOLARSHIP = "Covered by your scholarship";
+export const NOTHING_TO_PAY = "Nothing to pay";
+
+/** A plan whose price per bill is nothing is fully covered: its screens show no amount, no bill count and no Pay. */
+export function isCoveredPlan(priceCents: number | null | undefined): boolean {
+  return priceCents === 0;
+}
+
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 /** The bell notice for one covered 28-day cycle. `creditsNote` is a whole sentence part such as "4 credits are on your account". */
 export function coveredBillNotice(creditsNote: string): { title: string; body: string } {
-  return { title: "Covered by your scholarship", body: `Your scholarship covers your next 28 days. ${creditsNote}. Nothing to pay.` };
+  return { title: COVERED_BY_SCHOLARSHIP, body: `Your scholarship covers your next 28 days. ${creditsNote}. ${NOTHING_TO_PAY}.` };
 }
 
 /** The one notice when a fully covered plan reaches its last cycle and goes on by itself. */

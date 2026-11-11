@@ -2333,9 +2333,14 @@ html[data-kb-motion="off"] .cmd-window {
 [data-mode="light"] {
   --lg-fill: rgb(255 250 242 / 0.6);
 }
+/* Solid on the dark theme: at 80% the espresso page showed through and darkened the orange, which left its espresso label at
+   3.8:1 (measured in the browser). Solid Burnt Orange keeps the label at 5.0:1. The light theme keeps the lighter 80% fill. */
 .lg-glass.liquid-signal {
-  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
+  background: rgb(var(--cta-bg, var(--primary))) !important;
   box-shadow: 0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.6) !important;
+}
+[data-mode="light"] .lg-glass.liquid-signal {
+  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
 }
 @media (hover: hover) {
   .lg-glass:hover {

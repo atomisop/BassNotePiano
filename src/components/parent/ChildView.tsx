@@ -6,7 +6,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { ChildClasses } from "@/components/parent/ChildClasses";
 import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
-import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels"; // Eastern, like the band and the weekly time: the same words on the server and in the browser
 import { Hint } from "@/components/ui/Hint";
 import { Callout, CardFoot, CardHead, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { HeroBand } from "@/components/ui/HeroBand";

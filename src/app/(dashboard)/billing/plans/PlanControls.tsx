@@ -98,6 +98,7 @@ export function PlanControls({
                     pausedAt={plan.pausedAt ?? null}
                     pausedUntil={plan.pausedUntil ?? null}
                     indefinite={plan.pausedIndefinitely ?? false}
+                    covered={plan.installmentAmountCents === 0}
                     onPause={pausePaymentPlanAction}
                   />
                 </div>

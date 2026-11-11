@@ -15,11 +15,14 @@ export function PausePlanCard({
   pausedAt,
   pausedUntil,
   indefinite = false,
+  covered = false,
   onPause,
 }: {
   pausedAt: string | null;
   pausedUntil: string | null;
   indefinite?: boolean;
+  /** A full scholarship covers the plan: there is no payment to move, so the words name the plan dates instead. */
+  covered?: boolean;
   onPause: (weeks: number) => Promise<{ ok: boolean; error: string | null; resumesOn: string | null }>;
 }) {
   const router = useRouter();
@@ -65,7 +68,7 @@ export function PausePlanCard({
   return (
     <div>
       <p className="text-small text-slate-500">
-        Going away? Pause for 1 to {PAUSE_MAX_WEEKS} weeks. Your weekly time stays reserved, your next payment moves back by the same time, and your unused credits
+        Going away? Pause for 1 to {PAUSE_MAX_WEEKS} weeks. Your weekly time stays reserved, your {covered ? "plan dates move" : "next payment moves"} back by the same time, and your unused credits
         last that much longer. One pause every {PAUSE_COOLDOWN_DAYS} days.
         {pausedAt ? ` Your last pause started ${day(pausedAt)}.` : ""}
       </p>

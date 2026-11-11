@@ -9,6 +9,7 @@ import { calculatePaymentPlanRate, discountedPlanPriceCents, discountPercentForT
 import { isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { COVERED_BY_SCHOLARSHIP, NOTHING_TO_PAY, isCoveredPlan } from "@/lib/scholarshipWording";
 import { usePricing } from "@/components/billing/PricingContext";
 import { toast } from "@/components/ui/Toaster";
 import { Dialog } from "@/components/ui/Dialog";
@@ -222,7 +223,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                 <p className="mt-1 text-title font-semibold text-slate-50">{currentLabel}</p>
                 {activePlan.installmentAmountCents !== undefined && (
                   <p className="mt-0.5 text-small text-slate-400">
-                    {formatUsd(activePlan.installmentAmountCents)} every 28 days · {CADENCE_LABELS[activePlan.cadence]}
+                    {isCoveredPlan(activePlan.installmentAmountCents) ? COVERED_BY_SCHOLARSHIP : `${formatUsd(activePlan.installmentAmountCents)} every 28 days`} · {CADENCE_LABELS[activePlan.cadence]}
                   </p>
                 )}
               </div>
@@ -233,6 +234,18 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
               )}
             </div>
 
+            {/* A full scholarship has no bills to count: only what it costs (nothing) and when the next 28 days start. */}
+            {isCoveredPlan(activePlan.installmentAmountCents) ? (
+              <Facts className="mt-4">
+                <Fact label="To pay" value={NOTHING_TO_PAY} />
+                <Fact
+                  label="Next 28 days start"
+                  value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                  tone={progress.nextBillAt ? "default" : "muted"}
+                />
+              </Facts>
+            ) : (
+            <>
             <div className="mt-4" role="img" aria-label={`${progress.billsPaid} of ${progress.billsTotal} bills paid`}>
               <div className="flex gap-1">
                 {Array.from({ length: progress.billsTotal }, (_, i) => (
@@ -251,6 +264,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                 tone={progress.nextBillAt ? "default" : "muted"}
               />
             </Facts>
+            </>
+            )}
 
             {activePlan.pausedIndefinitely && <p className="mt-3 text-small text-amber-300">Paused until the studio resumes it.</p>}
 

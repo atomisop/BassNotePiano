@@ -7,6 +7,7 @@ import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { ChevronRight } from "@/components/ui/appIcons";
+import { COVERED_BY_SCHOLARSHIP, NOTHING_TO_PAY, isCoveredPlan } from "@/lib/scholarshipWording";
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const dateOnly = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
@@ -43,10 +44,24 @@ export async function MyPlanSummary({
   const pausedText = isIndefinitePause(plan) || !plan.pauseUntil ? "Until the studio resumes it" : `Until ${dateOnly(plan.pauseUntil)}`;
   const when = daysToDue === 0 ? "today" : daysToDue === 1 ? "tomorrow" : `in ${daysToDue} days`;
   const classesLeft = `${left} ${left === 1 ? "class" : "classes"} left`;
+  // A full scholarship: there is no bill, so no amount, no "next bill" and no bill count anywhere on this summary.
+  const covered = isCoveredPlan(plan.installmentAmountCents);
+  const nextCycle = `Next 28 days start ${dateOnly(due)}`;
 
   if (variant === "band") {
     const amountCents = dueCents === undefined ? plan.installmentAmountCents : dueCents;
     const waiting = plan.installmentsPaid === 0;
+    if (covered && !amountCents) {
+      return (
+        <HeroBand
+          eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+          title={paused ? "Paused" : COVERED_BY_SCHOLARSHIP}
+          meta={<Meta items={[paused && pausedText, classesLeft, !paused && daysToDue >= 0 && nextCycle]} />}
+        >
+          {children}
+        </HeroBand>
+      );
+    }
     return (
       <HeroBand
         eyebrow={describePaymentPlan(plan.cadence, plan.term)}
@@ -73,6 +88,8 @@ export async function MyPlanSummary({
             items={[
               paused ? (
                 <span className="text-amber-300">Paused</span>
+              ) : covered ? (
+                COVERED_BY_SCHOLARSHIP
               ) : overdue ? (
                 <span className="text-red-400">Bill was due {dateOnly(due)}</span>
               ) : (
@@ -96,20 +113,22 @@ export async function MyPlanSummary({
           {/* The one loud thing: what the next bill is, or that the plan is paused. */}
           {paused ? (
             <p className="mt-1 text-headline font-semibold text-slate-50">Paused</p>
+          ) : covered ? (
+            <p className="mt-1 text-headline font-semibold text-slate-50">{COVERED_BY_SCHOLARSHIP}</p>
           ) : (
             <p className={`mt-1 text-headline font-semibold tabular-nums ${overdue ? "text-red-300" : "text-slate-50"}`}>{usd(plan.installmentAmountCents)}</p>
           )}
-          <p className={`mt-0.5 text-small ${overdue ? "font-medium text-red-300" : "text-slate-400"}`}>
-            {paused ? pausedText : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
+          <p className={`mt-0.5 text-small ${overdue && !covered ? "font-medium text-red-300" : "text-slate-400"}`}>
+            {paused ? pausedText : covered ? `${NOTHING_TO_PAY}. ${daysToDue >= 0 ? nextCycle : ""}`.trim() : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
           </p>
         </div>
-        {(overdue || paused) && (
+        {((overdue && !covered) || paused) && (
           <div className="shrink-0 pt-0.5">{overdue ? <StatusDot tone="danger">Overdue</StatusDot> : <StatusDot tone="warning">Paused</StatusDot>}</div>
         )}
       </div>
       <Facts columns={2} className="mt-4 border-t border-slate-50/8 pt-4">
         <Fact label="This cycle" value={classesLeft} tone={left > 0 ? "default" : "muted"} />
-        <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />
+        {!covered && <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />}
       </Facts>
     </section>
   );
