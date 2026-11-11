@@ -550,6 +550,8 @@ export interface PaymentPlanInvoiceDetails {
   unsubscribe?: UnsubscribeTarget;
   /** Present only for the overdue variant, its presence, not a separate flag, is what picks the template's copy/accent. */
   overdueDays?: number;
+  /** A partial scholarship on this bill, as one plain sentence ("Your 50% scholarship covers $90.00 of this bill. $89.99 is left to pay."). */
+  scholarshipNote?: string;
 }
 
 /**
@@ -563,6 +565,8 @@ export interface PaymentPlanInvoiceDetails {
  * the scheduled job that calls this.
  */
 export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPlanInvoiceDetails): Promise<void> {
+  // A bill that asks for nothing (a full scholarship) is never sent to anyone: it settles by itself (freeBills.ts).
+  if (details.amountCents <= 0) return;
   const isOverdue = typeof details.overdueDays === "number";
   const heading = isOverdue ? "Overdue bill" : "Your bill";
   const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
@@ -581,7 +585,8 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
   const headlineHtml = `
     <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">${escapeHtml(intro)}</p>
     <p style="margin:0;color:${MAIL.ink};font-size:38px;font-weight:700;line-height:1.1;">${amountLabel}</p>
-    <p style="margin:8px 0 22px;color:${isOverdue ? MAIL.danger : MAIL.ink};font-size:16px;font-weight:600;">${isOverdue ? "Was due" : "Due"} ${escapeHtml(dueDateLabel)}</p>
+    <p style="margin:8px 0 ${details.scholarshipNote ? "8px" : "22px"};color:${isOverdue ? MAIL.danger : MAIL.ink};font-size:16px;font-weight:600;">${isOverdue ? "Was due" : "Due"} ${escapeHtml(dueDateLabel)}</p>
+    ${details.scholarshipNote ? `<p style="margin:0 0 22px;color:${MAIL.ink};font-size:14px;">${escapeHtml(details.scholarshipNote)}</p>` : ""}
   `;
 
   const buttonsHtml = `
@@ -632,6 +637,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
   const text = [
     `${heading}: ${amountLabel} ${isOverdue ? "was due" : "due on"} ${dueDateLabel}`,
     intro,
+    ...(details.scholarshipNote ? [details.scholarshipNote] : []),
     "",
     `Plan: ${details.planLabel}`,
     `Installment: ${details.installmentLabel}`,

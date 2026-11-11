@@ -52,7 +52,8 @@ export async function planBillTarget(planId: string): Promise<PlanBillTarget> {
   let bill: PlanBillTarget["bill"] = null;
   if (own?.bundle && (OPEN as readonly string[]).includes(own.bundle.status)) {
     bill = { id: own.bundle.id, amountCents: own.bundle.amountCents, zelleHandle: own.bundle.zelleHandle, installmentNumber: null, combined: true, people: own.bundle._count.bundled };
-  } else if (own) {
+  } else if (own && own.amountCents > 0) {
+    // (A $0 bill, a full scholarship, is never a bill to pay or to remind anyone about: it settles by itself, freeBills.ts.)
     bill = { id: own.id, amountCents: own.amountCents, zelleHandle: own.zelleHandle, installmentNumber: own.installmentNumber, combined: false, people: 1 };
   }
 

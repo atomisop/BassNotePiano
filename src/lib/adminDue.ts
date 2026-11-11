@@ -82,7 +82,8 @@ export function buildDueWeek(plans: DuePlan[], now: Date = new Date()): DueWeek 
 
 export async function getDueWeek(now: Date = new Date()): Promise<DueWeek> {
   const plans = await prisma.paymentPlan.findMany({
-    where: { status: "ACTIVE", installmentsPaid: { gte: 1 } },
+    // Money that is due: a plan that costs nothing (a full scholarship) has none.
+    where: { status: "ACTIVE", installmentsPaid: { gte: 1 }, installmentAmountCents: { gt: 0 } },
     select: { installmentAmountCents: true, nextDueDate: true, user: { select: { id: true, name: true, email: true } } },
   });
   return buildDueWeek(

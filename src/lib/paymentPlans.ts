@@ -302,9 +302,11 @@ export async function getOrCreateOpenInstallmentPayment(
   planId: string,
   zelleHandle: string,
   now: Date = new Date(),
+  /** `quietFree`: a $0 bill settled here sends no "Covered by your scholarship" notice, for a caller that tells the student itself. */
+  options: { quietFree?: boolean } = {},
 ): Promise<OpenInstallmentPayment> {
   const startedAt = Date.now();
-  const result = await getOrCreateMemberInstallmentPayment(planId, zelleHandle, now);
+  const result = await getOrCreateMemberInstallmentPayment(planId, zelleHandle, now, options);
   // A group's open bills are held inside ONE combined bill (paymentBundles.ts): that is what the payer is shown, pays and gets a
   // receipt for. A person on a plan of their own, or a group with fewer than two open bills, keeps the ordinary bill.
   if (!result.payment || result.payment.status !== "AWAITING_TRANSFER") return result;
@@ -317,7 +319,7 @@ export async function getOrCreateOpenInstallmentPayment(
   if (!plan?.familyGroupId || plan.installmentsPaid === 0) return result;
   // Every started member's bill that is due is opened first, so the combined bill holds all of them whichever member's page asks first.
   const siblings = await prisma.paymentPlan.findMany({ where: { familyGroupId: plan.familyGroupId, status: "ACTIVE", installmentsPaid: { gt: 0 }, id: { not: planId } }, select: { id: true } });
-  for (const sibling of siblings) await getOrCreateMemberInstallmentPayment(sibling.id, zelleHandle, now);
+  for (const sibling of siblings) await getOrCreateMemberInstallmentPayment(sibling.id, zelleHandle, now, options);
   const { syncGroupBundle } = await import("@/lib/paymentBundles");
   const { bundleId } = await syncGroupBundle(plan.familyGroupId, zelleHandle);
   if (!bundleId) return result;
@@ -329,6 +331,7 @@ async function getOrCreateMemberInstallmentPayment(
   planId: string,
   zelleHandle: string,
   now: Date,
+  options: { quietFree?: boolean } = {},
 ): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
@@ -343,7 +346,7 @@ async function getOrCreateMemberInstallmentPayment(
     // A $0 bill (a 100% scholarship repriced it) has nothing to pay: it settles now.
     if (existing.amountCents === 0 && existing.status === "AWAITING_TRANSFER") {
       const { settleFreeBill } = await import("@/lib/freeBills");
-      await settleFreeBill(existing.id);
+      await settleFreeBill(existing.id, { quiet: options.quietFree });
       const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { nextDueDate: true } });
       return { payment: null, wasCreated: false, nextDueDate: after.nextDueDate };
     }
@@ -388,7 +391,7 @@ async function getOrCreateMemberInstallmentPayment(
   if (!createdHere) return { payment, wasCreated: false };
   if (payment.amountCents === 0) {
     const { settleFreeBill } = await import("@/lib/freeBills");
-    await settleFreeBill(payment.id);
+    await settleFreeBill(payment.id, { quiet: options.quietFree });
     const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { nextDueDate: true } });
     return { payment: null, wasCreated: false, nextDueDate: after.nextDueDate };
   }
@@ -455,7 +458,8 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
             startTime: addMinutesToHHmm(plan.reservedSchedule.startTime, chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex]?.offsetMin ?? 0),
           }
         : plan.reservedSchedule,
-    isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now,
+    // A plan that costs nothing (a full scholarship) has no bill to be late with: its covered bill settles by itself.
+    isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now && plan.installmentAmountCents > 0,
   }));
 }
 
@@ -1030,7 +1034,7 @@ export async function changePlanBillDate(planId: string, adminId: string, newDay
   await createNotification({
     userId: plan.userId,
     type: "PAYMENT_PLAN_UPDATED",
-    title: "Your next payment date changed",
+    title: plan.installmentAmountCents === 0 ? "Your plan dates changed" : "Your next payment date changed",
     body:
       plan.installmentAmountCents === 0
         ? `Your next 28 days now start on ${label(to)}, covered by your scholarship. Your classes and credits are unchanged.`
@@ -1052,6 +1056,14 @@ export const LAPSE_AFTER_DAYS = 7;
 export async function lapsePlanForNonPayment(planId: string, options: { firstBill?: boolean; quietAdmin?: boolean } = {}): Promise<boolean> {
   const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
   if (!plan || plan.status !== "ACTIVE") return false;
+  // A plan that costs nothing (a full scholarship) can never be late: there is no money to wait for. Its covered bill is settled
+  // instead (which moves the plan forward), and it is never canceled or locked for non-payment.
+  if (plan.installmentAmountCents === 0 && !plan.familyGroupId) {
+    const { settleCoveredPlanBills } = await import("@/lib/scholarshipPlans");
+    await settleCoveredPlanBills(plan.id);
+    await getOrCreateOpenInstallmentPayment(plan.id, process.env.ZELLE_HANDLE ?? "payments@yourplatform.com").catch((err) => console.error(`Covered bill for plan ${plan.id} could not be settled (non-blocking):`, err));
+    return false;
+  }
   const inReview = await prisma.zellePayment.findFirst({
     where: { OR: [{ paymentPlanId: planId }, ...(plan.familyGroupId && plan.installmentsPaid === 0 ? [{ familyGroupId: plan.familyGroupId }] : [])], status: "PENDING_REVIEW" },
     select: { id: true },
@@ -1523,6 +1535,12 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
   const { planBillTarget } = await import("@/lib/planBillPayer");
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
   if (plan.status !== "ACTIVE") throw new Error("Only an active plan has a bill to send.");
+  // A plan a full scholarship covers has no bill: anything left open is settled, and nothing is ever sent.
+  if (plan.installmentAmountCents === 0 && !plan.familyGroupId) {
+    const { settleCoveredPlanBills } = await import("@/lib/scholarshipPlans");
+    await settleCoveredPlanBills(plan.id);
+    throw new Error("This plan is covered by a full scholarship, so there is no bill to send. Each 28 days is settled by itself.");
+  }
   const target = await planBillTarget(planId);
   const bill = target.bill;
   if (!bill) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
@@ -1531,7 +1549,12 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
   const now = Date.now();
   const overdueDays = plan.nextDueDate.getTime() < now ? Math.max(1, Math.floor((now - plan.nextDueDate.getTime()) / 86_400_000)) : undefined;
   const planName = describePaymentPlan(plan.cadence, plan.term);
+  // A partial scholarship: the bill says what it covered and what is left.
+  const { describeBillScholarship } = await import("@/lib/scholarshipPlans");
+  const { scholarshipDueLine, scholarshipOverdueLine } = await import("@/lib/scholarshipWording");
+  const scholarship = bill.combined ? null : await describeBillScholarship(plan, bill.amountCents);
   await sendPaymentPlanInvoiceEmail(target.payer.email, {
+    scholarshipNote: scholarship ? (overdueDays ? scholarshipOverdueLine(scholarship) : scholarshipDueLine(scholarship)) : undefined,
     planLabel: bill.combined ? `Combined bill for ${bill.people} people` : target.paysForSomeoneElse ? `${planName} for ${target.member.name}` : planName,
     installmentLabel: bill.combined ? "One payment covers everyone" : `Installment ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
     amountCents: bill.amountCents,

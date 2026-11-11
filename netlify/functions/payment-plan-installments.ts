@@ -12,6 +12,9 @@ import {
 import { getNumberSetting } from "../../src/lib/siteSettings";
 import { describePaymentPlan } from "../../src/lib/classCreditPricing";
 import { groupBillPath } from "../../src/lib/inPlaceLinks";
+import { describeBillScholarship, renewCompletedScholarshipPlans, settleCoveredBills } from "../../src/lib/scholarshipPlans";
+import { installmentDueBody, installmentOverdueBody, scholarshipDueLine, scholarshipOverdueLine } from "../../src/lib/scholarshipWording";
+import { settleFreeBill } from "../../src/lib/freeBills";
 
 // A reminder every day once a payment is overdue, then the plan is canceled
 // at LAPSE_AFTER_DAYS (see lapsePlanForNonPayment). The cap is the lapse
@@ -32,17 +35,22 @@ async function notifyInstallment(
   overdueDays?: number,
   lapseAfterDays = 7,
 ) {
+  // A bill that asks for nothing (a full scholarship) is never announced: no bell, no email. It settles by itself.
+  if (payment.amountCents <= 0) return;
   const planLabel = describePaymentPlan(plan.cadence, plan.term);
   const installmentLabel = `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`;
   const isOverdue = type === "PAYMENT_PLAN_INSTALLMENT_OVERDUE";
+  // A partial scholarship: the notice and the email say what it covered and what is left to pay.
+  const scholarship = await describeBillScholarship(plan, payment.amountCents).catch(() => null);
+  const daysLeft = lapseAfterDays - (overdueDays ?? 0);
 
   await createNotification({
     userId: plan.userId,
     type,
     title: isOverdue ? "Installment overdue" : "Installment due",
     body: isOverdue
-      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. If it does not arrive in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"}, your plan is canceled and you lose access to your account.`
-      : `${installmentLabel} on your ${planLabel} is ready to pay.`,
+      ? installmentOverdueBody({ installmentLabel, planLabel, overdueDays: overdueDays ?? 0, daysLeft, scholarship })
+      : installmentDueBody({ installmentLabel, planLabel, scholarship }),
     // No emailCategory here on purpose, the email below is a dedicated
     // itemized invoice (sendPaymentPlanInvoiceEmail), not the generic
     // CTA-button template createNotification's emailCategory path sends.
@@ -66,6 +74,7 @@ async function notifyInstallment(
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay your installment", url: getAppUrl("/billing/plans") },
     overdueDays,
+    scholarshipNote: scholarship ? (isOverdue ? scholarshipOverdueLine(scholarship) : scholarshipDueLine(scholarship)) : undefined,
     unsubscribe: { userId: plan.userId, category: "payments" },
   }).catch((err) => console.error(`Installment invoice email failed for user ${plan.userId} (non-blocking):`, err));
 }
@@ -144,6 +153,17 @@ export const runPaymentPlanInstallments = () =>
   const leadWindowEnd = new Date(now.getTime() + leadDays * 24 * 60 * 60 * 1000);
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
+  // Full scholarships first, so nothing below can ever treat a covered student as someone who owes: every open $0 bill is settled,
+  // and a finished plan whose holder still has a 100% scholarship goes on for another six cycles (scholarshipPlans.ts).
+  const coveredSettled = await settleCoveredBills().catch((err) => {
+    console.error("Settling covered bills failed (non-blocking):", err);
+    return 0;
+  });
+  const scholarshipRenewed = await renewCompletedScholarshipPlans(zelleHandle, now, leadDays).catch((err) => {
+    console.error("Scholarship renewal check failed (non-blocking):", err);
+    return 0;
+  });
+
   const duePlans = await prisma.paymentPlan.findMany({
     where: { status: "ACTIVE", nextDueDate: { lte: leadWindowEnd } },
   });
@@ -184,6 +204,11 @@ export const runPaymentPlanInstallments = () =>
     // (see createPaymentPlan/getOrCreateOpenInstallmentPayment), the schema
     // allows null only for a hypothetical future purpose that isn't this one.
     const plan = payment.paymentPlan!;
+    // A $0 bill is never overdue: it is settled here if anything left it open, and nobody is told anything about a bill.
+    if (payment.amountCents === 0) {
+      await settleFreeBill(payment.id).catch(() => false);
+      continue;
+    }
     const gap = daysSince(plan.nextDueDate, now);
     if (!overdueTriggerDays.includes(gap)) continue;
     if (payment.bundleId) {
@@ -219,7 +244,7 @@ export const runPaymentPlanInstallments = () =>
   }
 
   console.log(
-    `Payment plan installments: lapsed ${lapsed}, opened ${opened} of ${duePlans.length} due plans, escalated ${escalated} of ${overduePayments.length} overdue installments`,
+    `Payment plan installments: settled ${coveredSettled} covered, renewed ${scholarshipRenewed} scholarship plans, lapsed ${lapsed}, opened ${opened} of ${duePlans.length} due plans, escalated ${escalated} of ${overduePayments.length} overdue installments`,
   );
   return { statusCode: 200 };
 });

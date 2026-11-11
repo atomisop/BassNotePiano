@@ -28,6 +28,7 @@ const LABELS: Record<string, string> = {
   "plan.price": "Set a plan's price per bill",
   "plan.waive": "Gave a plan's next 28 days free",
   "plan.restart": "Restarted a canceled plan",
+  "plan.scholarship-renew": "A full scholarship plan went on for another 6 payments by itself",
   "lesson.edit": "Renamed a lesson",
   "payment.edit": "Corrected a payment",
   "plan.separate": "Moved someone off a group plan",

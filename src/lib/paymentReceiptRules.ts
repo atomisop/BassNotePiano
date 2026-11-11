@@ -53,6 +53,8 @@ export function receiptItem(f: ReceiptFacts): string {
   switch (f.purpose) {
     case "PAYMENT_PLAN_INSTALLMENT":
       if (!f.plan) return "Payment plan";
+      // A covered 28 days (a full scholarship, or a bill the studio waived) is not a payment and is not counted "of 6".
+      if (f.amountCents === 0) return `${describePaymentPlan(f.plan.cadence, f.plan.term)}, 28 days covered`;
       return `${describePaymentPlan(f.plan.cadence, f.plan.term)}, payment ${f.plan.installmentNumber ?? 1} of ${f.plan.termMonths}`;
     case "FAMILY_PLAN_INSTALLMENT":
       return f.groupSize && f.groupSize > 1 ? `Group plan, 28-day bill for ${f.groupSize} people` : "Group plan, 28-day bill";
@@ -80,13 +82,21 @@ export function displayName(name: string): string {
 }
 
 export function buildReceipt(f: ReceiptFacts): Receipt {
-  const rows: Receipt["rows"] = [
-    { label: "Receipt number", value: f.referenceCode },
-    { label: "Paid on", value: longDate(f.paidAt) },
-    { label: "Paid by", value: f.senderName && f.senderName.trim() ? displayName(f.senderName) : f.accountName },
-    { label: "Method", value: f.method === "VENMO" ? "Venmo" : "Zelle" },
-    { label: "Account", value: f.accountEmail },
-  ];
+  // A plan bill of $0 was covered (a full scholarship, or waived by the studio): nobody paid it, so it shows no amount, payer or method.
+  const covered = f.purpose === "PAYMENT_PLAN_INSTALLMENT" && f.amountCents === 0;
+  const rows: Receipt["rows"] = covered
+    ? [
+        { label: "Record number", value: f.referenceCode },
+        { label: "Covered on", value: longDate(f.paidAt) },
+        { label: "Account", value: f.accountEmail },
+      ]
+    : [
+        { label: "Receipt number", value: f.referenceCode },
+        { label: "Paid on", value: longDate(f.paidAt) },
+        { label: "Paid by", value: f.senderName && f.senderName.trim() ? displayName(f.senderName) : f.accountName },
+        { label: "Method", value: f.method === "VENMO" ? "Venmo" : "Zelle" },
+        { label: "Account", value: f.accountEmail },
+      ];
   if (f.periodEnd) {
     const start = new Date(f.periodEnd.getTime() - BILLING_CYCLE_DAYS * 86_400_000);
     rows.push({ label: "Covers", value: `${shortDate(start)} to ${shortDate(f.periodEnd)} (${BILLING_CYCLE_DAYS} days)` });
@@ -95,12 +105,13 @@ export function buildReceipt(f: ReceiptFacts): Receipt {
     rows.push({ label: line.name, value: `${usd(line.amountCents)}${line.installmentNumber ? `, payment ${line.installmentNumber}` : ""}` });
   }
   if (f.creditsStored && f.creditsStored > 0) rows.push({ label: "Classes added", value: creditsLabelFromStored(f.creditsStored) });
-  if (f.nextBill) rows.push({ label: "Next bill", value: `${usd(f.nextBill.amountCents)} on ${longDate(f.nextBill.dueDate)}` });
+  if (f.nextBill && f.nextBill.amountCents === 0) rows.push({ label: "Next 28 days", value: `Start ${longDate(f.nextBill.dueDate)}, covered. Nothing to pay.` });
+  else if (f.nextBill) rows.push({ label: "Next bill", value: `${usd(f.nextBill.amountCents)} on ${longDate(f.nextBill.dueDate)}` });
 
   return {
     number: f.referenceCode,
     title: "Receipt",
-    amountLabel: usd(f.amountCents),
+    amountLabel: covered ? "Covered" : usd(f.amountCents),
     paidOn: longDate(f.paidAt),
     item: receiptItem(f),
     rows,

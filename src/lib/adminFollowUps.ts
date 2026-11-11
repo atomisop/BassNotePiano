@@ -45,7 +45,8 @@ export async function getFollowUpPeople(kind: FollowUpPeopleKind, now = new Date
   switch (kind) {
     case "overdue": {
       const plans = await prisma.paymentPlan.findMany({
-        where: { status: "ACTIVE", nextDueDate: { lt: now } },
+        // A plan that costs nothing (a full scholarship) is never late: there is no bill to chase.
+        where: { status: "ACTIVE", nextDueDate: { lt: now }, installmentAmountCents: { gt: 0 } },
         orderBy: { nextDueDate: "asc" },
         select: { user: { select: { id: true, name: true, email: true } }, familyGroup: { select: { payer: { select: { id: true, name: true, email: true } } } } },
       });

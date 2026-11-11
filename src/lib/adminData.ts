@@ -352,7 +352,7 @@ export async function getInsightInputs(report: ScaleReport): Promise<InsightInpu
       where: { ...STUDENT, trialEndsAt: { gte: since90 } },
       select: { trialEndsAt: true, paymentPlans: { select: { createdAt: true }, orderBy: { createdAt: "asc" }, take: 1 } },
     }),
-    prisma.paymentPlan.findMany({ where: { status: "ACTIVE", user: STUDENT }, select: { nextDueDate: true, pauseUntil: true } }),
+    prisma.paymentPlan.findMany({ where: { status: "ACTIVE", user: STUDENT }, select: { nextDueDate: true, pauseUntil: true, installmentAmountCents: true } }),
   ]);
 
   const learnerIds = new Set(learners.map((l) => l.id));
@@ -395,7 +395,7 @@ export async function getInsightInputs(report: ScaleReport): Promise<InsightInpu
     },
     plans: {
       active: activePlans.length,
-      overdue: activePlans.filter((p) => p.nextDueDate.getTime() < now && !(p.pauseUntil && p.pauseUntil.getTime() > now)).length,
+      overdue: activePlans.filter((p) => p.installmentAmountCents > 0 && p.nextDueDate.getTime() < now && !(p.pauseUntil && p.pauseUntil.getTime() > now)).length,
     },
   };
 }

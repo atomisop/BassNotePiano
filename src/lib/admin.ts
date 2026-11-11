@@ -462,11 +462,11 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
     prisma.paymentPlan.findMany({ where: { status: "ACTIVE", installmentsPaid: { gte: 1 } }, select: { installmentAmountCents: true, nextDueDate: true } }),
     prisma.zellePayment.aggregate({ where: { purpose: { not: "FAMILY_PLAN_INSTALLMENT" }, status: "REFUNDED" }, _sum: { amountCents: true } }),
   ]);
-  const soon = plans.filter((p) => p.nextDueDate >= now && p.nextDueDate <= week);
+  const soon = plans.filter((p) => p.nextDueDate >= now && p.nextDueDate <= week && p.installmentAmountCents > 0);
   return {
     active: plans.length,
     monthlyCents: plans.reduce((sum, p) => sum + p.installmentAmountCents, 0),
-    overdue: plans.filter((p) => p.nextDueDate < now).length,
+    overdue: plans.filter((p) => p.nextDueDate < now && p.installmentAmountCents > 0).length,
     dueSoon: soon.length,
     dueSoonCents: soon.reduce((sum, p) => sum + p.installmentAmountCents, 0),
     refundedCents: refunded._sum.amountCents ?? 0,

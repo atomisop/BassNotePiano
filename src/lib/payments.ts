@@ -28,6 +28,8 @@ import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { assertRateLimit } from "@/lib/rateLimit";
 import { getPricingConfig } from "@/lib/pricing";
+import { afterScholarshipRenewal, planContinuesOnScholarship } from "@/lib/scholarshipPlans";
+import { coveredBillNotice, SCHOLARSHIP_RENEWAL_CYCLES } from "@/lib/scholarshipWording";
 
 /**
  * A student who opens the payment modal but never actually confirms a
@@ -795,10 +797,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   let payment;
   const approvalStartedAt = new Date();
   let newPlanId: string | null = null;
+  // A fully covered plan whose last bill this was went on for another six cycles (scholarshipPlans.ts): one notice says so below.
+  let scholarshipRenewed = false;
   try {
     payment = await prisma.$transaction(
       async (tx) => {
         newPlanId = null;
+        scholarshipRenewed = false;
         const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
         if (payment.status !== "PENDING_REVIEW") {
           throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
@@ -854,7 +859,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
             await grantCurriculumAccess(recipient.userId, tx);
           }
         } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
-          await applyPlanInstallment(tx, { userId: payment.userId, paymentPlanId: payment.paymentPlanId, lessonQuantity: payment.lessonQuantity });
+          scholarshipRenewed = (await applyPlanInstallment(tx, { userId: payment.userId, paymentPlanId: payment.paymentPlanId, lessonQuantity: payment.lessonQuantity })).renewed;
         } else if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
           // One payment starts every member's plan, in this same transaction, or none of them: if any member's plan is no
           // longer waiting to start (canceled, lapsed), the whole approval fails and the payment stays for a person to refund.
@@ -1036,8 +1041,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     const creditsNote = `${creditsLabelFromStored(payment.lessonQuantity)} ${payment.lessonQuantity === CREDITS_PER_CLASS ? "is" : "are"} on your account`;
     notificationBody =
       payment.amountCents === 0
-        ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified.
-          `Your scholarship covers ${plan ? `payment ${ordinal} of ${plan.termMonths}` : "this bill"}. ${creditsNote}. Nothing to pay.`
+        ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified, and never counted "of 6".
+          coveredBillNotice(creditsNote).body
         : plan
           ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
           : `Your payment plan installment was verified. ${creditsNote}.`;
@@ -1052,14 +1057,22 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // The bell notice only: the email that goes with an approval is the receipt below (the old plain "Payment approved" email,
   // which had no amount, date or receipt number, would have been a second email about the same payment).
   // Skipped only when the caller tells the student itself in one notice (the owner's "Set up plan", planSetup.ts).
-  if (!opts?.skipStudentNotice) {
+  // A covered plan that just went on for another six cycles gets ONE notice, "Your scholarship plan continues", in place of this one.
+  if (scholarshipRenewed && payment.paymentPlanId) {
+    await afterScholarshipRenewal(payment.paymentPlanId, { notify: !opts?.skipStudentNotice, via: "last bill" });
+  } else if (!opts?.skipStudentNotice) {
     await createNotification({
       userId: payment.userId,
       type: "PAYMENT_APPROVED",
-      title: payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.amountCents === 0 ? "Covered by your scholarship" : "Payment approved",
+      title: payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.amountCents === 0 ? coveredBillNotice("").title : "Payment approved",
       body: notificationBody,
       // The button opens this payment's own receipt, not the whole history list.
-      cta: fifthClass?.offerPath ? { label: "Add the fifth class", path: fifthClass.offerPath } : { label: "View your receipt", path: receiptPath(payment.id) },
+      // A covered bill has nothing to show a receipt for: the button goes to their classes.
+      cta: fifthClass?.offerPath
+        ? { label: "Add the fifth class", path: fifthClass.offerPath }
+        : payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.amountCents === 0
+          ? { label: "See your classes", path: "/lessons" }
+          : { label: "View your receipt", path: receiptPath(payment.id) },
     });
   }
   if (!opts?.skipReceipt) await sendPaymentReceipt(payment.id, notificationBody).catch((err) => reportError(err, `sendPaymentReceipt ${payment.id}`));
@@ -1074,8 +1087,9 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       await createNotification({
         userId: payment.userId,
         type: "PAYMENT_PLAN_COMPLETED",
-        title: "Payment plan complete",
-        body: `You've paid off your ${plan.termMonths * 28}-day plan in full. Nice work.`,
+        title: plan.installmentAmountCents === 0 ? "Your plan is complete" : "Payment plan complete",
+        // A plan that cost nothing was never paid off, so it is not congratulated for paying.
+        body: plan.installmentAmountCents === 0 ? `Your ${plan.termMonths * 28}-day plan is complete. Nice work.` : `You've paid off your ${plan.termMonths * 28}-day plan in full. Nice work.`,
         emailCategory: "payments",
       });
     }
@@ -1132,7 +1146,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 export async function applyPlanInstallment(
   tx: Prisma.TransactionClient,
   args: { userId: string; paymentPlanId: string; lessonQuantity: number; /** True for a plan created inside this same transaction: the ledger row is written outside it, so the link is added after commit. */ planIsNew?: boolean },
-): Promise<void> {
+): Promise<{ /** The plan's last bill settled and, being fully covered by a 100% scholarship, it went on for another six cycles. */ renewed: boolean }> {
   // Fetched before granting (unlike the other branches) because the
   // grant's own expiresAt needs it: this installment's credits are good
   // through the end of the cycle it's paying for, exactly when the
@@ -1165,16 +1179,23 @@ export async function applyPlanInstallment(
   // alone rather than resurrected by a late approval.
   if (plan && plan.status === "ACTIVE" && cycleEnd) {
     const installmentsPaid = plan.installmentsPaid + 1;
-    const isComplete = installmentsPaid >= plan.termMonths;
+    const lastBill = installmentsPaid >= plan.termMonths;
+    // A plan a 100% scholarship covers never ends at its sixth bill: the same plan goes on for six more cycles, in this same
+    // transaction, so there is never a moment without a running plan (no gap in access, the weekly time, classes or credits).
+    const renewed = lastBill && (await planContinuesOnScholarship(tx, plan));
+    const isComplete = lastBill && !renewed;
     await tx.paymentPlan.update({
       where: { id: plan.id },
       data: {
         installmentsPaid,
         status: isComplete ? "COMPLETED" : "ACTIVE",
         nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+        ...(renewed ? { termMonths: plan.termMonths + SCHOLARSHIP_RENEWAL_CYCLES } : {}),
       },
     });
+    return { renewed };
   }
+  return { renewed: false };
 }
 
 /**
