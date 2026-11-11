@@ -94,6 +94,23 @@ thing per card, and one thing per screen, still stands out. The rules come from 
 Shared pieces (`src/components/ui/CardKit.tsx`): `CardHead` (eyebrow, title, subtitle, status), `Facts` + `Fact` (value over label), `Meta`
 (one quiet line joined with " · "), `Callout` (the one problem), `CardFoot` (the actions). Use them; do not rebuild them per screen.
 
+## Band, sheet and tiles (2026-11-11, owner: whole app)
+
+The look every main screen shares, learned from a super-app redesign the owner liked: less on the screen, the main thing first, the rest
+one tap away.
+
+1. **One band per screen** (`HeroBand`, `src/components/ui/HeroBand.tsx`): a colored sky over piano keys carrying the screen's ONE fact
+   (the next class, the amount due, the streak, the count waiting). A figure is `text-hero`; its label is the small line over it. Never
+   two bands on a screen, and never a band on a form, a dialog or a detail page that is mostly a list of settings.
+2. **A sheet over the band's edge** holds that fact's controls: one primary button, one or two quiet ones, the rest in More.
+3. **Tiles for what people do next** (`ActionTiles`): two to four soft cards with a tinted icon, a bold name and one quiet line. They
+   replace rows of text links and scattered buttons. More than four choices is a list, not tiles.
+4. **Do it again**: where a person repeats something (book the same time, pay the same bill, message the same person), offer the repeat
+   as one tap near the top, built from what they last did.
+5. **Filter inside the search**: a list with categories gets one search field with a scope chip or icon pills, not a second row of tabs.
+6. **Quiet cards under it**: `rounded-card bg-neu-base shadow-raised-low`, no outlines; rows with hairlines for lists (`Hierarchy` 8).
+7. Both themes, 390px and 320px wide, nothing under the dock (`pb-32`), menus never clipped by a rounded parent.
+
 ## Spacing
 
 4-point grid. Inside a card 16 (phone) / 20 (computer); between cards 12 / 16; between page sections 32 / 48.
