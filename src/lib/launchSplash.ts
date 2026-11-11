@@ -34,7 +34,7 @@ export const LAUNCH_SPLASH_SCRIPT = `
     if (forced && slow) document.documentElement.style.setProperty('--bnp-slow', slow[1]);
     // Painted before the stylesheet arrives: espresso behind, so the phone's launch image never gives way to white.
     var st = document.createElement('style');
-    st.textContent = 'html[data-splash]{background:#241c18}';
+    st.textContent = 'html[data-splash]{background:#000000}';
     document.head.appendChild(st);
   } catch (e) {}
 })();

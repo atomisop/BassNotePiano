@@ -2,11 +2,11 @@
    soft shapes, and the system font the signed-in app uses. Put the class on a Stage: <Stage className="bnp-look" theme="dark">. */
 .bnp-look .ss-stage {
   --ss-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
-  --ss-canvas: #241c18;
+  --ss-canvas: #000000;
   --ss-surface: #2a211c;
-  --ss-chrome: #2f2520;
-  --ss-raised: #3b2f2a;
-  --ss-well: #1e1714;
+  --ss-chrome: #14110f;
+  --ss-raised: #201c19;
+  --ss-well: #0a0908;
   --ss-accent: #e8641e;
   --ss-accent-2: #cc5214;
   --ss-accent-soft: rgba(232, 100, 30, 0.2);

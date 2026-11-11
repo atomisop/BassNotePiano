@@ -187,8 +187,8 @@ const DARK_CLASS_BY_STYLE: [RegExp, string][] = [
 const DARK_STYLE = `<style>
 :root{color-scheme:light dark;supported-color-schemes:light dark;}
 @media (prefers-color-scheme: dark){
-.d-page{background:#241c18 !important;}
-.d-card{background:#2f2520 !important;}
+.d-page{background:#000000 !important;}
+.d-card{background:#14110f !important;}
 .d-panel{background:#3b2f2a !important;}
 .d-ink{color:#faf6ee !important;}
 .d-body{color:#e0d7c9 !important;}

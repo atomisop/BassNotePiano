@@ -42,10 +42,10 @@
   --c-s-400: 186 174 159;   /* de-emphasised        7.7:1 */
   --c-s-500: 170 158 143;   /* mono labels          6.4:1 */
   --c-s-600: 154 141 128;   /* disabled             5.2:1 */
-  --c-s-700: 88 73 65;      /* hairlines, rules */
-  --c-s-800: 66 53 47;      /* raised surface */
-  --c-s-900: 42 33 28;      /* recessed surface */
-  --c-s-950: 36 28 24;      /* the ground, deep espresso #241C18 */
+  --c-s-700: 66 60 54;      /* hairlines, rules */
+  --c-s-800: 38 34 30;      /* raised surface */
+  --c-s-900: 16 14 12;      /* recessed surface */
+  --c-s-950: 0 0 0;      /* the ground, deep espresso #241C18 */
 
   /* ---- Accent ramp: Burnt Orange ----------------------------------------
      Same values as `[data-mode="dark"]` in themes.css (amber became burnt

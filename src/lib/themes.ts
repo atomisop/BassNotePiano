@@ -42,18 +42,18 @@ export const THEMES: ThemeMeta[] = [
   {
     id: "paper",
     label: "Editorial Paper",
-    description: "Linen: a cream page, warm off-white cards and espresso text, like a printed method book.",
+    description: "Warm cream and ink, like a printed method book, with real frosted-glass panels.",
     mode: "light",
     source: "curated",
-    swatch: ["#EFE8DC", "#FAF6EE", "#241C18"],
+    swatch: ["#FAF6EC", "#FFFFFF", "#1A150F"],
   },
   {
     id: "ink",
     label: "Editorial Ink",
-    description: "Espresso: a deep brown page, lighter brown cards and cream text, the default look.",
+    description: "Pitch black with cream text and burnt orange, with frosted-glass panels, the default look.",
     mode: "dark",
     source: "curated",
-    swatch: ["#241C18", "#2F2520", "#FAF6EE"],
+    swatch: ["#000000", "#14110F", "#FAF6EE"],
   },
 ];
 
@@ -77,7 +77,7 @@ export function themeMode(theme: ThemeId): "light" | "dark" {
  * band that reads like an unwanted extra frame sitting below the dock.
  */
 export function themeGroundColor(theme: ThemeId): string {
-  return THEMES.find((t) => t.id === theme)?.swatch[0] ?? "#EFE8DC";
+  return THEMES.find((t) => t.id === theme)?.swatch[0] ?? "#FAF6EC";
 }
 
 export function isThemeId(value: unknown): value is ThemeId {

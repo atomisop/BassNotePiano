@@ -525,13 +525,7 @@ custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `tex
 solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
 matching CSS rule); add any new solid fill there too, or the lens paints over it.
 
-**Palette (2026-11-11, owner): three colours, 60 / 30 / 10.** Cream Linen (60%: page `#EFE8DC`, cards `#FAF6EE`), Espresso Bean (30%: `#3B2F2A`, deepest
-`#241C18`) and Burnt Orange (10%, the one accent: exactly `#E8641E`, `--signal`). The light theme (id `paper`) is Linen: cream page, warm off-white cards,
-espresso text. The dark theme (id `ink`, still the default) is Espresso: `#241C18` page, `#2F2520` cards, `#3B2F2A` lift, cream text. Every neutral is
-warm, in `themes.css` (the `--c-s-*` ramps, mirrored in `marketing.css`) and `globals.css` (`--ground`, `--neu-*`, shadows, glass, the dock); Tailwind's
-`white` / `black` are a cream white and an espresso black; there is no blue-gray or pure gray, and the pill tints (`tint-*`) are warm too. Red leans to
-crimson so a late bill never reads as the accent. Emails, the offline page and the manifest use the same three colours. The roadmap artwork gradients
-(`ROADMAP_ARTWORKS`), the drawn piano keys and fretboard, photos and logo files are unchanged on purpose. Contrast for every text pair is in `DESIGN.md`.
+**Palette (2026-11-12, owner, replaces the Linen and Espresso one): pitch black, cream text, Burnt Orange.** The dark theme (id `ink`, the default) is a true black page `#000000`, warm near-black cards `#14110F`, cream text (`#FAF6EE` down the ramp) and the one accent Burnt Orange `#E8641E` (`--signal`; the label on an orange fill is dark ink, never cream). The light theme (id `paper`) is back to the old look: a gray page with white cards and near-black text. Semantic colours are plain green (`emerald`), yellow (`yellow`, new `--c-ye-*` tokens) and red (`red`, a true red, not crimson); orange is the accent only, never a state. Tokens live in `themes.css` and `globals.css` (`[data-mode]` and `[data-surface="app"]` blocks), mirrored in `marketing.css`; the launch images, manifest, offline pages, emails and `launchSplash.ts` use `#000000`.
 
 ## Card deck on computers (added 2026-10-30)
 
