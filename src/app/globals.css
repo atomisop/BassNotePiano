@@ -1635,7 +1635,7 @@
 }
 [data-surface="app"],
 body:has([data-surface="app"]) {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
+  font-family: var(--font-body), ui-rounded, system-ui, sans-serif; /* Nunito: the smooth, rounded face (2026-11-12) */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

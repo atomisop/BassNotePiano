@@ -525,6 +525,8 @@ custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `tex
 solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
 matching CSS rule); add any new solid fill there too, or the lens paints over it.
 
+**Font (2026-11-12, owner): smooth, rounded type everywhere.** Body copy, the signed-in app and the label (mono) voice are Nunito (`src/app/fonts/Nunito-Variable.woff2`, `--font-body` and `--font-mono` in `layout.tsx`); headlines stay Baloo 2. Sora and JetBrains Mono were removed. The OG image still draws with Sora (it loads its own font).
+
 **Palette (2026-11-12, owner, replaces the Linen and Espresso one): pitch black, cream text, Burnt Orange.** The dark theme (id `ink`, the default) is a true black page `#000000`, warm near-black cards `#14110F`, cream text (`#FAF6EE` down the ramp) and the one accent Burnt Orange `#E8641E` (`--signal`; the label on an orange fill is dark ink, never cream). The light theme (id `paper`) is back to the old look: a gray page with white cards and near-black text. Semantic colours are plain green (`emerald`), yellow (`yellow`, new `--c-ye-*` tokens) and red (`red`, a true red, not crimson); orange is the accent only, never a state. Tokens live in `themes.css` and `globals.css` (`[data-mode]` and `[data-surface="app"]` blocks), mirrored in `marketing.css`; the launch images, manifest, offline pages, emails and `launchSplash.ts` use `#000000`.
 
 ## Card deck on computers (added 2026-10-30)
