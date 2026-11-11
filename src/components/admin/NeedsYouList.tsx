@@ -24,7 +24,7 @@ const NOTIFY_PLACE: Partial<Record<NeedsYouKind, { place: string; defaultOn: boo
   scales: { place: "scales", defaultOn: false, label: "Notify students when I approve" },
 };
 
-const PANEL = "mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8";
+const PANEL = "mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low";
 
 /**
  * The Overview's Needs you rows. A row with things behind it opens right here with the first three and each one's main action (approve

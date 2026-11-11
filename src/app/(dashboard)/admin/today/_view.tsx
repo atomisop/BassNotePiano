@@ -98,7 +98,7 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
                   <ClassMessageButton studentIds={[...new Set(slot.students.map((s) => s.studentId))]} label={time(slot.startsAt)} />
                 </div>
                 {/* No overflow-hidden here: each row's More menu has to draw outside the panel. */}
-                <ul className="mt-2 divide-y divide-slate-50/8 rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+                <ul className="mt-2 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
                   {slot.students.map((s) => {
                     // Problems are coloured words (red for money, amber for "check this"), never chips that look like every other fact.
                     // The Discord one carries its fix right beside it.
@@ -187,7 +187,7 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
       {stillToMark && stillToMark.total > 0 && (
         <section aria-label="Still to mark" className={`${LIFT} mt-8`}>
           <h2 className="px-1 text-small font-medium uppercase tracking-caps text-amber-300">Still to mark · {stillToMark.total}</h2>
-          <ul className="mt-2 divide-y divide-slate-50/8 rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+          <ul className="mt-2 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
             {stillToMark.rows.map((r) => (
               <li key={r.bookingId} className={`${LIFT} flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
                 <div className="min-w-0">

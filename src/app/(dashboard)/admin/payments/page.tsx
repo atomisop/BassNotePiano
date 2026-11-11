@@ -18,6 +18,7 @@ import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
 import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
 import { buttonVariants } from "@/components/ui/button";
+import { FigureLead } from "@/components/admin/AdminLead";
 import { Check, Clock, CreditCard, Eye, Hourglass, List, Mail, ShieldCheck, Ticket, Timer, Undo2, X } from "@/components/ui/appIcons";
 
 // Each status is an icon (2026-11-10, the owner: icons, not page names); the chosen one also shows its word.
@@ -33,6 +34,8 @@ const FILTERS: { label: string; value: PaymentFilterValue; icon: React.ReactNode
 ];
 
 export const metadata = { title: "Admin: Payments" };
+
+const formatUsd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 export default async function AdminPaymentsPage(
   props: { searchParams: Promise<{ status?: string; tab?: string; page?: string; user?: string; q?: string; id?: string }> }
@@ -56,6 +59,7 @@ export default async function AdminPaymentsPage(
   const isOwner = isOwnerEmail(session?.user?.email);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
   const upcoming = isOwner ? await countUpcomingClasses(payments.filter((p) => p.status === "VERIFIED").map((p) => p.user.id)) : {};
+  const waitingView = activeFilter === "PENDING_REVIEW";
   const hrefFor = (status: PaymentFilterValue, toPage = 1) => adminPaymentsHref({ status, page: toPage, user: view.user, q: view.q });
 
   return (
@@ -103,24 +107,28 @@ export default async function AdminPaymentsPage(
         />
       </div>
 
-      {/* The count and the export share one quiet line, so the payments themselves are the first loud thing on the page. */}
-      {(total > 0 || isOwner) && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-small tabular-nums text-slate-500">
-            {total > 0 && (
-              <>
-                {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-                {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
-              </>
-            )}
-          </p>
-          {isOwner && (
-            <a href="/api/admin/export?type=payments" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-              Export CSV
-            </a>
-          )}
-        </div>
-      )}
+      {/* The screen's one fact, figure first on one line (a band would push the payments down a phone): how many are waiting for the
+          owner, or how many the chosen status holds. The export sits quietly at its right. */}
+      <FigureLead
+        className="mt-5"
+        figure={total}
+        label={waitingView ? (total === 0 ? "waiting, all clear" : "waiting for your approval") : `payment${total === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`}
+        meta={
+          [
+            // Every waiting payment is on this page, so their sum is the whole amount waiting.
+            waitingView && total > 0 && pageCount === 1 ? `${formatUsd(payments.reduce((sum, p) => sum + p.amountCents, 0))} in all` : null,
+            pageCount > 1 ? `Page ${page} of ${pageCount}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
+      >
+        {isOwner && (
+          <a href="/api/admin/export?type=payments" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Export CSV
+          </a>
+        )}
+      </FigureLead>
 
       {activeFilter === "UNCHECKED" && total > 0 && (
         <div className="mt-4">
@@ -206,7 +214,13 @@ async function EmailsTab() {
       <h1 className="sr-only">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} owner={isOwner} />
       <PaymentPipelineBanner health={health} />
-      <p className="mt-2 max-w-[70ch] text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</Hint></p>
+      <FigureLead
+        className="mt-5"
+        figure={rows.length}
+        tone={rows.length > 0 ? "warning" : "default"}
+        label={rows.length === 0 ? "unmatched, all clear" : `bank email${rows.length === 1 ? "" : "s"} matched no one`}
+      />
+      <p className="mt-2 max-w-[70ch] px-1 text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</Hint></p>
       <div className="mt-6">
         <UnmatchedEmailList
           rows={rows.map((r) => ({

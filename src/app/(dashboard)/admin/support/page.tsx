@@ -5,14 +5,18 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { FigureLead } from "@/components/admin/AdminLead";
+import { Check, Inbox, List, User } from "@/components/ui/appIcons";
 import { SectionPills } from "@/components/admin/SectionPills";
 import { MessagesView } from "../messages/_view";
 
-const FILTERS: { label: string; value: SupportListFilter; param: string }[] = [
-  { label: "Open", value: "OPEN", param: "open" },
-  { label: "Resolved", value: "RESOLVED", param: "resolved" },
-  { label: "All", value: "ALL", param: "all" },
-  { label: "Assigned to me", value: "MINE", param: "mine" },
+// Each status is an icon, the chosen one with its word, so the four share one line with Chat and Email on a phone.
+const FILTERS: { label: string; value: SupportListFilter; param: string; icon: React.ReactNode }[] = [
+  { label: "Open", value: "OPEN", param: "open", icon: <Inbox /> },
+  { label: "Resolved", value: "RESOLVED", param: "resolved", icon: <Check /> },
+  { label: "All", value: "ALL", param: "all", icon: <List /> },
+  { label: "Assigned to me", value: "MINE", param: "mine", icon: <User /> },
 ];
 
 const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = [
@@ -60,36 +64,41 @@ async function ChatsView(
   return (
     <div>
       <h1 className="sr-only">Support Chat</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {threads.length} {noun}
-        {threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-      </p>
+      {/* The Inbox's one fact, figure first: how many are waiting (or how many the chosen view holds). */}
+      <FigureLead
+        className="mt-5"
+        figure={threads.length}
+        label={
+          mine
+            ? `case${threads.length === 1 ? "" : "s"} assigned to you`
+            : activeFilter === "OPEN"
+              ? `open ${noun}${threads.length === 1 ? "" : "s"}${threads.length === 0 ? ", all clear" : ""}`
+              : `${noun}${threads.length === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`
+        }
+      />
 
-      <div className={`mt-6 ${TAB_TRACK}`}>
-        {SOURCES.map((source) => (
-          <Link
-            key={source.value}
-            href={hrefFor(mine ? "OPEN" : activeFilter, source.value)}
-            className={tabItem(!mine && activeSource === source.value)}
-          >
-            {source.label}
-          </Link>
-        ))}
+      {/* Where it came from and its status share one line: two words, then four icons. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <nav aria-label="Where it came from" className={TAB_TRACK}>
+          {SOURCES.map((source) => (
+            <Link
+              key={source.value}
+              href={hrefFor(mine ? "OPEN" : activeFilter, source.value)}
+              aria-current={!mine && activeSource === source.value ? "page" : undefined}
+              className={tabItem(!mine && activeSource === source.value)}
+            >
+              {source.label}
+            </Link>
+          ))}
+        </nav>
+        <AdminFilterTabs
+          label="Status"
+          iconOnly
+          items={FILTERS.map((filter) => ({ label: filter.label, icon: filter.icon, href: hrefFor(filter.value, activeSource), active: activeFilter === filter.value }))}
+        />
       </div>
 
-      <div className={`mt-3 ${TAB_TRACK}`}>
-        {FILTERS.map((filter) => (
-          <Link
-            key={filter.value}
-            href={hrefFor(filter.value, activeSource)}
-            className={tabItem(activeFilter === filter.value)}
-          >
-            {filter.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-6">
+      <div className="mt-4">
         <SupportThreadList
           initialThreads={threads}
           source={activeSource}
