@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PaymentPlanCadence, type PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
 import { createFamilyPlans,
   createParentPlans, createPaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 import { submitZellePaymentReference, type ZelleReferenceSubmission } from "@/lib/payments";
@@ -121,6 +122,8 @@ export async function enrollInPaymentPlanAction(
 ): Promise<EnrollPaymentPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  // A linked child's weekly time is their parent's to pick (the parent starts the plan from /parent).
+  if (await hasParentControl(session.user.id)) return { ok: false, planId: null, installmentPaymentId: null, amountCents: null, error: PARENT_CONTROL_MESSAGE };
   // A double tap, a retry or a second tab with the same key starts the plan once and gets the same answer back.
   return runOnce(session.user.id, "enroll-plan", idempotencyKey, () => enrollSolo(session.user.id, cadence, term, reservedScheduleId, reservedChunkIndex, expectedFirstPaymentCents), {
     isSuccess: (r) => r.ok,

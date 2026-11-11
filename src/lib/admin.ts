@@ -490,7 +490,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: hoursAgo(3) } } }),
     getAdminProgressOverview(""),
     // Approved from an email, not yet looked at by a person.
-    prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
+    prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED", bundleId: null } }),
     countUnmatchedReceipts(),
     getPaymentPipelineHealth(),
     // Employees are admins too and never saw this: the jobs table below is owner only.

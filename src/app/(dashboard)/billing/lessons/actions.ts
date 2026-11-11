@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
 import {
   submitZellePaymentReference,
   checkFamilyBundleRecipients,
@@ -122,6 +123,8 @@ export async function createExtraClassPaymentAction(
 ): Promise<ExtraClassPaymentResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
+  // A linked child's schedule is their parent's to change, and an extra class books itself on approval.
+  if (await hasParentControl(session.user.id)) return { ok: false, id: null, status: null, amountCents: null, error: PARENT_CONTROL_MESSAGE };
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   try {

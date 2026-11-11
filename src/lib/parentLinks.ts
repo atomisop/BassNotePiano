@@ -187,7 +187,8 @@ export async function cancelParentLinkByEmail(parentId: string, rawEmail: string
 
 /** Throws unless this parent is linked (accepted) to this child. The one gate every parent action goes through. */
 export async function assertParentOf(parentId: string, childId: string): Promise<void> {
-  const link = await prisma.parentLink.findFirst({ where: { parentId, childId, status: "ACCEPTED" }, select: { id: true } });
+  // A banned child's account is closed: a parent can no longer act as them (book, move or pay).
+  const link = await prisma.parentLink.findFirst({ where: { parentId, childId, status: "ACCEPTED", child: { bannedAt: null } }, select: { id: true } });
   if (!link) throw new ParentLinkError("That account is not linked to you.");
 }
 

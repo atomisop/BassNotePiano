@@ -810,7 +810,8 @@ export async function bookClass(
         const existing = await tx.classBooking.findUnique({
           where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
         });
-        if (existing?.status === "SCHEDULED") {
+        // A marked (COMPLETED) class is a record of a class that happened: never overwrite it with a new booking.
+        if (existing && existing.status !== "CANCELED") {
           throw new ClassBookingError("You've already booked this class.");
         }
 
@@ -844,6 +845,7 @@ export async function bookClass(
               refunded: false,
               canceledReason: null,
               familyBookingGroupId: null,
+              reservedByPlanId: null, // a reused row is a fresh booking, not the plan's weekly class
             },
           });
         }
@@ -1354,7 +1356,7 @@ export async function bookFamilyClass(
           const existing = await tx.classBooking.findUnique({
             where: { studentId_scheduleId_occurrenceDate: { studentId: attendee.id, scheduleId, occurrenceDate } },
           });
-          if (existing?.status === "SCHEDULED") {
+          if (existing && existing.status !== "CANCELED") {
             throw new ClassBookingError(`${email} already has a booking for this occurrence.`);
           }
 
@@ -1383,6 +1385,7 @@ export async function bookFamilyClass(
             refunded: false,
             canceledReason: null,
             familyBookingGroupId,
+            reservedByPlanId: null,
           };
 
           created.push(
@@ -1561,7 +1564,8 @@ export async function createReservedBookingIfAbsent(
   const existing = await db.classBooking.findUnique({
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
-  if (existing?.status === "SCHEDULED") return null;
+  // SCHEDULED, or COMPLETED (a marked class is a record of a class that happened): leave it alone.
+  if (existing && existing.status !== "CANCELED") return null;
   // Canceled on purpose, by the student (24+ hours ahead) or by the studio: do not book it again.
   // A plan-wide cancel leaves no reason, so those can still be booked by a new plan.
   if (existing?.status === "CANCELED" && existing.canceledReason !== null) return null;
@@ -1646,6 +1650,7 @@ export async function bookExtraSessionOccurrence(
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
   if (existing?.status === "SCHEDULED") return true; // already booked somehow (a retried approval, say), nothing to do
+  if (existing?.status === "COMPLETED") return false; // a marked class is never overwritten
 
   const extraSchedule = await db.classSchedule.findUnique({ where: { id: scheduleId } });
   const extraChunk = extraSchedule ? chunksForSchedule(extraSchedule).find((c) => computeScheduledAt(extraSchedule, occurrenceDate, c).getTime() === scheduledAt.getTime()) : undefined;
@@ -1740,15 +1745,14 @@ export interface WeeklyCreditUsage {
  * my week is spoken for," not which purchase paid for which class.
  */
 export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCreditUsage> {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekStart = new Date(startOfToday.getTime() - startOfToday.getDay() * 24 * 60 * 60 * 1000);
-  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // The week is the studio's (Eastern) Sunday to Saturday, the same one the booking limit counts, not the server's own clock's.
+  const { year, month, day } = todayInEt();
+  const { start: weekStart, end: weekEnd } = weekRangeForOccurrence(new Date(Date.UTC(year, month - 1, day)));
 
   const [plan, bookings] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { cadence: true } }),
     prisma.classBooking.findMany({
-      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: weekStart, lt: weekEnd } },
+      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, occurrenceDate: { gte: weekStart, lt: weekEnd } },
       select: { creditsSpent: true },
     }),
   ]);
@@ -1986,6 +1990,12 @@ export async function rescheduleClassBooking(
         const existingTarget = await tx.classBooking.findUnique({
           where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId: targetScheduleId, occurrenceDate: newOccurrenceDate } },
         });
+
+        // The target day already holds a DIFFERENT live class of this student's on this schedule (or a marked one): refuse, never overwrite it.
+        // Only the old booking's own row (same schedule and day, another hour) or a CANCELED row may be reused.
+        if (existingTarget && existingTarget.id !== oldBooking.id && existingTarget.status !== "CANCELED") {
+          throw new ClassBookingError("You've already booked this class.");
+        }
 
         if (existingTarget) {
           return tx.classBooking.update({

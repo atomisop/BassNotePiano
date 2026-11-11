@@ -109,6 +109,9 @@ export async function changeGroupPayer(adminId: string, groupId: string, newPaye
   const inReview = await prisma.zellePayment.findFirst({ where: { status: "PENDING_REVIEW", paymentPlan: { familyGroupId: groupId } }, select: { id: true } });
   if (inReview) throw new PlanFixError("A payment for this group is waiting for review. Approve or reject it below, then try again.", { kind: "payment", paymentId: inReview.id });
   await prisma.familyPlanGroup.update({ where: { id: groupId }, data: { payerId: newPayerId } });
+  // An open combined bill belongs to the old payer: close it and open it again for the new one.
+  const { syncGroupBundle } = await import("@/lib/paymentBundles");
+  await syncGroupBundle(groupId, process.env.ZELLE_HANDLE ?? "payments@yourplatform.com").catch(() => undefined);
   const body = `${choice.name} now pays for the group plan. Only their bank account settles its bills from now on; the plans, weekly times and credits stay the same.`;
   for (const userId of new Set([view.payer.id, newPayerId])) {
     await createNotification({ userId, type: "PAYMENT_PLAN_UPDATED", title: "The group plan has a new payer", body, emailCategory: "payments" }).catch(() => undefined);

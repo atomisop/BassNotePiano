@@ -1,0 +1,166 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, getServerSession: async () => null, authOptions: {} }));
+vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {} }));
+import { bookClass, nextOccurrenceDates, rescheduleClassBooking } from "@/lib/classSchedule";
+import { OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
+import { approveZellePayment, submitZellePaymentReference } from "@/lib/payments";
+import { getOrCreateOpenInstallmentPayment, recordPlanPaymentReceived } from "@/lib/paymentPlans";
+import { assertParentOf } from "@/lib/parentLinks";
+import { syncGroupBundle } from "@/lib/paymentBundles";
+import { applyMoneyFix } from "@/lib/moneyCheck";
+import { makeUser, newTag, prisma } from "./helpers";
+
+// Regression tests for the bugs the booking and money reviews found (2026-11-12).
+const tag = newTag("rv");
+const users: string[] = [];
+let sched: { id: string };
+const dates = nextOccurrenceDates(2, 10).slice(2);
+
+async function person(name: string, extra: Record<string, unknown> = {}) {
+  const u = await makeUser(tag, name, { classCredits: 20, emailVerified: new Date(), ...extra });
+  users.push(u.id);
+  return u;
+}
+
+beforeAll(async () => {
+  sched = await prisma.classSchedule.create({ data: { dayOfWeek: 2, startTime: "09:00", durationMin: 120, creditCost: 4, label: `${tag} one` } });
+});
+
+afterAll(async () => {
+  await prisma.zellePayment.updateMany({ where: { userId: { in: users } }, data: { bundleId: null } });
+  await prisma.zellePayment.deleteMany({ where: { userId: { in: users } } });
+  await prisma.parentLink.deleteMany({ where: { OR: [{ parentId: { in: users } }, { childId: { in: users } }] } });
+  await prisma.paymentPlan.updateMany({ where: { userId: { in: users } }, data: { familyGroupId: null } });
+  await prisma.familyPlanGroup.deleteMany({ where: { payerId: { in: users } } });
+  await prisma.classBooking.deleteMany({ where: { scheduleId: sched.id } });
+  await prisma.creditGrant.deleteMany({ where: { userId: { in: users } } });
+  await prisma.paymentPlan.deleteMany({ where: { userId: { in: users } } });
+  await prisma.notification.deleteMany({ where: { userId: { in: users } } });
+  await prisma.classSchedule.delete({ where: { id: sched.id } });
+  await prisma.user.deleteMany({ where: { id: { in: users } } });
+});
+
+describe("booking never overwrites another class of the same student", () => {
+  it("a reschedule onto a day that already holds a live class is refused, and that class stays", async () => {
+    const s = await person("Ann");
+    const [d1, d2] = dates;
+    const from = await bookClass(s.id, sched.id, d1.getTime(), 0);
+    const target = await bookClass(s.id, sched.id, d2.getTime(), 0);
+    await expect(rescheduleClassBooking(s.id, from.id, sched.id, d2.getTime(), 1, undefined, { byAdmin: true })).rejects.toThrow(/already booked/);
+    const rows = await prisma.classBooking.findMany({ where: { studentId: s.id, scheduleId: sched.id }, orderBy: { occurrenceDate: "asc" } });
+    expect(rows.map((r) => r.status)).toEqual(["SCHEDULED", "SCHEDULED"]);
+    expect(rows[1].id).toBe(target.id);
+    expect(rows[1].scheduledAt.getTime()).toBe(target.scheduledAt.getTime());
+  });
+
+  it("booking another hour of a day whose class was marked keeps the marked class", async () => {
+    const s = await person("Bo");
+    const d = dates[2];
+    const done = await bookClass(s.id, sched.id, d.getTime(), 0);
+    await prisma.classBooking.update({ where: { id: done.id }, data: { status: "COMPLETED", attendance: "PRESENT" } });
+    await expect(bookClass(s.id, sched.id, d.getTime(), 1)).rejects.toThrow(/already booked/);
+    const row = await prisma.classBooking.findUniqueOrThrow({ where: { id: done.id } });
+    expect(row.status).toBe("COMPLETED");
+    expect(row.attendance).toBe("PRESENT");
+  });
+});
+
+describe("one bill is never paid twice in credits", () => {
+  async function planWithBill(label: string) {
+    const s = await person(label);
+    const plan = await prisma.paymentPlan.create({
+      data: {
+        userId: s.id, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3", installmentAmountCents: 16499, creditsPerInstallment: 8, termMonths: 3,
+        installmentsPaid: 1, nextDueDate: new Date(Date.now() + 2 * 86_400_000), reservedScheduleId: sched.id, reservedChunkIndex: 0,
+      },
+    });
+    return { s, plan };
+  }
+
+  it("a rejected bill is closed when a fresh one opens, so only the new one can be approved", async () => {
+    const { s, plan } = await planWithBill("Cy");
+    const first = await getOrCreateOpenInstallmentPayment(plan.id, "pay@example.test");
+    expect(first.payment?.installmentNumber).toBe(2);
+    await prisma.zellePayment.update({ where: { id: first.payment!.id }, data: { status: "REJECTED" } });
+    const second = await getOrCreateOpenInstallmentPayment(plan.id, "pay@example.test");
+    expect(second.payment?.id).not.toBe(first.payment!.id);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: first.payment!.id } })).status).toBe("EXPIRED");
+    expect(s.id).toBe(plan.userId);
+  });
+
+  it("approving a bill whose number the plan already paid is refused and grants nothing", async () => {
+    const { s, plan } = await planWithBill("Di");
+    const dup = await prisma.zellePayment.create({
+      data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "PENDING_REVIEW" },
+    });
+    await expect(approveZellePayment(dup.id, null)).rejects.toThrow(/already paid/);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: dup.id } })).status).toBe("PENDING_REVIEW");
+    expect(await prisma.creditGrant.count({ where: { userId: s.id } })).toBe(0);
+  });
+
+  it("a rejected payment sent in again waits for a person, even for a trusted returning student", async () => {
+    const { s, plan } = await planWithBill("Ed");
+    // Two earlier approved payments make this student eligible for the returning-student auto-approval.
+    for (const n of [1, 2]) {
+      await prisma.zellePayment.create({ data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: n, amountCents: 100, lessonQuantity: 8, zelleHandle: "x", status: "VERIFIED", autoApproved: false } });
+    }
+    const bill = await prisma.zellePayment.create({
+      data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 2, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "REJECTED", rejectionReason: "wrong amount" },
+    });
+    await submitZellePaymentReference(s.id, bill.id, { senderName: "Ed Test", method: "ZELLE", note: "" } as never);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: bill.id } })).status).toBe("PENDING_REVIEW");
+  });
+});
+
+describe("smaller review fixes", () => {
+  const planData = (userId: string, extra: Record<string, unknown> = {}) => ({
+    userId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3" as const, installmentAmountCents: 16499, creditsPerInstallment: 8, termMonths: 3,
+    installmentsPaid: 1, nextDueDate: new Date(Date.now() + 25 * 86_400_000), reservedScheduleId: sched.id, reservedChunkIndex: 0, ...extra,
+  });
+
+  it("a parent can no longer act as a banned child", async () => {
+    const parent = await person("Pa");
+    const child = await person("Ch");
+    await prisma.parentLink.create({ data: { parentId: parent.id, childId: child.id, status: "ACCEPTED" } });
+    await expect(assertParentOf(parent.id, child.id)).resolves.toBeUndefined();
+    await prisma.user.update({ where: { id: child.id }, data: { bannedAt: new Date() } });
+    await expect(assertParentOf(parent.id, child.id)).rejects.toThrow(/not linked/);
+  });
+
+  it("recording a payment for a started group member books the next month, not a phantom copy of the first", async () => {
+    const payer = await person("Pay");
+    const member = await person("Mem");
+    const group = await prisma.familyPlanGroup.create({ data: { payerId: payer.id } });
+    await prisma.zellePayment.create({ data: { userId: payer.id, purpose: "FAMILY_PLAN_START", familyGroupId: group.id, amountCents: 20000, zelleHandle: "x", status: "VERIFIED" } });
+    const plan = await prisma.paymentPlan.create({ data: planData(member.id, { familyGroupId: group.id }) });
+    expect(await recordPlanPaymentReceived(plan.id, payer.id)).toBe("approved");
+    const rows = await prisma.zellePayment.findMany({ where: { paymentPlanId: plan.id, status: "VERIFIED" } });
+    expect(rows.map((r) => r.installmentNumber)).toEqual([2]);
+  });
+
+  it("changing a group's payer rebuilds the open combined bill for the new payer", async () => {
+    const payer = await person("Old");
+    const next = await person("New");
+    const group = await prisma.familyPlanGroup.create({ data: { payerId: payer.id } });
+    const a = await prisma.paymentPlan.create({ data: planData(payer.id, { familyGroupId: group.id }) });
+    const b = await prisma.paymentPlan.create({ data: planData(next.id, { familyGroupId: group.id }) });
+    for (const [plan, u] of [[a, payer], [b, next]] as const) {
+      await prisma.zellePayment.create({ data: { userId: u.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 2, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "AWAITING_TRANSFER" } });
+    }
+    const first = await syncGroupBundle(group.id, "x");
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: first.bundleId! } })).userId).toBe(payer.id);
+    await prisma.familyPlanGroup.update({ where: { id: group.id }, data: { payerId: next.id } });
+    const second = await syncGroupBundle(group.id, "x");
+    expect(second.bundleId).not.toBe(first.bundleId);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: second.bundleId! } })).userId).toBe(next.id);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: first.bundleId! } })).status).toBe("EXPIRED");
+  });
+
+  it("the money check will not set a finished plan back (that reopens it overdue)", async () => {
+    const s = await person("Fin");
+    const plan = await prisma.paymentPlan.create({ data: planData(s.id, { status: "COMPLETED", installmentsPaid: 3 }) });
+    await prisma.zellePayment.create({ data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "VERIFIED" } });
+    await expect(applyMoneyFix({ id: s.id, email: null }, `counter:${plan.id}`, "setPaid")).rejects.toThrow(/finished|no longer applies/);
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("COMPLETED");
+  });
+});
