@@ -2917,9 +2917,9 @@ html[data-offline] [data-top-banner] {
   z-index: 2147483000;
   align-items: center;
   justify-content: center;
-  /* Always true black with the logo dead centre, exactly like the phone's launch images (public/splash), so the hand-over from the
-     phone's own launch screen to this layer shows no change at all. */
-  background: #000;
+  /* Espresso (#241C18) with the logo dead centre, exactly like the phone's launch images (public/splash, flat espresso), so the hand-over
+     from the phone's own launch screen to this layer shows no change at all. */
+  background: #241c18;
   pointer-events: auto;
   animation: bnp-splash-failsafe calc(9s * var(--bnp-slow, 1)) linear forwards;
 }
@@ -2968,9 +2968,9 @@ html[data-splash] .bnp-splash {
 .bnp-logo-rule-r { transform-origin: 0% 50%; }
 .bnp-logo-diamond { animation-name: bnp-logo-diamond; animation-duration: calc(520ms * var(--bnp-slow, 1)); transform-origin: 50% 50%; }
 @keyframes bnp-logo-band {
-  0% { opacity: 0; fill: #FF8A4C; }
-  20% { opacity: 1; fill: #FF8A4C; }
-  100% { opacity: 1; fill: #FBF1E6; }
+  0% { opacity: 0; fill: #F4884A; }
+  20% { opacity: 1; fill: #F4884A; }
+  100% { opacity: 1; fill: #FAF6EE; }
 }
 @keyframes bnp-logo-key {
   from { opacity: 0; transform: translateY(14px); }

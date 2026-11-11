@@ -23,7 +23,7 @@ export function LaunchLogo() {
             <path key={i} d={d} className="bnp-logo-band" style={after(ms)} />
           ))}
         </g>
-        <g fill="#FBF1E6">
+        <g fill="#FAF6EE">
           {LOGO_KEYS.map((d, i) => (
             <path key={i} d={d} className="bnp-logo-key" style={after(1500 + i * 110)} />
           ))}
@@ -31,7 +31,7 @@ export function LaunchLogo() {
             <path key={i} d={d} className="bnp-logo-letter" style={after(2200 + i * 60)} />
           ))}
         </g>
-        <g fill="#F5A623">
+        <g fill="#E8641E">
           <path d={LOGO_RULES[0]} className="bnp-logo-rule bnp-logo-rule-l" style={after(3200)} />
           <path d={LOGO_RULES[1]} className="bnp-logo-rule bnp-logo-rule-r" style={after(3200)} />
           <path d={LOGO_DIAMOND} className="bnp-logo-diamond" style={after(3100)} />
@@ -39,13 +39,13 @@ export function LaunchLogo() {
       </g>
       <g className="bnp-logo-still" fillRule="evenodd">
         {LOGO_BANDS.map(([d], i) => (
-          <path key={i} d={d} fill="#FBF1E6" />
+          <path key={i} d={d} fill="#FAF6EE" />
         ))}
         {[...LOGO_KEYS, ...LOGO_LETTERS].map((d, i) => (
-          <path key={`k${i}`} d={d} fill="#FBF1E6" />
+          <path key={`k${i}`} d={d} fill="#FAF6EE" />
         ))}
         {[...LOGO_RULES, LOGO_DIAMOND].map((d, i) => (
-          <path key={`r${i}`} d={d} fill="#F5A623" />
+          <path key={`r${i}`} d={d} fill="#E8641E" />
         ))}
       </g>
     </svg>
