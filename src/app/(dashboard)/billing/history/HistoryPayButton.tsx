@@ -22,6 +22,7 @@ export function HistoryPayButton({
   eyebrow,
   zelleHandle,
   autoOpen = false,
+  hero = false,
 }: {
   paymentId: string;
   rejected: boolean;
@@ -30,6 +31,8 @@ export function HistoryPayButton({
   eyebrow: string;
   zelleHandle: string;
   autoOpen?: boolean;
+  /** On the band's sheet at the top of the page: the screen's one big button, carrying the amount. Looks only. */
+  hero?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(autoOpen);
@@ -43,8 +46,12 @@ export function HistoryPayButton({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-3" })}>
-        {rejected ? "Resubmit" : "Pay"}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={buttonVariants({ variant: "primary", size: hero ? "lg" : "sm", className: hero ? "w-full tabular-nums" : "mt-3" })}
+      >
+        {rejected ? (hero ? "Resubmit payment" : "Resubmit") : hero ? `Pay ${(amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}` : "Pay"}
       </button>
       <ZellePaymentModal
         isOpen={open}

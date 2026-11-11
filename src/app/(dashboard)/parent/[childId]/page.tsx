@@ -41,36 +41,48 @@ export default async function ParentChildPage({ params, searchParams }: { params
           <ChildSwitcher currentId={childId} kids={kids} />
         </div>
       </div>
-      {bills.length > 0 && (
-        <section className="mt-5 space-y-3" aria-label="To pay">
-          {bills.map((bill) => (
-            <div key={bill.paymentId} className="rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.label}</p>
-                <p className="shrink-0 text-small text-slate-500">{bill.planName}</p>
-              </div>
-              <ZelleUnlockGate
-                status={bill.status}
-                rejectionReason={bill.rejectionReason}
-                scaleCode={`${bill.childName}: ${bill.label}`}
-                scaleTitle={bill.planName}
-                eyebrowLabel="Plan for your child"
-                amountCents={bill.amountCents}
-                zelleHandle={zelleHandle}
-                paymentId={bill.paymentId}
-                onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.paymentId)}
-              />
+      <ChildView
+        view={view}
+        openMoveFor={openMoveFor}
+        // On the band's sheet: starting a plan, when this child has none and nothing is owed for them.
+        sheet={
+          !view.plan && bills.length === 0 ? (
+            <div key="start" className="flex justify-end pb-1 pt-3">
+              <Link href={`/billing/plans?who=parent&child=${encodeURIComponent(childId)}`} className={buttonVariants({ variant: "primary", size: "sm" })}>
+                <Plus aria-hidden className="mr-1.5 h-4 w-4" />
+                Start a plan for {view.name.split(" ")[0]}
+              </Link>
             </div>
-          ))}
-        </section>
-      )}
-      {!view.plan && bills.length === 0 && (
-        <Link href={`/billing/plans?who=parent&child=${encodeURIComponent(childId)}`} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-5" })}>
-          <Plus aria-hidden className="mr-1.5 h-4 w-4" />
-          Start a plan for {view.name.split(" ")[0]}
-        </Link>
-      )}
-      <ChildView view={view} openMoveFor={openMoveFor} />
+          ) : null
+        }
+        // Right under the band: what is due for this child, each with its one Pay button.
+        afterHero={
+          bills.length > 0 ? (
+            <section key="bills" className="space-y-3" aria-label="To pay">
+              <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">To pay</h2>
+              {bills.map((bill) => (
+                <div key={bill.paymentId} className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
+                  <div className="mb-3 flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.label}</p>
+                    <p className="shrink-0 text-small text-slate-500">{bill.planName}</p>
+                  </div>
+                  <ZelleUnlockGate
+                    status={bill.status}
+                    rejectionReason={bill.rejectionReason}
+                    scaleCode={`${bill.childName}: ${bill.label}`}
+                    scaleTitle={bill.planName}
+                    eyebrowLabel="Plan for your child"
+                    amountCents={bill.amountCents}
+                    zelleHandle={zelleHandle}
+                    paymentId={bill.paymentId}
+                    onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.paymentId)}
+                  />
+                </div>
+              ))}
+            </section>
+          ) : null
+        }
+      />
     </WideLayout>
   );
 }

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { HeroBand } from "@/components/ui/HeroBand";
 import { classesLeftInPaidMonth, getActivePaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
@@ -10,11 +12,27 @@ const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "c
 const dateOnly = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
 
 /**
- * "My plan" in plain words. On the plan page (`card`) it says one thing loudly, the next bill (its amount, with the date under it),
- * and keeps the rest small: classes left and bills paid as two facts, the plan's name as the eyebrow. On Lessons (`row`) it is one
+ * "My plan" in plain words. On the plan page (`band`) it is the screen's hero: the next bill on the app's band (when it is due
+ * small, the amount the biggest thing on the screen), with what to do about it on the sheet (`children`). `card` is the same fact
+ * as a quiet card, for a screen whose main thing is something else (the form for a child's plan). On Lessons (`row`) it is one
  * quiet line that opens the plan page, because there the next class is the screen's hero. Renders nothing without an active plan.
  */
-export async function MyPlanSummary({ userId, variant = "card" }: { userId: string; variant?: "card" | "row" }) {
+export async function MyPlanSummary({
+  userId,
+  variant = "card",
+  dueCents,
+  headline,
+  children,
+}: {
+  userId: string;
+  variant?: "band" | "card" | "row";
+  /** Band only. The amount to show: the bill this person is about to pay (a group's combined bill is more than their own part). Null shows no amount (someone else pays). Left out, it is the plan's own price per bill. */
+  dueCents?: number | null;
+  /** Band only. Replaces the "Next bill" line while the plan has not started (waiting for its first payment). */
+  headline?: string | null;
+  /** Band only. The sheet under the band: the bill's one action. */
+  children?: ReactNode;
+}) {
   const plan = await getActivePaymentPlan(userId);
   if (!plan) return null;
   const left = await classesLeftInPaidMonth(plan);
@@ -25,6 +43,21 @@ export async function MyPlanSummary({ userId, variant = "card" }: { userId: stri
   const pausedText = isIndefinitePause(plan) || !plan.pauseUntil ? "Until the studio resumes it" : `Until ${dateOnly(plan.pauseUntil)}`;
   const when = daysToDue === 0 ? "today" : daysToDue === 1 ? "tomorrow" : `in ${daysToDue} days`;
   const classesLeft = `${left} ${left === 1 ? "class" : "classes"} left`;
+
+  if (variant === "band") {
+    const amountCents = dueCents === undefined ? plan.installmentAmountCents : dueCents;
+    const waiting = plan.installmentsPaid === 0;
+    return (
+      <HeroBand
+        eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+        title={paused ? "Paused" : waiting ? (headline ?? "First payment") : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
+        figure={paused || amountCents === null ? undefined : usd(amountCents)}
+        meta={<Meta items={[paused && pausedText, overdue && !paused && !waiting && "Overdue", classesLeft, `${plan.installmentsPaid} of ${plan.termMonths} bills paid`]} />}
+      >
+        {children}
+      </HeroBand>
+    );
+  }
 
   if (variant === "row") {
     return (

@@ -1,13 +1,18 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
-/** Mirrors Parent mode: the title, then one row per child: their name, their next class and a quiet line of facts. */
+/** Mirrors Parent mode: the title, the band, two tiles, then one row per child: their name, their next class and a quiet line of facts. */
 export default function ParentLoading() {
   return (
     <SkeletonScreen label="Loading parent mode">
       <WideLayout>
         <Skeleton className="h-3 w-16" />
         <Skeleton className="mt-2.5 h-10 w-52" />
+        <Skeleton className="mt-6 h-52 w-full rounded-sheet" />
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <Skeleton className="h-28 rounded-card" />
+          <Skeleton className="h-28 rounded-card" />
+        </div>
         <div className="mt-6 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center justify-between gap-3 px-4 py-3.5 md:px-5">

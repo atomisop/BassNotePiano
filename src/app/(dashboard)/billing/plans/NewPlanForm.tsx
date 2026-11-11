@@ -347,7 +347,7 @@ export function NewPlanForm({
       {/* The plan length: three plain cards with just the price, in the plan colours (they fade to the group colours with the switch). */}
       <div aria-hidden className="tier-wash" style={{ opacity: audience === "FAMILY" ? 1 : 0 }} />
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
+        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Plan length</p>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
@@ -394,11 +394,12 @@ export function NewPlanForm({
         )}
       </div>
 
-      {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
-      <div className="space-y-6">
+      {/* Tablets and computers: the people on the left, the weekly times on the right. Phones, and a plan for one person (which
+          has no people to list): one column, so the times never sit beside an empty half. */}
+      <div className={cn("grid grid-cols-1 gap-6 md:items-start md:gap-8", isFamily && "md:grid-cols-2")}>
+      <div className={cn("space-y-6", !isFamily && "hidden")}>
       {isFamily && (
-        <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+        <section aria-label="People on this plan" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
           {parent && !parent.only && (
             <div className="mb-4 flex items-center gap-2">
               {/* The same one-track switch as "Just me / Me and others": one highlight, so it is always clear which kind is on. */}
@@ -521,7 +522,7 @@ export function NewPlanForm({
       </div>
 
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
         {slotGone && (
           <p role="status" className="mb-2 text-small text-amber-300">
             The time you picked was just taken. Pick another one below.

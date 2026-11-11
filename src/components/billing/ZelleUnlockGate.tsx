@@ -23,6 +23,8 @@ export interface ZelleUnlockGateProps {
   /** Lets the screen notice the payment clearing on its own. */
   paymentId: string;
   onSubmitPayment: (payload: ZelleReferenceSubmission) => Promise<void>;
+  /** On a band's sheet: the "we are checking it" notice is drawn small, with no box of its own. Looks only. */
+  compact?: boolean;
 }
 
 export function ZelleUnlockGate({
@@ -35,6 +37,7 @@ export function ZelleUnlockGate({
   zelleHandle,
   paymentId,
   onSubmitPayment,
+  compact = false,
 }: ZelleUnlockGateProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(status === "AWAITING_TRANSFER" || status === "REJECTED");
@@ -70,7 +73,7 @@ export function ZelleUnlockGate({
     router.refresh();
   }
 
-  if (status === "PENDING_REVIEW") return <PaymentWaitNotice paymentId={paymentId} />;
+  if (status === "PENDING_REVIEW") return <PaymentWaitNotice paymentId={paymentId} compact={compact} />;
 
   return (
     <>
