@@ -526,11 +526,21 @@ on a computer on the screens whose `WideLayout` has `deckDesktop` (Streak, Leade
 grouped by left edge), and the columns run the full height (`content-start`, no `items-start`) so a stack stays pinned to the end of the page.
 Card grids (Roadmap's scales, the admin overview) keep normal scrolling on a computer.
 
+## Releases (added 2026-11-11, `docs/RELEASES.md`)
+
+Netlify bills 15 credits per production deploy, and merging 50 times in nine days used three quarters of a month's 1,000 credits ($9 plan, $5 per top-up). So production deploys from the **`release` branch**, not `main`: the
+`Release to production` workflow (`.github/workflows/release.yml`, `scripts/release-to-production.sh`, tested in `tests/releaseScript.test.ts`) fast-forwards `release` to `main` once a day at 08:17 UTC, only to a commit whose CI passed,
+and does nothing when nothing is new. The owner ships something at once from Actions > Release to production > Run workflow. Pull requests keep their free Netlify preview. A migration reaches the live database when the release builds, not when
+the PR merges. Never push to `release` by hand and never force it; the script refuses a `release` that holds anything `main` lacks. The one-time Netlify settings (Production branch `release`, Branch deploys only for `staging`, Deploy Previews for all pull
+requests) are in the doc: until they are set, Netlify still deploys `main` and the workflow is harmless.
+
 ## Workflow this session (and prior Claude sessions in this repo) actually follow
 
 1. Branch per unit of work, PR against `main`, `subscribe_pr_activity`,
    watch CI (Netlify's own deploy-preview check is typically the only
-   status check), merge (squash) once green and mergeable.
+   status check), merge (squash) once green and mergeable. **Merging does
+   not put it live** (see "Releases" below): never tell the owner it is
+   live just because it merged.
 2. If the assigned branch's PR was already merged, **restart it from the
    latest `main`** (`git fetch origin main && git checkout -B <branch>
    origin/main`) and cherry-pick only the genuinely new commits forward,

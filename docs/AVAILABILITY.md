@@ -6,7 +6,7 @@ problem, not just to read once. Plain language, concrete steps, no jargon
 left unexplained.
 
 The stack this all refers to: **GitHub** (code) → **Netlify** (hosting,
-auto-deploys on push to `main`) → **Neon** (the Postgres database) →
+deploys the `release` branch, which a daily job moves up to `main`, see `docs/RELEASES.md`) → **Neon** (the Postgres database) →
 **Cloudflare R2** (lesson videos/PDFs, avatars).
 
 ---

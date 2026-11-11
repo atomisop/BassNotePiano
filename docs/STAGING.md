@@ -32,7 +32,7 @@ payment email pipeline broke.
    `STAGING_SMOKE_TOKEN`, `MAILGUN_SIGNING_KEY`, `PAYMENT_INBOX_TOKEN` (the same values as in Netlify).
 
 ## Using it
-- Merge into `main` as usual. To try something before it goes live, push the branch to `staging`: `git push origin my-branch:staging --force`.
+- Merge into `main` as usual; it goes live with the next daily release (`docs/RELEASES.md`). To try something before it goes live, push the branch to `staging`: `git push origin my-branch:staging --force`.
 - Run the checks yourself: `npm run smoke` with the same values as environment variables (see the top of `scripts/smoke/run.mjs`).
 - The checks also run by themselves every night (`.github/workflows/staging-smoke.yml`) and from the Actions tab (Run workflow).
 - Try a bank email by hand: `node scripts/send-test-bank-email.mjs <staging address> <BNP-CODE> <amountCents> [pass|soft|fail]`.
