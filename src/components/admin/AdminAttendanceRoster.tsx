@@ -7,7 +7,7 @@ import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
 import { ClassMoveCancelButtons } from "@/components/admin/ClassRowActions";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { ClipboardCheck } from "@/components/ui/appIcons";
 import { NotifyPlaceToggle, useNotifyStudent } from "@/components/admin/NotifyToggle";
 import { Meta } from "@/components/ui/CardKit";

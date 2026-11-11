@@ -10,7 +10,7 @@ type Params = Record<string, string | string[] | undefined>;
  */
 export function SectionPills({ base, active, items, label }: { base: string; active: string | null; items: { label: string; value: string | null }[]; label: string }) {
   return (
-    <nav aria-label={label} className="mt-6">
+    <nav aria-label={label} className="md:mt-3">
       <div className={TAB_TRACK}>
         {items.map((item) => (
           <Link key={item.label} href={item.value ? `${base}?section=${item.value}` : base} aria-current={active === item.value ? "page" : undefined} className={tabItem(active === item.value)}>

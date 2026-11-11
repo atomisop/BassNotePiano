@@ -108,7 +108,7 @@ export default async function BillingHistoryPage(props: { searchParams: Promise<
   );
 
   type Payment = (typeof payments)[number];
-  const dateOf = (payment: Payment) => new Date(payment.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  const dateOf = (payment: Payment) => new Date(payment.createdAt).toLocaleDateString("en-US", { timeZone: "America/New_York", year: "numeric", month: "short", day: "numeric" });
 
   // The screen's one fact, in this order: a bill this person can pay right now (Pay is then one tap, at the top), a payment
   // we are still checking, or else the last thing they paid, with its receipt.

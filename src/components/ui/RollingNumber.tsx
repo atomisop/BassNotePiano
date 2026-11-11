@@ -14,10 +14,10 @@ import styles from "./RollingNumber.module.css";
 export function RollingNumber({ text, className = "" }: { text: string; className?: string }) {
   const chars = [...text];
   return (
-    <span className={`inline-flex tabular-nums ${className}`}>
+    <span className={`inline-flex items-baseline tabular-nums ${className}`}>
       {/* The one real copy of the price: read by screen readers and crawlers, and copyable. */}
       <span className="sr-only">{text}</span>
-      <span aria-hidden className="inline-flex select-none">
+      <span aria-hidden className="inline-flex items-baseline select-none">
         {chars.map((ch, i) => {
           const fromRight = chars.length - i;
           if (!/\d/.test(ch)) {
@@ -37,6 +37,9 @@ export function RollingNumber({ text, className = "" }: { text: string; classNam
 function Reel({ digit }: { digit: number }) {
   return (
     <span className="relative inline-block h-[1.15em] w-[1ch] overflow-hidden leading-[1.15]">
+      {/* A clipped box has no baseline of its own (it would sit on its bottom edge, so the digits rode above the words around them).
+          This unseen "0", drawn by CSS so the page text still holds the price once, gives the reel the digits' real baseline. */}
+      <span aria-hidden className="invisible before:content-['0']" />
       <motion.span className="absolute inset-x-0 top-0 block" initial={false} animate={{ y: `${-digit * 10}%` }} transition={SPRING.smooth}>
         <span className={styles.strip} style={{ display: "block" }} />
       </motion.span>

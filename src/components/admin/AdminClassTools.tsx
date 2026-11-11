@@ -12,7 +12,6 @@ import { formatEtShort } from "@/lib/classScheduleLabels";
 import { cancelUpcomingClassesAction, closeStudioDayAction, previewClosedDayAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { closeDayMovingClassesAction } from "@/app/(dashboard)/admin/schedule/weeklyTimeActions";
 import type { ClosedDayPreview } from "@/lib/adminClassTools";
-import { Hint } from "@/components/ui/Hint";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { addDaysYmd } from "@/lib/weeklyTimeRules";
 
@@ -178,7 +177,7 @@ export function AdminCloseDay() {
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Close the studio for a day">
         <NotifyToggle on={notify} onChange={setNotify} label="Notify the students" className="mb-3" />
         <div className="grid gap-4">
-          <p className="text-small text-slate-400"><Hint>Every class that day is canceled with no credit charged, or moved to another day if you pick Move them instead. The day is kept so nobody books it. Open it again by releasing it under Reserved.</Hint></p>
+          <p className="text-small text-slate-400">Every class that day is canceled with no credit charged, or moved to another day if you pick Move them instead. The day is kept so nobody books it. Open it again by releasing it under Reserved.</p>
           <label className="grid gap-1.5">
             <span className="text-small font-medium text-slate-200">Day</span>
             <input type="date" value={date} min={easternToday()} onChange={(e) => void pick(e.target.value)} className={field} />

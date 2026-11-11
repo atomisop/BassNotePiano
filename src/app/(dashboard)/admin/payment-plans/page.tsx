@@ -49,7 +49,7 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
       <div>
         <h1 className="sr-only">Plans</h1>
 
-        <div className="mt-6">
+        <div className="mt-3">
           <AdminFilterTabs
             label="Plan status"
             mobile="scroll"
@@ -62,7 +62,7 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
             }))}
           />
         </div>
-        <FigureLead className="mt-5" figure={feedback.length} label={`cancellation${feedback.length === 1 ? "" : "s"} with a reason`} />
+        <FigureLead className="mt-4" figure={feedback.length} label={`cancellation${feedback.length === 1 ? "" : "s"} with a reason`} />
 
         <PlanCancellationFeedbackList feedback={feedback} />
       </div>
@@ -83,7 +83,7 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
     <div>
       <h1 className="sr-only">Payment Plans</h1>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AdminFilterTabs
           label="Plan status"
           mobile="scroll"
@@ -98,7 +98,7 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
       </div>
       {/* The screen's one fact on one line, figure first: how many plans, what they bring in every 28 days, and who is late. */}
       <FigureLead
-        className="mt-5"
+        className="mt-4"
         figure={plans.length}
         tone={activeFilter === "OVERDUE" && plans.length > 0 ? "danger" : "default"}
         label={activeFilter === "ALL" ? `plan${plans.length === 1 ? "" : "s"}` : `${activeLabel.toLowerCase()} plan${plans.length === 1 ? "" : "s"}`}

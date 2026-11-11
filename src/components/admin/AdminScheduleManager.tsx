@@ -415,7 +415,13 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                   {live === 0 ? (
                     <span className="h-1 w-1 rounded-full bg-slate-50/15" />
                   ) : (
-                    Array.from({ length: Math.min(live, 4) }, (_, k) => <span key={k} className="h-1.5 w-1.5 rounded-full bg-signal" />)
+                    <>
+                      {Array.from({ length: Math.min(live, 4) }, (_, k) => (
+                        <span key={k} className="h-1.5 w-1.5 rounded-full bg-signal" />
+                      ))}
+                      {/* Four dots at most: a plus says there are more than the dots show. */}
+                      {live > 4 && <span className="text-[10px] font-semibold leading-none text-signal-fg">+</span>}
+                    </>
                   )}
                 </span>
               </button>

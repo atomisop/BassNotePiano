@@ -37,13 +37,13 @@ export async function DataView(props: { searchParams: Promise<{ tab?: string; q?
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Data<Hint className="ml-1.5">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</Hint></h1>
+      <h1 className="sr-only">Data<Hint className="ml-1.5">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</Hint></h1>
 
-      <div className="mt-5">
+      <div className="mt-3">
         <AdminFilterTabs label="Data views" iconOnly items={TABS.map((t) => ({ label: t.label, icon: t.icon, href: `/admin/security?section=data&tab=${t.value}`, active: tab === t.value }))} />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         {tab === "scales" && <ScalesView />}
         {tab === "people" && <PeopleView q={q} />}
         {tab === "collected" && <CollectedView />}
@@ -152,7 +152,7 @@ function ScaleCard({ scale: s }: { scale: ScaleReportRow }) {
       </div>
 
       {s.unlocked === 0 ? (
-        <p className="text-small text-slate-500"><Hint>Nobody has this scale open yet.</Hint></p>
+        <p className="text-small text-slate-500">Nobody has this scale open yet.</p>
       ) : (
         <ul className="grid gap-2.5" aria-label={`${s.code} checklist`}>
           {steps.map((step, i) => (
@@ -380,7 +380,7 @@ async function CollectedView() {
   const groups = await getCollectedInventory();
   return (
     <div className="grid gap-6">
-      <p className="max-w-2xl text-small text-slate-400"><Hint>Every kind of record the app keeps about people, grouped, with how many there are right now.</Hint></p>
+      <p className="max-w-2xl text-small text-slate-400">Every kind of record the app keeps about people, grouped, with how many there are right now.</p>
       <div className="grid gap-4 lg:grid-cols-2">
         {groups.map((g) => (
           <Card key={g.title} className="grid content-start gap-3">

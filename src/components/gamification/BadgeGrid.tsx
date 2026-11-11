@@ -70,7 +70,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
   const prefersReducedMotion = useReducedMotion();
   const [selected, setSelected] = useState<string | null>(null);
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {CATEGORY_ORDER.map((category) => {
         const badges = BADGES.filter((b) => b.category === category);
         const shown = badges.find((b) => b.code === selected) ?? null;

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Hint } from "@/components/ui/Hint";
 import { prisma } from "@/lib/prisma";
 import { groupSentNotices, listSentNotices, NOTICE_PAGE_SIZE, type NoticeAudience, type NoticeChannel } from "@/lib/adminNotices";
 import { buttonVariants } from "@/components/ui/button";
@@ -235,7 +234,7 @@ export async function SentView(props: { searchParams: Promise<{ q?: string; chan
         </>
       )}
 
-      <p className="mt-6 text-small text-slate-500"><Hint>Bell notices, Mail messages and emails are listed. Delivered, opened and bounced come from Resend once its webhook is set up; emails are kept here for 180 days.</Hint></p>
+      <p className="mt-6 text-small text-slate-500">Bell notices, Mail messages and emails are listed. Delivered, opened and bounced come from Resend once its webhook is set up; emails are kept here for 180 days.</p>
     </div>
   );
 }

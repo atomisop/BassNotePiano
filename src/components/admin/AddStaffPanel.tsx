@@ -6,6 +6,7 @@ import type { StaffCandidate, StaffLookup } from "@/lib/staffAdd";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { Avatar } from "@/components/ui/Avatar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { Plus } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
 
@@ -80,7 +81,8 @@ export function AddStaffPanel({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      <button type="button" onClick={() => setOpen(true)} data-keep-chrome="" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+        <Plus aria-hidden className="h-4 w-4" />
         Add staff
       </button>
     );

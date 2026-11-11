@@ -41,8 +41,8 @@ export default function GlobalError({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0c0c0c",
-          color: "#F5F5F5",
+          background: "#241c18",
+          color: "#FAF6EE",
           fontFamily:
             "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
           padding: "24px",
@@ -59,7 +59,7 @@ export default function GlobalError({
               // call-to-action. The reload button below is the one real CTA
               // on this page, so it's the one thing here that keeps the
               // accent color.
-              color: "#F5F5F5",
+              color: "#FAF6EE",
               fontWeight: 600,
             }}
           >
@@ -76,7 +76,7 @@ export default function GlobalError({
           >
             The app failed to start.
           </h1>
-          <p style={{ margin: "14px 0 0", fontSize: 15, lineHeight: 1.6, color: "#AAAAAA" }}>
+          <p style={{ margin: "14px 0 0", fontSize: 15, lineHeight: 1.6, color: "#BAAE9F" }}>
             This is a fault on our side. Your account and progress are unaffected.
           </p>
 
@@ -100,8 +100,8 @@ export default function GlobalError({
               // Neutral, not accent, the "premium black and white" pass
               // now covers real CTAs too, so nothing in the app fills a
               // button with the accent gradient anymore.
-              background: "#F5F5F5",
-              color: "#0A0A0A",
+              background: "#FAF6EE",
+              color: "#241C18",
               padding: "11px 22px",
               fontSize: 14,
               fontWeight: 600,
@@ -111,7 +111,7 @@ export default function GlobalError({
           </button>
 
           {error.digest && (
-            <p style={{ margin: "28px 0 0", fontSize: 12, color: "#888888" }}>
+            <p style={{ margin: "28px 0 0", fontSize: 12, color: "#AA9E8F" }}>
               Reference: {error.digest}
             </p>
           )}

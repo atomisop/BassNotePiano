@@ -86,13 +86,13 @@ export function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
   const waiting = ADMIN_HUBS.reduce((sum, hub) => sum + hubWaiting(hub, badges), 0);
 
   return (
-    <div className="mb-2 md:hidden">
+    <div className="md:hidden [&:not(:last-child)]:mb-2">
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`Admin menu, you are in ${current.label}${waiting > 0 ? `, ${waiting} waiting` : ""}`}
-        className="tap press-soft flex h-11 w-full items-center gap-2.5 rounded-full bg-neu-base px-4 text-left text-small font-medium text-slate-100 shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="tap press-soft flex h-11 w-full items-center gap-2.5 rounded-full bg-neu-base px-4 text-left text-small font-medium text-slate-100 shadow-raised-low ring-1 ring-inset ring-slate-50/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <CurrentIcon className="h-4 w-4 shrink-0 text-signal-fg" strokeWidth={2.1} aria-hidden />
         <span className="min-w-0 flex-1 truncate">{current.label}</span>

@@ -11,7 +11,6 @@ import { toast } from "@/components/ui/Toaster";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { listCreditGrantsAction, setCreditExpiryAction } from "@/app/(dashboard)/admin/users/[userId]/actions";
 import type { LiveCreditGrant } from "@/lib/adminAccountTools";
-import { Hint } from "@/components/ui/Hint";
 
 const SOURCE: Record<string, string> = { PAYMENT_PLAN_INSTALLMENT: "From a plan payment", ADMIN_ADJUSTMENT: "Given by the studio", CLASS_CREDITS: "Bought", FAMILY_BUNDLE: "Family bundle", PRE_LEDGER_BALANCE: "Older balance" };
 const ymd = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
@@ -60,7 +59,7 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
             Loading credits
           </div>
         ) : grants.length === 0 ? (
-          <p className="text-small text-slate-300"><Hint>No unused credits right now.</Hint></p>
+          <p className="text-small text-slate-300">No unused credits right now.</p>
         ) : (
           <ul className="grid gap-3">
             {grants.map((g) => {

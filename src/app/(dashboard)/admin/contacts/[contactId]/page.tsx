@@ -39,7 +39,7 @@ export default async function AdminContactPage(props: { params: Promise<{ contac
   return (
     <div>
       <BackToContacts />
-      <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{contact.name}</h1>
+      <h1 className="mt-3 px-1 text-headline font-semibold text-balance text-slate-50">{contact.name}</h1>
       <div className="mt-6 grid gap-4">
         <ContactAccountCard contactId={contact.id} email={contact.email} account={account} heldTimes={heldTimes} onSendSignUp={sendContactSignUpAction} />
         <Card>

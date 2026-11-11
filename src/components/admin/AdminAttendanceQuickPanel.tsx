@@ -13,7 +13,6 @@ import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
-import { Hint } from "@/components/ui/Hint";
 
 const POLL_INTERVAL_MS = 30_000;
 // Present and Absent stay greyed out until this long before the class starts.
@@ -258,7 +257,7 @@ export function AdminAttendanceQuickPanel() {
             {loading && rows.length === 0 ? (
               <PulsatingDots className="mt-3 justify-start px-1" />
             ) : groups.length === 0 ? (
-              <p className="mt-3 px-1 text-small text-slate-500"><Hint>No bookings left this week.</Hint></p>
+              <p className="mt-3 px-1 text-small text-slate-500">No bookings left this week.</p>
             ) : (
               <div className="mt-3 space-y-2.5">
                 {groups.map((group) => {

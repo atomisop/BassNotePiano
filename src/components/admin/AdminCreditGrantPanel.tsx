@@ -9,7 +9,7 @@ import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjus
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { Coins } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { Meta } from "@/components/ui/CardKit";

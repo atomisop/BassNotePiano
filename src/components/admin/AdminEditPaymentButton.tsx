@@ -1,6 +1,5 @@
 "use client";
 
-import { Hint } from "@/components/ui/Hint";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "@/components/ui/appIcons";
@@ -47,7 +46,7 @@ export function AdminEditPaymentButton({ paymentId, amountCents, paidAt }: { pay
       </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Correct this payment">
         <div className="grid gap-4">
-          <p className="text-small text-slate-400"><Hint>For a payment recorded with the wrong amount or day. Only the record changes: the classes and credits it paid for stay as they are. The student is not told, and the change is in the activity log.</Hint></p>
+          <p className="text-small text-slate-400">For a payment recorded with the wrong amount or day. Only the record changes: the classes and credits it paid for stay as they are. The student is not told, and the change is in the activity log.</p>
           <label className="grid gap-1.5">
             <span className="text-small font-medium text-slate-200">Amount (dollars)</span>
             <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className={field} />

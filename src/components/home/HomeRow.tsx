@@ -19,7 +19,7 @@ export function HomeRowInner({ icon, title, detail, trailing }: { icon: ReactNod
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-body font-semibold text-slate-50">{title}</span>
+        <span className="line-clamp-2 text-body font-semibold leading-snug text-slate-50">{title}</span>
         {detail && <span className="block truncate text-small text-slate-500">{detail}</span>}
       </span>
       {trailing && <span className="shrink-0">{trailing}</span>}

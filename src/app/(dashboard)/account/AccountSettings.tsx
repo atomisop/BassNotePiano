@@ -388,7 +388,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
             className="mt-0.5"
             items={[
               account.username ? `@${account.username}` : "No username",
-              `Member since ${new Date(account.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`,
+              `Member since ${new Date(account.createdAt).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" })}`,
             ]}
           />
           <Link href="/profile" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>

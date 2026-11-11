@@ -1,5 +1,4 @@
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
-import { Hint } from "@/components/ui/Hint";
 import { countUpcomingClasses, getAdminPayments, locateAdminPayment } from "@/lib/payments";
 import { adminPaymentsHref, readAdminPaymentsParams, type PaymentFilterValue } from "@/lib/adminPaymentLinks";
 import { prisma } from "@/lib/prisma";
@@ -93,7 +92,7 @@ export default async function AdminPaymentsPage(
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AdminFilterTabs
           label="Payment status"
           mobile="scroll"
@@ -110,7 +109,7 @@ export default async function AdminPaymentsPage(
       {/* The screen's one fact, figure first on one line (a band would push the payments down a phone): how many are waiting for the
           owner, or how many the chosen status holds. The export sits quietly at its right. */}
       <FigureLead
-        className="mt-5"
+        className="mt-4"
         figure={total}
         label={waitingView ? (total === 0 ? "waiting, all clear" : "waiting for your approval") : `payment${total === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`}
         meta={
@@ -189,14 +188,14 @@ export default async function AdminPaymentsPage(
 
 function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" | "credits" | "check"; unmatched: number; owner: boolean }) {
   return (
-    <div className="mt-6">
+    <div className="md:mt-3">
       <AdminFilterTabs
         label="Payments section"
         iconOnly
         items={[
-          { label: "Zelle payments", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
-          { label: "Unmatched emails", icon: <Mail />, badge: unmatched, href: "/admin/payments?tab=emails", active: active === "emails" },
-          { label: "Class credits", icon: <Ticket />, href: "/admin/payments?tab=credits", active: active === "credits" },
+          { label: "Payments", selectLabel: "Zelle payments", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
+          { label: "Emails", selectLabel: "Unmatched emails", icon: <Mail />, badge: unmatched, href: "/admin/payments?tab=emails", active: active === "emails" },
+          { label: "Credits", selectLabel: "Class credits", icon: <Ticket />, href: "/admin/payments?tab=credits", active: active === "credits" },
           // The owner's money check lives here too (2026-11-10): what does not add up, with a fix for each.
           ...(owner ? [{ label: "Check", icon: <ShieldCheck />, href: "/admin/payments?tab=check", active: active === "check" }] : []),
         ]}
@@ -220,7 +219,7 @@ async function EmailsTab() {
         tone={rows.length > 0 ? "warning" : "default"}
         label={rows.length === 0 ? "unmatched, all clear" : `bank email${rows.length === 1 ? "" : "s"} matched no one`}
       />
-      <p className="mt-2 max-w-[70ch] px-1 text-small text-slate-500"><Hint>These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</Hint></p>
+      <p className="mt-2 max-w-[70ch] px-1 text-small text-slate-500">These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open payment for the same amount, find the student when their bill is not open yet, or dismiss it if it is not a studio payment.</p>
       <div className="mt-6">
         <UnmatchedEmailList
           rows={rows.map((r) => ({

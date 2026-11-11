@@ -217,7 +217,8 @@ export function ClassRegistrationForm() {
         <p id="reg-instrument-label" className="mb-1.5 text-small font-medium text-slate-400">
           Instrument
         </p>
-        <div className="flex flex-wrap gap-2">
+        {/* An even grid on phones (two equal columns, an odd last one across both), the loose row from sm up. */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap max-sm:[&>button:last-child:nth-child(odd)]:col-span-2 max-sm:[&>button]:justify-center">
           {INSTRUMENTS.map((opt) => (
             <Pill
               key={opt.value}

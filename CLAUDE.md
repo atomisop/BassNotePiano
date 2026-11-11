@@ -399,7 +399,7 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
 
 - **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
   the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
-- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.
+- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is a deeper burnt orange in the light theme and a lighter one in the dark theme, so it passes contrast in both. Backgrounds and borders stay `bg-signal` / `border-signal`, and a label on an orange fill is `text-signal-ink` (espresso, 5.0:1; cream or white on this orange is only 3.1:1, and globals.css turns a stray `text-white` / `text-slate-950` on `bg-signal` into the ink).
 
 - **Pull to refresh** (`PullToRefreshMain`, touch screens only): the finger drives the page and the spinner through refs (no React state per touch move), on a rubber-band curve, with the
   browser's own bounce switched off while pulling (a non-passive `touchmove`). Twelve spokes light up as you pull and become the fading ring while it refreshes (the "iOS Spinner" idea from
@@ -517,6 +517,14 @@ buttons), one orange accent. Tailwind's own size and radius names land on the sa
 custom names. Use token classes (`text-slate-50/80`, `bg-signal/16`), never `text-[rgb(var(--c-s-50))]` or a px size. A control with its own
 solid fill (`bg-signal`, `bg-amber-*`, `bg-red-*`, `bg-white`) is left out of the glass lens (`SOLID_FILL` in `GlassButtons.tsx` and the
 matching CSS rule); add any new solid fill there too, or the lens paints over it.
+
+**Palette (2026-11-11, owner): three colours, 60 / 30 / 10.** Cream Linen (60%: page `#EFE8DC`, cards `#FAF6EE`), Espresso Bean (30%: `#3B2F2A`, deepest
+`#241C18`) and Burnt Orange (10%, the one accent: exactly `#E8641E`, `--signal`). The light theme (id `paper`) is Linen: cream page, warm off-white cards,
+espresso text. The dark theme (id `ink`, still the default) is Espresso: `#241C18` page, `#2F2520` cards, `#3B2F2A` lift, cream text. Every neutral is
+warm, in `themes.css` (the `--c-s-*` ramps, mirrored in `marketing.css`) and `globals.css` (`--ground`, `--neu-*`, shadows, glass, the dock); Tailwind's
+`white` / `black` are a cream white and an espresso black; there is no blue-gray or pure gray, and the pill tints (`tint-*`) are warm too. Red leans to
+crimson so a late bill never reads as the accent. Emails, the offline page and the manifest use the same three colours. The roadmap artwork gradients
+(`ROADMAP_ARTWORKS`), the drawn piano keys and fretboard, photos and logo files are unchanged on purpose. Contrast for every text pair is in `DESIGN.md`.
 
 ## Card deck on computers (added 2026-10-30)
 
@@ -704,11 +712,11 @@ card (it waits for a later visit), and only while the tab is visible. "Maybe lat
 The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
 grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
-its `::before` in globals.css; milky white with near-black icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
+its `::before` in globals.css; a smoky espresso tint with cream icons on Ink, milky cream with espresso icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
 current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
 down shrinks the whole pill in both directions (a scale anchored at its bottom). The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
-down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted white pill with dark icons on Paper and a dark glass pill with light icons on Ink; never hard-code dock colors.
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted cream pill with espresso icons on Paper and a smoky espresso glass pill with cream icons on Ink; never hard-code dock colors.
 
 ## Notify student switch and Reschedule (added 2026-10-31)
 

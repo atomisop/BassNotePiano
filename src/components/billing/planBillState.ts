@@ -60,6 +60,18 @@ export function planBillState(plan: PlanBillPlan, installment: PlanBillInstallme
 /** Who pays a group plan and how, as one short paragraph. */
 export function groupPlanSentence(group: PlanBillGroup): string {
   const memberView = !group.isPayer;
+  // One person on the plan (a parent paying for one child): there is no "everyone else", so the sentence only says who pays.
+  if (group.memberCount < 2) {
+    const payer = group.payerName ?? "The person who set it up";
+    const lead = memberView
+      ? group.waitingForStart
+        ? `Your classes start when ${group.payerName ?? "the person who set it up"} sends the first payment. There is nothing for you to pay.`
+        : `${payer} pays your 28-day bill from their own bank account. You never have to pay it yourself.`
+      : group.waitingForStart
+        ? "The plan starts when this first payment arrives, and it must come from your own bank account."
+        : "You pay the 28-day bill from your own bank account.";
+    return lead + (group.weeklyTime ? ` Your weekly class: ${group.weeklyTime}.` : "");
+  }
   const lead = memberView
     ? group.waitingForStart
       ? `This is a group plan for ${group.memberCount} accounts. Your classes start when ${group.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`

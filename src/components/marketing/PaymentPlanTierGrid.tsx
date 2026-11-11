@@ -27,7 +27,7 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "TERM_6", label: "6 Months" },
 ];
 
-/** The card that gets the purple glow and the rising stars (a marketing choice, not the lowest price). */
+/** The card that gets the orange glow and the rising stars (a marketing choice, not the lowest price). */
 const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
 
 /**
@@ -39,18 +39,19 @@ const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
 const TIER_LOOK: Record<"MONTHLY" | "TERM_3" | "TERM_6", { tag: string; solo: Look; family: Look }> = {
   MONTHLY: {
     tag: "No commitment",
-    solo: { tint: "rgb(70 105 200)", accent: "rgb(165 195 255)", glow: "rgb(120 160 255)" },
+    solo: { tint: "rgb(150 124 104)", accent: "rgb(239 232 220)", glow: "rgb(207 197 182)" },
     family: { tint: "rgb(214 150 70)", accent: "rgb(255 205 150)", glow: "rgb(255 170 90)" },
   },
   TERM_3: {
     tag: "3 payments",
-    solo: { tint: "rgb(140 140 40)", accent: "rgb(225 232 120)", glow: "rgb(200 210 80)" },
+    solo: { tint: "rgb(176 132 60)", accent: "rgb(244 212 130)", glow: "rgb(232 176 64)" },
     family: { tint: "rgb(225 170 40)", accent: "rgb(255 224 120)", glow: "rgb(255 205 70)" },
   },
   TERM_6: {
     tag: "6 payments",
-    solo: { tint: "rgb(120 80 210)", accent: "rgb(200 175 255)", glow: "rgb(170 130 255)" },
-    family: { tint: "rgb(226 78 42)", accent: "rgb(255 150 105)", glow: "rgb(255 105 55)" },
+    // The featured card wears the one accent, Burnt Orange (it was purple, a second accent the design system does not have).
+    solo: { tint: "rgb(232 100 30)", accent: "rgb(244 136 74)", glow: "rgb(232 100 30)" },
+    family: { tint: "rgb(204 82 20)", accent: "rgb(250 160 110)", glow: "rgb(240 110 50)" },
   },
 };
 type Look = { tint: string; accent: string; glow: string };

@@ -8,7 +8,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     <div data-surface="app" className="relative flex h-dvh flex-col overflow-y-auto overscroll-contain">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(160,78,30,0.07),_transparent_60%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(232,100,30,0.07),_transparent_60%)]"
       />
       <header className="relative flex items-center gap-2.5 px-6 py-6">
         <BrandLogo height={24} className="text-slate-50" />

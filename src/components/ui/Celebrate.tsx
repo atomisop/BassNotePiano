@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 const PIECES = 28;
-const COLORS = ["rgb(var(--signal))", "#f5f5f5", "#fbbf24", "#60a5fa", "#f472b6"];
+const COLORS = ["rgb(var(--signal))", "#faf6ee", "#e8b040", "#b98c6c", "#f4884a"];
 
 /**
  * A short burst of confetti for a moment that deserves one (a finished practice day). Pure CSS, no library, hidden from assistive

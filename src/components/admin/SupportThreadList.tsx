@@ -7,7 +7,7 @@ import { getSupportThreadsAction, type AdminThreadSummary } from "@/app/(dashboa
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { LifeBuoy } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Meta } from "@/components/ui/CardKit";
@@ -51,7 +51,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
           )}
           <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
-        <span className="shrink-0 text-caption tabular-nums text-slate-500">{relativeTime(thread.createdAt)}</span>
+        <span suppressHydrationWarning className="shrink-0 text-caption tabular-nums text-slate-500">{relativeTime(thread.createdAt)}</span>
       </div>
       {thread.subject && <p className={`truncate text-small ${thread.hasUnread ? "text-slate-200" : "text-slate-400"}`}>{thread.subject}</p>}
       {thread.lastMessage && (

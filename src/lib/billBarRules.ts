@@ -12,16 +12,23 @@ export interface BillBarText {
 /** Late days 1 and 2 say the payment is missing; from day 3 the bar counts down to the lock. */
 export const LATE_WARNING_DAYS = 2;
 
-function startOfDay(d: Date): number {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+function startOfDay(d: Date, timeZone?: string): number {
+  if (!timeZone) return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  // The calendar day in a named time zone, as a plain day number (only differences between two of these are used).
+  const [y, m, day] = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(d).split("-").map(Number);
+  return Date.UTC(y, m - 1, day);
 }
 
-export function billBarText(bill: { amountCents: number; dueDate: string; lapseAfterDays: number }, now: Date): BillBarText {
+/**
+ * `timeZone` is only for the very first paint: the server and the browser must write the same words before the page comes alive, so
+ * both use the studio's clock there. Without it (every later render) the days are the viewer's own.
+ */
+export function billBarText(bill: { amountCents: number; dueDate: string; lapseAfterDays: number }, now: Date, timeZone?: string): BillBarText {
   const amount = `$${(bill.amountCents / 100).toFixed(2)}`;
   const due = new Date(bill.dueDate);
-  const daysLeft = Math.round((startOfDay(due) - startOfDay(now)) / 86_400_000);
+  const daysLeft = Math.round((startOfDay(due, timeZone) - startOfDay(now, timeZone)) / 86_400_000);
   if (daysLeft >= 0) {
-    const when = daysLeft === 0 ? "today" : daysLeft === 1 ? "tomorrow" : `on ${due.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`;
+    const when = daysLeft === 0 ? "today" : daysLeft === 1 ? "tomorrow" : `on ${due.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone })}`;
     return { stage: "reminder", title: "Your next bill is ready", body: `${amount} is due ${when}. Pay any time before then to keep your classes going.` };
   }
   const late = -daysLeft;

@@ -7,7 +7,7 @@ import { Sparkles } from "@/components/ui/appIcons";
 // can wear the exact same border; the button itself is unchanged apart from
 // making its label, click handler and a few button props configurable.
 // Kept faint on purpose: Atom and the Ask AI button sit on the app surface, so a hint of warmth is enough.
-export const AI_HALO = "0 0 8px 0 rgb(251 138 92 / 0.14)";
+export const AI_HALO = "0 0 8px 0 rgb(232 100 30 / 0.14)";
 
 export function AiBorder({
   rounded = "rounded-full",

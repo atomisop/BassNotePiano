@@ -35,17 +35,19 @@ async function script(a: Act<S>) {
 
 export function PricingBento({ pricing = DEFAULT_PRICING }: { pricing?: PricingConfig }) {
   const rates = TERMS.map((t) => calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, t, pricing))
-  const off = [0, Math.round(pricing.term3DiscountRate * 100), Math.round(pricing.term6DiscountRate * 100)]
+  // The saving a person really gets: the price they pay against the 1 Month price. The configured rate (20%) is taken BEFORE the price
+  // is rounded up to end in 4.99 or 9.99, so quoting the rate overstated it and disagreed with the plan cards above (18%).
+  const off = rates.map((r) => Math.max(0, Math.round((1 - r.installmentAmountCents / rates[0].installmentAmountCents) * 100)))
   return (
     <Stage
       width={880}
       height={420}
-      compact={{ below: 600, width: 358, height: 560 }}
+      compact={{ below: 600, width: 358, height: 460 }}
       initial={initial}
       poster={POSTER}
       script={script}
       theme="dark"
-      cursor={{ at: { wide: { x: 470, y: 330 }, compact: { x: 320, y: 440 } }, style: 'arrow' }}
+      cursor={{ at: { wide: { x: 470, y: 330 }, compact: { x: 320, y: 346 } }, style: 'arrow' }}
       className="bnp-look pb"
     >
       {(s, _rect, layout) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
@@ -16,8 +17,12 @@ import { cn } from "@/lib/utils";
 export function BillBar() {
   const bill = useMeStatus()?.billDue;
   const pathname = usePathname();
+  // The words depend on the viewer's calendar day, which the server cannot know. The first paint uses the studio's clock on both
+  // sides (so the page hydrates cleanly), then the viewer's own day takes over.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   if (!bill) return null;
-  const text = billBarText(bill, new Date());
+  const text = billBarText(bill, new Date(), mounted ? undefined : "America/New_York");
   const urgent = text.stage !== "reminder";
   const Icon = urgent ? AlertTriangle : CreditCard;
   return (

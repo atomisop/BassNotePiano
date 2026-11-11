@@ -17,7 +17,7 @@ import { Toaster as SileoToaster, sileo, type SileoOptions } from "sileo";
  * are overridden in globals.css to the app's (paper text for success, red for
  * errors), because green means "tap this" only.
  */
-const FALLBACK_FILL = "rgb(21 21 21)";
+const FALLBACK_FILL = "rgb(47 37 32)";
 
 function readToastFill(): string {
   const raw = getComputedStyle(document.documentElement).getPropertyValue("--neu-base").trim();

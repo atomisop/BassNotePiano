@@ -12,12 +12,13 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { CreditCard } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { cn } from "@/lib/utils";
 import { CardFoot, CardHead, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { toast } from "@/components/ui/Toaster";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { RemindButton } from "@/components/admin/RemindButton";
 import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
@@ -35,11 +36,15 @@ export interface PaymentPlanListProps {
   emptyMessage?: string;
 }
 
+const STUDIO_TIME_ZONE = "America/New_York";
+
 /** "Nov 23", with the year only when it is not this year: a date speaks for itself, so it needs no "Date:" label. */
 function shortDate(value: Date | string): string {
   const d = new Date(value);
-  const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  // Always the studio's Eastern day, the same day the person's own page shows, whatever zone the browser (or the server) is in.
+  const year = (x: Date) => x.toLocaleDateString("en-US", { year: "numeric", timeZone: STUDIO_TIME_ZONE });
+  const sameYear = year(d) === year(new Date());
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: STUDIO_TIME_ZONE, ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 function formatUsd(cents: number) {
@@ -363,48 +368,72 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 </div>
               </div>
             ) : (
-              <CardFoot className="justify-between">
+              <>
+              <CardFoot className="flex-nowrap justify-between max-[359px]:flex-wrap">
                 {/* The destructive action sits alone at the far end from the everyday ones, quiet, so it is never tapped by mistake. */}
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 shrink-0 text-red-300 hover:text-red-200" })}
                 >
                   Cancel plan
                 </button>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  {/* The fixed "your payment is overdue" notice, once a day at most, right from the row. */}
-                  {plan.isOverdue && <RemindButton kind="overdue" userId={plan.user.id} name={name.split(" ")[0]} />}
-                  <Link href={`/admin/users/${plan.user.id}#scheduler`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                    Schedule
-                  </Link>
-                  {canRecord && !noRecord && recordingId !== plan.id && (
+                {/* One everyday action stays in view (Remind when the bill is late, otherwise Resend bill); with three or more the rest fold
+                    into More, so the foot is always one tidy row: Cancel plan at the left, the everyday actions at the right. */}
+                {(() => {
+                  const schedule = (
+                    <Link key="schedule" href={`/admin/users/${plan.user.id}#scheduler`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                      Schedule
+                    </Link>
+                  );
+                  const record =
+                    canRecord && !noRecord && recordingId !== plan.id ? (
+                      <button
+                        key="record"
+                        type="button"
+                        onClick={() => {
+                          setRecordError(null);
+                          setRecordFix(null);
+                          setRecordingId(plan.id);
+                        }}
+                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                      >
+                        Record payment
+                      </button>
+                    ) : null;
+                  const resend = onResendBill ? (
                     <button
-                      type="button"
-                      onClick={() => {
-                        setRecordError(null);
-                        setRecordFix(null);
-                        setRecordingId(plan.id);
-                      }}
-                      className={buttonVariants({ variant: "ghost", size: "sm" })}
-                    >
-                      Record payment
-                    </button>
-                  )}
-                  {onResendBill && (
-                    <button
+                      key="resend"
                       type="button"
                       onClick={() => handleResend(plan.id)}
                       disabled={busyId === plan.id}
-                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                      className={buttonVariants({ variant: plan.isOverdue ? "ghost" : "secondary", size: "sm" })}
                     >
                       {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}
                     </button>
-                  )}
-                </div>
-                {billNote?.id === plan.id && <p className={`basis-full text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
+                  ) : null;
+                  // The fixed "your payment is overdue" notice, once a day at most, right from the row.
+                  const remind = plan.isOverdue ? <RemindButton key="remind" kind="overdue" userId={plan.user.id} name={name.split(" ")[0]} /> : null;
+                  const lead = remind ?? resend;
+                  const rest = [schedule, record, remind ? resend : null].filter(Boolean);
+                  const fold = rest.length + (lead ? 1 : 0) > 2;
+                  return (
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+                      {fold ? (
+                        <ActionMenu label="More" align="right">
+                          {rest}
+                        </ActionMenu>
+                      ) : (
+                        rest
+                      )}
+                      {lead}
+                    </div>
+                  );
+                })()}
               </CardFoot>
+              {billNote?.id === plan.id && <p className={`mt-2 text-right text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
+              </>
             ))}
         </article>
         );

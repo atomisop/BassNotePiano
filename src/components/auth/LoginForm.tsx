@@ -320,7 +320,7 @@ export function LoginForm({
           />
         </div>
         <div>
-          <div className="mb-1 flex items-center justify-between">
+          <div className="mb-1 flex items-baseline justify-between">
             <Label htmlFor={embedded ? "panel-password" : "password"} className={fieldLabel}>
               Password
             </Label>

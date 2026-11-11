@@ -263,8 +263,8 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             // Ink scrim, not navy: the spotlight still has to darken a light
             // page to isolate its target, so this is one of the few places
             // that stays genuinely dark in the paper system.
-            boxShadow: "0 0 0 9999px rgba(26,21,15,0.62)",
-            border: "2px solid rgba(160,78,30,0.85)",
+            boxShadow: "0 0 0 9999px rgba(36,28,24,0.62)",
+            border: "2px solid rgba(232,100,30,0.85)",
           }}
         />
       ) : (

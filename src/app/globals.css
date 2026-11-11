@@ -40,10 +40,19 @@
 
   --color-emerald-300: rgb(var(--c-em-300));
   --color-emerald-400: rgb(var(--c-em-400));
+  --color-emerald-500: rgb(var(--c-em-400));
 
+  /* 200 and 600 used to fall through to Tailwind's own reds (a hover tone and the solid Delete button); they are the theme's now. */
+  --color-red-200: rgb(var(--c-rd-200));
+  --color-red-600: rgb(var(--c-rd-600));
   --color-red-300: rgb(var(--c-rd-300));
   --color-red-400: rgb(var(--c-rd-400));
   --color-red-500: rgb(var(--c-rd-500));
+
+  /* Tailwind's `white` and `black` (text on photos and coloured bands, veils, scrims) lean warm too: a soft cream white and an
+     espresso black, so no pure neutral is left. A veil such as `from-black/30` is as dark as it was. */
+  --color-white: #fffcf7;
+  --color-black: #140e0b;
 
   --color-ink: rgb(var(--c-ink));
   --color-surface: rgb(var(--c-surface-solid));
@@ -85,21 +94,21 @@
        front (the controls, closest to the finger).
      ========================================================================== */
 
-  /* Signal orange (the logo color). `--signal` / `--signal-ink` are set per data-mode below. */
+  /* Signal: Burnt Orange, #E8641E. `--signal` / `--signal-ink` are set per data-mode below. */
   --color-signal: rgb(var(--signal));
   --color-signal-ink: rgb(var(--signal-ink));
-  /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
+  /* The signal orange AS TEXT. A deeper burnt orange in the light theme (the accent itself is only about 3:1 on cream) and a lighter one in the dark theme (the accent is under 4.5:1 on a brown card). */
   --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
-  /* Fixed colours that are not part of the theme ramps: Discord's own brand blue, the dock's unread dot, the near-black text on
-     the white Roadmap button, and the drawn iPhone's titanium rim (the same in both themes). */
+  /* Fixed colours that are not part of the theme ramps: Discord's own brand blue, the dock's unread dot, the espresso text on
+     the white Roadmap button, and the drawn iPhone's rim, a warm bronze titanium (the same in both themes). */
   --color-discord: #5865f2;
   --color-unread: #ff3040;
-  --color-on-white: #1d1a22;
-  --color-titanium: #3a3a3d;
-  --color-titanium-hi: #5a5a5e;
-  --color-titanium-mid: #2b2b2d;
-  --color-titanium-lo: #4a4a4d;
+  --color-on-white: #241c18;
+  --color-titanium: #3f3632;
+  --color-titanium-hi: #5f534c;
+  --color-titanium-mid: #2f2622;
+  --color-titanium-lo: #4e433d;
 
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
@@ -147,8 +156,8 @@
   --radius-card: 1rem;
   --radius-sheet: 1.5rem;
 
-  /* The marketing pages' warm cream text (one colour; it was typed as a hex 17 times). */
-  --color-cream: #e1e0cc;
+  /* The marketing pages' cream text: Cream Linen (one colour; it was typed as a hex 17 times). */
+  --color-cream: #efe8dc;
 
   /* Depth planes. Values come from per-mode variables below so a light
      page gets lighter shadows than a dark one. */
@@ -346,7 +355,7 @@
    frost where the browser can still apply one, and a faint light along the top. */
 @utility glass-menu {
   background-color: rgb(var(--c-surface-solid) / 0.93);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 40%);
+  background-image: linear-gradient(180deg, rgb(255 250 242 / 0.06), transparent 40%);
   border: 1px solid var(--elev-border);
   border-radius: var(--surface-radius);
   box-shadow: var(--elev-shadow);
@@ -600,9 +609,9 @@
   border: 1px solid rgb(var(--cta-bg, var(--primary)) / 0.5);
   color: rgb(var(--cta-ink, var(--primary-foreground)));
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-    0 6px 16px -6px rgba(0, 0, 0, 0.4);
+    inset 0 1px 1px rgba(255, 250, 242, 0.25),
+    inset 0 -1px 1px rgba(16, 11, 9, 0.12),
+    0 6px 16px -6px rgba(16, 11, 9, 0.4);
   /* Real dimensional feedback, not just a brightness tint. Direct
      instruction ("almost impossible to tell if I need to click it or
      not"): lifts on hover, presses down on click, same -2px/+1px and
@@ -613,17 +622,17 @@
     filter: brightness(1.1);
     transform: translateY(-2px);
     box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.25),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-      0 10px 24px -8px rgba(0, 0, 0, 0.5);
+      inset 0 1px 1px rgba(255, 250, 242, 0.25),
+      inset 0 -1px 1px rgba(16, 11, 9, 0.12),
+      0 10px 24px -8px rgba(16, 11, 9, 0.5);
   }
   &:active {
     filter: brightness(0.95);
     transform: translateY(1px);
     box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.25),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-      0 2px 8px -4px rgba(0, 0, 0, 0.4);
+      inset 0 1px 1px rgba(255, 250, 242, 0.25),
+      inset 0 -1px 1px rgba(16, 11, 9, 0.12),
+      0 2px 8px -4px rgba(16, 11, 9, 0.4);
   }
 }
 
@@ -1071,64 +1080,65 @@
     --knob-stretch: 1.12; /* rule 5 */
   }
 
-  /* Neumorphic base + the two shadow colors, per mode. Dark is near-black
-     ground (#111111, the Claude app's) with cards a step lighter, so the light-side shadow has room to show. Light is a soft
-     gray, darker than paper white, for the same reason. */
+  /* The base surfaces and the two shadow colors, per mode (the palette is in themes.css: Cream Linen, Espresso Bean, Burnt Orange).
+     Dark (Espresso) is a deep brown page with cards a step lighter; light (Linen) is a cream page with warm off-white cards. */
   [data-mode="dark"] {
-    --ground: 0 0 0; /* the page itself: true black, like apple.com's dark bands */
-    --neu-base: 22 22 23; /* cards and panels, a step above the ground */
-    --neu-lift: 29 29 31;
+    --ground: 36 28 24; /* #241C18, the page */
+    --neu-base: 47 37 32; /* #2F2520, cards and panels, a step above the page */
+    --neu-lift: 59 47 42; /* #3B2F2A, Espresso Bean: a card inside a card, hover */
     /* Buttons, chips, toggles AND cards share one soft light-and-shade depth (see --neu-raised-*). */
-    --neu-hi: rgb(255 255 255 / 0.04);
-    --neu-lo: rgb(0 0 0 / 0.55);
-    --neu-top: rgb(255 255 255 / 0.05);
-    --neu-edge: rgb(255 255 255 / 0.12);
+    --neu-hi: rgb(255 250 242 / 0.04);
+    --neu-lo: rgb(16 11 9 / 0.55);
+    --neu-top: rgb(255 250 242 / 0.05);
+    --neu-edge: rgb(255 250 242 / 0.12);
     /* A text field's outline: strong enough to read as a field (3:1 against the card it sits on, WCAG 1.4.11). */
-    --field-edge: rgb(255 255 255 / 0.36);
-    --signal: var(--c-a-400);
-    --signal-ink: 26 20 14;
-    --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
-    --signal-fg: var(--c-a-400);
-    /* Pastel tints for pills and chips (classes, practice, payments). A soft wash of the hue over the card, and a light ink. */
-    --tint-purple-bg: rgb(167 139 250 / 0.2);
-    --tint-purple-fg: rgb(205 195 255);
-    --tint-green-bg: rgb(74 222 128 / 0.16);
-    --tint-green-fg: rgb(150 235 185);
-    --tint-peach-bg: rgb(251 146 60 / 0.2);
-    --tint-peach-fg: rgb(255 200 150);
-    --tint-blue-bg: rgb(96 165 250 / 0.2);
-    --tint-blue-fg: rgb(165 210 255);
-    --tint-pink-bg: rgb(248 113 113 / 0.2);
-    --tint-pink-fg: rgb(255 175 175);
-    --tint-yellow-bg: rgb(250 204 21 / 0.18);
-    --tint-yellow-fg: rgb(250 220 120);
+    --field-edge: rgb(250 246 238 / 0.4);
+    --signal: 232 100 30; /* #E8641E, Burnt Orange */
+    /* The label on an orange fill is espresso (5.0:1). Cream on this orange is 3.1:1, so it is never the label. */
+    --signal-ink: 36 28 24;
+    --signal-glow: 0 0 0 1px rgb(var(--signal) / 0.35), 0 10px 28px -8px rgb(var(--signal) / 0.45);
+    --signal-fg: 244 136 74; /* #F4884A: 6.8:1 on the page, 6.0:1 on a card, 4.9:1 on an orange-tinted card */
+    /* Soft tints for pills and chips (classes, practice, payments), all from the palette's own warm family: mocha, linen, orange,
+       honey, plus the two state hues (green, rose). A soft wash of the hue over the card, and a light ink. */
+    --tint-purple-bg: rgb(190 140 108 / 0.24);
+    --tint-purple-fg: rgb(238 208 186);
+    --tint-green-bg: rgb(110 207 130 / 0.16);
+    --tint-green-fg: rgb(170 230 185);
+    --tint-peach-bg: rgb(232 100 30 / 0.22);
+    --tint-peach-fg: rgb(250 190 150);
+    --tint-blue-bg: rgb(239 232 220 / 0.14);
+    --tint-blue-fg: rgb(239 232 220);
+    --tint-pink-bg: rgb(250 112 122 / 0.2);
+    --tint-pink-fg: rgb(255 180 184);
+    --tint-yellow-bg: rgb(232 176 64 / 0.18);
+    --tint-yellow-fg: rgb(244 212 130);
   }
 
   [data-mode="light"] {
-    --ground: 235 235 239; /* a step darker than apple.com's #f5f5f7 so the white cards stand out clearly */
-    --neu-base: 255 255 255; /* cards are white on that gray */
-    --neu-lift: 255 255 255;
-    --neu-hi: rgb(255 255 255 / 0.95);
-    --neu-lo: rgb(140 140 158 / 0.38);
-    --neu-top: rgb(255 255 255 / 0.9);
-    --neu-edge: rgb(0 0 0 / 0.16);
-    --field-edge: rgb(0 0 0 / 0.45);
-    --signal: var(--c-a-400);
-    --signal-ink: 26 20 14;
-    --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
-    --signal-fg: 156 54 18; /* #9c3612: 4.7:1 or better on every light surface, including the orange-tinted ones */
-    --tint-purple-bg: rgb(222 219 252);
-    --tint-purple-fg: rgb(59 54 128);
-    --tint-green-bg: rgb(205 238 219);
-    --tint-green-fg: rgb(31 107 69);
-    --tint-peach-bg: rgb(255 224 194);
-    --tint-peach-fg: rgb(138 74 20);
-    --tint-blue-bg: rgb(212 236 250);
-    --tint-blue-fg: rgb(29 90 133);
-    --tint-pink-bg: rgb(251 211 211);
-    --tint-pink-fg: rgb(138 47 47);
-    --tint-yellow-bg: rgb(253 238 192);
-    --tint-yellow-fg: rgb(111 84 16);
+    --ground: 239 232 220; /* #EFE8DC, Cream Linen: the page */
+    --neu-base: 250 246 238; /* #FAF6EE, cards are a warm off-white on that cream */
+    --neu-lift: 255 252 247;
+    --neu-hi: rgb(255 252 246 / 0.95);
+    --neu-lo: rgb(150 128 106 / 0.38);
+    --neu-top: rgb(255 252 246 / 0.9);
+    --neu-edge: rgb(36 28 24 / 0.16);
+    --field-edge: rgb(36 28 24 / 0.5);
+    --signal: 232 100 30; /* #E8641E, Burnt Orange */
+    --signal-ink: 36 28 24;
+    --signal-glow: 0 0 0 1px rgb(var(--signal) / 0.3), 0 10px 24px -10px rgb(var(--signal) / 0.5);
+    --signal-fg: 150 50 10; /* #96320A: 6.2:1 on the page, 7.1:1 on a card, 5.9:1 on an orange-tinted card */
+    --tint-purple-bg: rgb(228 208 190);
+    --tint-purple-fg: rgb(84 54 38);
+    --tint-green-bg: rgb(212 232 208);
+    --tint-green-fg: rgb(26 86 48);
+    --tint-peach-bg: rgb(252 220 196);
+    --tint-peach-fg: rgb(124 44 8);
+    --tint-blue-bg: rgb(226 217 201);
+    --tint-blue-fg: rgb(59 47 42);
+    --tint-pink-bg: rgb(248 212 214);
+    --tint-pink-fg: rgb(128 14 36);
+    --tint-yellow-bg: rgb(246 228 180);
+    --tint-yellow-fg: rgb(100 72 10);
   }
 
   /* Shapes are two shadows: light from the top-left, shade to the
@@ -1596,7 +1606,7 @@
   width: 3px;
   height: 3px;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.8);
+  background: rgb(255 250 242 / 0.8);
   animation: link-star 2.6s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1717,27 +1727,27 @@ body:has([data-surface="app"]) {
    own stylesheet at runtime (after this one), so these selectors are doubled
    up to win on specificity. */
 :root:root {
-  --sileo-state-success: rgb(var(--c-s-50, 250 250 250));
-  --sileo-state-error: rgb(248 113 113);
-  --sileo-state-warning: rgb(251 191 36);
-  --sileo-state-info: rgb(var(--c-s-300, 203 213 225));
-  --sileo-state-loading: rgb(var(--c-s-400, 148 163 184));
-  --sileo-state-action: rgb(var(--c-s-50, 250 250 250));
+  --sileo-state-success: rgb(var(--c-s-50, 250 246 238));
+  --sileo-state-error: rgb(250 112 122);
+  --sileo-state-warning: rgb(245 164 114);
+  --sileo-state-info: rgb(var(--c-s-300, 207 197 182));
+  --sileo-state-loading: rgb(var(--c-s-400, 186 174 159));
+  --sileo-state-action: rgb(var(--c-s-50, 250 246 238));
 }
 :root:root[data-mode="light"] {
-  /* Light-red and amber are too faint on the light surface (under 3:1). */
-  --sileo-state-error: rgb(185 28 28);
-  --sileo-state-warning: rgb(180 83 9);
+  /* The pale rose and peach are too faint on the light surface (under 3:1): the theme's own deep red and warning brown. */
+  --sileo-state-error: rgb(168 22 46);
+  --sileo-state-warning: rgb(140 60 14);
 }
 [data-sileo-viewport][data-position] {
   z-index: var(--z-toast);
 }
 [data-sileo-viewport] [data-sileo-svg] {
   /* The body is the same colour as the page ground, so it needs a lift. */
-  filter: drop-shadow(0 10px 24px rgb(0 0 0 / 0.35)) drop-shadow(0 0 0.5px rgb(var(--c-s-400, 148 163 184) / 0.6));
+  filter: drop-shadow(0 10px 24px rgb(16 11 9 / 0.35)) drop-shadow(0 0 0.5px rgb(var(--c-s-400, 186 174 159) / 0.6));
 }
 [data-sileo-viewport] [data-sileo-description] {
-  color: rgb(var(--c-s-300, 203 213 225)) !important;
+  color: rgb(var(--c-s-300, 207 197 182)) !important;
 }
 
 /* Sileo draws every toast 350px wide (a fixed number in its code). On phones narrower than that plus its edge gap the
@@ -1903,12 +1913,12 @@ input[type="radio"],
    is a gradient that moves by transform, so it costs no layout. Reduced motion gets a still block. */
 :root,
 [data-mode="dark"] {
-  --skeleton-base: rgb(255 255 255 / 0.07);
-  --skeleton-shine: rgb(255 255 255 / 0.13);
+  --skeleton-base: rgb(255 250 242 / 0.07);
+  --skeleton-shine: rgb(255 250 242 / 0.13);
 }
 [data-mode="light"] {
-  --skeleton-base: rgb(0 0 0 / 0.07);
-  --skeleton-shine: rgb(255 255 255 / 0.75);
+  --skeleton-base: rgb(16 11 9 / 0.07);
+  --skeleton-shine: rgb(255 250 242 / 0.75);
 }
 .skeleton {
   position: relative;
@@ -2020,18 +2030,18 @@ input[type="radio"],
    of light, and every blur is cheap. Anywhere the system asks for reduced transparency it becomes a plain solid control.
    --------------------------------------------------------------------------- */
 :root {
-  --lg-body-top: rgb(255 255 255 / 0.16);
-  --lg-body-bottom: rgb(255 255 255 / 0.05);
-  --lg-edge: rgb(255 255 255 / 0.42);
-  --lg-glow: rgb(255 255 255 / 0.1);
-  --lg-drop: rgb(0 0 0 / 0.42);
+  --lg-body-top: rgb(255 250 242 / 0.16);
+  --lg-body-bottom: rgb(255 250 242 / 0.05);
+  --lg-edge: rgb(255 250 242 / 0.42);
+  --lg-glow: rgb(255 250 242 / 0.1);
+  --lg-drop: rgb(16 11 9 / 0.42);
 }
 [data-mode="light"] {
-  --lg-body-top: rgb(255 255 255 / 0.7);
-  --lg-body-bottom: rgb(255 255 255 / 0.32);
-  --lg-edge: rgb(255 255 255 / 0.95);
-  --lg-glow: rgb(255 255 255 / 0.5);
-  --lg-drop: rgb(40 40 60 / 0.16);
+  --lg-body-top: rgb(255 250 242 / 0.7);
+  --lg-body-bottom: rgb(255 250 242 / 0.32);
+  --lg-edge: rgb(255 250 242 / 0.95);
+  --lg-glow: rgb(255 250 242 / 0.5);
+  --lg-drop: rgb(59 47 42 / 0.16);
 }
 
 @utility liquid {
@@ -2040,26 +2050,26 @@ input[type="radio"],
   backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
   box-shadow:
     inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 0 0 1px rgb(255 250 242 / 0.1),
     inset 0 -6px 10px -8px var(--lg-glow),
     0 5px 14px -8px var(--lg-drop);
 }
 .liquid:active {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.2),
-    inset 0 0 0 1px rgb(255 255 255 / 0.08),
-    inset 0 3px 8px rgb(0 0 0 / 0.28);
+    inset 0 1px 0 rgb(255 250 242 / 0.2),
+    inset 0 0 0 1px rgb(255 250 242 / 0.08),
+    inset 0 3px 8px rgb(16 11 9 / 0.28);
 }
 
 /* The main action: orange glass, the same light on its edge. */
 @utility liquid-signal {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0) 55%),
+    linear-gradient(180deg, rgb(255 250 242 / 0.42), rgb(255 250 242 / 0) 55%),
     rgb(var(--cta-bg, var(--primary)));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.65),
-    inset 0 0 0 1px rgb(255 255 255 / 0.18),
-    inset 0 -7px 12px -8px rgb(255 255 255 / 0.4),
+    inset 0 1px 0 rgb(255 250 242 / 0.65),
+    inset 0 0 0 1px rgb(255 250 242 / 0.18),
+    inset 0 -7px 12px -8px rgb(255 250 242 / 0.4),
     0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
 }
 
@@ -2074,7 +2084,7 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class
   backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
   box-shadow:
     inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 0 0 1px rgb(255 250 242 / 0.1),
     inset 0 -6px 10px -8px var(--lg-glow),
     0 5px 14px -8px var(--lg-drop);
 }
@@ -2190,7 +2200,7 @@ html[data-theme-fade] *::after {
    Behind it the page is only softly blurred, not grayed out.
    --------------------------------------------------------------------------- */
 .cmd-scrim {
-  background: rgb(0 0 0 / 0.04);
+  background: rgb(16 11 9 / 0.04);
   -webkit-backdrop-filter: blur(6px) saturate(1.1);
   backdrop-filter: blur(6px) saturate(1.1);
 }
@@ -2262,10 +2272,10 @@ html[data-kb-motion="off"] .cmd-window {
   --lg-refraction: 1;
   --lg-dispersion: 1;
   --lg-blur: 1.5px;
-  --lg-ring: rgb(255 255 255 / 0.28);
+  --lg-ring: rgb(255 250 242 / 0.28);
 }
 [data-mode="light"] {
-  --lg-ring: rgb(120 200 255 / 0.5);
+  --lg-ring: rgb(59 47 42 / 0.3);
 }
 /* Active or pressed glass gets a faint outer ring, like the back button in Apple's own shots. */
 .lg-ring {
@@ -2289,10 +2299,10 @@ html[data-kb-motion="off"] .cmd-window {
 
 /* The body color of sheets, dialogs and the search window: glass that stays readable (mostly opaque; the lens still bends the edge). */
 :root {
-  --lg-sheet-tint: rgb(26 26 28 / 0.8);
+  --lg-sheet-tint: rgb(42 33 28 / 0.8);
 }
 [data-mode="light"] {
-  --lg-sheet-tint: rgb(250 250 253 / 0.8);
+  --lg-sheet-tint: rgb(250 246 238 / 0.8);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2318,10 +2328,10 @@ html[data-kb-motion="off"] .cmd-window {
     3px 3px 8px var(--glass-lo, transparent) !important;
 }
 :root {
-  --lg-fill: rgb(255 255 255 / 0.07);
+  --lg-fill: rgb(255 250 242 / 0.07);
 }
 [data-mode="light"] {
-  --lg-fill: rgb(255 255 255 / 0.6);
+  --lg-fill: rgb(255 250 242 / 0.6);
 }
 .lg-glass.liquid-signal {
   background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
@@ -2350,10 +2360,10 @@ html[data-kb-motion="off"] .cmd-window {
 
 /* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
 :root {
-  --lg-hairline: rgb(255 255 255 / 0.14);
+  --lg-hairline: rgb(255 250 242 / 0.14);
 }
 [data-mode="light"] {
-  --lg-hairline: rgb(0 0 0 / 0.1);
+  --lg-hairline: rgb(16 11 9 / 0.1);
 }
 
 /* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
@@ -2410,7 +2420,7 @@ html[data-kb-motion="off"] .cmd-window {
    The card material inside the app: 3D glass. Solid cards on a plain page, with the neumorphic depth the app started with (light from
    the top left, shade to the bottom right) plus a glass rim and sheen. Every card, panel, button and field still uses the same classes
    (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*); only what those mean changes here:
-     - the page is a soft near-black (dark) or light gray (light), cards are one solid step lighter (dark) or white (light);
+     - the page is deep espresso (dark) or cream linen (light), cards are one solid step lighter (dark) or a warm off-white (light);
      - "raised" lifts off the page (two soft shadows, a bright top rim, a faint dark bottom edge) and lays a faint wash over the fill,
        so a card inside a card is one more step lighter and still reads as its own box;
      - "pressed" (fields, wells, a held control) sinks in: a soft inner shadow and a faint shade over the fill.
@@ -2418,23 +2428,23 @@ html[data-kb-motion="off"] .cmd-window {
    --------------------------------------------------------------------------- */
 [data-surface="app"],
 body:has([data-surface="app"]) {
-  /* Sampled from the owner's reference app: page #121212, cards #222121, dock #333. Cards are solid: stacked cards (the phone card
+  /* Espresso: page #241C18, cards #2F2520, the lift and the dock #3B2F2A. Cards are solid: stacked cards (the phone card
      deck) must never show the one behind through them. */
-  --ground: 18 18 18;
-  --neu-base: 27 26 26;
-  --neu-lift: 38 37 37;
+  --ground: 36 28 24;
+  --neu-base: 47 37 32;
+  --neu-lift: 59 47 42;
   --neu-alpha: 1;
-  --card-wash: rgb(255 255 255 / 0.035);
-  --card-shade: rgb(0 0 0 / 0.24);
-  --card-line: rgb(255 255 255 / 0.07);
+  --card-wash: rgb(255 250 242 / 0.035);
+  --card-shade: rgb(16 11 9 / 0.24);
+  --card-line: rgb(255 250 242 / 0.07);
   /* 3D glass (2026-10-30): the neumorphic light-and-shade the owner liked, on the glass. Light from the top left, shade to the
      bottom right, a bright rim along the top edge and a faint dark one along the bottom (the thickness of the glass), and a soft
      sheen across the face (--glass-sheen, see the rule below). */
-  --glass-hi: rgb(255 255 255 / 0.07);
-  --glass-lo: rgb(0 0 0 / 0.72);
-  --glass-rim: rgb(255 255 255 / 0.13);
-  --glass-floor: rgb(0 0 0 / 0.35);
-  --glass-sheen: linear-gradient(158deg, rgb(255 255 255 / 0.09) 0%, rgb(255 255 255 / 0.02) 38%, transparent 62%);
+  --glass-hi: rgb(255 250 242 / 0.07);
+  --glass-lo: rgb(16 11 9 / 0.72);
+  --glass-rim: rgb(255 250 242 / 0.13);
+  --glass-floor: rgb(16 11 9 / 0.35);
+  --glass-sheen: linear-gradient(158deg, rgb(255 250 242 / 0.09) 0%, rgb(255 250 242 / 0.02) 38%, transparent 62%);
   --glass-edge3d: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-floor);
   --neu-hi: var(--card-line);
   --neu-lo: var(--card-line);
@@ -2460,24 +2470,25 @@ body:has([data-surface="app"]) {
 }
 [data-mode="light"] [data-surface="app"],
 [data-mode="light"] body:has([data-surface="app"]) {
-  --ground: 242 242 245;
-  --neu-base: 255 255 255;
-  --neu-lift: 255 255 255;
+  /* Linen: page #EFE8DC, cards #FAF6EE. */
+  --ground: 239 232 220;
+  --neu-base: 250 246 238;
+  --neu-lift: 255 252 247;
   --neu-alpha: 1;
-  --card-wash: rgb(0 0 0 / 0.018);
-  --card-shade: rgb(0 0 0 / 0.045);
-  --card-line: rgb(0 0 0 / 0.07);
+  --card-wash: rgb(16 11 9 / 0.018);
+  --card-shade: rgb(16 11 9 / 0.045);
+  --card-line: rgb(16 11 9 / 0.07);
   /* Light mode is flat (2026-10-30, owner: "too much glow"): no white highlight and no wide soft shadow around cards, buttons or the
      dock; a hairline edge and a tight 1px shadow are all that separate them from the page. */
   --glass-hi: transparent;
-  --glass-lo: rgb(0 0 0 / 0.06);
-  --glass-rim: rgb(255 255 255 / 0.6);
-  --glass-floor: rgb(0 0 0 / 0.04);
+  --glass-lo: rgb(16 11 9 / 0.06);
+  --glass-rim: rgb(255 250 242 / 0.6);
+  --glass-floor: rgb(16 11 9 / 0.04);
   --glass-sheen: none;
   --neu-raised-low: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
   --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 2px var(--glass-lo);
   --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), inset 0 0 0 1px var(--card-line), 0 1px 3px var(--glass-lo);
-  --neu-float: 0 8px 24px -12px rgb(0 0 0 / 0.18);
+  --neu-float: 0 8px 24px -12px rgb(16 11 9 / 0.18);
   --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
   --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
   --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade), inset 0 0 0 1px var(--card-line);
@@ -2490,10 +2501,10 @@ body:has([data-surface="app"]) {
 /* No glow under the main (orange or white) buttons in light mode either. */
 [data-mode="light"] .liquid-signal,
 [data-mode="light"] .lg-glass.liquid-signal {
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06) !important;
+  box-shadow: inset 0 0 0 1px rgb(16 11 9 / 0.06) !important;
 }
 [data-mode="light"] .liquid {
-  box-shadow: inset 0 0 0 1px var(--card-line, rgb(0 0 0 / 0.07));
+  box-shadow: inset 0 0 0 1px var(--card-line, rgb(16 11 9 / 0.07));
 }
 /* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
    picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
@@ -2505,25 +2516,25 @@ body:has([data-surface="app"]) {
    the gray text ramp turns white, the accent turns white (buttons become white pills with dark ink, rings and ticks go white) and
    wells and rows become a faint white tint, so everything reads on the color. */
 .color-tile {
-  background: linear-gradient(158deg, rgb(255 255 255 / 0.14) 0%, rgb(255 255 255 / 0.03) 40%, transparent 62%),
+  background: linear-gradient(158deg, rgb(255 250 242 / 0.14) 0%, rgb(255 250 242 / 0.03) 40%, transparent 62%),
     linear-gradient(150deg, var(--tile-from) 0%, var(--tile-via) 58%, var(--tile-to) 100%);
   color: #fff;
   --c-s-50: 255 255 255;
-  --c-s-100: 250 249 251;
-  --c-s-200: 242 240 244;
-  --c-s-300: 236 233 238;
-  --c-s-400: 222 218 226;
-  --c-s-500: 204 199 209;
-  --c-s-600: 186 181 192;
-  --c-s-800: 0 0 0;
-  --c-s-950: 24 20 28;
+  --c-s-100: 252 250 246;
+  --c-s-200: 246 242 235;
+  --c-s-300: 240 235 226;
+  --c-s-400: 228 221 210;
+  --c-s-500: 210 202 190;
+  --c-s-600: 192 183 170;
+  --c-s-800: 16 11 9;
+  --c-s-950: 36 28 24;
   --c-ink: 255 255 255;
   --signal: 255 255 255;
   --signal-fg: 255 255 255;
-  --signal-ink: 24 20 28;
+  --signal-ink: 36 28 24;
   --cta-bg: 255 255 255;
-  --cta-ink: 24 20 28;
-  --lg-fill: rgb(255 255 255 / 0.16);
+  --cta-ink: 36 28 24;
+  --lg-fill: rgb(255 250 242 / 0.16);
   --neu-base: 255 255 255;
   --neu-alpha: 0.13;
 }
@@ -2545,33 +2556,34 @@ body:has([data-surface="app"]) .glass-surface-modal {
 
 /* The bottom dock: a solid pill with a light blur, and a darker capsule behind the page you are on. */
 .app-dock {
-  background: rgb(51 51 51 / 0.9);
+  background: rgb(59 47 42 / 0.9);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
   backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+  box-shadow: inset 0 0 0 1px rgb(255 250 242 / 0.06), 0 12px 32px -12px rgb(16 11 9 / 0.7);
 }
 .app-dock-active {
-  background: rgb(24 24 24 / 0.8);
+  background: rgb(30 23 20 / 0.8);
 }
 [data-mode="light"] .app-dock {
-  background: rgb(255 255 255 / 0.92);
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+  background: rgb(250 246 238 / 0.92);
+  box-shadow: inset 0 0 0 1px rgb(16 11 9 / 0.06), 0 10px 28px -12px rgb(59 47 42 / 0.3);
 }
 [data-mode="light"] .app-dock-active {
-  background: rgb(0 0 0 / 0.07);
+  background: rgb(16 11 9 / 0.07);
 }
 /* The dock: an exact copy of Instagram's floating tab bar (measured from the owner's screenshots, 2026-10-31, after the lens version
-   drew as a square grey bar). A dark smoky tint over a heavy frost, a glass rim that is brightest along the top, a soft drop shadow, and a
-   light capsule behind the current tab. White icons on Ink, near-black on Paper. Keep this look unless the owner asks. */
+   drew as a square grey bar). A smoky espresso tint over a heavy frost, a glass rim that is brightest along the top, a soft drop shadow, and a
+   light capsule behind the current tab. Cream icons on Ink, espresso on Paper (recoloured 2026-11-11 with the Linen / Espresso palette; the
+   shape and the glass are unchanged). Keep this look unless the owner asks. */
 .ig-dock {
   isolation: isolate;
   corner-shape: round;
-  background: rgb(78 80 88 / 0.5);
+  background: rgb(84 68 60 / 0.5);
   -webkit-backdrop-filter: blur(10px) saturate(1.6);
   backdrop-filter: blur(10px) saturate(1.6);
-  box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.25);
-  --ig-icon: rgb(255 255 255);
-  --dock-cut: rgb(78 78 81);
+  box-shadow: 0 10px 30px -8px rgb(16 11 9 / 0.65), 0 2px 6px rgb(16 11 9 / 0.25);
+  --ig-icon: rgb(250 246 238);
+  --dock-cut: rgb(84 69 62);
 }
 /* The rim: a 1px ring, bright at the top, faint down the sides, catching a little light again along the bottom curve. */
 .ig-dock::before {
@@ -2581,7 +2593,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   z-index: -1;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.62) 0%, rgb(255 255 255 / 0.18) 30%, rgb(255 255 255 / 0.1) 65%, rgb(255 255 255 / 0.3) 100%);
+  background: linear-gradient(180deg, rgb(255 250 242 / 0.62) 0%, rgb(255 250 242 / 0.18) 30%, rgb(255 250 242 / 0.1) 65%, rgb(255 250 242 / 0.3) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -2592,8 +2604,8 @@ body:has([data-surface="app"]) .glass-surface-modal {
    thin rainbow fringe where the light splits. */
 .ig-dock-active {
   corner-shape: round;
-  background: rgb(0 0 0 / 0.18);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  background: rgb(16 11 9 / 0.18);
+  box-shadow: inset 0 0 0 1px rgb(255 250 242 / 0.07), inset 0 1px 0 rgb(255 250 242 / 0.05);
 }
 /* The live lens (DockLens in AppDock.tsx): its own bent copy of the icons sits inside a slightly lighter clear capsule. */
 .ig-lens-live {
@@ -2602,15 +2614,15 @@ body:has([data-surface="app"]) .glass-surface-modal {
   scale: 0.84 0.72;
   transition: opacity 160ms ease, scale 360ms var(--ease-ios);
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.42),
-    0 6px 14px -6px rgb(0 0 0 / 0.5);
+    0 0 0 1px rgb(16 11 9 / 0.42),
+    0 6px 14px -6px rgb(16 11 9 / 0.5);
 }
 .ig-lens-clip {
   background: radial-gradient(90% 70% at 50% 30%, rgb(var(--ig-lens-bg) / 1), rgb(var(--ig-lens-bg-edge) / 1));
 }
 .ig-lens-sheen {
   corner-shape: round;
-  box-shadow: inset 0 8px 6px -6px rgb(0 0 0 / 0.5), inset 0 -8px 6px -6px rgb(0 0 0 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 8px 6px -6px rgb(16 11 9 / 0.5), inset 0 -8px 6px -6px rgb(16 11 9 / 0.4), inset 0 0 0 1px rgb(255 250 242 / 0.1);
 }
 .ig-lens-live::after {
   content: "";
@@ -2618,7 +2630,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.5) 0%, rgb(255 255 255 / 0) 24%, rgb(255 255 255 / 0) 76%, rgb(255 255 255 / 0.28) 100%);
+  background: linear-gradient(180deg, rgb(255 250 242 / 0.5) 0%, rgb(255 250 242 / 0) 24%, rgb(255 250 242 / 0) 76%, rgb(255 250 242 / 0.28) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -2628,12 +2640,12 @@ body:has([data-surface="app"]) .glass-surface-modal {
   scale: 1;
 }
 .ig-dock {
-  --ig-lens-bg: 70 74 82;
-  --ig-lens-bg-edge: 62 66 74;
+  --ig-lens-bg: 78 63 56;
+  --ig-lens-bg-edge: 66 53 47;
 }
 [data-mode="light"] .ig-dock {
-  --ig-lens-bg: 246 246 249;
-  --ig-lens-bg-edge: 232 232 238;
+  --ig-lens-bg: 250 246 238;
+  --ig-lens-bg-edge: 236 229 216;
 }
 .ig-dock-active {
   transition: background-color 200ms ease, box-shadow 200ms ease;
@@ -2653,22 +2665,22 @@ body:has([data-surface="app"]) .glass-surface-modal {
   background: rgb(255 48 64);
 }
 [data-mode="light"] .ig-dock {
-  background: rgb(222 223 229 / 0.55);
-  box-shadow: 0 10px 30px -10px rgb(30 30 60 / 0.28), 0 2px 6px rgb(30 30 60 / 0.08);
-  --ig-icon: rgb(10 10 12);
-  --dock-cut: rgb(226 226 230);
+  background: rgb(232 224 210 / 0.55);
+  box-shadow: 0 10px 30px -10px rgb(59 47 42 / 0.28), 0 2px 6px rgb(59 47 42 / 0.08);
+  --ig-icon: rgb(36 28 24);
+  --dock-cut: rgb(233 226 213);
 }
 [data-mode="light"] .ig-dock::before {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.95) 0%, rgb(0 0 0 / 0.06) 40%, rgb(0 0 0 / 0.06) 70%, rgb(255 255 255 / 0.6) 100%);
+  background: linear-gradient(180deg, rgb(255 250 242 / 0.95) 0%, rgb(16 11 9 / 0.06) 40%, rgb(16 11 9 / 0.06) 70%, rgb(255 250 242 / 0.6) 100%);
 }
 [data-mode="light"] .ig-dock-active {
   background:
-    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.3) 60%, rgb(0 0 0 / 0.04) 100%),
-    rgb(0 0 0 / 0.03);
-  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.16), inset 0 1px 1px rgb(255 255 255 / 0.9), 0 8px 16px -8px rgb(30 30 60 / 0.3);
+    radial-gradient(120% 90% at 50% 0%, rgb(255 250 242 / 0.9), rgb(255 250 242 / 0.3) 60%, rgb(16 11 9 / 0.04) 100%),
+    rgb(16 11 9 / 0.03);
+  box-shadow: 0 0 0 0.5px rgb(16 11 9 / 0.16), inset 0 1px 1px rgb(255 250 242 / 0.9), 0 8px 16px -8px rgb(59 47 42 / 0.3);
 }
 [data-mode="light"] .ig-dock-active::after {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.95) 0%, rgb(0 0 0 / 0.05) 30%, rgb(0 0 0 / 0.05) 70%, rgb(255 255 255 / 0.6) 100%);
+  background: linear-gradient(180deg, rgb(255 250 242 / 0.95) 0%, rgb(16 11 9 / 0.05) 30%, rgb(16 11 9 / 0.05) 70%, rgb(255 250 242 / 0.6) 100%);
 }
 
 
@@ -2708,8 +2720,8 @@ body {
   z-index: 70;
   height: 3px;
   border-radius: 0 999px 999px 0;
-  background: linear-gradient(90deg, rgb(var(--c-a-400) / 0.55), rgb(var(--c-a-400)));
-  box-shadow: 0 0 10px rgb(var(--c-a-400) / 0.55);
+  background: linear-gradient(90deg, rgb(var(--signal) / 0.55), rgb(var(--signal)));
+  box-shadow: 0 0 10px rgb(var(--signal) / 0.55);
   transform: scaleX(0);
   transform-origin: left;
   pointer-events: none;
@@ -2772,14 +2784,14 @@ body {
   inset-inline: -0.75rem;
   z-index: -1;
   border-radius: 16px;
-  background: rgb(var(--neu-base, 22 22 23) / 0.92);
-  border: 1px solid rgb(255 255 255 / 0.07);
-  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.18);
+  background: rgb(var(--neu-base, 47 37 32) / 0.92);
+  border: 1px solid rgb(255 250 242 / 0.07);
+  box-shadow: 0 16px 28px -14px rgb(16 11 9 / 0.55), 0 2px 6px rgb(16 11 9 / 0.18);
   transition: opacity 380ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 [data-mode="light"] .deck-header::after {
-  border-color: rgb(0 0 0 / 0.06);
-  box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.22), 0 2px 6px rgb(0 0 0 / 0.08);
+  border-color: rgb(16 11 9 / 0.06);
+  box-shadow: 0 16px 28px -14px rgb(16 11 9 / 0.22), 0 2px 6px rgb(16 11 9 / 0.08);
 }
 .deck-header[data-stuck]::before,
 .deck-header[data-stuck]::after {
@@ -2795,7 +2807,7 @@ body {
 /* Admin on phones: the section bar and its tabs are rendered inside the top card (AdminBarSlot.tsx). The bar is a card inside the card,
    one step lighter. */
 [data-bar-slot] > div > button:first-child {
-  background: rgb(var(--neu-lift, 34 34 36));
+  background: rgb(var(--neu-lift, 59 47 42));
 }
 
 /* The card deck on phones and tablets (Home, Roadmap, the admin overview): instead of a list that scrolls away, each `.deck-card`
@@ -2807,20 +2819,20 @@ body {
   [data-deck-desktop] .deck-card {
     position: sticky;
     top: var(--deck-top, 72px);
-    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
+    filter: drop-shadow(0 -10px 14px rgb(16 11 9 / 0.38));
   }
   [data-mode="light"] [data-deck-desktop] .deck-card {
-    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
+    filter: drop-shadow(0 -1px 0 rgb(16 11 9 / 0.08));
   }
 }
 @media (max-width: 1023px) {
   .deck-card {
     position: sticky;
     top: var(--deck-top, 72px);
-    filter: drop-shadow(0 -10px 14px rgb(0 0 0 / 0.38));
+    filter: drop-shadow(0 -10px 14px rgb(16 11 9 / 0.38));
   }
   [data-mode="light"] .deck-card {
-    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.08));
+    filter: drop-shadow(0 -1px 0 rgb(16 11 9 / 0.08));
   }
 }
 
@@ -2875,9 +2887,9 @@ html[data-offline] [data-top-banner] {
   .print-only-receipt,
   .print-only-receipt * {
     visibility: visible;
-    color: #111 !important;
+    color: #241c18 !important;
     background: transparent !important;
-    border-color: #ddd !important;
+    border-color: #d9cfbf !important;
   }
   .print-only-receipt {
     position: absolute;
@@ -2983,7 +2995,7 @@ html[data-splash] .bnp-splash {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  border: 2px solid rgb(var(--signal, 255 138 76));
+  border: 2px solid rgb(var(--signal, 232 100 30));
   opacity: 0;
   animation: bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 300ms 1 forwards, bnp-splash-ring 1100ms cubic-bezier(0.23, 1, 0.32, 1) 1700ms 1 forwards;
 }
@@ -2998,7 +3010,7 @@ html[data-splash] .bnp-splash {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgb(245 245 245 / 0.72);
+  color: rgb(250 246 238 / 0.72);
   opacity: 0;
   animation: bnp-splash-word-in 800ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards;
 }
@@ -3051,14 +3063,14 @@ input[type="month"] {
   display: block;
   min-height: 44px;
   text-align: left;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(255 250 242 / 0.12);
   color-scheme: dark;
 }
 [data-mode="light"] input[type="date"],
 [data-mode="light"] input[type="time"],
 [data-mode="light"] input[type="datetime-local"],
 [data-mode="light"] input[type="month"] {
-  border-color: rgb(0 0 0 / 0.14);
+  border-color: rgb(16 11 9 / 0.14);
   color-scheme: light;
 }
 input[type="date"]::-webkit-date-and-time-value,
@@ -3073,11 +3085,11 @@ input[type="month"]::-webkit-date-and-time-value {
 input[type="date"][value=""]::before,
 input[type="date"]:not([value])::before {
   content: "Choose a date";
-  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
+  color: rgb(var(--c-s-50, 250 246 238) / 0.5);
 }
 input[type="time"][value=""]::before {
   content: "Choose a time";
-  color: rgb(var(--c-s-50, 245 245 245) / 0.5);
+  color: rgb(var(--c-s-50, 250 246 238) / 0.5);
 }
 }
 input[type="date"]:disabled,
@@ -3104,8 +3116,8 @@ input[type="time"]:disabled {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 56px -8px color-mix(in srgb, var(--tier-glow) 45%, transparent), 0 0 110px -34px color-mix(in srgb, var(--tier-glow) 40%, transparent);
   }
 }
-.tier-price { color: #ffffff; }
-:root:not([data-theme="ink"]) .tier-price { color: #0b0b0b; }
+.tier-price { color: #faf6ee; }
+:root:not([data-theme="ink"]) .tier-price { color: #241c18; }
 /* The warm wash behind the page while a group plan is on: strongest at the bottom edge of the screen, fading up. */
 .tier-wash {
   pointer-events: none;
@@ -3115,7 +3127,7 @@ input[type="time"]:disabled {
   transition: opacity 600ms ease;
   will-change: opacity;
   background:
-    radial-gradient(120% 60% at 50% 108%, rgb(255 122 48 / 0.2), rgb(255 122 48 / 0.07) 40%, transparent 68%);
+    radial-gradient(120% 60% at 50% 108%, rgb(232 100 30 / 0.2), rgb(232 100 30 / 0.07) 40%, transparent 68%);
 }
 @keyframes tier-star-rise {
   0% { transform: translateY(0) scale(0.5); opacity: 0; }
@@ -3137,9 +3149,9 @@ input[type="time"]:disabled {
   .tier-layer, .tier-accent-bg, .tier-wash { transition-duration: 1ms; }
 }
 
-/* The Starter pill and button: white in the dark theme, black in the light one, so they never vanish into the card. */
-.tier-starter { background-color: #ffffff; color: #000000; }
-:root:not([data-theme="ink"]) .tier-starter { background-color: #0b0b0b; color: #ffffff; }
+/* The Starter pill and button: cream in the dark theme, espresso in the light one, so they never vanish into the card. */
+.tier-starter { background-color: #faf6ee; color: #241c18; }
+:root:not([data-theme="ink"]) .tier-starter { background-color: #241c18; color: #faf6ee; }
 
 
 /* ---------------------------------------------------------------------------------------------------------------
@@ -3261,7 +3273,7 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
   inset-inline: 10px;
   height: calc(var(--bar-h, calc(var(--card-top) + 4rem)) - var(--card-top) - 0.5rem);
   border-radius: 16px;
-  background: rgb(var(--neu-base, 22 22 23));
+  background: rgb(var(--neu-base, 47 37 32));
   pointer-events: none;
 }
 /* The strip above the card (status bar and the gap over the card) is solid ground, so scrolled content never shows there. It travels with the card. */
@@ -3320,7 +3332,7 @@ html[data-solid-surfaces="on"] :is(.glass-surface, .glass-surface-subtle, .glass
   box-shadow: none;
 }
 html[data-solid-surfaces="on"] .cmd-scrim {
-  background: rgb(0 0 0 / 0.45);
+  background: rgb(16 11 9 / 0.45);
 }
 html[data-solid-surfaces="on"] :is(.liquid, .neu-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"]):not(.liquid-signal):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]) {
   background: rgb(var(--neu-base));
@@ -3376,7 +3388,7 @@ html[data-solid-surfaces="on"] [data-glass-lens] > * {
     background: rgb(var(--c-surface-solid)) !important;
   }
   .cmd-scrim {
-    background: rgb(0 0 0 / 0.45);
+    background: rgb(16 11 9 / 0.45);
   }
   .lg-glass::after {
     display: none !important;
@@ -3436,18 +3448,29 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
 /* Scale pictures in Paper: the picture used to be washed with the cream card colour (a milky white veil over the photo). Here the
    photo keeps its colour under a dark shade, and the card's text turns light, as on the dark theme. */
 [data-theme="paper"] .scale-art-card {
-  --c-s-50: 245 245 245;
-  --c-s-100: 232 232 232;
-  --c-s-200: 216 216 216;
-  --c-s-300: 200 200 200;
-  --c-s-400: 184 184 184;
-  --c-s-500: 168 168 168;
-  --c-s-600: 150 150 150;
-  color: rgb(245 245 245);
+  --c-s-50: 250 246 238;
+  --c-s-100: 239 232 220;
+  --c-s-200: 224 215 201;
+  --c-s-300: 207 197 182;
+  --c-s-400: 192 181 166;
+  --c-s-500: 176 165 150;
+  --c-s-600: 158 147 133;
+  color: rgb(250 246 238);
 }
 [data-theme="paper"] .scale-art-fade {
   background:
-    linear-gradient(90deg, rgb(12 12 14 / 0.74) 0%, rgb(12 12 14 / 0.46) 55%, rgb(12 12 14 / 0.14) 100%),
-    linear-gradient(180deg, transparent 40%, rgb(12 12 14 / 0.55) 100%);
+    linear-gradient(90deg, rgb(30 23 20 / 0.74) 0%, rgb(30 23 20 / 0.46) 55%, rgb(30 23 20 / 0.14) 100%),
+    linear-gradient(180deg, transparent 40%, rgb(30 23 20 / 0.55) 100%);
 }
-[data-theme="paper"] .scale-art-fade-locked { background: rgb(12 12 14 / 0.66); }
+[data-theme="paper"] .scale-art-fade-locked { background: rgb(30 23 20 / 0.66); }
+
+/* ── Burnt Orange rules (2026-11-11, the Linen / Espresso palette) ────────────────────────────────────────────────────────────
+   The accent is #E8641E in both themes. Two things follow from its lightness, and both are settled here once instead of in every
+   component:
+   - A label on an orange fill is the espresso ink (5.0:1). Cream or white on this orange is only 3.1 to 3.3:1, so a component
+     that asks for `text-slate-950`, `text-white` or `text-black` on `bg-signal` (or on the same orange as `bg-amber-400`) gets
+     the ink instead. Inside a colored band (`.color-tile`) the fill is white and the ink is already espresso.
+   - Orange as TEXT is `--signal-fg` (deeper on Linen, lighter on Espresso), also when a component wrote `text-amber-400`.
+   Unlayered on purpose: it must beat the utility layer. */
+:is(.bg-signal, .bg-amber-400):is(.text-slate-950, .text-white, .text-black) { color: rgb(var(--signal-ink)); }
+.text-amber-400 { color: rgb(var(--signal-fg)); }

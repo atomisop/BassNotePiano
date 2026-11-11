@@ -6,7 +6,6 @@ import { Switch as UiSwitch } from "@/components/ui/switch";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { Hint } from "@/components/ui/Hint";
 
 type SaveResult = { ok: true; value: SettingValue } | { ok: false; error: string };
 
@@ -193,7 +192,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
           </section>
         );
       })}
-      {shown.length === 0 && <p className="text-small text-slate-500"><Hint>No settings match that search.</Hint></p>}
+      {shown.length === 0 && <p className="text-small text-slate-500">No settings match that search.</p>}
     </div>
   );
 }

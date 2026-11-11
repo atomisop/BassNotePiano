@@ -18,8 +18,9 @@ import { PageBack } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Parent mode" };
 
-const classDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-const classTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+// Class times are the studio's (Eastern), the same as the weekly time written beside them, and the same on the server and in the browser.
+const classDay = (iso: string) => new Date(iso).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "short", day: "numeric" });
+const classTime = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 export default async function ParentPage() {

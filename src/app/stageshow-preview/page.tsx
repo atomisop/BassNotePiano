@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Stageshow preview", robots: { index:
 
 export default function Page() {
   return (
-    <main style={{ background: "#0c0c0c", minHeight: "100vh", padding: "32px 16px", display: "grid", gap: 48, justifyItems: "center" }}>
+    <main style={{ background: "#241c18", minHeight: "100vh", padding: "32px 16px", display: "grid", gap: 48, justifyItems: "center" }}>
       <section id="booking" style={{ width: "min(760px, 100%)" }}>
         <BookingHero />
       </section>

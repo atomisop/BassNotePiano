@@ -13,7 +13,7 @@ import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { CheckCheck } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
@@ -458,6 +458,8 @@ export function PaymentQueue({
           exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
           id={`pay-${payment.id}`}
+          // Each payment is a card of its own, so each keeps its one orange Approve (AdminQuietButtons counts per card).
+          data-card=""
           className={`scroll-mt-28 rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5 ${highlightId === payment.id ? "ring-2 ring-signal" : ""}`}
         >
           {/* The focal point: who paid and how much. What it was for is one quieter line, how it arrived one quieter still. */}
@@ -479,7 +481,7 @@ export function PaymentQueue({
                     </Link>
                   )}
                 </h2>
-                <p className="mt-0.5 truncate text-small text-slate-400">{title === name ? eyebrow : `${eyebrow} · ${title}`}</p>
+                <p className="mt-0.5 line-clamp-2 text-small text-slate-400">{title === name ? eyebrow : `${eyebrow} · ${title}`}</p>
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-headline font-semibold tabular-nums text-slate-50">{formatUsd(payment.amountCents)}</p>

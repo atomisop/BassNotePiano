@@ -4,8 +4,8 @@ import { NotifyPlaceToggle } from "@/components/admin/NotifyToggle";
 import { getStillToMark, getTeachingDay } from "@/lib/teachingToday";
 import { dayLong, dayTitle, dayWord, easternDay, parseDayParam, shiftDay, todayHref } from "@/lib/teachingDayRules";
 import { buttonVariants } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { CalendarCheck, ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
+import { CalendarCheck, CalendarClock, ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
 import { Meta } from "@/components/ui/CardKit";
 import { TodayAttendance } from "@/components/admin/TodayAttendance";
 import { ClassMessageButton, ClassMoveCancelButtons, ClassRowMenu, DiscordStepsButton } from "@/components/admin/ClassRowActions";
@@ -47,7 +47,7 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
       <h1 className="sr-only">{isToday ? "Today" : dayLong(day)}</h1>
 
       {/* Step through the days without leaving the screen. */}
-      <nav aria-label="Choose a day" className="mt-2 flex items-center gap-2">
+      <nav aria-label="Choose a day" className="mt-3 flex items-center gap-2">
         <Link href={todayHref(shiftDay(day, -1), today)} aria-label="The day before" className={arrow}>
           <ChevronLeft aria-hidden className="h-4 w-4" />
         </Link>
@@ -120,7 +120,8 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
                         </Link>
                         <Meta
                           className="mt-0.5"
-                          items={[
+                          items={(
+                            [
                             s.firstClass ? <span className="font-medium text-signal-fg">First class</span> : null,
                             s.inPerson ? "In person" : null,
                             s.nextScale?.state === "READY" ? <span className="font-medium text-slate-300">Ready for {s.nextScale.code}</span> : null,
@@ -129,7 +130,8 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
                             s.practicedDaysLast7 !== null ? `Practiced ${s.practicedDaysLast7}/7 days` : null,
                             `${s.credits} left`,
                             s.status === "COMPLETED" ? "Class done" : null,
-                          ]}
+                          ] as (ReactNode | null)[]
+                          ).map((fact, i) => (fact ? <span key={i} className="whitespace-nowrap">{fact}</span> : null))}
                         />
                         {problems.length > 0 && (
                           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-medium">
@@ -219,7 +221,8 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link href="/admin/schedule" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        <Link href="/admin/schedule" className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12" })}>
+          <CalendarClock aria-hidden className="h-4 w-4" />
           Weekly schedule
         </Link>
       </div>

@@ -1,20 +1,20 @@
-/* Bass Note Piano's look for every Stageshow scene: the app's dark theme (DESIGN.md), one orange accent (the logo orange),
+/* Bass Note Piano's look for every Stageshow scene: the app's dark theme, Espresso (DESIGN.md), one accent (Burnt Orange, #E8641E),
    soft shapes, and the system font the signed-in app uses. Put the class on a Stage: <Stage className="bnp-look" theme="dark">. */
 .bnp-look .ss-stage {
   --ss-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
-  --ss-canvas: #121212;
-  --ss-surface: #161616;
-  --ss-chrome: #1b1b1b;
-  --ss-raised: #232323;
-  --ss-well: #0c0c0c;
-  --ss-accent: #fb8a5c;
-  --ss-accent-2: #f26a38;
-  --ss-accent-soft: rgba(251, 138, 92, 0.18);
-  --ss-accent-text: #fb8a5c;
-  --ss-text-strong: #f5f5f5;
-  --ss-text: #a8a8a8;
-  --ss-text-faint: #787878;
-  --ss-success: #4ade80;
+  --ss-canvas: #241c18;
+  --ss-surface: #2a211c;
+  --ss-chrome: #2f2520;
+  --ss-raised: #3b2f2a;
+  --ss-well: #1e1714;
+  --ss-accent: #e8641e;
+  --ss-accent-2: #cc5214;
+  --ss-accent-soft: rgba(232, 100, 30, 0.2);
+  --ss-accent-text: #f4884a;
+  --ss-text-strong: #faf6ee;
+  --ss-text: #baae9f;
+  --ss-text-faint: #8c7f72;
+  --ss-success: #6ecf82;
   --ss-radius-sm: 8px;
   --ss-radius-md: 12px;
   --ss-radius-lg: 16px;

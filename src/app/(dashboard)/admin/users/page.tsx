@@ -83,13 +83,13 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
     <div>
       <h1 className="sr-only">People</h1>
 
-      <div className="mt-6">
+      <div className="md:mt-3">
         <AdminFilterTabs
           label="Show"
           iconOnly
           items={[
             { label: "Everyone", icon: <Users />, href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: everyone },
-            { label: "Needs approval", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
+            { label: "Approve", selectLabel: "Needs approval", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", icon: <Moon />, href: `/admin/users?filter=idle${q}`, active: notPracticing },
             ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, icon: FOLLOW_UP_TABS[f].icon, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
             { label: "Complimentary", icon: <Star />, href: `/admin/users?filter=comped${q}`, active: complimentary },
@@ -100,11 +100,11 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         />
       </div>
 
-      {staff && <div className="mt-6"><StaffView /></div>}
+      {staff && <div className="mt-4"><StaffView /></div>}
 
       {/* Add someone who has no account (a call, a walk-in); open, the form takes its own row under the buttons. */}
       {!staff && (
-      <div className="mt-5 flex flex-wrap items-end justify-end gap-2">
+      <div className="mt-4 flex flex-wrap items-start justify-end gap-2">
         {/* The list's one fact, figure first, sharing its line with the two side actions. */}
         <FigureLead
           className="mr-auto"
@@ -165,7 +165,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         </div>
       )}
 
-      {!contactsOnly && (
+      {!contactsOnly && !staff && (
         <div className="mt-4">
           <UserList rows={rows} initialQuery={query} onApproveNext={approveNextScaleAction} />
         </div>

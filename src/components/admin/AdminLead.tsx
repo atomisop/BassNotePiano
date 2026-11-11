@@ -34,7 +34,7 @@ export function FigureLead({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-x-4 gap-y-2 px-1", className)}>
+    <div className={cn("flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-1", className)}>
       <div className="min-w-0">
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className={cn("text-headline font-bold leading-none tabular-nums", FIGURE_TONE[tone])}>{figure}</span>
@@ -42,7 +42,8 @@ export function FigureLead({
         </p>
         {meta && <div className="mt-1 text-caption text-slate-500">{meta}</div>}
       </div>
-      {children && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
+      {/* Side actions line up with the figure's own line (the first), never between it and the quiet line under it. */}
+      {children && <div className="-my-1 flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }

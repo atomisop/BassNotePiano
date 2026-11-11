@@ -2,7 +2,7 @@
 
 // From 21st.dev: Elastic Gallery by daiwiikharihar. Adapted to this app: takes
 // its panels as props, links each one, and uses the app's dark ground.
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,10 @@ export interface ElasticItem {
 
 export function ElasticGallery({ items, className }: { items: ElasticItem[]; className?: string }) {
   const [activeId, setActiveId] = useState<string>(items[0]?.id ?? "");
+  // A photo that cannot be loaded (two of them come from another host) is replaced by a tinted block; the instrument's name is
+  // already drawn over the panel, so the card still reads and still links.
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
+  const markFailed = useCallback((id: string) => setFailed((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), []);
 
   return (
     <div className={cn("flex h-[480px] w-full flex-col gap-2 md:h-[560px] md:flex-row md:gap-4", className)}>
@@ -36,14 +40,23 @@ export function ElasticGallery({ items, className }: { items: ElasticItem[]; cla
             )}
           >
             <div className="absolute inset-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.src}
-                alt={item.alt}
-                loading="lazy"
-                style={{ objectPosition: item.position ?? "center" }}
-                className={cn("h-full w-full object-cover transition-transform duration-1000", active ? "scale-100" : "scale-110")}
-              />
+              {failed.has(item.id) ? (
+                <div role="img" aria-label={item.alt} className="h-full w-full bg-gradient-to-br from-signal/35 via-neu-lift to-neu-base" />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  loading="lazy"
+                  onError={() => markFailed(item.id)}
+                  // An image that failed before the page became interactive never fires onError here, so it is checked once on mount.
+                  ref={(el) => {
+                    if (el && el.complete && el.naturalWidth === 0) markFailed(item.id);
+                  }}
+                  style={{ objectPosition: item.position ?? "center" }}
+                  className={cn("h-full w-full object-cover transition-transform duration-1000", active ? "scale-100" : "scale-110")}
+                />
+              )}
               <div className={cn("absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500", active ? "opacity-100" : "opacity-0")} />
             </div>
 

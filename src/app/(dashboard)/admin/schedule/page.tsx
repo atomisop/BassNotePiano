@@ -25,11 +25,10 @@ import {
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
-import { CalendarCheck, CalendarClock, ClipboardCheck, Inbox, Lock } from "@/components/ui/appIcons";
+import { CalendarCheck, CalendarClock, CalendarPlus, ClipboardCheck, Inbox, Lock } from "@/components/ui/appIcons";
 import { AdminReservations } from "@/components/admin/AdminReservations";
 import { AdminCloseDay } from "@/components/admin/AdminClassTools";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
-import { Hint } from "@/components/ui/Hint";
 
 type ViewValue = "TODAY" | "WINDOWS" | "REQUESTS" | "ATTENDANCE" | "RESERVED";
 
@@ -63,7 +62,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
     RESERVED: <Lock />,
   };
   const viewSwitcher = (
-    <div className="mt-6">
+    <div className="md:mt-3">
       <AdminFilterTabs
         label="Schedule views"
         iconOnly
@@ -95,7 +94,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {viewSwitcher}
 
-        <div className="mt-6">
+        <div className="mt-4">
           <AdminBookingRequests
             groups={groups.map((g) => ({
               key: g.key,
@@ -122,7 +121,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {viewSwitcher}
 
-        <div className="mt-6">
+        <div className="mt-4">
           {/* ?name=&email=&phone= (from People and elsewhere) fills in the customer, so keeping a time for them is one step. */}
           <AdminReservations
             hours={hours}
@@ -133,7 +132,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {/* Closing a day cancels (or moves) every class on it, so it sits quietly at the end, behind its own confirm, not above the list. */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50/8 pt-4">
-          <p className="text-small text-slate-500"><Hint>A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</Hint></p>
+          <p className="text-small text-slate-500">A holiday or a sick day: close it, and every class that day is canceled or moved to another day.</p>
           <AdminCloseDay />
         </div>
       </div>
@@ -149,7 +148,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {viewSwitcher}
 
-        <div className="mt-6">
+        <div className="mt-4">
           <AdminAttendanceRoster
             occurrences={occurrences.map((o) => ({
               scheduleId: o.scheduleId,
@@ -185,7 +184,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
       {viewSwitcher}
 
-      <div className="mt-6">
+      <div className="mt-4">
         <AdminScheduleManager
           schedules={schedules.map((s) => ({
             id: s.id,
@@ -211,12 +210,13 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       {/* The calendar feed is a set-once tool, so it sits quietly under the times instead of above them. */}
       {calendarLink && (
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-50/8 pt-4">
-          <a href={calendarLink} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          <a href={calendarLink} className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12" })}>
+            <CalendarPlus aria-hidden className="h-4 w-4" />
             Add my classes to my calendar
           </a>
           {viewerIsOwner && (
             <form action={rotateTeacherCalendarLinkAction}>
-              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
+              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12 text-slate-400" })}>
                 New calendar link
               </button>
             </form>

@@ -47,10 +47,10 @@ async function SystemView() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">System</h1>
+      <h1 className="sr-only">System</h1>
       {/* The system's one fact, figure first: whether every automatic task is running. */}
       <FigureLead
-        className="mt-5"
+        className="mt-4"
         figure={stoppedJobs > 0 ? stoppedJobs : jobs.length}
         tone={stoppedJobs > 0 ? "danger" : "default"}
         label={stoppedJobs > 0 ? `automatic task${stoppedJobs === 1 ? "" : "s"} stopped` : "automatic tasks, all running"}
@@ -98,7 +98,7 @@ async function SystemView() {
         {rows.length === 0 ? (
           <>
             <h2 className="mt-1 text-title font-semibold text-slate-50">No reports yet</h2>
-            <p className="mt-1 text-small text-slate-400"><Hint>Reports arrive as people use the site; check again after a few days of normal use.</Hint></p>
+            <p className="mt-1 text-small text-slate-400">Reports arrive as people use the site; check again after a few days of normal use.</p>
           </>
         ) : realRecent.length === 0 ? (
           <>

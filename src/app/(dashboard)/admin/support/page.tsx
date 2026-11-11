@@ -5,18 +5,19 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { cn } from "@/lib/utils";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { FigureLead } from "@/components/admin/AdminLead";
 import { Check, Inbox, List, User } from "@/components/ui/appIcons";
 import { SectionPills } from "@/components/admin/SectionPills";
 import { MessagesView } from "../messages/_view";
 
-// Each status is an icon, the chosen one with its word, so the four share one line with Chat and Email on a phone.
+// Each status is an icon and its word; the four share one sideways-scrolling line with Chat and Email on a phone.
 const FILTERS: { label: string; value: SupportListFilter; param: string; icon: React.ReactNode }[] = [
   { label: "Open", value: "OPEN", param: "open", icon: <Inbox /> },
   { label: "Resolved", value: "RESOLVED", param: "resolved", icon: <Check /> },
   { label: "All", value: "ALL", param: "all", icon: <List /> },
-  { label: "Assigned to me", value: "MINE", param: "mine", icon: <User /> },
+  { label: "Mine", value: "MINE", param: "mine", icon: <User /> },
 ];
 
 const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = [
@@ -64,22 +65,9 @@ async function ChatsView(
   return (
     <div>
       <h1 className="sr-only">Support Chat</h1>
-      {/* The Inbox's one fact, figure first: how many are waiting (or how many the chosen view holds). */}
-      <FigureLead
-        className="mt-5"
-        figure={threads.length}
-        label={
-          mine
-            ? `case${threads.length === 1 ? "" : "s"} assigned to you`
-            : activeFilter === "OPEN"
-              ? `open ${noun}${threads.length === 1 ? "" : "s"}${threads.length === 0 ? ", all clear" : ""}`
-              : `${noun}${threads.length === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`
-        }
-      />
-
-      {/* Where it came from and its status share one line: two words, then four icons. */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <nav aria-label="Where it came from" className={TAB_TRACK}>
+      {/* Where it came from and its status are ONE row (it scrolls sideways on a phone), directly under the Chats and Messages pills. */}
+      <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav aria-label="Where it came from" className={cn(TAB_TRACK, "max-w-none shrink-0 overflow-visible")}>
           {SOURCES.map((source) => (
             <Link
               key={source.value}
@@ -94,9 +82,23 @@ async function ChatsView(
         <AdminFilterTabs
           label="Status"
           iconOnly
+          inline
           items={FILTERS.map((filter) => ({ label: filter.label, icon: filter.icon, href: hrefFor(filter.value, activeSource), active: activeFilter === filter.value }))}
         />
       </div>
+
+      {/* The Inbox's one fact, figure first, right over the list it counts. */}
+      <FigureLead
+        className="mt-4"
+        figure={threads.length}
+        label={
+          mine
+            ? `case${threads.length === 1 ? "" : "s"} assigned to you`
+            : activeFilter === "OPEN"
+              ? `open ${noun}${threads.length === 1 ? "" : "s"}${threads.length === 0 ? ", all clear" : ""}`
+              : `${noun}${threads.length === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`
+        }
+      />
 
       <div className="mt-4">
         <SupportThreadList

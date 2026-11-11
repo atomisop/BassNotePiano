@@ -14,11 +14,12 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 export function StreakDots({ currentStreak }: { currentStreak: number }) {
   const prefersReducedMotion = useReducedMotion();
   const filled = Math.min(currentStreak, 7);
-  const today = new Date();
+  // Practice days are counted on the studio's (Eastern) calendar, so "today" is that day here too: the server and the browser
+  // then draw the same seven letters wherever each of them is.
+  const todayIndex = Math.max(0, DAY_NAMES.indexOf(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date())));
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (6 - i));
-    return { letter: DAY_LETTERS[d.getDay()], name: DAY_NAMES[d.getDay()], isToday: i === 6, isFilled: i >= 7 - filled };
+    const dow = (todayIndex - (6 - i) + 7) % 7;
+    return { letter: DAY_LETTERS[dow], name: DAY_NAMES[dow], isToday: i === 6, isFilled: i >= 7 - filled };
   });
 
   return (

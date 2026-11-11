@@ -23,13 +23,19 @@ export function ActionTiles({ title, items, className }: { title: string; items:
     <section aria-label={title} className={className}>
       <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>
       <ul className={cn("mt-3 grid grid-cols-2 gap-3", items.length >= 4 ? "sm:grid-cols-4" : items.length === 3 ? "sm:grid-cols-3" : "")}>
-        {items.map((item) => (
-          <li key={item.label}>
+        {items.map((item, index) => {
+          // On a phone (two across) an odd last tile would leave a hole beside it: it takes the whole row instead, laid out sideways.
+          const lone = items.length % 2 === 1 && index === items.length - 1;
+          return (
+          <li key={item.label} className={cn(lone && "col-span-2 sm:col-span-1")}>
             <Link
               href={item.href}
-              className="tap press group relative flex h-full flex-col gap-3 rounded-card bg-neu-base p-4 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={cn(
+                "tap press group relative flex h-full flex-col gap-3 rounded-card bg-neu-base p-4 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                lone && "max-sm:flex-row max-sm:items-center",
+              )}
             >
-              <span aria-hidden className="flex h-11 w-11 items-center justify-center rounded-control bg-signal/16 text-signal-fg [&>svg]:h-6 [&>svg]:w-6">
+              <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-signal/16 text-signal-fg [&>svg]:h-6 [&>svg]:w-6">
                 {item.icon}
               </span>
               <span className="min-w-0">
@@ -44,7 +50,8 @@ export function ActionTiles({ title, items, className }: { title: string; items:
               )}
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );
