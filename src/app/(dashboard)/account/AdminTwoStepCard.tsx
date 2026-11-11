@@ -1,6 +1,7 @@
 "use client";
 
 import { Hint } from "@/components/ui/Hint";
+import { useSettingsSurface } from "./SectionCard";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,10 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
   }
 
   const field = "mt-2 w-full max-w-xs";
+  const surface = useSettingsSurface();
   return (
-    <div className="glass-surface p-6">
-      <h2 className="text-title font-semibold text-slate-50">Two-step sign-in (admin)</h2>
+    <div className={surface}>
+      <h2 className="text-body font-semibold text-slate-50">Two-step sign-in (admin)</h2>
       <div className="mt-4 space-y-3 text-small text-slate-300">
         {codes ? (
           <>
@@ -103,7 +105,7 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
         ) : setup ? (
           <>
             <p>1. Scan this with an authenticator app (Google Authenticator, 1Password, Authy), or type the key in by hand.</p>
-            <div className="inline-block rounded-xl bg-white p-3">
+            <div className="inline-block rounded-control bg-white p-3">
               <QRCodeSVG value={setup.uri} size={160} />
             </div>
             <p className="break-all font-mono text-slate-100">{setup.secret}</p>

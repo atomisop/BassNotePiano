@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 import { Bell, ChevronRight, CreditCard, Info, KeyRound, Palette, PlayCircle, ShieldCheck, ShoppingBag, SignOut, Trash2, User, type AppIcon } from "@/components/ui/appIcons";
-import { SectionCard } from "./SectionCard";
+import { SectionCard, SettingsGroup, SETTINGS_CARD } from "./SectionCard";
 import { EmailChange } from "./EmailChange";
 import {
   PasswordSection,
@@ -129,8 +129,8 @@ function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { ico
 // it reads as part of the same list.
 // Every row in the desktop settings menu (tabs, Shop, About, Sign out) is the same shape; only the current one is filled.
 const NAV_ROW =
-  "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
-const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
+  "tap flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
+const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
 
 function ShopLink({ back }: { back: string }) {
   return (
@@ -196,7 +196,7 @@ function CategoryHeading({ category, isFirst }: { category: Category; isFirst: b
 // an action, not a setting.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
+    <nav className={`sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start p-2 lg:flex ${SETTINGS_CARD}`}>
       {groupedTabs().map((group, i) => (
         <div key={group.category}>
           <CategoryHeading category={group.category} isFirst={i === 0} />
@@ -228,7 +228,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
           <AppearanceTiles compact />
         </div>
       </div>
-      <div className="my-1 h-px bg-ink/10" />
+      <div className="my-1 h-px bg-slate-50/8" />
       <SignOutButton />
     </nav>
   );
@@ -238,46 +238,50 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
 // the desktop nav, no content shown until tapped. Each row pushes a
 // full-screen SlideOverPanel instead of swapping content in place. Sign out
 // stays bottom-pinned, always last, same reasoning as the desktop nav.
-function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
-  // Each category is its own raised card; every icon sits in a small pressed
-  // well. Rows press in on tap so the list reads as physical buttons.
-  const row = "tap flex w-full items-center gap-3 px-4 py-3 text-left transition active:shadow-pressed-low";
-  const well = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-400 shadow-pressed-low";
+function MobileSettingsMenu({ onSelect, values }: { onSelect: (tab: TabId) => void; values: Record<TabId, string> }) {
+  // Each category is one quiet card of rows with hairlines between them. A row is the setting's name with its current value under it,
+  // so the list can be read without opening anything.
+  const row = "tap flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
+  const well = "flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-signal/16 text-signal-fg";
+  const chevron = <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />;
+  const words = (label: string, value: string) => (
+    <span className="min-w-0 flex-1">
+      <span className="block text-body font-medium text-slate-50">{label}</span>
+      <span className="mt-0.5 block truncate text-caption text-slate-500">{value}</span>
+    </span>
+  );
+  const heading = "px-1 pb-2 text-caption font-medium uppercase tracking-caps text-slate-500";
   return (
     <div className="space-y-5 lg:hidden">
       {groupedTabs().map((group) => (
         <section key={group.category}>
-          <p
-            className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500"
-          >
-            {group.category}
-          </p>
-          <div className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
+          <p className={heading}>{group.category}</p>
+          <div className={`divide-y divide-slate-50/8 overflow-hidden ${SETTINGS_CARD}`}>
             {group.tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => onSelect(tab.id)} className={row}>
-                <span className={`${well} `}>
-                  <TabIcon icon={tab.icon} />
+                <span aria-hidden className={well}>
+                  <TabIcon icon={tab.icon} className="h-5 w-5 shrink-0" />
                 </span>
-                <span className="flex-1 text-small text-slate-100">{tab.label}</span>
-                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                {words(tab.label, values[tab.id])}
+                {chevron}
               </button>
             ))}
             {group.category === "Help" && (
               <Link href={`/shop?back=${encodeURIComponent("/account")}`} className={row}>
-                <span className={well}>
-                  <TabIcon icon={TAB_ICONS.shop} />
+                <span aria-hidden className={well}>
+                  <TabIcon icon={TAB_ICONS.shop} className="h-5 w-5 shrink-0" />
                 </span>
-                <span className="flex-1 text-small text-slate-100">Shop</span>
-                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                {words("Shop", "Recommended gear")}
+                {chevron}
               </Link>
             )}
             {group.category === "Help" && (
               <Link href="/about" className={row}>
-                <span className={well}>
-                  <TabIcon icon={TAB_ICONS.about} />
+                <span aria-hidden className={well}>
+                  <TabIcon icon={TAB_ICONS.about} className="h-5 w-5 shrink-0" />
                 </span>
-                <span className="flex-1 text-small text-slate-100">About</span>
-                <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+                {words("About", "Update notes, terms and privacy")}
+                {chevron}
               </Link>
             )}
           </div>
@@ -285,12 +289,12 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       ))}
       {/* Like the Claude app's settings: the look is chosen right here, three pictures, no screen of its own. */}
       <section>
-        <p className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500">Appearance</p>
-        <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+        <p className={heading}>Appearance</p>
+        <div className={`p-4 ${SETTINGS_CARD}`}>
           <AppearanceTiles />
         </div>
       </section>
-      <div className="overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
+      <div className={`overflow-hidden ${SETTINGS_CARD}`}>
         <SignOutButton className="w-full rounded-none px-4 py-3 hover:shadow-none active:shadow-pressed-low" />
       </div>
     </div>
@@ -322,13 +326,14 @@ function TabContent({
 }
 
 function AccountGroup({ id, title, blurb, danger, children }: { id: string; title: string; blurb?: string; danger?: boolean; children: React.ReactNode }) {
+  // One quiet card per group, its settings as rows with hairlines between them, instead of a pile of equal boxes.
   return (
-    <section data-account-group={id} className="scroll-mt-4 space-y-4">
-      <div>
-        <h2 className={`text-small font-semibold uppercase tracking-caps ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
+    <section data-account-group={id} className="scroll-mt-4 space-y-3">
+      <div className="px-1">
+        <h2 className={`text-caption font-medium uppercase tracking-caps ${danger ? "text-red-300" : "text-slate-500"}`}>{title}</h2>
         {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
       </div>
-      {children}
+      <SettingsGroup>{children}</SettingsGroup>
     </section>
   );
 }
@@ -374,7 +379,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
 // the one irreversible action last.
 function AccountSection({ account, history, twoStep }: { account: AccountOverview; history: AssistantMessage[]; twoStep: AccountSettingsProps["twoStep"] }) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <AccountGroup id="profile" title="Profile">
         <SectionCard title="Your account">
           {/* Who you are is the one bright line; the rest is a quiet meta line under it. */}
@@ -455,7 +460,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
     <SectionCard advanced title="Saved Atom conversations" value={history.length === 0 ? "Nothing saved" : `${history.length} ${history.length === 1 ? "message" : "messages"}, kept 30 days`}>
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
-        <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
+        <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-control bg-neu-base p-3 shadow-pressed-low">
           {history.length === 0 ? (
             <p className="py-6 text-center text-small text-slate-500">
               Nothing here yet.
@@ -464,9 +469,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
             history.map((message, index) => (
               <div
                 key={index}
-                className={`rounded-lg px-3 py-2 text-small ${
-                  message.role === "user" ? "ml-8 bg-neu-base shadow-pressed-low text-slate-100" : "mr-8 bg-neu-base shadow-raised-low text-slate-300"
-                }`}
+                className={`rounded-control px-3 py-2 text-small ${message.role === "user" ? "ml-8 bg-slate-50/8 text-slate-100" : "mr-8 bg-neu-base text-slate-300 shadow-raised-low"}`}
               >
                 <p className="mb-0.5 font-medium text-slate-500">{message.role === "user" ? "You" : "Atom"}</p>
                 <p className="whitespace-pre-wrap">{message.content}</p>
@@ -549,7 +552,16 @@ function AccountSettingsInner({
         menu={
           <>
             <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
-            <MobileSettingsMenu onSelect={openMobileTab} />
+            <MobileSettingsMenu
+              onSelect={openMobileTab}
+              values={{
+                account: account.email,
+                notifications: `${Object.values(initialNotificationPreferences).filter(Boolean).length} of ${Object.keys(initialNotificationPreferences).length} kinds of email on`,
+                appearance: "",
+                membership: !activePlan ? "No plan yet" : activePlan.pausedIndefinitely || activePlan.pausedUntil ? "Plan paused" : "Plan running",
+                tutorials: "The tour and Home Screen steps",
+              }}
+            />
           </>
         }
       >

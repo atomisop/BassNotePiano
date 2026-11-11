@@ -17,7 +17,7 @@ import { startNavigation } from "@/lib/navigationState";
 import { buttonVariants } from "@/components/ui/button";
 import { Laptop, Smartphone, Tablet } from "@/components/ui/appIcons";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
-import { SectionCard } from "./SectionCard";
+import { SectionCard, SettingsGroup } from "./SectionCard";
 import { toast } from "@/components/ui/Toaster";
 import { claimScholarshipAction } from "./scholarship-actions";
 import { changePaymentPlanTermAction } from "./actions";
@@ -247,7 +247,7 @@ export function ScholarshipCard() {
           value={shown}
           onChange={(e) => setRaw(e.target.value)}
           maxLength={19}
-          className="h-11 w-full rounded-lg bg-neu-base px-3 font-mono text-body tracking-wider text-slate-50 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-11 w-full rounded-control bg-neu-base px-3 font-mono text-body tracking-wider text-slate-50 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         {error && <p role="alert" className="text-small text-red-400">{error}</p>}
         {done && <p role="status" className="text-small text-slate-50">{done}</p>}
@@ -262,7 +262,7 @@ export function ScholarshipCard() {
               Switch to 6 Months
             </button>
           ) : (
-            <div className="rounded-xl bg-neu-base p-3 shadow-pressed-low">
+            <div className="rounded-control bg-neu-base p-3 shadow-pressed-low">
               <p className="text-small text-slate-200">Switch your plan to 6 Months now? Your next bill uses the scholarship price.</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" disabled={switching === "busy"} onClick={switchToSix} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
@@ -314,7 +314,7 @@ export function ReferralCard() {
         Send your link. When your friend starts a 3 Months or 6 Months plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
-      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-control bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
         <span className="text-small text-slate-400">
@@ -507,11 +507,11 @@ export function CalendarFeedCard() {
             <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
           </div>
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
-          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-control bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           {!confirmReset ? (
             <button type="button" onClick={() => setConfirmReset(true)} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-slate-400" })}>Make a new link</button>
           ) : (
-            <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+            <div className="rounded-control bg-neu-base p-4 shadow-raised-low">
               <p className="text-small text-slate-200">The old link stops working.</p>
               <div className="mt-3 flex gap-2">
                 <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
@@ -680,7 +680,7 @@ export function DangerZoneSection() {
 
   return (
     <SectionCard advanced title="Delete my account" value="Permanent, can't be undone">
-      <div className="rounded-xl bg-neu-base p-4 shadow-pressed-low">
+      <div className="rounded-control bg-neu-base p-4 shadow-pressed-low">
         <p className="text-small text-slate-400">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
           to your account.
@@ -791,7 +791,7 @@ export function TutorialsSection() {
   const [installed, setInstalled] = useState(false);
   useEffect(() => setInstalled(isStandalone()), []);
   return (
-    <>
+    <SettingsGroup>
       <SectionCard advanced title="Tutorials">
         <button
           type="button"
@@ -811,7 +811,7 @@ export function TutorialsSection() {
           <AddToHomeSteps />
         </div>
       </SectionCard>
-    </>
+    </SettingsGroup>
   );
 }
 

@@ -3,7 +3,7 @@
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
-import { Ban, ChevronDown, Mail } from "@/components/ui/appIcons";
+import { Ban, ChevronDown, Flame, Mail, Trophy, User, UserPlus } from "@/components/ui/appIcons";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";
@@ -15,7 +15,10 @@ import {
   blockUserAction,
   unblockUserAction,
 } from "./actions";
-import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
+import { WideLayout } from "@/components/layout/PageLayouts";
+import { HeroBand } from "@/components/ui/HeroBand";
+import { ActionTiles } from "@/components/ui/ActionTiles";
+import { Meta } from "@/components/ui/CardKit";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
@@ -61,6 +64,7 @@ function ProfileLine({ profile }: { profile: PublicProfile }) {
   );
 }
 
+/** A quiet card under the band: a small heading naming the list, its count beside it, the rows below. */
 function SectionCard({
   title,
   count,
@@ -73,12 +77,21 @@ function SectionCard({
   id?: string;
 }) {
   return (
-    <div id={id} className="glass-surface scroll-mt-24 p-4 md:p-6">
-      <h2 className="flex items-baseline gap-2 text-title font-semibold text-slate-50">
-        {title}
-        {count ? <span className="text-small font-normal tabular-nums text-slate-500">{count}</span> : null}
-      </h2>
+    <section id={id} aria-label={title} className="scroll-mt-24 rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-small font-semibold uppercase tracking-caps text-slate-400">{title}</h2>
+        {count ? <span className="min-w-7 rounded-full bg-slate-50/8 px-2 py-0.5 text-center text-small font-semibold tabular-nums text-slate-100">{count}</span> : null}
+      </div>
       <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+/** The page's pinned title. The band under it carries the rest (who you are, what is waiting). */
+function Heading() {
+  return (
+    <div data-deck-header className="deck-header -mt-4 pt-4">
+      <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Friends</h1>
     </div>
   );
 }
@@ -212,36 +225,97 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
   if (!username) {
     return (
       <WideLayout className="space-y-6">
-        <div data-deck-header className="deck-header -mt-4 pt-4">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-400">Social</p>
-          <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
-        </div>
-        <SectionCard title="Set a username first">
-          <Link
-            href="/profile"
-            className={buttonVariants({ variant: "primary", size: "sm", className: "inline-block" })}
-          >
-            Go to your profile
-          </Link>
-        </SectionCard>
+        <Heading />
+        <HeroBand eyebrow="Before you add friends" title="Set a username first" meta="Friends find you by your username.">
+          <div className="pt-3">
+            <Link href="/profile" className={buttonVariants({ variant: "primary", size: "sm", className: "inline-block" })}>
+              Go to your profile
+            </Link>
+          </div>
+        </HeroBand>
       </WideLayout>
     );
   }
 
+  // The one fact: requests waiting on you; with none, how many friends you have.
+  const waiting = receivedRequests.length;
+  const sentCount = sentRequests.length + emailAsks.length;
+  const hasSide = sentCount > 0 || blocked.length > 0;
+  const metaItems = [
+    waiting > 0 ? `${friends.length} ${friends.length === 1 ? "friend" : "friends"}` : null,
+    waiting === 0 && friends.length === 0 ? "Search a username to add your first" : null,
+    sentCount > 0 ? `${sentCount} sent, waiting` : null,
+  ].filter((item): item is string => item !== null);
+
   return (
-    <TwoPaneLayout
-      mobile="stack"
-      header={
-        <div data-deck-header className="deck-header -mt-4 pt-4">
-          <p className="text-small font-medium uppercase tracking-caps text-slate-400">Social</p>
-          <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
-          <p className="mt-1 text-small text-slate-500">
-            You&apos;re <span className="text-slate-300">@{username}</span>.
-          </p>
+    <WideLayout className="space-y-6">
+      <Heading />
+
+      {/* The band: what is waiting (or how many friends), and on its sheet the one thing people come here to do, finding someone. */}
+      <HeroBand
+        eyebrow={`You're @${username}`}
+        title={waiting > 0 ? (waiting === 1 ? "Friend request waiting" : "Friend requests waiting") : friends.length === 0 ? "No friends yet" : friends.length === 1 ? "Friend" : "Friends"}
+        figure={waiting > 0 ? waiting : friends.length > 0 ? friends.length : undefined}
+        meta={metaItems.length > 0 ? <Meta items={metaItems} /> : undefined}
+      >
+        <div className="pt-3">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search @username"
+                aria-label="Search by username"
+                className="h-11 min-w-0 flex-1 rounded-control bg-neu-base px-3 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <button
+                type="submit"
+                disabled={action.pending || query.trim().length < 2}
+                className={buttonVariants({ variant: "primary", className: "shrink-0 whitespace-nowrap" })}
+              >
+                {searching && spin}
+                {searching ? "Searching…" : "Search"}
+              </button>
+            </form>
+
+            {(requestError ?? action.error) && <p className="mt-2 text-small text-red-400">{requestError ?? action.error}</p>}
+
+            {results.length > 0 && (
+              <ul className={`mt-3 ${ROWS}`}>
+                {results.map((profile) => (
+                  <li key={profile.id} className={ROW}>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar profile={profile} />
+                      <ProfileLine profile={profile} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddFriend(profile)}
+                      disabled={sentTo.has(profile.id) || action.pending}
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
+                    >
+                      {action.isPending(`add:${profile.id}`) && spin}
+                      {sentTo.has(profile.id) ? "Sent" : "Add friend"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
         </div>
-      }
-      list={
-        <div className="space-y-6">
+      </HeroBand>
+
+      <ActionTiles
+        title="What do you want to do?"
+        items={[
+          { href: "/leaderboard", label: "Leaderboard", detail: "Where you stand", icon: <Trophy /> },
+          { href: "/streak", label: "Streak", detail: "Your practice days", icon: <Flame /> },
+          { href: "/profile", label: "Your profile", detail: "How friends see you", icon: <User /> },
+          { href: "/account?tab=account", label: "Invite a friend", detail: "Share your link", icon: <UserPlus /> },
+        ]}
+      />
+
+      <div className={hasSide ? "grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start" : undefined}>
+        <div className="min-w-0 space-y-6">
           {/* Requests first: they are the one thing here waiting on you. */}
           {receivedRequests.length > 0 && (
             <SectionCard id="requests" title="Friend requests" count={receivedRequests.length}>
@@ -278,156 +352,85 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
             </SectionCard>
           )}
 
+          {/* With no friends the band already says so, so there is no empty card. */}
+          {friends.length > 0 && (
           <SectionCard title="Friends" count={friends.length}>
-            {friends.length === 0 ? (
-              <div className="flex flex-col items-center gap-1 py-6 text-center">
-                <p className="text-body font-semibold text-slate-100">No friends yet</p>
-              </div>
-            ) : (
-              <ul className={ROWS}>
-                {friends.map((friend, i) => {
-                  const open = openId === friend.id;
-                  const label = friend.name ?? friend.username ?? "them";
-                  return (
-                    <li key={friend.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
-                      <div className={ROW}>
-                        {/* The name opens that friend's practice, badges and streak right here: one place for looking and nudging. */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenId(open ? null : friend.id);
-                            if (open) setBlockingId(null);
-                          }}
-                          aria-expanded={open}
-                          aria-label={`${open ? "Hide" : "Show"} ${friend.name ?? friend.username ?? "friend"}'s practice`}
-                          className="tap group flex min-w-0 flex-1 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <Avatar profile={friend} />
-                          <ProfileLine profile={friend} />
-                          <ChevronDown size={16} strokeWidth={1.75} aria-hidden className={`shrink-0 text-slate-500 transition-transform group-hover:text-slate-300 ${open ? "rotate-180" : ""}`} />
-                        </button>
-                        {/* The one everyday action stays on the row; blocking lives inside the opened row, quiet and behind a confirm. */}
-                        <NudgeButton friendId={friend.id} friendName={nudgeSenderLabel(friend.name ?? friend.username)} />
-                      </div>
-                      {open && (
-                        <div className="mb-3 rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
-                          {friend.username && <FriendDetail username={friend.username} />}
-                          <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 ${friend.username ? "mt-3 border-t border-slate-50/8 pt-2" : ""}`}>
-                            {blockingId === friend.id ? (
-                              <>
-                                <span className="text-small text-red-300">Block {label}?</span>
-                                <span className="ml-auto flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => setBlockingId(null)}
-                                    disabled={action.pending}
-                                    className={buttonVariants({ variant: "ghost", size: "sm", className: busy })}
-                                  >
-                                    Never mind
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleBlock(friend.id)}
-                                    disabled={action.pending}
-                                    className={buttonVariants({ variant: "danger", size: "sm", className: busy })}
-                                  >
-                                    {action.isPending(`block:${friend.id}`) && spin}
-                                    Confirm
-                                  </button>
-                                </span>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setBlockingId(friend.id)}
-                                aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
-                                className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}
-                              >
-                                <Ban size={16} strokeWidth={1.75} aria-hidden />
-                                Block
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </SectionCard>
-
-          {blocked.length > 0 && (
-            <SectionCard title="Blocked" count={blocked.length}>
-              <ul className={ROWS}>
-                {blocked.map((entry) => (
-                  <li key={entry.id} className={ROW}>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar profile={entry.user} />
-                      <ProfileLine profile={entry.user} />
+            <ul className={ROWS}>
+              {friends.map((friend, i) => {
+                const open = openId === friend.id;
+                const label = friend.name ?? friend.username ?? "them";
+                return (
+                  <li key={friend.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
+                    <div className={ROW}>
+                      {/* The name opens that friend's practice, badges and streak right here: one place for looking and nudging. */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenId(open ? null : friend.id);
+                          if (open) setBlockingId(null);
+                        }}
+                        aria-expanded={open}
+                        aria-label={`${open ? "Hide" : "Show"} ${friend.name ?? friend.username ?? "friend"}'s practice`}
+                        className="tap group flex min-w-0 flex-1 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Avatar profile={friend} />
+                        <ProfileLine profile={friend} />
+                        <ChevronDown size={16} strokeWidth={1.75} aria-hidden className={`shrink-0 text-slate-500 transition-transform group-hover:text-slate-300 ${open ? "rotate-180" : ""}`} />
+                      </button>
+                      {/* The one everyday action stays on the row; blocking lives inside the opened row, quiet and behind a confirm. */}
+                      <NudgeButton friendId={friend.id} friendName={nudgeSenderLabel(friend.name ?? friend.username)} />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleUnblock(entry.user.id)}
-                      disabled={action.pending}
-                      className={buttonVariants({ variant: "ghost", size: "sm", className: `shrink-0 ${busy}` })}
-                    >
-                      {action.isPending(`unblock:${entry.user.id}`) && spin}
-                      Unblock
-                    </button>
+                    {open && (
+                      <div className="mb-3 rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
+                        {friend.username && <FriendDetail username={friend.username} />}
+                        <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 ${friend.username ? "mt-3 border-t border-slate-50/8 pt-2" : ""}`}>
+                          {blockingId === friend.id ? (
+                            <>
+                              <span className="text-small text-red-300">Block {label}?</span>
+                              <span className="ml-auto flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setBlockingId(null)}
+                                  disabled={action.pending}
+                                  className={buttonVariants({ variant: "ghost", size: "sm", className: busy })}
+                                >
+                                  Never mind
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleBlock(friend.id)}
+                                  disabled={action.pending}
+                                  className={buttonVariants({ variant: "danger", size: "sm", className: busy })}
+                                >
+                                  {action.isPending(`block:${friend.id}`) && spin}
+                                  Confirm
+                                </button>
+                              </span>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setBlockingId(friend.id)}
+                              aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
+                              className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}
+                            >
+                              <Ban size={16} strokeWidth={1.75} aria-hidden />
+                              Block
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </li>
-                ))}
-              </ul>
-            </SectionCard>
+                );
+              })}
+            </ul>
+          </SectionCard>
           )}
         </div>
-      }
-      detail={
-        <div className="space-y-6">
-          <SectionCard title="Find people">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search @username"
-                className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
-              />
-              <button
-                type="submit"
-                disabled={action.pending || query.trim().length < 2}
-                className={buttonVariants({ variant: "primary", className: "shrink-0 whitespace-nowrap" })}
-              >
-                {searching && spin}
-                {searching ? "Searching…" : "Search"}
-              </button>
-            </form>
 
-            {(requestError ?? action.error) && <p className="mt-2 text-small text-red-400">{requestError ?? action.error}</p>}
-
-            {results.length > 0 && (
-              <ul className={`mt-3 ${ROWS}`}>
-                {results.map((profile) => (
-                  <li key={profile.id} className={ROW}>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar profile={profile} />
-                      <ProfileLine profile={profile} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddFriend(profile)}
-                      disabled={sentTo.has(profile.id) || action.pending}
-                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                    >
-                      {action.isPending(`add:${profile.id}`) && spin}
-                      {sentTo.has(profile.id) ? "Sent" : "Add friend"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-
+        {hasSide && (
+          <div className="min-w-0 space-y-6">
           {(sentRequests.length > 0 || emailAsks.length > 0) && (
             <SectionCard title="Sent requests" count={sentRequests.length + emailAsks.length}>
               <ul className={ROWS}>
@@ -463,8 +466,32 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
               </ul>
             </SectionCard>
           )}
-        </div>
-      }
-    />
+          {blocked.length > 0 && (
+            <SectionCard title="Blocked" count={blocked.length}>
+              <ul className={ROWS}>
+                {blocked.map((entry) => (
+                  <li key={entry.id} className={ROW}>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar profile={entry.user} />
+                      <ProfileLine profile={entry.user} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUnblock(entry.user.id)}
+                      disabled={action.pending}
+                      className={buttonVariants({ variant: "ghost", size: "sm", className: `shrink-0 ${busy}` })}
+                    >
+                      {action.isPending(`unblock:${entry.user.id}`) && spin}
+                      Unblock
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </SectionCard>
+          )}
+          </div>
+        )}
+      </div>
+    </WideLayout>
   );
 }

@@ -9,7 +9,7 @@ import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/Privacy
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { BackLink, PageBack } from "@/components/ui/BackLink";
+import { PageBack } from "@/components/ui/BackLink";
 import { ChevronRight, Clock, FileText, Info, ShieldCheck, type AppIcon } from "@/components/ui/appIcons";
 
 const TAB_ICONS = {
@@ -21,10 +21,10 @@ const TAB_ICONS = {
 } satisfies Record<string, AppIcon>;
 
 const TABS = [
-  { id: "about", label: "About", icon: TAB_ICONS.about },
-  { id: "updates", label: "Update notes", icon: TAB_ICONS.updates },
-  { id: "terms", label: "Terms & refunds", icon: TAB_ICONS.terms },
-  { id: "privacy", label: "Privacy", icon: TAB_ICONS.privacy },
+  { id: "about", label: "About", detail: `Version ${CURRENT_VERSION}`, icon: TAB_ICONS.about },
+  { id: "updates", label: "Update notes", detail: CHANGELOG[0] ? `Newest: ${CHANGELOG[0].title}` : "What changed", icon: TAB_ICONS.updates },
+  { id: "terms", label: "Terms & refunds", detail: `Updated ${TERMS_LAST_UPDATED}`, icon: TAB_ICONS.terms },
+  { id: "privacy", label: "Privacy", detail: `Updated ${PRIVACY_LAST_UPDATED}`, icon: TAB_ICONS.privacy },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -35,16 +35,15 @@ function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { ico
 
 function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start rounded-card bg-neu-base shadow-raised-low p-2 lg:flex">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onSelect(tab.id)}
-          className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
-            activeTab === tab.id
-              ? "border-slate-50/40 bg-slate-800 text-slate-50"
-              : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+          aria-current={activeTab === tab.id ? "page" : undefined}
+          className={`tap flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            activeTab === tab.id ? "bg-neu-lift text-slate-50" : "text-slate-400 hover:bg-neu-lift hover:text-slate-100"
           }`}
         >
           <TabIcon icon={tab.icon} />
@@ -56,17 +55,23 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
 }
 
 function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
+  // The same rows as Settings on a phone: a tinted icon, the name, one quiet line saying what is inside.
   return (
-    <div className="glass-surface divide-y divide-ink/10 lg:hidden">
+    <div className="divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onSelect(tab.id)}
-          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
+          className="tap flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
-          <TabIcon icon={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
-          <span className="flex-1 text-small text-slate-100">{tab.label}</span>
+          <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-signal/16 text-signal-fg">
+            <TabIcon icon={tab.icon} className="h-5 w-5 shrink-0" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-body font-medium text-slate-50">{tab.label}</span>
+            <span className="mt-0.5 block truncate text-caption text-slate-500">{tab.detail}</span>
+          </span>
           <TabIcon icon={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
         </button>
       ))}
@@ -76,7 +81,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 
 function AboutTab() {
   return (
-    <div className="glass-surface p-6">
+    <div className="rounded-card bg-neu-base shadow-raised-low p-5 md:p-6">
       <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Bass Note Piano</p>
       <p className="mt-1 text-title text-slate-50 font-semibold">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-small text-slate-400">
@@ -93,7 +98,7 @@ const UPDATES_SHOWN = 3;
 
 function UpdateEntry({ entry }: { entry: (typeof CHANGELOG)[number] }) {
   return (
-    <div className="glass-surface p-5 md:p-6">
+    <div className="rounded-card bg-neu-base shadow-raised-low p-5 md:p-6">
       <div className="flex items-baseline justify-between gap-4">
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">v{entry.version}</p>
         <p className="text-caption text-slate-500">{entry.date}</p>
@@ -136,7 +141,7 @@ function UpdatesTab() {
 
 function TermsTab() {
   return (
-    <div className="glass-surface space-y-6 p-6">
+    <div className="rounded-card bg-neu-base shadow-raised-low space-y-6 p-5 md:p-6">
       <div>
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
         <p className="mt-1 text-title text-slate-50 font-semibold">Terms &amp; refund policy</p>
@@ -151,7 +156,7 @@ function TermsTab() {
 
 function PrivacyTab() {
   return (
-    <div className="glass-surface space-y-6 p-6">
+    <div className="rounded-card bg-neu-base shadow-raised-low space-y-6 p-5 md:p-6">
       <div>
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
         <p className="mt-1 text-title text-slate-50 font-semibold">Privacy policy</p>
@@ -203,7 +208,7 @@ function AboutClientInner() {
       {/* Only ever linked from Settings, see AccountSettings.tsx. */}
       <PageBack href="/account" />
       <div>
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Info</p>
+        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Info</p>
         <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>
       </div>
 
