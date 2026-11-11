@@ -1,4 +1,5 @@
 import { schedule } from "@netlify/functions";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../src/lib/prisma";
 import { runJob } from "../../src/lib/jobRun";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
@@ -13,6 +14,16 @@ const MINUTE_MS = 60_000;
 const CLASS_MINUTES = 45;
 // Someone who joins voice late is still pulled into their call for this long after the class starts.
 const MOVE_RETRY_AFTER_START_MIN = 15;
+
+/** The classes that still need a call: starting soon, not in person, no channel yet. One definition, so the quick check and the real run agree. */
+function needsCallWhere(now: number, openBeforeMin: number): Prisma.ClassBookingWhereInput {
+  return {
+    status: "SCHEDULED",
+    discordChannelId: null,
+    inPerson: false, // an in-person class has no call
+    scheduledAt: { gt: new Date(now - 10 * MINUTE_MS), lte: new Date(now + openBeforeMin * MINUTE_MS) },
+  };
+}
 
 /**
  * One in-app notice to the owner per reason, so a job that runs every two minutes does not repeat itself.
@@ -35,28 +46,35 @@ export const runDiscordClassChannels = () =>
       console.log("Discord class channels: no bot token yet, nothing to do");
       return { statusCode: 200 };
     }
-    if (!(await getBoolSetting("discord.enabled"))) {
-      console.log("Discord class channels: turned off in settings");
-      return { statusCode: 200 };
+    // The quick check (2026-11-11). This runs every minute, all day, and almost every run finds nothing to do, so it first asks three
+    // small questions in one round trip: is it turned on, is any call open (it has to be moved into or removed), is the test call
+    // there. Only when all three say no does it ask whether a class is about to start. If nothing is, it stops here: no owner lookup,
+    // no Discord request, no cleanup writes. The full run below is what used to happen on every single minute.
+    const [enabled, hasOpenCall, hasTestCall] = await Promise.all([
+      getBoolSetting("discord.enabled"),
+      prisma.classBooking.findFirst({ where: { discordChannelId: { not: null } }, select: { id: true } }),
+      prisma.appSetting.findUnique({ where: { key: TEST_CHANNEL_KEY }, select: { key: true } }),
+    ]);
+    if (!enabled) {
+      return { statusCode: 200, body: "idle" };
     }
     const OPEN_BEFORE_MIN = await getNumberSetting("discord.openBeforeMinutes");
+    const now = Date.now();
+    if (!hasOpenCall && !hasTestCall && !(await prisma.classBooking.findFirst({ where: needsCallWhere(now, OPEN_BEFORE_MIN), select: { id: true } }))) {
+      return { statusCode: 200, body: "idle" };
+    }
+
     const CLOSE_AFTER_MIN = await getNumberSetting("discord.closeAfterMinutes");
     const addOwner = await getBoolSetting("discord.addOwner");
     const notifyOwner = await getBoolSetting("discord.notifyOwner");
     const notifyStudents = await getBoolSetting("discord.notifyStudents");
     const autoMove = await getBoolSetting("discord.autoMove");
-    const now = Date.now();
     let created = 0;
     let removed = 0;
 
     // 1. Make a private call for each class starting soon.
     const upcoming = await prisma.classBooking.findMany({
-      where: {
-        status: "SCHEDULED",
-        discordChannelId: null,
-        inPerson: false, // an in-person class has no call
-        scheduledAt: { gt: new Date(now - 10 * MINUTE_MS), lte: new Date(now + OPEN_BEFORE_MIN * MINUTE_MS) },
-      },
+      where: needsCallWhere(now, OPEN_BEFORE_MIN),
       select: {
         id: true,
         scheduledAt: true,
@@ -75,8 +93,9 @@ export const runDiscordClassChannels = () =>
 
     const owner = await prisma.user.findFirst({ where: { email: OWNER_EMAIL, role: "ADMIN" }, select: { id: true, discordId: true } });
     // The owner can only be given a call they are actually in the server for, and a missing
-    // Discord link means they are not added to the call at all. Say so instead of staying silent.
-    const ownerInServer = addOwner && owner?.discordId ? await isGuildMember(owner.discordId).catch(() => false) : false;
+    // Discord link means they are not added to the call at all. Say so instead of staying silent. Only asked of Discord when a call
+    // is actually about to open: this used to be a Discord request on every run, even with no class in sight.
+    const ownerInServer = calls.size > 0 && addOwner && owner?.discordId ? await isGuildMember(owner.discordId).catch(() => false) : false;
 
     for (const members of Array.from(calls.values())) {
       try {

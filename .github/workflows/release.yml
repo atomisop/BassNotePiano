@@ -1,0 +1,37 @@
+# Puts main live, once a day. Netlify deploys the `release` branch to production (not main), because every production
+# deploy costs 15 Netlify credits and merging a few times a day used up the month's credits. Pull requests still get a free
+# preview to test before they merge. To ship something right now: Actions > Release to production > Run workflow (the GitHub
+# phone app has the same button). Plain-language steps and the one-time Netlify setting are in docs/RELEASES.md.
+#
+# It only moves `release` forward, and only to a main commit whose CI run passed (waiting for it if it is still running).
+# If nothing new landed on main since the last release, it does nothing, and Netlify builds nothing.
+name: Release to production
+
+on:
+  schedule:
+    # 08:17 UTC is 4:17 AM Eastern (3:17 in winter), after the nightly backup and before the 09:00 UTC daily jobs.
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+# One release at a time; a second press waits instead of racing the first.
+concurrency:
+  group: release-to-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write # pushes the release branch
+  actions: read # reads the CI result
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Move release forward to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/release-to-production.sh
