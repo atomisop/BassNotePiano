@@ -29,6 +29,8 @@ import { OpenClassCallOnArrival } from "@/components/lessons/JoinClassButton";
 import { getDisplayPricingConfig } from "@/lib/pricing";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
+import { LessonsTiles } from "@/components/lessons/LessonsTiles";
+import { CalendarClock, CalendarPlus, CreditCard, Flame } from "@/components/ui/appIcons";
 
 /**
  * A student on an active Payment Plan sees two tabs here. "My weekly class" is
@@ -223,6 +225,16 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
                   ),
                 }
               : null
+          }
+          afterHero={
+            <LessonsTiles
+              items={[
+                { href: "/lessons?tab=extra", label: "Book a class", detail: booksOwnClasses ? "Pick a time" : "An extra session", icon: <CalendarPlus /> },
+                ...(timeChange === "self" && activePlan.reservedScheduleId ? [{ href: "/lessons?changeTime=", label: "Weekly time", detail: "Change your day", icon: <CalendarClock /> }] : []),
+                { href: "/practice", label: "Practice", detail: "10 minutes today", icon: <Flame /> },
+                { href: "/billing/plans", label: "My plan", detail: "Bills and length", icon: <CreditCard /> },
+              ]}
+            />
           }
           upcomingBookings={upcomingBookings.map((b) => ({
             id: b.id,
