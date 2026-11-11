@@ -501,7 +501,7 @@ export function PaymentQueue({
               payment.method === "VENMO" ? "Venmo" : "Zelle",
               payment.senderName,
               payment.senderPhone ? formatPhone(payment.senderPhone) : null,
-              payment.submittedAt ? new Date(payment.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null,
+              payment.submittedAt ? new Date(payment.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : null,
               payment.matchedVia && !softMatch ? (MATCHED_VIA_LABEL[payment.matchedVia] ?? `Matched by ${payment.matchedVia}`) : null,
               payment.autoApproved && payment.checkedAt ? "Auto-approved, checked" : null,
             ]}

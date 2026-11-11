@@ -12,7 +12,7 @@ import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 }
 
 /**

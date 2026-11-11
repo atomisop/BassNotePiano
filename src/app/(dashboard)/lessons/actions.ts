@@ -73,6 +73,7 @@ export async function requestClassTimesAction(selections: RequestSelection[]) {
 export async function cancelBookingRequestAction(requestId: string) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
+  if (await hasParentControl(session.user.id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
 
   try {
     await cancelBookingRequest(requestId, session.user.id);

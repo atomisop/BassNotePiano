@@ -1599,6 +1599,20 @@ export async function createReservedBookingIfAbsent(
       console.error(
         `Reserved booking conflict: plan ${planId}'s student ${studentId} found no free seat at schedule ${scheduleId}, ${occurrenceDate.toISOString()}: skipped, needs admin attention.`,
       );
+      // A paid weekly class that cannot be booked must reach a person: tell the owner once per plan and day (a marker row keeps the
+      // daily job from repeating it).
+      const marker = `seat-conflict:${planId}:${occurrenceDate.toISOString().slice(0, 10)}`;
+      const fresh = await db.appSetting.create({ data: { key: marker, value: "1" } }).then(() => true, () => false);
+      if (fresh) {
+        const { notifyAdmins } = await import("@/lib/adminNotifications");
+        await notifyAdmins("SLOT_PROBLEM", {
+          type: "ADMIN_ALERT",
+          title: "A paid weekly class could not be booked",
+          body: `A subscriber's weekly time on ${occurrenceDate.toISOString().slice(0, 10)} is full (another student holds it), so their class was not booked. Move one of them.`,
+          emailCategory: "classes",
+          cta: { label: "Open the schedule", path: "/admin/schedule" },
+        }).catch(() => undefined);
+      }
       return null;
     }
   }
@@ -1801,10 +1815,11 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   // still SCHEDULED at this point has never been attendance-marked, there
   // is nothing to refund because nothing was ever actually taken. `refunded`
   // stays true regardless, meaning "this booking never cost you anything."
-  await prisma.classBooking.update({
-    where: { id: bookingId },
+  const canceled = await prisma.classBooking.updateMany({
+    where: { id: bookingId, status: "SCHEDULED" },
     data: { status: "CANCELED", refunded: true, ...(booking.reservedByPlanId ? { canceledReason: SKIPPED_BY_STUDENT } : {}) },
   });
+  if (canceled.count !== 1) throw new ClassBookingError("This booking isn't active.");
 
   await createNotification({
     userId: studentId,

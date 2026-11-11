@@ -67,7 +67,7 @@ function formatUsd(cents: number) {
 }
 
 function formatDate(d: Date | string) {
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
 function formatDateTime(d: Date | string) {
@@ -94,8 +94,9 @@ function SectionCard({ id, title, action, children }: { id?: string; title: stri
 /** "Nov 3", with the year only when it is not this year: a date in a row speaks for itself. */
 function shortDate(d: Date | string) {
   const date = new Date(d);
-  const sameYear = date.getFullYear() === new Date().getFullYear();
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  const yearOf = (x: Date) => x.toLocaleDateString("en-US", { year: "numeric", timeZone: "America/New_York" });
+  const sameYear = yearOf(date) === yearOf(new Date());
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }), timeZone: "America/New_York" });
 }
 
 /** A payment's purpose in plain words: "Payment plan installment". */

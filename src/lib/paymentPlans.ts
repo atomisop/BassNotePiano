@@ -465,7 +465,7 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
           }
         : plan.reservedSchedule,
     // A plan that costs nothing (a full scholarship) has no bill to be late with: its covered bill settles by itself.
-    isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now && plan.installmentAmountCents > 0,
+    isOverdue: plan.status === "ACTIVE" && plan.installmentsPaid > 0 && plan.nextDueDate.getTime() < now && plan.installmentAmountCents > 0,
   }));
 }
 

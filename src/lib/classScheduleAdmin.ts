@@ -331,7 +331,7 @@ export async function undoAttendance(bookingId: string): Promise<void> {
 
   await prisma.$transaction(async (tx) => {
     // Claim the undo first: of two clicks at once only one finds the class still marked, so the credit comes back once.
-    const claimed = await tx.classBooking.updateMany({ where: { id: bookingId, status: "COMPLETED" }, data: { status: "SCHEDULED", attendance: null } });
+    const claimed = await tx.classBooking.updateMany({ where: { id: bookingId, status: "COMPLETED" }, data: { status: "SCHEDULED", attendance: null, canceledReason: "Attendance corrected" } }); // the reason keeps the hourly auto-charge from marking it again
     if (claimed.count !== 1) throw new ClassBookingError("This booking isn't marked yet. Nothing to undo.");
     await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
   });
@@ -360,11 +360,14 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
 
   const trimmedReason = reason?.trim() || null;
 
-  await prisma.classBooking.update({
-    where: { id: bookingId },
+  // Conditional on still being SCHEDULED: if the hourly auto-charge (or another tab) marked it a moment ago, this must not overwrite a
+  // class whose credit was already taken.
+  const canceled = await prisma.classBooking.updateMany({
+    where: { id: bookingId, status: "SCHEDULED" },
     // Always a reason, so a weekly-slot job never brings a class the studio canceled back.
     data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason ?? "Canceled by the studio" },
   });
+  if (canceled.count !== 1) throw new ClassBookingError("This class was just marked. Undo the mark first if you meant to cancel it.");
 
   await createNotification({
     userId: booking.studentId,

@@ -227,7 +227,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
               </div>
               {(activePlan.pausedIndefinitely || activePlan.pausedUntil) && (
                 <StatusDot tone="warning" className="shrink-0 pt-0.5">
-                  {activePlan.pausedUntil ? `Paused to ${new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Paused"}
+                  {activePlan.pausedUntil ? `Paused to ${new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : "Paused"}
                 </StatusDot>
               )}
             </div>
@@ -238,7 +238,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                 <Fact label="To pay" value={NOTHING_TO_PAY} />
                 <Fact
                   label="Next 28 days start"
-                  value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                  value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "None"}
                   tone={progress.nextBillAt ? "default" : "muted"}
                 />
               </Facts>
@@ -258,7 +258,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
               <Fact label="Days paid" value={`${progress.daysCovered} of ${progress.daysTotal}`} />
               <Fact
                 label="Next bill"
-                value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "None"}
                 tone={progress.nextBillAt ? "default" : "muted"}
               />
             </Facts>

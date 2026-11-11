@@ -13,7 +13,7 @@ export async function TeacherNotesCard({ studentId }: { studentId: string }) {
     <li key={n.id} className="py-3 first:pt-0 last:pb-0">
       <p className="whitespace-pre-wrap text-body text-slate-100">{n.body}</p>
       <p className="mt-1 text-caption text-slate-500">
-        {new Date(n.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+        {new Date(n.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" })}
       </p>
     </li>
   );

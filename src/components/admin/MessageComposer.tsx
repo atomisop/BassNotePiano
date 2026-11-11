@@ -294,8 +294,8 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
                     <div className="border-t border-slate-50/8 px-4 pb-4 pt-3">
                       <p className="whitespace-pre-wrap text-body text-slate-200">{m.body}</p>
                       <p className="mt-3 text-small text-slate-500">
-                        {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString()}
-                        {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString()}` : ""}
+                        {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString(undefined, { timeZone: "America/New_York" })}
+                        {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString(undefined, { timeZone: "America/New_York" })}` : ""}
                       </p>
                     </div>
                   </Collapse>

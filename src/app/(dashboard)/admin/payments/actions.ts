@@ -35,14 +35,14 @@ export async function approvePaymentAction(paymentId: string, notify = true) {
 }
 
 export async function checkPaymentAction(paymentId: string) {
-  await requireAdmin();
+  await requireOwnerAdmin(); // the owner's own review of auto-approved payments, and it counts toward trust
   await markPaymentChecked(paymentId);
   revalidatePath("/", "layout");
 }
 
 /** "Mark all as checked" on the Unchecked tab, after the admin has looked through them. */
 export async function checkAllPaymentsAction(): Promise<{ message: string }> {
-  await requireAdmin();
+  await requireOwnerAdmin();
   const count = await markAllPaymentsChecked();
   revalidatePath("/", "layout");
   return { message: count === 1 ? "1 payment marked as checked." : `${count} payments marked as checked.` };

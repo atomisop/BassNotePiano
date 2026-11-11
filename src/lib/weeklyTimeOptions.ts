@@ -72,9 +72,11 @@ export interface WeeklyTimeOption {
 export const newTimeKey = (t: TypedWeeklyTime) => `new:${t.dayOfWeek}:${t.startTime}`;
 
 const etYmd = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+// Today's Eastern date as a UTC-midnight stand-in (the same shape a hold's "until" is stored in), not the UTC date: from 8pm Eastern the
+// UTC date is already tomorrow and a hold ending today would vanish early.
 const todayUtcMidnight = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const [y, m, d] = etYmd(new Date()).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
 };
 const ONE_CHUNK = { chunkIndex: 0, offsetMin: 0, creditCost: 2 };
 

@@ -3,7 +3,10 @@ vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, getServer
 vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {} }));
 import { bookClass, nextOccurrenceDates, rescheduleClassBooking } from "@/lib/classSchedule";
 import { OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
-import { approveZellePayment, submitZellePaymentReference } from "@/lib/payments";
+import { approveZellePayment, rejectZellePayment, submitZellePaymentReference } from "@/lib/payments";
+import { adjustUserCredits } from "@/lib/creditAdjustments";
+import { undoAttendance } from "@/lib/classScheduleAdmin";
+import { runAttendanceAutoCharge } from "@/lib/attendanceAutoCharge";
 import { getOrCreateOpenInstallmentPayment, recordPlanPaymentReceived } from "@/lib/paymentPlans";
 import { assertParentOf } from "@/lib/parentLinks";
 import { syncGroupBundle } from "@/lib/paymentBundles";
@@ -162,5 +165,56 @@ describe("smaller review fixes", () => {
     await prisma.zellePayment.create({ data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "VERIFIED" } });
     await expect(applyMoneyFix({ id: s.id, email: null }, `counter:${plan.id}`, "setPaid")).rejects.toThrow(/finished|no longer applies/);
     expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("COMPLETED");
+  });
+});
+
+describe("second round of review fixes", () => {
+  it("a 1 Month plan's paid period starts when it is approved, not when the plan was made", async () => {
+    const s = await person("One");
+    const madeAt = new Date(Date.now() - 5 * 86_400_000);
+    const plan = await prisma.paymentPlan.create({
+      data: {
+        userId: s.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", installmentAmountCents: 21999, creditsPerInstallment: 8, termMonths: 1,
+        installmentsPaid: 0, nextDueDate: madeAt, reservedScheduleId: sched.id, reservedChunkIndex: 0,
+      },
+    });
+    const bill = await prisma.zellePayment.create({
+      data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 21999, lessonQuantity: 8, zelleHandle: "x", status: "PENDING_REVIEW" },
+    });
+    await approveZellePayment(bill.id, null);
+    const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
+    expect(after.status).toBe("COMPLETED");
+    // The stored date is the start of the paid cycle: about now, never the earlier day the plan was made.
+    expect(after.nextDueDate.getTime()).toBeGreaterThan(madeAt.getTime() + 4 * 86_400_000);
+  });
+
+  it("a payment that was approved in the meantime cannot be rejected", async () => {
+    const s = await person("Rj");
+    const admin = await person("Adm");
+    const pay = await prisma.zellePayment.create({ data: { userId: s.id, purpose: "CLASS_CREDITS", amountCents: 5500, lessonQuantity: 2, zelleHandle: "x", status: "VERIFIED" } });
+    await expect(rejectZellePayment(pay.id, admin.id, "late")).rejects.toThrow(/pending review|no longer/);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: pay.id } })).status).toBe("VERIFIED");
+  });
+
+  it("a class whose mark was undone is not charged again by the hourly auto-charge", async () => {
+    const s = await person("Und");
+    const long = new Date(Date.now() - 30 * 3_600_000);
+    const b = await prisma.classBooking.create({
+      data: { studentId: s.id, scheduleId: sched.id, occurrenceDate: new Date(Date.UTC(2031, 5, 2)), scheduledAt: long, status: "COMPLETED", attendance: "NO_SHOW", creditsSpent: 2 },
+    });
+    await undoAttendance(b.id);
+    await runAttendanceAutoCharge();
+    const row = await prisma.classBooking.findUniqueOrThrow({ where: { id: b.id } });
+    expect(row.status).toBe("SCHEDULED");
+  });
+
+  it("an admin's hand-made deduction cannot eat credits that booked classes hold", async () => {
+    const s = await person("Held", { classCredits: 4 });
+    const admin = await person("Adm2");
+    await prisma.classBooking.create({
+      data: { studentId: s.id, scheduleId: sched.id, occurrenceDate: new Date(Date.UTC(2031, 6, 2)), scheduledAt: new Date(Date.now() + 5 * 86_400_000), status: "SCHEDULED", creditsSpent: 4 },
+    });
+    await expect(adjustUserCredits(admin.id, s.id, -2, "oops", { respectHeld: true })).rejects.toThrow(/holding/);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: s.id } })).classCredits).toBe(4);
   });
 });

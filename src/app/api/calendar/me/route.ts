@@ -15,8 +15,8 @@ export async function GET(req: Request) {
   const token = url.searchParams.get("t") ?? "";
   if (!userId || !token) return notFound();
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { calendarVersion: true, bannedAt: true } });
-  if (!user || user.bannedAt || !isValidStudentCalendarToken(userId, user.calendarVersion, token)) return notFound();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { calendarVersion: true, bannedAt: true, paymentLockedAt: true } });
+  if (!user || user.bannedAt || user.paymentLockedAt || !isValidStudentCalendarToken(userId, user.calendarVersion, token)) return notFound();
 
   const now = new Date();
   const bookings = await prisma.classBooking.findMany({

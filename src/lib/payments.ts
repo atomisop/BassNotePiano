@@ -1197,7 +1197,9 @@ export async function applyPlanInstallment(
       data: {
         installmentsPaid,
         status: isComplete ? "COMPLETED" : "ACTIVE",
-        nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+        // A finished plan keeps the START of its last paid cycle (paid access runs 28 days from it). A 1 Month plan's first bill is also its
+        // last, so its stored date is still the day the plan was made: the cycle really started at cycleStart (approval, or the first class).
+        nextDueDate: isComplete ? (plan.installmentsPaid === 0 && cycleStart ? cycleStart : plan.nextDueDate) : cycleEnd,
         ...(renewed ? { termMonths: plan.termMonths + SCHOLARSHIP_RENEWAL_CYCLES } : {}),
       },
     });
@@ -1387,8 +1389,17 @@ export async function undoRefundZellePayment(
     }
     if (opts.reactivatePlan) {
       for (const planId of planIds) {
-        const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, cancellationNote: true } });
+        const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, cancellationNote: true, userId: true } });
         if (plan?.status === "CANCELED" && plan.cancellationNote?.startsWith("Refund:")) {
+          // Never a second running plan for one person, and never for a banned account: leave it ended and say so.
+          const [other, holder] = await Promise.all([
+            prisma.paymentPlan.findFirst({ where: { userId: plan.userId, status: "ACTIVE", id: { not: planId } }, select: { id: true } }),
+            prisma.user.findUnique({ where: { id: plan.userId }, select: { bannedAt: true } }),
+          ]);
+          if (other || holder?.bannedAt) {
+            warnings.push(other ? "The plan was not restored: this person already has another running plan. Use Restart canceled plan on their page if you still want it back." : "The plan was not restored: the account is banned.");
+            continue;
+          }
           await prisma.paymentPlan.update({ where: { id: planId }, data: { status: "ACTIVE", canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
           warnings.push("A plan ended by the refund is running again. Classes canceled with it were not brought back.");
         }
@@ -1426,10 +1437,13 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
   }
 
-  await prisma.zellePayment.update({
-    where: { id: paymentId },
+  // Guarded by status: a bank email or an auto-approval may have verified this payment since it was read, and that must not be
+  // flipped to REJECTED after its credits were granted.
+  const rejected = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, status: "PENDING_REVIEW" },
     data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: reviewerId, rejectionReason: reason },
   });
+  if (rejected.count !== 1) throw new Error(`Payment ${paymentId} is no longer pending review.`);
 
   // A group or parent plan's bill is sent in by whoever pays it (a member, a child, cannot), so the payer is the one told, and sent to
   // where they pay it: the Parent page or Billing > Plans. Everyone else's bill goes back to them, with its pay sheet open.
