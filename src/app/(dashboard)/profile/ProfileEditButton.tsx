@@ -3,8 +3,9 @@
 import { useState } from "react";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { NavIcon, ICON_PATHS } from "@/components/layout/navIcons";
+import { Pencil } from "@/components/ui/appIcons";
 import { ProfileEditor } from "./ProfileEditor";
+import { buttonVariants } from "@/components/ui/button";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -28,13 +29,9 @@ export function ProfileEditButton(props: ProfileEditButtonProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Edit profile"
-        className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:text-slate-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-      >
-        <NavIcon path={ICON_PATHS.edit} className="h-4 w-4" />
+      <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 gap-1.5" })}>
+        <Pencil aria-hidden className="h-4 w-4" />
+        Edit profile
       </button>
 
       <SlideOverPanel open={open} onClose={() => setOpen(false)} title="Edit profile">

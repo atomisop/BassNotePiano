@@ -59,7 +59,7 @@ export async function getTeachingDay(now: Date = new Date(), day?: string): Prom
           classCredits: true,
           discordId: true,
           discordUsername: true,
-          paymentPlans: { where: { status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 1, select: { term: true, nextDueDate: true, installmentsPaid: true } },
+          paymentPlans: { where: { status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 1, select: { term: true, nextDueDate: true, installmentsPaid: true, installmentAmountCents: true } },
         },
       },
     },
@@ -102,7 +102,8 @@ export async function getTeachingDay(now: Date = new Date(), day?: string): Prom
       discord: discordLinkState({ discordId: s.discordId, discordUsername: s.discordUsername }),
       credits: creditsLabelFromStored(s.classCredits),
       planLabel: plan ? TERM_LABEL[plan.term] ?? plan.term : null,
-      billOverdue: Boolean(plan && plan.nextDueDate.getTime() < now.getTime()),
+      // A plan that costs nothing (a full scholarship) has no bill to be late with.
+      billOverdue: Boolean(plan && plan.installmentAmountCents > 0 && plan.nextDueDate.getTime() < now.getTime()),
       scale: scaleBy.get(s.id) ?? null,
       practicedDaysLast7: plan ? practice.get(s.id) ?? 0 : null,
       note: noteBy.get(s.id) ?? null,

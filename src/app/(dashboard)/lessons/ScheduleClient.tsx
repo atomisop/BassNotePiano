@@ -21,6 +21,7 @@ import { toast } from "@/components/ui/Toaster";
 import { Hint } from "@/components/ui/Hint";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Callout, CardFoot, Meta } from "@/components/ui/CardKit";
+import { NextClassBand } from "@/components/lessons/NextClassBand";
 
 interface UpcomingBooking {
   id: string;
@@ -51,11 +52,22 @@ function formatTimeLabel(hhmm: string): string {
 const LATER_SHOWN = 3;
 
 /** The hero's two big parts: "Wednesday, Nov 12" and "6:00 PM", in the viewer's own clock like formatDateTime. */
-function classDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+function classDay(iso: string, timeZone?: string) {
+  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", timeZone });
 }
-function classTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+function classTime(iso: string, timeZone?: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone });
+}
+
+/**
+ * Times here are shown in the viewer's own clock, which the server cannot know. So the first paint (the server's, and the browser's
+ * matching one) uses the studio's Eastern clock, and the viewer's own clock takes over as soon as the page is alive. Without this
+ * the page failed to hydrate for everyone whose clock is not the server's.
+ */
+function useViewerTimeZone(): string | undefined {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? undefined : "America/New_York";
 }
 
 interface WeeklyTime {
@@ -85,6 +97,8 @@ interface ScheduleClientProps {
   openTimePicker?: boolean;
   /** "scheduleId:chunkIndex" to have chosen in the picker on arrival, when that time is open. */
   initialTimeKey?: string | null;
+  /** Drawn right under the hero (the page's "What do you want to do?" tiles). */
+  afterHero?: React.ReactNode;
 }
 
 export function ScheduleClient({
@@ -97,7 +111,9 @@ export function ScheduleClient({
   timeChange = "self",
   openTimePicker = false,
   initialTimeKey = null,
+  afterHero,
 }: ScheduleClientProps) {
+  const tz = useViewerTimeZone();
   const router = useRouter();
   // Skipping one class (24+ hours ahead): two taps, then it is gone and its
   // credit stays on the account, to use on a different time under Extra sessions.
@@ -243,10 +259,10 @@ export function ScheduleClient({
       <li key={booking.id} className="py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(booking.scheduledAt)}</p>
+            <p className="text-body font-semibold tabular-nums text-slate-50">{formatDateTime(booking.scheduledAt, tz)}</p>
             <Meta
               className="mt-0.5"
-              items={[booking.label ?? "Weekly class", `ends ${formatEndTime(booking.scheduledAt, booking.creditsSpent)}`, booking.inPerson && "In person", c.lockedNote && "Changes go through the team"]}
+              items={[booking.label ?? "Weekly class", `ends ${formatEndTime(booking.scheduledAt, booking.creditsSpent, tz)}`, booking.inPerson && "In person", c.lockedNote && "Changes go through the team"]}
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -293,89 +309,85 @@ export function ScheduleClient({
     <WideLayout className="space-y-6">
       <h2 className="sr-only">Your schedule</h2>
 
-      {/* The hero: the next class, its day and time the biggest thing on the screen. Everything else on this tab is quieter. */}
-      <section aria-label="Next class" className="rounded-card bg-neu-base p-5 shadow-raised-mid sm:p-6">
-        {next && nextState ? (
-          <>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
-                <p className="mt-1 text-headline font-semibold tabular-nums text-balance text-slate-50">
-                  <span className="block sm:inline">{classDay(next.scheduledAt)}</span>
-                  <span aria-hidden className="hidden text-slate-500 sm:inline"> · </span>
-                  <span className="block sm:inline">{classTime(next.scheduledAt)}</span>
-                </p>
-                <Meta
-                  className="mt-1.5"
-                  items={[
-                    `Ends ${formatEndTime(next.scheduledAt, next.creditsSpent)}`,
-                    `${nextState.minutes} min`,
-                    next.inPerson ? "In person" : (next.label ?? "Weekly class"),
-                    hasClassThisWeek && "This week is booked",
-                  ]}
+      {/* The hero: the next class on a coloured band, its time the biggest thing on the screen, the controls on the sheet under it. */}
+      {next && nextState ? (
+        <NextClassBand
+          day={classDay(next.scheduledAt, tz)}
+          time={classTime(next.scheduledAt, tz)}
+          meta={
+            <Meta
+              items={[
+                `Ends ${formatEndTime(next.scheduledAt, next.creditsSpent, tz)}`,
+                `${nextState.minutes} min`,
+                next.inPerson ? "In person" : (next.label ?? "Weekly class"),
+                hasClassThisWeek && "This week is booked",
+              ]}
+            />
+          }
+        >
+          {nextState.lockedNote && <p className="pt-3 text-small text-slate-500">{nextState.lockedNote}</p>}
+          {nextState.confirming && nextState.canChange ? (
+            skipConfirm(next, nextState.busy)
+          ) : (
+            <CardFoot className="mt-0 justify-between border-t-0 pt-3">
+              {/* The rare jobs (asking support, skipping) sit in one quiet menu, Skip last and red, so the row fits on a phone and the
+                  everyday buttons on the right stay the obvious ones. */}
+              <ActionMenu label="More">
+                <MessageSupportButton
+                  bookingId={next.id}
+                  onError={(message) => setSupportError(message ? { id: next.id, message } : null)}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
                 />
+                {nextState.canChange && canCancel && (
+                  <button type="button" onClick={() => startSkip(next.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
+                    Skip this class
+                  </button>
+                )}
+              </ActionMenu>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {nextState.canChange && canReschedule && (
+                  <Link href={`/lessons?tab=extra&move=${next.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Move
+                  </Link>
+                )}
+                {nextState.calendarHref && (
+                  <a href={nextState.calendarHref} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                    Add to calendar
+                  </a>
+                )}
+                {nextState.joinNow && (
+                  <JoinClassButton href={next.discordUrl ?? DISCORD_INVITE_URL} bookingId={next.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
+                )}
               </div>
+              {supportError?.id === next.id && <p role="alert" className="basis-full text-right text-small text-red-400">{supportError.message}</p>}
+            </CardFoot>
+          )}
+          {skipError && (
+            <div className="flex flex-wrap items-center gap-3 pb-1" role="alert">
+              <p className="text-small text-red-400">{skipError}</p>
+              {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
             </div>
-            {nextState.lockedNote && <p className="mt-3 text-small text-slate-500">{nextState.lockedNote}</p>}
-            {nextState.confirming && nextState.canChange ? (
-              skipConfirm(next, nextState.busy)
-            ) : (
-              <CardFoot className="justify-between">
-                {/* The rare jobs (asking support, skipping) sit in one quiet menu, Skip last and red, so the row fits on a phone and the
-                    everyday buttons on the right stay the obvious ones. */}
-                <ActionMenu label="More">
-                  <MessageSupportButton
-                    bookingId={next.id}
-                    onError={(message) => setSupportError(message ? { id: next.id, message } : null)}
-                    className={buttonVariants({ variant: "ghost", size: "sm" })}
-                  />
-                  {nextState.canChange && canCancel && (
-                    <button type="button" onClick={() => startSkip(next.id)} className={buttonVariants({ variant: "ghost", size: "sm", className: "text-red-300 hover:text-red-200" })}>
-                      Skip this class
-                    </button>
-                  )}
-                </ActionMenu>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  {nextState.canChange && canReschedule && (
-                    <Link href={`/lessons?tab=extra&move=${next.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                      Move
-                    </Link>
-                  )}
-                  {nextState.calendarHref && (
-                    <a href={nextState.calendarHref} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                      Add to calendar
-                    </a>
-                  )}
-                  {nextState.joinNow && (
-                    <JoinClassButton href={next.discordUrl ?? DISCORD_INVITE_URL} bookingId={next.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
-                  )}
-                </div>
-                {supportError?.id === next.id && <p role="alert" className="basis-full text-right text-small text-red-400">{supportError.message}</p>}
-              </CardFoot>
-            )}
-          </>
-        ) : (
-          <>
-            <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
-            <p className="mt-1 text-headline font-semibold text-balance text-slate-50">{weeklyLine ?? "Nothing booked yet"}</p>
-            {weeklyLine ? (
-              <Meta className="mt-1.5" items={[hasClassThisWeek ? "This week is booked" : "Your weekly time", "Nothing else booked yet"]} />
-            ) : timeChange === "team" ? (
-              <p className="mt-1.5 text-small text-slate-500">You book each class yourself with your credits, under Book a class.</p>
-            ) : (
-              <Callout tone="neutral" className="mt-3">
-                No weekly time yet. Pick one below and every class in your plan is booked.
-              </Callout>
-            )}
-          </>
-        )}
-        {skipError && (
-          <div className="mt-3 flex flex-wrap items-center gap-3" role="alert">
-            <p className="text-small text-red-400">{skipError}</p>
-            {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
-          </div>
-        )}
-      </section>
+          )}
+        </NextClassBand>
+      ) : (
+        <NextClassBand day={weeklyLine ?? "Nothing booked yet"} meta={weeklyLine ? <Meta items={[hasClassThisWeek ? "This week is booked" : "Your weekly time", "Nothing else booked yet"]} /> : undefined}>
+          {!weeklyLine && timeChange === "team" ? (
+            <p className="pt-3 text-small text-slate-500">You book each class yourself with your credits, under Book a class.</p>
+          ) : !weeklyLine ? (
+            <Callout tone="neutral" className="mt-3">
+              No weekly time yet. Pick one below and every class in your plan is booked.
+            </Callout>
+          ) : null}
+          {skipError && (
+            <div className="flex flex-wrap items-center gap-3 pb-1" role="alert">
+              <p className="text-small text-red-400">{skipError}</p>
+              {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
+            </div>
+          )}
+        </NextClassBand>
+      )}
+
+      {afterHero}
 
       {/* The rest, as rows: a few shown, the others folded. */}
       <section aria-label="Your classes" className="rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">

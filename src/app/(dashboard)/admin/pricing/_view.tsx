@@ -38,7 +38,7 @@ export async function PricingView() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Pricing<Hint className="ml-1.5">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</Hint></h1>
+      <h1 className="sr-only">Pricing<Hint className="ml-1.5">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</Hint></h1>
       <div className="mt-6">
         <PricingManager
           initial={initial}

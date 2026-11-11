@@ -19,6 +19,7 @@ import { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Ticket } from "@/components/ui/appIcons";
+import { NextClassBand } from "@/components/lessons/NextClassBand";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
@@ -575,35 +576,30 @@ export function ClassBookingClient({
       {/* Without a plan this is the whole Lessons screen, so its hero is the next class: the day and time big, the rest quiet. (On a
           plan the weekly tab carries that hero, and this is the quieter extra-sessions tab.) */}
       {!extraMode && nextClass && (
-        <section aria-label="Next class" className="mb-(--space-group) rounded-card bg-neu-base p-5 shadow-raised-mid sm:p-6">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
-              <p className="mt-1 text-headline font-semibold tabular-nums text-balance text-slate-50">
-                <span className="block sm:inline">{formatOccurrenceDay(nextClass.scheduledAt)}</span>
-                <span aria-hidden className="hidden text-slate-500 sm:inline"> · </span>
-                <span className="block sm:inline">{formatOccurrenceTime(nextClass.scheduledAt)}</span>
-              </p>
-              <Meta
-                className="mt-1.5"
-                items={[
-                  nextClass.label ?? "Class",
-                  `to ${formatEndTime(nextClass.scheduledAt, nextClass.creditsSpent)}`,
-                  nextClass.inPerson && "In person",
-                  upcoming.length > 1 && `${upcoming.length - 1} more booked`,
-                ]}
-              />
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button type="button" onClick={() => setTab("upcoming")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                See all
-              </button>
-              {nextClassJoinable && (
-                <JoinClassButton href={nextClass.discordUrl ?? DISCORD_INVITE_URL} bookingId={nextClass.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
-              )}
-            </div>
+        <NextClassBand
+          className="mb-(--space-group)"
+          day={formatOccurrenceDay(nextClass.scheduledAt)}
+          time={formatOccurrenceTime(nextClass.scheduledAt)}
+          meta={
+            <Meta
+              items={[
+                nextClass.label ?? "Class",
+                `to ${formatEndTime(nextClass.scheduledAt, nextClass.creditsSpent)}`,
+                nextClass.inPerson && "In person",
+                upcoming.length > 1 && `${upcoming.length - 1} more booked`,
+              ]}
+            />
+          }
+        >
+          <div className="flex items-center justify-end gap-2 pt-3">
+            <button type="button" onClick={() => setTab("upcoming")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              See all
+            </button>
+            {nextClassJoinable && (
+              <JoinClassButton href={nextClass.discordUrl ?? DISCORD_INVITE_URL} bookingId={nextClass.id} className={buttonVariants({ variant: "primary", size: "sm" })} />
+            )}
           </div>
-        </section>
+        </NextClassBand>
       )}
 
       <div className={extraMode ? "mt-(--space-group)" : ""}>

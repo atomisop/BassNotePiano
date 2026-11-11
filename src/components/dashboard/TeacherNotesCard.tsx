@@ -1,4 +1,3 @@
-import { Card, Eyebrow } from "@/components/ui/Card";
 import { listNotesForStudent } from "@/lib/studentNotes";
 
 /** Notes shown before the rest fold away (DESIGN.md, Hierarchy rule 9). */
@@ -20,8 +19,8 @@ export async function TeacherNotesCard({ studentId }: { studentId: string }) {
   );
   const rest = shown.slice(FIRST);
   return (
-    <Card>
-      <Eyebrow>Notes from your teacher</Eyebrow>
+    <section aria-label="Notes from your teacher" className="rounded-card bg-neu-base p-5 shadow-raised-low">
+      <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Notes from your teacher</h2>
       <ul className="mt-3 divide-y divide-slate-50/8">
         {shown.slice(0, FIRST).map(note)}
         {rest.length > 0 && (
@@ -35,6 +34,6 @@ export async function TeacherNotesCard({ studentId }: { studentId: string }) {
           </li>
         )}
       </ul>
-    </Card>
+    </section>
   );
 }

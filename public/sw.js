@@ -2,7 +2,7 @@
 // internet (2026-10-31), and our own "Under maintenance" page instead of Netlify's "Site not available" when the host has paused the
 // site for usage limits. Registered on every visit (ServiceWorkerSetup.tsx). Only those two pages and the logo are kept on the device:
 // nothing else is cached, so the app is never served stale.
-const OFFLINE_CACHE = "bnp-offline-v2";
+const OFFLINE_CACHE = "bnp-offline-v4";
 const OFFLINE_URL = "/offline.html";
 const MAINTENANCE_URL = "/maintenance.html";
 const OFFLINE_FILES = [OFFLINE_URL, MAINTENANCE_URL, "/logo-mark.png"];

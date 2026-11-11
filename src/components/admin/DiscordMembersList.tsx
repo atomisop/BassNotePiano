@@ -7,7 +7,7 @@ import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearc
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { Search } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { Meta } from "@/components/ui/CardKit";

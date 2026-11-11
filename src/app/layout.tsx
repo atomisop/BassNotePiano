@@ -47,10 +47,12 @@ const baloo = localFont({
   weight: "500 800",
   display: "swap",
 });
+// 2026-11-12 (owner: "use the smooth font everywhere instead of the sharp font"): body copy and the label voice are Nunito,
+// a rounded face with soft terminals, in place of Sora and JetBrains Mono. Headlines stay Baloo 2, also rounded.
 const body = localFont({
-  src: "./fonts/Sora-Variable.woff2",
+  src: "./fonts/Nunito-Variable.woff2",
   variable: "--font-body",
-  weight: "300 700",
+  weight: "300 800",
   display: "swap",
 });
 
@@ -59,9 +61,9 @@ const body = localFont({
 // visitor's OS, which is three different designs for what is a signature
 // element of the marketing surface.
 const mono = localFont({
-  src: "./fonts/JetBrainsMono-Variable.woff2",
+  src: "./fonts/Nunito-Variable.woff2",
   variable: "--font-mono",
-  weight: "400 500",
+  weight: "300 800",
   display: "swap",
 });
 

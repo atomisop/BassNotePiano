@@ -7,7 +7,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
-import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels"; // Eastern, like the band and the weekly time: the same words on the server and in the browser
 import type { ChildClass } from "@/lib/parentChildren";
 import { childOpenSlotsAction, parentBookClassAction, parentCancelClassAction, parentMoveClassAction, type OpenClassSlot } from "@/app/(dashboard)/parent/actions";
 import { Hint } from "@/components/ui/Hint";

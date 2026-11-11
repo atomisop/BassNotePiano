@@ -63,7 +63,7 @@ export async function ActivityView(props: { searchParams: Promise<{ q?: string; 
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Activity<Hint className="ml-1.5">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</Hint></h1>
+      <h1 className="sr-only">Activity<Hint className="ml-1.5">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</Hint></h1>
 
       <form method="get" action="/admin/security" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Filter the activity log">
         <input type="hidden" name="section" value="activity" />

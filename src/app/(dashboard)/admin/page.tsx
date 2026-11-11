@@ -11,9 +11,13 @@ import { getDueWeek } from "@/lib/adminDue";
 import { getTeachingDay, getWeekSchedule } from "@/lib/teachingToday";
 import { changeLabel } from "@/lib/revenueSummary";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
-import { HomeHero } from "@/components/home/HomeHero";
+import { HeroBand } from "@/components/ui/HeroBand";
+import { ActionTiles } from "@/components/ui/ActionTiles";
+import { QUIET_ROWS } from "@/components/admin/AdminLead";
+import { messageComposeHref } from "@/lib/commandRecents";
+import { adminPaymentsHref } from "@/lib/adminPaymentLinks";
 import { buttonVariants } from "@/components/ui/button";
-import { ArrowRight, ChevronDown, ChevronRight } from "@/components/ui/appIcons";
+import { ArrowRight, CalendarCheck, ChevronDown, ChevronRight, CreditCard, Inbox, Send } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -29,8 +33,9 @@ function formatUsdShort(cents: number) {
 
 const timeEt = (d: Date) => d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 
-/** A titled group of rows in one soft panel (the same look as Home's rows). */
-const PANEL = "mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8";
+/** A titled group of rows in one quiet card (DESIGN.md, "Band, sheet and tiles" rule 6): no outline, hairlines between the rows. */
+// These panels hold links only (no menus), so clipping the rows' hover tint to the card's corners is safe.
+const PANEL = `mt-3 overflow-hidden ${QUIET_ROWS}`;
 
 const ROW = "group flex min-h-14 items-center gap-3 px-4 py-3 transition hover:bg-slate-50/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
 
@@ -83,7 +88,7 @@ function MoneyFigure({ href, value, label, hint, bars }: { href: string; value: 
     <li className="min-w-0">
       <Link
         href={href}
-        className="group flex h-full min-w-0 flex-col rounded-card bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8 transition hover:bg-slate-50/7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+        className="press group flex h-full min-w-0 flex-col rounded-card bg-neu-base p-3 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
       >
         <span className="truncate text-headline font-bold leading-none tabular-nums text-slate-50">{value}</span>
         <span className="mt-1.5 truncate text-caption text-slate-500">{label}</span>
@@ -119,6 +124,8 @@ export default async function AdminOverviewPage() {
   ]);
   const needsYou = buildNeedsYou(attention, followUps);
   const todayKey = easternDay(new Date());
+  /** How many of one kind of job are waiting (the same counts as Needs you), for the tiles' badges. */
+  const waiting = (kind: string) => needsYou.find((row) => row.id === kind)?.count ?? 0;
 
   const classesToday = today.slots.reduce((n, slot) => n + slot.students.length, 0);
   const upcoming = today.slots.find((s) => s.startsAt.getTime() > Date.now() - 45 * 60_000) ?? null;
@@ -127,15 +134,10 @@ export default async function AdminOverviewPage() {
   const weekChange = changeLabel(revenue.weekCents, revenue.prevWeekCents);
   const monthChange = changeLabel(revenue.monthCents, revenue.prevMonthCents);
 
-  // The hero names the one thing about today: the class coming up (or on now), that the day is done, or that there is none.
+  // The band names the one thing about today: the class coming up (or on now) with its time as the figure, that the day is done, or
+  // that there is none.
   const upcomingStarted = upcoming ? upcoming.startsAt.getTime() <= Date.now() : false;
-  const heroTitle = upcoming
-    ? upcomingStarted
-      ? `In class now, ${timeEt(upcoming.startsAt)}`
-      : `Next class at ${timeEt(upcoming.startsAt)}`
-    : classesToday > 0
-      ? "Today's classes are done"
-      : "No classes today";
+  const heroTitle = upcoming ? (upcomingStarted ? "In class now" : "Next class") : classesToday > 0 ? "Today's classes are done" : "No classes today";
   const heroDetail = upcoming
     ? `${upcoming.students.map((s) => s.name).join(", ")} · ${classesToday} ${classesToday === 1 ? "student" : "students"} today`
     : classesToday > 0
@@ -162,22 +164,40 @@ export default async function AdminOverviewPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
         {/* Schedule */}
         <div className="grid min-w-0 grid-cols-1 gap-8">
-          <HomeHero
-            artwork="dusk"
-            eyebrow="Today"
-            title={heroTitle}
-            detail={heroDetail}
-            actions={
-              <>
-                <Link href="/admin/today" className={buttonVariants({ size: "lg" })}>
-                  Open today
-                  <ArrowRight aria-hidden className="h-4 w-4" />
-                </Link>
-                <Link href="/admin/schedule" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-                  Schedule
-                </Link>
-              </>
-            }
+          {/* The one band (DESIGN.md, "Band, sheet and tiles"): today's fact, with its two buttons on the sheet. */}
+          <HeroBand eyebrow="Today" title={heroTitle} figure={upcoming ? timeEt(upcoming.startsAt) : undefined} meta={heroDetail}>
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-3">
+              <Link href="/admin/schedule" className={buttonVariants({ variant: "ghost" })}>
+                Schedule
+              </Link>
+              <Link href="/admin/today" className={buttonVariants()}>
+                Open today
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            </div>
+          </HeroBand>
+
+          {/* The jobs done most from here, one tap each; a count shows on the ones with something waiting. */}
+          <ActionTiles
+            title="Do next"
+            items={[
+              {
+                href: adminPaymentsHref({}),
+                label: "Payments",
+                detail: waiting("payments") > 0 ? `${formatUsdShort(stats.pendingRevenueCents)} to approve` : "Nothing to approve",
+                icon: <CreditCard />,
+                badge: waiting("payments"),
+              },
+              {
+                href: "/admin/schedule?view=ATTENDANCE",
+                label: "Attendance",
+                detail: waiting("unmarked") > 0 ? "Classes still to mark" : "Everyone is marked",
+                icon: <CalendarCheck />,
+                badge: waiting("unmarked"),
+              },
+              { href: "/admin/support", label: "Inbox", detail: waiting("support") > 0 ? "Waiting for a reply" : "No one is waiting", icon: <Inbox />, badge: waiting("support") },
+              { href: messageComposeHref([]), label: "Message", detail: "Write to a student", icon: <Send /> },
+            ]}
           />
 
           {/* Today's classes come straight after the hero that summarises them: the time is each row's point, the names quieter. */}
@@ -229,8 +249,8 @@ export default async function AdminOverviewPage() {
                     href={todayHref(d.dayKey, todayKey)}
                     aria-label={`${d.weekday} ${d.day}: ${d.students} ${d.students === 1 ? "class" : "classes"}`}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-control py-2.5 ring-1 ring-inset transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      i === 0 ? "bg-signal/14 ring-signal/30" : "bg-slate-50/4 ring-slate-50/8 hover:bg-slate-50/7",
+                      "press flex flex-col items-center gap-1 rounded-control py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      i === 0 ? "bg-signal/16" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid",
                     )}
                   >
                     <span className={cn("text-caption font-medium", i === 0 ? "text-signal-fg" : "text-slate-500")}>{d.weekday}</span>

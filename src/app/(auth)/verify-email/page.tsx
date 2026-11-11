@@ -18,6 +18,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
 import { BackLink } from "@/components/ui/BackLink";
+import { AuthHeading } from "@/components/auth/AuthHeading";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
@@ -123,11 +124,9 @@ function VerifyEmailForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Almost there</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Verify your email</h1>
-      <p className="mt-2 text-small text-slate-500">
-        Code sent to <span className="text-slate-300">{email}</span>.
-      </p>
+      <AuthHeading title="Verify your email">
+        Code sent to <span className="text-slate-200">{email}</span>.
+      </AuthHeading>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>

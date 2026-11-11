@@ -30,14 +30,14 @@ async function LessonsView(props: { searchParams: Promise<{ scale?: string }> })
       <h1 className="sr-only">Lessons</h1>
 
       {!storageConfigured && (
-        <Callout tone="warning" className="mt-6">
+        <Callout tone="warning" className="mt-3">
           Object storage isn&apos;t configured. Set the <code className="font-mono text-small">R2_*</code> env vars
           before uploading.
         </Callout>
       )}
 
       {!activeScale ? (
-        <p className="mt-6 text-small text-slate-400">
+        <p className="mt-4 text-small text-slate-400">
           No scales yet. Add one on{" "}
           <Link href="/admin/roadmaps" className="tap inline-flex items-center underline underline-offset-4">
             Roadmaps
@@ -46,7 +46,7 @@ async function LessonsView(props: { searchParams: Promise<{ scale?: string }> })
         </p>
       ) : (
         <>
-          <div className="mt-6">
+          <div className="mt-3">
             <AdminFilterTabs
               label="Scale"
               mobile="select"
@@ -60,7 +60,7 @@ async function LessonsView(props: { searchParams: Promise<{ scale?: string }> })
             />
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <AdminLessonManager
               key={activeScale.slug}
               scaleGroupSlug={activeScale.slug}

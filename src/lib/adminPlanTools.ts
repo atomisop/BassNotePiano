@@ -9,6 +9,7 @@ import { applyPlanInstallment } from "@/lib/payments";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
 import { nextBillSentence } from "@/lib/planSetupRules";
+import { afterScholarshipRenewal } from "@/lib/scholarshipPlans";
 import { PlanFixError, refuseWhileInReview } from "@/lib/planFixes";
 
 /**
@@ -74,19 +75,23 @@ export async function waiveNextBill(adminId: string, planId: string): Promise<Da
   if (plan.installmentsPaid < 1) throw new PlanFixError("The first payment has not been made yet. Record it below first, then the next bill can be waived.", { kind: "record-payment", planId: plan.id });
   await closeUnpaidBill(plan.id);
   const now = new Date();
+  let renewed = false;
   await prisma.$transaction(async (tx) => {
+    renewed = false;
     const claimed = await tx.paymentPlan.updateMany({ where: { id: plan.id, status: "ACTIVE", installmentsPaid: plan.installmentsPaid }, data: { updatedAt: now } });
     if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
     await tx.zellePayment.create({
       data: { userId: plan.userId, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: plan.installmentsPaid + 1, amountCents: 0, lessonQuantity: plan.creditsPerInstallment, zelleHandle: "Waived by the studio", status: "VERIFIED", submittedAt: now, reviewedAt: now, reviewedById: adminId, checkedAt: now },
     });
-    await applyPlanInstallment(tx, { userId: plan.userId, paymentPlanId: plan.id, lessonQuantity: plan.creditsPerInstallment });
+    renewed = (await applyPlanInstallment(tx, { userId: plan.userId, paymentPlanId: plan.id, lessonQuantity: plan.creditsPerInstallment })).renewed;
   });
+  // A fully covered plan whose last bill this was goes on by itself (scholarshipPlans.ts); the notice below tells the student.
+  if (renewed) await afterScholarshipRenewal(plan.id, { notify: false, via: "last bill" });
   await bookReservedWindowForPlan(plan.id);
   const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
   const next = after.status === "ACTIVE" ? after.nextDueDate : null;
   await logAudit({ actorId: adminId, action: "plan.waive", targetType: "PaymentPlan", targetId: plan.id, detail: `Waived bill ${plan.installmentsPaid + 1} (${usd(plan.installmentAmountCents)})` }).catch(() => undefined);
-  await noticePlanUpdated({ userId: plan.userId, title: "Your next 28 days are on us", body: next ? `The studio covered your next bill. Your classes are booked, and your next payment is due ${day(next)}.` : "The studio covered your last bill. Your classes are booked and your plan is complete." });
+  await noticePlanUpdated({ userId: plan.userId, title: "Your next 28 days are on us", body: next ? `The studio covered your next 28 days. Your classes are booked. ${nextBillSentence(after.installmentAmountCents, day(next))}` : "The studio covered your last bill. Your classes are booked and your plan is complete." });
   return next;
 }
 

@@ -14,15 +14,16 @@ import { listDirectory } from "@/lib/contacts";
 import { DirectorySection } from "@/components/admin/DirectorySection";
 import { ContactForm } from "@/components/admin/ContactPanels";
 import { Card } from "@/components/ui/Card";
-import { Plus } from "@/components/ui/appIcons";
+import { CheckCheck, ClipboardList, Hourglass, Link2Off, Moon, Plus, ShieldCheck, Star, Ticket, UserPlus, Users } from "@/components/ui/appIcons";
+import { FigureLead } from "@/components/admin/AdminLead";
 import { createContactAction } from "../contacts/actions";
 import { StaffView } from "../employees/_view";
 
 /** The follow-up filters: one reason's people, with the same Remind all as the Follow up list. */
-const FOLLOW_UP_TABS: Record<AccountFollowUpFilter, { label: string; title: string }> = {
-  trial: { label: "Trial ending", title: "Trial ends within a day" },
-  credits: { label: "Credits expiring", title: "Credits expire this week" },
-  discord: { label: "No Discord", title: "Discord not connected" },
+const FOLLOW_UP_TABS: Record<AccountFollowUpFilter, { label: string; title: string; icon: React.ReactNode; counts: string }> = {
+  trial: { label: "Trial ending", title: "Trial ends within a day", icon: <Hourglass />, counts: "with a trial ending within a day" },
+  credits: { label: "Credits expiring", title: "Credits expire this week", icon: <Ticket />, counts: "with credits expiring this week" },
+  discord: { label: "No Discord", title: "Discord not connected", icon: <Link2Off />, counts: "not connected to Discord" },
 };
 
 export const metadata = { title: "Admin: People" };
@@ -82,27 +83,49 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
     <div>
       <h1 className="sr-only">People</h1>
 
-      <div className="mt-6">
+      <div className="md:mt-3">
         <AdminFilterTabs
           label="Show"
+          iconOnly
           items={[
-            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: everyone },
-            { label: "Needs approval", href: `/admin/users?filter=approval${q}`, active: needsApproval },
-            { label: "Not practicing", href: `/admin/users?filter=idle${q}`, active: notPracticing },
-            ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
-            { label: "Complimentary", href: `/admin/users?filter=comped${q}`, active: complimentary },
-            { label: "Class form", href: `/admin/users?filter=classform${q}`, active: classForm },
-            { label: "Added", href: `/admin/users?filter=added${q}`, active: added },
-            { label: "Staff", href: "/admin/users?filter=staff", active: staff },
+            { label: "Everyone", icon: <Users />, href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: everyone },
+            { label: "Approve", selectLabel: "Needs approval", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
+            { label: "Not practicing", icon: <Moon />, href: `/admin/users?filter=idle${q}`, active: notPracticing },
+            ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, icon: FOLLOW_UP_TABS[f].icon, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
+            { label: "Complimentary", icon: <Star />, href: `/admin/users?filter=comped${q}`, active: complimentary },
+            { label: "Class form", icon: <ClipboardList />, href: `/admin/users?filter=classform${q}`, active: classForm },
+            { label: "Added", icon: <UserPlus />, href: `/admin/users?filter=added${q}`, active: added },
+            { label: "Staff", icon: <ShieldCheck />, href: "/admin/users?filter=staff", active: staff },
           ]}
         />
       </div>
 
-      {staff && <div className="mt-6"><StaffView /></div>}
+      {staff && <div className="mt-4"><StaffView /></div>}
 
       {/* Add someone who has no account (a call, a walk-in); open, the form takes its own row under the buttons. */}
       {!staff && (
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+      <div className="mt-4 flex flex-wrap items-start justify-end gap-2">
+        {/* The list's one fact, figure first, sharing its line with the two side actions. */}
+        <FigureLead
+          className="mr-auto"
+          figure={contactsOnly ? noAccount.length : rows.length}
+          label={
+            classForm
+              ? "from the class form, no account yet"
+              : added
+                ? "added by hand, no account yet"
+                : needsApproval
+                  ? "ready for the next scale"
+                  : notPracticing
+                    ? "not practicing this week"
+                    : followUpFilter
+                      ? FOLLOW_UP_TABS[followUpFilter].counts
+                      : complimentary
+                        ? `complimentary account${rows.length === 1 ? "" : "s"}`
+                        : `account${rows.length === 1 ? "" : "s"}`
+          }
+          meta={[query.trim() ? `Matching "${query.trim()}"` : null, everyone && noAccount.length > 0 ? `${noAccount.length} not signed up yet` : null].filter(Boolean).join(" · ") || undefined}
+        />
         {isOwner && (
           <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Export CSV
@@ -142,7 +165,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         </div>
       )}
 
-      {!contactsOnly && (
+      {!contactsOnly && !staff && (
         <div className="mt-4">
           <UserList rows={rows} initialQuery={query} onApproveNext={approveNextScaleAction} />
         </div>

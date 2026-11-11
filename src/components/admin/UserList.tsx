@@ -10,7 +10,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { Search } from "@/components/ui/appIcons";
 import { toast } from "@/components/ui/Toaster";
 import { PersonPeekPanel } from "@/components/admin/PersonPeekPanel";
@@ -89,7 +89,7 @@ export function UserList({
   return (
     <div>
       <AdminListSearch value={query} onChange={handleSearchChange} placeholder="Search a name or email" shown={rows.length} total={rows.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify students" className="mt-3" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify students" className="mb-4 mt-3 px-1" />
 
       {error && <p className="mb-3 text-small text-red-400">{error}</p>}
 

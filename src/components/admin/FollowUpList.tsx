@@ -48,7 +48,7 @@ export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; 
           const rest = all.slice(FIRST);
           const unseen = f.total - all.length;
           return (
-            <div key={f.key} className="overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+            <div key={f.key} className="overflow-hidden rounded-card bg-neu-base shadow-raised-low">
               <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-3">
                 <span className="flex items-center gap-1.5">
                   <Link href={f.href} className="rounded-sm text-small font-semibold uppercase tracking-caps text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

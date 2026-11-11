@@ -197,10 +197,10 @@ export function AdminPlanSettingsButton(props: {
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
             <h3 className="text-body font-semibold text-slate-50">Price per bill</h3>
             {props.hasDiscount ? (
-              <p className="text-small text-slate-400"><Hint>The personal discount above sets the price. Remove it to set an exact price.</Hint></p>
+              <p className="text-small text-slate-400">The personal discount above sets the price. Remove it to set an exact price.</p>
             ) : (
               <>
-                <p className="text-small text-slate-400"><Hint>Every bill from the next one on. An unpaid bill already sent is replaced at the new price.</Hint></p>
+                <p className="text-small text-slate-400">Every bill from the next one on. An unpaid bill already sent is replaced at the new price.</p>
                 <label className="grid max-w-48 gap-1.5">
                   <span className="sr-only">Price in dollars</span>
                   <input inputMode="decimal" value={dollars} onChange={(e) => setDollars(e.target.value.replace(/[^\d.]/g, ""))} className={field} />

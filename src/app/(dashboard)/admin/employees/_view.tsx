@@ -2,6 +2,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { listEmployees } from "@/lib/admin";
 import { ADMIN_NOTIFICATION_KINDS, getAdminNotificationSettings, isOwnerEmail } from "@/lib/adminNotifications";
 import { EmployeesView } from "@/components/admin/EmployeesView";
+import { FigureLead } from "@/components/admin/AdminLead";
 import { getAutomations } from "@/lib/appSettings";
 import { AUTOMATIONS } from "@/lib/automationKeys";
 import { addStaffAction, findStaffCandidateAction, revokeEmployeeAction, setAutomationAction, setEmployeeNotificationAction } from "./actions";
@@ -15,9 +16,7 @@ export async function StaffView() {
   return (
     <div>
       <h1 className="sr-only">Staff</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {employees.length} admin{employees.length === 1 ? "" : "s"}
-      </p>
+      <FigureLead figure={employees.length} label={`admin${employees.length === 1 ? "" : "s"}`} />
 
       <div className="mt-6">
         <EmployeesView

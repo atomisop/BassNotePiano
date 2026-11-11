@@ -306,9 +306,11 @@ export function NewPlanForm({
   const classesTotal = totals.classesPerPayment * totals.payments;
   const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
 
-  const barNote = isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
+  // A full scholarship on this plan: there is no price to show anywhere on the form, only that it is covered.
+  const free = !isFamily && totals.perPaymentCents === 0;
+  const barNote = free ? "by your scholarship" : isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
   // The whole plan, so a 3 or 6 month plan shows what it adds up to before anyone starts.
-  const barTotal = totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
+  const barTotal = free ? "Nothing to pay." : totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
   async function start() {
     if (hint !== null || (!isParent && !slot)) return;
@@ -347,7 +349,7 @@ export function NewPlanForm({
       {/* The plan length: three plain cards with just the price, in the plan colours (they fade to the group colours with the switch). */}
       <div aria-hidden className="tier-wash" style={{ opacity: audience === "FAMILY" ? 1 : 0 }} />
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
+        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Plan length</p>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
@@ -376,8 +378,8 @@ export function NewPlanForm({
                 ))}
                 <span className="tier-accent block text-caption font-bold uppercase tracking-wide">{look.tag}</span>
                 <span className="mt-0.5 block text-small font-semibold text-slate-100">{option.label}</span>
-                <span className="tier-price mt-0.5 block text-body font-semibold tabular-nums">{usd(t.perPaymentCents)}</span>
-                <span className="block text-small text-slate-400">{off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
+                <span className="tier-price mt-0.5 block text-body font-semibold tabular-nums">{!isFamily && t.perPaymentCents === 0 ? "Covered" : usd(t.perPaymentCents)}</span>
+                <span className="block text-small text-slate-400">{!isFamily && t.perPaymentCents === 0 ? "by your scholarship" : off > 0 ? `every 28 days, −${off}%` : "every 28 days"}</span>
               </button>
             );
           })}
@@ -394,11 +396,12 @@ export function NewPlanForm({
         )}
       </div>
 
-      {/* Tablets and computers: the plan and its people on the left, the weekly times on the right. Phones: one column. */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start md:gap-8">
-      <div className="space-y-6">
+      {/* Tablets and computers: the people on the left, the weekly times on the right. Phones, and a plan for one person (which
+          has no people to list): one column, so the times never sit beside an empty half. */}
+      <div className={cn("grid grid-cols-1 gap-6 md:items-start md:gap-8", isFamily && "md:grid-cols-2")}>
+      <div className={cn("space-y-6", !isFamily && "hidden")}>
       {isFamily && (
-        <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+        <section aria-label="People on this plan" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
           {parent && !parent.only && (
             <div className="mb-4 flex items-center gap-2">
               {/* The same one-track switch as "Just me / Me and others": one highlight, so it is always clear which kind is on. */}
@@ -521,7 +524,7 @@ export function NewPlanForm({
       </div>
 
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
         {slotGone && (
           <p role="status" className="mb-2 text-small text-amber-300">
             The time you picked was just taken. Pick another one below.
@@ -631,8 +634,8 @@ export function NewPlanForm({
                 );
               })
             : timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
-          <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}><RollingNumber text={usd(totals.perPaymentCents)} /></Row>
-          {!isFamily && termDiscount > 0 && (
+          <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{free ? "Covered by your scholarship" : <RollingNumber text={usd(totals.perPaymentCents)} />}</Row>
+          {!isFamily && termDiscount > 0 && !free && (
             <Row label="Your discount">
               {termDiscount}% off <span className="text-slate-500 line-through">{usd(totals.listPerPaymentCents)}</span>
             </Row>
@@ -642,9 +645,9 @@ export function NewPlanForm({
           </Row>
           <div className="flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
             <span>{isFamily ? `First payment, all ${totals.people}` : "Due now"}</span>
-            <RollingNumber text={usd(totals.firstPaymentCents)} />
+            {free ? "Nothing to pay" : <RollingNumber text={usd(totals.firstPaymentCents)} />}
           </div>
-          {totals.payments > 1 && (
+          {totals.payments > 1 && !free && (
             <Row label={isFamily ? "Whole plan, everyone" : "Whole plan"}><RollingNumber text={usd(totals.allPeopleTermCents)} /></Row>
           )}
         </dl>

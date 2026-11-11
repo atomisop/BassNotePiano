@@ -5,18 +5,13 @@ import { settleFreeBillsFor } from "@/lib/freeBills";
 import { applyToRunningPlan, type PlanPriceChange } from "@/lib/accountDiscounts";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { consumeRateLimit } from "@/lib/rateLimit";
+import { planPriceChangeNotice } from "@/lib/scholarshipWording";
 import { makeScholarshipCode, normalizeScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
-
-const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 /** Tells the student their running 6 Month plan changed price, when it did. */
 async function tellPriceChange(userId: string, change: PlanPriceChange | null) {
   if (!change || change.fromCents === change.toCents) return;
-  await noticePlanUpdated({
-    userId,
-    title: "Your plan price changed",
-    body: `Your price per payment is now ${money(change.toCents)} (it was ${money(change.fromCents)}). It applies to your next bill${change.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
-  });
+  await noticePlanUpdated({ userId, ...planPriceChangeNotice(change) });
 }
 
 export class ScholarshipError extends Error {}
@@ -74,7 +69,11 @@ export async function createScholarshipCode(input: {
   throw new ScholarshipError("Could not make a code. Try again.");
 }
 
-/** Owner: changes the percent, note or last claim day of a code nobody has claimed. */
+/**
+ * Owner: changes the percent, note or last claim day of a code nobody has claimed. Only an UNCLAIMED code can be changed, so this
+ * never moves a running plan's price or an open bill: a claimed scholarship is raised by giving a new one (Set up plan, or a new
+ * code), and claiming is what reprices the plan and settles an open bill that became $0 (claimScholarshipCode below).
+ */
 export async function updateScholarshipCode(id: string, input: { percent: number; note?: string | null; expiresAt?: Date | null }, actor: { id: string; email: string | null }) {
   checkPercent(input.percent);
   if (input.expiresAt && input.expiresAt <= new Date()) throw new ScholarshipError("The last claim day must be in the future.");
@@ -162,7 +161,9 @@ export async function claimScholarshipCode(userId: string, rawCode: unknown): Pr
   });
   await logAudit({ actorId: user.id, actorEmail: user.email, action: "scholarship.claim", detail: `${row.id}: ${row.percent}% off the 6 Month plan` });
   await tellPriceChange(user.id, planChange);
-  // A 100% scholarship on a running 6 Month plan leaves its open bill at $0: settle it now rather than wait for a job.
-  if (row.percent >= MAX_SCHOLARSHIP_PERCENT) await settleFreeBillsFor(user.id);
+  // A 100% scholarship on a running 6 Month plan leaves its open, unsent bill at $0: settle it now rather than wait for a job. Quiet
+  // when the "Your scholarship covers your plan" notice above already told them, so there is one notice. A bill already sent in for
+  // review with real money is not touched (applyToRunningPlan leaves it, and only a $0 bill can settle itself).
+  if (row.percent >= MAX_SCHOLARSHIP_PERCENT) await settleFreeBillsFor(user.id, { quiet: Boolean(planChange && planChange.toCents === 0 && planChange.fromCents !== 0) });
   return { percent: row.percent, planChange };
 }

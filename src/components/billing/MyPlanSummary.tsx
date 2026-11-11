@@ -1,20 +1,39 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { HeroBand } from "@/components/ui/HeroBand";
 import { classesLeftInPaidMonth, getActivePaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { ChevronRight } from "@/components/ui/appIcons";
+import { COVERED_BY_SCHOLARSHIP, NOTHING_TO_PAY, isCoveredPlan } from "@/lib/scholarshipWording";
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const dateOnly = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
 
 /**
- * "My plan" in plain words. On the plan page (`card`) it says one thing loudly, the next bill (its amount, with the date under it),
- * and keeps the rest small: classes left and bills paid as two facts, the plan's name as the eyebrow. On Lessons (`row`) it is one
+ * "My plan" in plain words. On the plan page (`band`) it is the screen's hero: the next bill on the app's band (when it is due
+ * small, the amount the biggest thing on the screen), with what to do about it on the sheet (`children`). `card` is the same fact
+ * as a quiet card, for a screen whose main thing is something else (the form for a child's plan). On Lessons (`row`) it is one
  * quiet line that opens the plan page, because there the next class is the screen's hero. Renders nothing without an active plan.
  */
-export async function MyPlanSummary({ userId, variant = "card" }: { userId: string; variant?: "card" | "row" }) {
+export async function MyPlanSummary({
+  userId,
+  variant = "card",
+  dueCents,
+  headline,
+  children,
+}: {
+  userId: string;
+  variant?: "band" | "card" | "row";
+  /** Band only. The amount to show: the bill this person is about to pay (a group's combined bill is more than their own part). Null shows no amount (someone else pays). Left out, it is the plan's own price per bill. */
+  dueCents?: number | null;
+  /** Band only. Replaces the "Next bill" line while the plan has not started (waiting for its first payment). */
+  headline?: string | null;
+  /** Band only. The sheet under the band: the bill's one action. */
+  children?: ReactNode;
+}) {
   const plan = await getActivePaymentPlan(userId);
   if (!plan) return null;
   const left = await classesLeftInPaidMonth(plan);
@@ -25,6 +44,35 @@ export async function MyPlanSummary({ userId, variant = "card" }: { userId: stri
   const pausedText = isIndefinitePause(plan) || !plan.pauseUntil ? "Until the studio resumes it" : `Until ${dateOnly(plan.pauseUntil)}`;
   const when = daysToDue === 0 ? "today" : daysToDue === 1 ? "tomorrow" : `in ${daysToDue} days`;
   const classesLeft = `${left} ${left === 1 ? "class" : "classes"} left`;
+  // A full scholarship: there is no bill, so no amount, no "next bill" and no bill count anywhere on this summary.
+  const covered = isCoveredPlan(plan.installmentAmountCents);
+  const nextCycle = `Next 28 days start ${dateOnly(due)}`;
+
+  if (variant === "band") {
+    const amountCents = dueCents === undefined ? plan.installmentAmountCents : dueCents;
+    const waiting = plan.installmentsPaid === 0;
+    if (covered && !amountCents) {
+      return (
+        <HeroBand
+          eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+          title={paused ? "Paused" : COVERED_BY_SCHOLARSHIP}
+          meta={<Meta items={[paused && pausedText, classesLeft, !paused && daysToDue >= 0 && nextCycle]} />}
+        >
+          {children}
+        </HeroBand>
+      );
+    }
+    return (
+      <HeroBand
+        eyebrow={describePaymentPlan(plan.cadence, plan.term)}
+        title={paused ? "Paused" : waiting ? (headline ?? "First payment") : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
+        figure={paused || amountCents === null ? undefined : usd(amountCents)}
+        meta={<Meta items={[paused && pausedText, overdue && !paused && !waiting && "Overdue", classesLeft, `${plan.installmentsPaid} of ${plan.termMonths} bills paid`]} />}
+      >
+        {children}
+      </HeroBand>
+    );
+  }
 
   if (variant === "row") {
     return (
@@ -40,6 +88,8 @@ export async function MyPlanSummary({ userId, variant = "card" }: { userId: stri
             items={[
               paused ? (
                 <span className="text-amber-300">Paused</span>
+              ) : covered ? (
+                COVERED_BY_SCHOLARSHIP
               ) : overdue ? (
                 <span className="text-red-400">Bill was due {dateOnly(due)}</span>
               ) : (
@@ -63,20 +113,22 @@ export async function MyPlanSummary({ userId, variant = "card" }: { userId: stri
           {/* The one loud thing: what the next bill is, or that the plan is paused. */}
           {paused ? (
             <p className="mt-1 text-headline font-semibold text-slate-50">Paused</p>
+          ) : covered ? (
+            <p className="mt-1 text-headline font-semibold text-slate-50">{COVERED_BY_SCHOLARSHIP}</p>
           ) : (
             <p className={`mt-1 text-headline font-semibold tabular-nums ${overdue ? "text-red-300" : "text-slate-50"}`}>{usd(plan.installmentAmountCents)}</p>
           )}
-          <p className={`mt-0.5 text-small ${overdue ? "font-medium text-red-300" : "text-slate-400"}`}>
-            {paused ? pausedText : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
+          <p className={`mt-0.5 text-small ${overdue && !covered ? "font-medium text-red-300" : "text-slate-400"}`}>
+            {paused ? pausedText : covered ? `${NOTHING_TO_PAY}. ${daysToDue >= 0 ? nextCycle : ""}`.trim() : overdue ? `Next bill was due ${dateOnly(due)}` : `Next bill ${dateOnly(due)}, ${when}`}
           </p>
         </div>
-        {(overdue || paused) && (
+        {((overdue && !covered) || paused) && (
           <div className="shrink-0 pt-0.5">{overdue ? <StatusDot tone="danger">Overdue</StatusDot> : <StatusDot tone="warning">Paused</StatusDot>}</div>
         )}
       </div>
       <Facts columns={2} className="mt-4 border-t border-slate-50/8 pt-4">
         <Fact label="This cycle" value={classesLeft} tone={left > 0 ? "default" : "muted"} />
-        <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />
+        {!covered && <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />}
       </Facts>
     </section>
   );

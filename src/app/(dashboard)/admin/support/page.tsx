@@ -5,14 +5,19 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { cn } from "@/lib/utils";
+import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { FigureLead } from "@/components/admin/AdminLead";
+import { Check, Inbox, List, User } from "@/components/ui/appIcons";
 import { SectionPills } from "@/components/admin/SectionPills";
 import { MessagesView } from "../messages/_view";
 
-const FILTERS: { label: string; value: SupportListFilter; param: string }[] = [
-  { label: "Open", value: "OPEN", param: "open" },
-  { label: "Resolved", value: "RESOLVED", param: "resolved" },
-  { label: "All", value: "ALL", param: "all" },
-  { label: "Assigned to me", value: "MINE", param: "mine" },
+// Each status is an icon and its word; the four share one sideways-scrolling line with Chat and Email on a phone.
+const FILTERS: { label: string; value: SupportListFilter; param: string; icon: React.ReactNode }[] = [
+  { label: "Open", value: "OPEN", param: "open", icon: <Inbox /> },
+  { label: "Resolved", value: "RESOLVED", param: "resolved", icon: <Check /> },
+  { label: "All", value: "ALL", param: "all", icon: <List /> },
+  { label: "Mine", value: "MINE", param: "mine", icon: <User /> },
 ];
 
 const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = [
@@ -60,36 +65,42 @@ async function ChatsView(
   return (
     <div>
       <h1 className="sr-only">Support Chat</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {threads.length} {noun}
-        {threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-      </p>
-
-      <div className={`mt-6 ${TAB_TRACK}`}>
-        {SOURCES.map((source) => (
-          <Link
-            key={source.value}
-            href={hrefFor(mine ? "OPEN" : activeFilter, source.value)}
-            className={tabItem(!mine && activeSource === source.value)}
-          >
-            {source.label}
-          </Link>
-        ))}
+      {/* Where it came from and its status are ONE row (it scrolls sideways on a phone), directly under the Chats and Messages pills. */}
+      <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav aria-label="Where it came from" className={cn(TAB_TRACK, "max-w-none shrink-0 overflow-visible")}>
+          {SOURCES.map((source) => (
+            <Link
+              key={source.value}
+              href={hrefFor(mine ? "OPEN" : activeFilter, source.value)}
+              aria-current={!mine && activeSource === source.value ? "page" : undefined}
+              className={tabItem(!mine && activeSource === source.value)}
+            >
+              {source.label}
+            </Link>
+          ))}
+        </nav>
+        <AdminFilterTabs
+          label="Status"
+          iconOnly
+          inline
+          items={FILTERS.map((filter) => ({ label: filter.label, icon: filter.icon, href: hrefFor(filter.value, activeSource), active: activeFilter === filter.value }))}
+        />
       </div>
 
-      <div className={`mt-3 ${TAB_TRACK}`}>
-        {FILTERS.map((filter) => (
-          <Link
-            key={filter.value}
-            href={hrefFor(filter.value, activeSource)}
-            className={tabItem(activeFilter === filter.value)}
-          >
-            {filter.label}
-          </Link>
-        ))}
-      </div>
+      {/* The Inbox's one fact, figure first, right over the list it counts. */}
+      <FigureLead
+        className="mt-4"
+        figure={threads.length}
+        label={
+          mine
+            ? `case${threads.length === 1 ? "" : "s"} assigned to you`
+            : activeFilter === "OPEN"
+              ? `open ${noun}${threads.length === 1 ? "" : "s"}${threads.length === 0 ? ", all clear" : ""}`
+              : `${noun}${threads.length === 1 ? "" : "s"} · ${activeLabel.toLowerCase()}`
+        }
+      />
 
-      <div className="mt-6">
+      <div className="mt-4">
         <SupportThreadList
           initialThreads={threads}
           source={activeSource}

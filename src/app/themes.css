@@ -8,7 +8,7 @@
                             HIGH = the page ground. Always. In a light theme
                             low is dark; in a dark theme low is light.
      --c-a-100 … --c-a-500  the one accent (set separately, by data-mode)
-     --c-em-* / --c-rd-*    success / error
+     --c-em-* / --c-rd-*    success / error (rd-200 … rd-600)
      --c-ink                hairlines and subtle tints
      --c-scrim              modal overlays, dark in EVERY theme
      --surface- and --elev-  the card material
@@ -19,7 +19,17 @@
    own ground; nothing used for text sits below WCAG AA 4.5:1.
    ========================================================================== */
 
-/* ── Editorial Paper (light, default) ─────────────────────────────────────
+/* ── The palette (2026-11-11, owner): three colours, 60 / 30 / 10 ─────────
+     Cream Linen   60%  the page #EFE8DC (239 232 220), cards #FAF6EE (250 246 238)
+     Espresso Bean 30%  #3B2F2A (59 47 42), deepest #241C18 (36 28 24)
+     Burnt Orange  10%  #E8641E (232 100 30), the one accent
+   Paper is "Linen": cream page, warm off-white cards, espresso text.
+   Ink is "Espresso": the same three colours turned over, deep brown page,
+   slightly lighter brown cards, cream text. Every neutral is warm: there is
+   no blue-gray and no pure gray anywhere in either ramp. The theme ids
+   (paper, ink) and the default are unchanged. */
+
+/* ── Editorial Paper (light): Linen ───────────────────────────────────────
    Glassmorphism applies here too, not just in dark mode: a deliberate
    reversal of this system's original "blur is opt-in, it's the one
    expensive thing" stance, by direct instruction. Paper's own version is a
@@ -42,6 +52,8 @@
 
   --c-em-300: 20 92 51;
   --c-em-400: 31 122 69;
+  --c-ye-300: 133 77 14;
+  --c-ye-400: 161 98 7;
   --c-rd-300: 143 27 18;
   --c-rd-400: 179 35 24;
   --c-rd-500: 194 50 31;
@@ -86,7 +98,7 @@
   --scrim-rgb: 250 246 236;
 }
 
-/* ── Editorial Ink (dark) ───────────────────────────────────────────────────
+/* ── Editorial Ink (dark): Espresso ─────────────────────────────────────────
    The paper system after dark: same warm-not-blue-black ground Editorial
    Paper uses inverted, now carrying the same universal glass treatment: a
    real `backdrop-filter` blur, one step heavier than Paper's own above
@@ -94,93 +106,87 @@
    the app's default theme (see DEFAULT_THEME in themes.ts) and the one
    every logged-out visitor sees. */
 [data-theme="ink"] {
-  --c-s-50: 245 245 245; /* 0% 96%, near-white text */
-  --c-s-100: 230 230 230;
-  --c-s-200: 212 212 212;
-  --c-s-300: 194 194 194;
-  --c-s-400: 168 168 168;
-  --c-s-500: 153 153 153; /* 0% 60%, muted-foreground */
-  --c-s-600: 120 120 120;
-  --c-s-700: 66 66 66;
-  --c-s-800: 36 36 36; /* border/input */
-  --c-s-900: 22 22 22; /* muted, raised grey #161616 */
-  --c-s-950: 12 12 12; /* background/ground, deeper than the Claude app's #111111 */
+  /* Cream text on pitch black. Ratios are against the page (0 0 0) / a card (18 16 14). */
+  --c-s-50: 250 246 238; /* #FAF6EE */
+  --c-s-100: 239 232 220; /* #EFE8DC cream */
+  --c-s-200: 224 215 201;
+  --c-s-300: 207 197 182;
+  --c-s-400: 186 174 159;
+  --c-s-500: 170 158 143; /* muted-foreground */
+  --c-s-600: 150 138 125; /* the faintest tone that is still text */
+  --c-s-700: 66 60 54; /* borders and field edges */
+  --c-s-800: 38 34 30; /* hairlines inside cards */
+  --c-s-900: 16 14 12; /* one step off the page */
+  --c-s-950: 0 0 0; /* #000000, pitch black: the page */
 
+  /* Semantic colours: green good, yellow warning, red bad. */
   --c-em-300: 134 239 172;
   --c-em-400: 74 222 128;
+  --c-ye-300: 253 224 71;
+  --c-ye-400: 250 204 21;
+  --c-rd-200: 254 202 202;
   --c-rd-300: 252 165 165;
-  --c-rd-400: 239 68 68;
-  --c-rd-500: 220 38 38;
+  --c-rd-400: 248 113 113; /* red text */
+  --c-rd-500: 220 38 38; /* a solid red fill */
+  --c-rd-600: 185 28 28;
 
-  --c-ink: 255 255 255;
-  --c-scrim: 10 10 10;
+  --c-ink: 250 246 238;
+  --c-scrim: 0 0 0;
 
-  /* First fleck echoes the signal accent, the logo orange (--c-a-400,
-     rgb(251 138 92)). The accent ramp changed from green to the logo's
-     orange when the final logo landed; green is retired app-wide. */
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(251, 138, 92, 0.04), transparent 45%),
-    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
+    radial-gradient(circle at 15% 20%, rgba(232, 100, 30, 0.04), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(250, 246, 238, 0.015), transparent 40%);
 
-  /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
-     (0 0% 18%), a distinct, slightly-lighter opaque chrome fill, not the
-     bare ground. */
-  --c-surface-solid: 12 12 12;
-  --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
-  --surface-border: rgba(255, 255, 255, 0.1);
-  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --c-surface-solid: 10 9 8; /* opaque dialogs and menus */
+  --surface-bg: linear-gradient(160deg, rgba(250, 246, 238, 0.07), rgba(250, 246, 238, 0.02));
+  --surface-border: rgba(250, 246, 238, 0.1);
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 12px -4px rgba(0, 0, 0, 0.6);
   --surface-blur: 14px;
   --surface-radius: 1rem;
 
-  /* Neutral now, not accent-tinted, plain white at two opacities instead
-     of a white/accent blend, and `--c-ink` (this theme's own hairline
-     colour, white here) instead of `--c-a-400` for the border, same
-     "premium black and white, accent only on true CTAs" instruction as the
-     rest of the app. Affects every `glass-surface-elevated` consumer at
-     once: modals not already on `glass-surface-modal`, the marketing nav's
-     primary CTA border, cards, panels. */
-  --elev-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  --elev-bg: linear-gradient(160deg, rgba(250, 246, 238, 0.1), rgba(250, 246, 238, 0.04));
   --elev-border: rgb(var(--c-ink) / 0.4);
-  --elev-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+  --elev-shadow: 0 2px 4px rgba(0, 0, 0, 0.55), 0 12px 28px -8px rgba(0, 0, 0, 0.7);
   --elev-blur: 20px;
 
-  --subtle-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-  --subtle-border: rgba(255, 255, 255, 0.06);
+  --subtle-bg: linear-gradient(160deg, rgba(250, 246, 238, 0.035), rgba(250, 246, 238, 0.012));
+  --subtle-border: rgba(250, 246, 238, 0.06);
   --subtle-blur: 8px;
 
   --scrim-light: 0.42;
   --scrim-standard: 0.62;
   --scrim-dense: 0.82;
-  --scrim-rgb: 20 20 20; /* matches --hero-bg (0 0% 8%) from the spec */
+  --scrim-rgb: 0 0 0;
 }
 
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   The logo orange. Final brand color, taken byte-exact from the logo disc
-   (rgb 251 138 92); green is retired app-wide. One accent slot, same as
-   always (see themes.ts for why there is never a matrix of theme x color).
+   Burnt Orange, #E8641E (rgb 232 100 30), the 10% of the palette. One accent
+   slot, same as always (see themes.ts for why there is never a matrix of
+   theme x color).
 
    Still keyed on data-mode, not data-theme: the accent has to read against
-   the ground it sits on, and that need is the same for every dark theme and
-   every light one. Two blocks, one per mode. Dark uses the logo orange as-is
-   for 400 (the workhorse: fills, with near-black `signal-ink` text, and text
-   on the ground). Light uses a deeper orange for 400 so it still reads on a
-   pale ground; 500 is one step brighter, for borders and pressed states.
-   Both modes pair fills with the same near-black ink, never white. */
+   the ground it sits on. 400 is the accent itself in BOTH modes (fills,
+   borders, the scroll line). The other steps run toward the text end of each
+   mode: deep burnt browns on Linen, pale peach on Espresso (300 is the
+   warning text colour, 200 and 100 its stronger forms). 500 is the pressed
+   step. Orange fills always carry the espresso ink (5.0:1); cream on this
+   orange is only 3.1:1, so it is never used for a label. Orange TEXT goes
+   through --signal-fg (globals.css), never 400 directly.
+   ========================================================================== */
 [data-mode="light"] {
   --c-a-100: 82 30 8;
-  --c-a-200: 120 46 14;
-  --c-a-300: 158 64 22;
-  --c-a-400: 214 92 44; /* deeper than the logo orange so it reads on a light ground */
-  --c-a-500: 233 110 58;
+  --c-a-200: 110 44 10;
+  --c-a-300: 140 60 14; /* warning text, 6.2:1 on the page, 7.0:1 on a card */
+  --c-a-400: 232 100 30; /* #E8641E */
+  --c-a-500: 204 82 20;
 }
 
 [data-mode="dark"] {
-  --c-a-100: 255 236 226;
-  --c-a-200: 254 213 192;
-  --c-a-300: 253 178 138;
-  --c-a-400: 251 138 92; /* the logo orange, byte-exact */
-  --c-a-500: 232 111 66;
+  --c-a-100: 255 236 222;
+  --c-a-200: 252 211 184;
+  --c-a-300: 245 164 114; /* warning text, 8.3:1 on the page, 7.4:1 on a card */
+  --c-a-400: 232 100 30; /* #E8641E */
+  --c-a-500: 204 82 20;
 }
-

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyState";
 import { Mail, Search } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";

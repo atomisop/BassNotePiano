@@ -21,10 +21,9 @@
    before. Only the values behind those names change.
 
    ── Where the palette comes from ────────────────────────────────────────
-   The same neutral black/white ramp and Instagram-style purple/pink/orange
-   accent as the rest of the app (see themes.css's `[data-theme="ink"]` and
-   `[data-mode="dark"]` blocks, this trio is the only accent now, see
-   themes.ts's own comment), mirrored here in raw values rather than
+   The same Espresso ramp and Burnt Orange accent as the rest of the app
+   (see themes.css's `[data-theme="ink"]` and `[data-mode="dark"]` blocks),
+   mirrored here in raw values rather than
    referenced, because
    these are inherited custom properties: re-pointing `--c-a-400` this far
    down the tree only works if it's redeclared at this scope, not aliased to
@@ -33,34 +32,31 @@
 
 [data-surface="marketing"] {
   /* ---- Neutral ramp: ground ↔ text -----------------------------------
-     True neutral grey, matching `[data-theme="ink"]` exactly, no warm or
-     cool bias. Contrast ratios below are measured against the ground
-     (--c-s-950). */
-  --c-s-50: 245 245 245;    /* headings            17.9:1 */
-  --c-s-100: 230 230 230;   /* strong body         15.6:1 */
-  --c-s-200: 212 212 212;   /* body copy           13.1:1 */
-  --c-s-300: 194 194 194;   /* secondary body      10.8:1 */
-  --c-s-400: 168 168 168;   /* de-emphasised        7.8:1 */
-  --c-s-500: 153 153 153;   /* mono labels          6.5:1 */
-  --c-s-600: 120 120 120;   /* disabled             4.4:1, non-text, always */
-  --c-s-700: 66 66 66;      /* hairlines, rules */
-  --c-s-800: 36 36 36;      /* raised surface */
-  --c-s-900: 22 22 22;      /* recessed surface */
-  --c-s-950: 12 12 12;      /* the ground, deeper than the Claude app's #111111 */
+     The Espresso ramp, matching `[data-theme="ink"]` in themes.css exactly:
+     cream text on a deep espresso ground (black became espresso, 2026-11-11).
+     Contrast ratios below are measured against the ground (--c-s-950). */
+  --c-s-50: 250 246 238;    /* headings            15.5:1 */
+  --c-s-100: 239 232 220;   /* strong body         13.8:1, Cream Linen */
+  --c-s-200: 224 215 201;   /* body copy           11.8:1 */
+  --c-s-300: 207 197 182;   /* secondary body       9.8:1 */
+  --c-s-400: 186 174 159;   /* de-emphasised        7.7:1 */
+  --c-s-500: 170 158 143;   /* mono labels          6.4:1 */
+  --c-s-600: 154 141 128;   /* disabled             5.2:1 */
+  --c-s-700: 66 60 54;      /* hairlines, rules */
+  --c-s-800: 38 34 30;      /* raised surface */
+  --c-s-900: 16 14 12;      /* recessed surface */
+  --c-s-950: 0 0 0;      /* the ground, deep espresso #241C18 */
 
-  /* ---- Accent ramp: signal green, back again -----------------------------
-     Same values as `[data-mode="dark"]` in themes.css, see that file's
-     own "Accent" comment for the full history (green, then pink/orange,
-     then Instagram, then off, then Indigo/Violet, then off again, now
-     green again, byte-exact from its own original 229ad8d commit). Live
-     again on this page too: `.btn-primary` still reads `--primary`
-     (neutral, untouched), but selection states, badges, and the hero's
-     own accent below all read this ramp now. */
-  --c-a-100: 255 236 226;
-  --c-a-200: 254 213 192;
-  --c-a-300: 253 178 138;
-  --c-a-400: 251 138 92;    /* the logo orange */
-  --c-a-500: 232 111 66;
+  /* ---- Accent ramp: Burnt Orange ----------------------------------------
+     Same values as `[data-mode="dark"]` in themes.css (amber became burnt
+     orange, #E8641E). `.btn-primary` still reads `--primary` (neutral,
+     untouched); selection states, badges, and the hero's own accent read
+     this ramp. */
+  --c-a-100: 255 236 222;
+  --c-a-200: 252 211 184;
+  --c-a-300: 245 164 114;
+  --c-a-400: 232 100 30;    /* #E8641E */
+  --c-a-500: 204 82 20;
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop

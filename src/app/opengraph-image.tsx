@@ -17,9 +17,9 @@ export const contentType = "image/png";
 // for true CTAs only ("premium black and white" direction; see themes.css's
 // own "Accent" comment for the full history of what that one accent has
 // been over time).
-const INK = "#101012";
-const PAPER = "#F5F5F5";
-const MUTED = "#999999";
+const INK = "#241C18";
+const PAPER = "#FAF6EE";
+const MUTED = "#AA9E8F";
 
 /**
  * Satori (which backs ImageResponse) cannot use a CSS-declared webfont, it
@@ -98,7 +98,7 @@ export default async function OpengraphImage() {
             width: 820,
             height: 820,
             borderRadius: 999,
-            backgroundImage: "radial-gradient(circle, rgba(251,138,92,0.42) 0%, rgba(251,138,92,0) 68%)",
+            backgroundImage: "radial-gradient(circle, rgba(232,100,30,0.42) 0%, rgba(232,100,30,0) 68%)",
           }}
         />
         <div
@@ -109,7 +109,7 @@ export default async function OpengraphImage() {
             width: 880,
             height: 880,
             borderRadius: 999,
-            backgroundImage: "radial-gradient(circle, rgba(176,72,32,0.55) 0%, rgba(214,100,52,0.20) 45%, rgba(176,72,32,0) 70%)",
+            backgroundImage: "radial-gradient(circle, rgba(150,50,10,0.55) 0%, rgba(232,100,30,0.20) 45%, rgba(150,50,10,0) 70%)",
           }}
         />
         <div
@@ -120,7 +120,7 @@ export default async function OpengraphImage() {
             width: 700,
             height: 700,
             borderRadius: 999,
-            backgroundImage: "radial-gradient(circle, rgba(245,245,245,0.10) 0%, rgba(245,245,245,0) 65%)",
+            backgroundImage: "radial-gradient(circle, rgba(250,246,238,0.10) 0%, rgba(250,246,238,0) 65%)",
           }}
         />
 
@@ -203,8 +203,8 @@ export default async function OpengraphImage() {
                     display: "flex",
                     padding: "9px 20px",
                     borderRadius: 999,
-                    border: "1px solid rgba(245,245,245,0.22)",
-                    background: "rgba(245,245,245,0.06)",
+                    border: "1px solid rgba(250,246,238,0.22)",
+                    background: "rgba(250,246,238,0.06)",
                     color: PAPER,
                     fontSize: 22,
                   }}

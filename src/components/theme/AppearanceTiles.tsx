@@ -13,26 +13,26 @@ const CHOICES: { id: ThemeChoice; label: string }[] = [
 /** A little picture of a screen in that look: a card with two lines of text and the orange dot. */
 function Preview({ choice }: { choice: ThemeChoice }) {
   const light = (
-    <span className="absolute inset-1.5 rounded-md border border-black/10 bg-white">
+    <span className="absolute inset-1.5 rounded-md border border-black/10 bg-[#faf6ee]">
       <span className="absolute left-2 top-2 h-0.5 w-7 rounded-full bg-black/35" />
       <span className="absolute left-2 top-3.5 h-0.5 w-5 rounded-full bg-black/35" />
-      <span className="absolute bottom-2 right-2 h-2.5 w-2.5 rounded-full bg-[#d65c2c]" />
+      <span className="absolute bottom-2 right-2 h-2.5 w-2.5 rounded-full bg-[#e8641e]" />
     </span>
   );
   const dark = (
-    <span className="absolute inset-1.5 rounded-md border border-white/10 bg-[#222]">
+    <span className="absolute inset-1.5 rounded-md border border-white/10 bg-[#14110f]">
       <span className="absolute left-2 top-2 h-0.5 w-7 rounded-full bg-white/45" />
       <span className="absolute left-2 top-3.5 h-0.5 w-5 rounded-full bg-white/45" />
-      <span className="absolute bottom-2 right-2 h-2.5 w-2.5 rounded-full bg-[#fb8a5c]" />
+      <span className="absolute bottom-2 right-2 h-2.5 w-2.5 rounded-full bg-[#e8641e]" />
     </span>
   );
-  if (choice === "paper") return <span className="absolute inset-0 bg-[#f4f4f6]">{light}</span>;
-  if (choice === "ink") return <span className="absolute inset-0 bg-[#121212]">{dark}</span>;
+  if (choice === "paper") return <span className="absolute inset-0 bg-[#efe8dc]">{light}</span>;
+  if (choice === "ink") return <span className="absolute inset-0 bg-[#000000]">{dark}</span>;
   // System: light on the top left, dark on the bottom right, split on the diagonal.
   return (
     <>
-      <span className="absolute inset-0 bg-[#f4f4f6]">{light}</span>
-      <span className="absolute inset-0 bg-[#121212] [clip-path:polygon(100%_0,100%_100%,0_100%)]">{dark}</span>
+      <span className="absolute inset-0 bg-[#efe8dc]">{light}</span>
+      <span className="absolute inset-0 bg-[#000000] [clip-path:polygon(100%_0,100%_100%,0_100%)]">{dark}</span>
     </>
   );
 }

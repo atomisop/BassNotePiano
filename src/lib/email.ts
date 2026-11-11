@@ -129,26 +129,30 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
   await recordEmail({ to, subject, status: "SENT", resendId: result.data?.id ?? null });
 }
 
-// One light, clean layout for every designed email: a white card on a soft grey page, the brand
-// orange as the single accent, dark text for contrast, and a red accent only for notices (a security
-// change, an overdue bill) so those never read as "this went well". Light on purpose: it reads the
-// same in every mail app, and dark-mode clients that invert it still keep the text legible.
+// One light, clean layout for every designed email, in the app's palette (Cream Linen, Espresso Bean,
+// Burnt Orange): a warm off-white card on a cream page, the burnt orange as the single accent, espresso
+// text for contrast, and a red accent only for notices (a security change, an overdue bill) so those
+// never read as "this went well". Light on purpose: it reads the same in every mail app, and dark-mode
+// clients that invert it still keep the text legible.
+// The button label is espresso, not white or cream: on this orange white is only 3.3:1, espresso 5.0:1.
+// `brandInk` is one step off `ink` on purpose, so the dark-mode swap below (matched by colour value)
+// never turns the button label cream.
 const MAIL = {
-  page: "#f3f4f6",
-  card: "#ffffff",
-  ink: "#111827",
-  body: "#374151",
-  muted: "#6b7280",
-  line: "#e5e7eb",
-  panel: "#f9fafb",
-  brand: "#e86f42",
-  brandInk: "#ffffff",
-  danger: "#dc2626",
-  dangerSoft: "#fef2f2",
+  page: "#efe8dc",
+  card: "#faf6ee",
+  ink: "#241c18",
+  body: "#3b2f2a",
+  muted: "#6a584e",
+  line: "#ded4c4",
+  panel: "#f3ecdf",
+  brand: "#e8641e",
+  brandInk: "#231b17",
+  danger: "#a8162e",
+  dangerSoft: "#f8e6e4",
 } as const;
 
 const SHELL_ACCENT = {
-  default: { bar: MAIL.brand, link: "#c2410c" },
+  default: { bar: MAIL.brand, link: "#96320a" },
   notice: { bar: MAIL.danger, link: MAIL.danger },
 } as const;
 
@@ -183,16 +187,16 @@ const DARK_CLASS_BY_STYLE: [RegExp, string][] = [
 const DARK_STYLE = `<style>
 :root{color-scheme:light dark;supported-color-schemes:light dark;}
 @media (prefers-color-scheme: dark){
-.d-page{background:#0d0d0d !important;}
-.d-card{background:#1c1c1c !important;}
-.d-panel{background:#262626 !important;}
-.d-ink{color:#f5f5f5 !important;}
-.d-body{color:#cfcfcf !important;}
-.d-muted{color:#9a9a9a !important;}
-.d-link{color:#fb8a5c !important;}
-.d-danger{color:#f87171 !important;}
-.d-line{border-left-color:#333333 !important;border-right-color:#333333 !important;border-bottom-color:#333333 !important;}
-.d-line-t{border-top-color:#333333 !important;}
+.d-page{background:#000000 !important;}
+.d-card{background:#14110f !important;}
+.d-panel{background:#3b2f2a !important;}
+.d-ink{color:#faf6ee !important;}
+.d-body{color:#e0d7c9 !important;}
+.d-muted{color:#aa9e8f !important;}
+.d-link{color:#f4884a !important;}
+.d-danger{color:#fa707a !important;}
+.d-line{border-left-color:#54463f !important;border-right-color:#54463f !important;border-bottom-color:#54463f !important;}
+.d-line-t{border-top-color:#54463f !important;}
 }
 </style>`;
 
@@ -471,11 +475,11 @@ export async function sendPersonalEmail(
     .map((p) => p.trim())
     .filter(Boolean);
   const linkHtml = options.link ? `<p style="margin:0 0 14px;"><a href="${options.link.url}">${escapeHtml(options.link.label)}</a></p>` : "";
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#222222;">
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#241c18;">
 <p style="margin:0 0 14px;">${escapeHtml(greeting)}</p>
 ${paragraphs.map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("\n")}
 ${linkHtml}<p style="margin:0;">Bass Note Piano</p>
-${links ? `<p style="margin:18px 0 0;font-size:12px;color:#666666;">Do not want these emails? <a href="${links.page}" style="color:#666666;">Unsubscribe</a>.</p>` : ""}
+${links ? `<p style="margin:18px 0 0;font-size:12px;color:#6a584e;">Do not want these emails? <a href="${links.page}" style="color:#6a584e;">Unsubscribe</a>.</p>` : ""}
 </div>`;
   const text = [greeting, "", ...paragraphs.flatMap((p) => [p, ""]), ...(options.link ? [`${options.link.label}: ${options.link.url}`, ""] : []), "Bass Note Piano", ...(links ? ["", `Do not want these emails? Unsubscribe: ${links.page}`] : [])].join("\n");
   await sendEmail({ to, subject, html, text, from: PERSONAL_FROM, unsubscribePostUrl: links?.post });
@@ -546,6 +550,8 @@ export interface PaymentPlanInvoiceDetails {
   unsubscribe?: UnsubscribeTarget;
   /** Present only for the overdue variant, its presence, not a separate flag, is what picks the template's copy/accent. */
   overdueDays?: number;
+  /** A partial scholarship on this bill, as one plain sentence ("Your 50% scholarship covers $90.00 of this bill. $89.99 is left to pay."). */
+  scholarshipNote?: string;
 }
 
 /**
@@ -559,6 +565,8 @@ export interface PaymentPlanInvoiceDetails {
  * the scheduled job that calls this.
  */
 export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPlanInvoiceDetails): Promise<void> {
+  // A bill that asks for nothing (a full scholarship) is never sent to anyone: it settles by itself (freeBills.ts).
+  if (details.amountCents <= 0) return;
   const isOverdue = typeof details.overdueDays === "number";
   const heading = isOverdue ? "Overdue bill" : "Your bill";
   const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
@@ -577,7 +585,8 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
   const headlineHtml = `
     <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">${escapeHtml(intro)}</p>
     <p style="margin:0;color:${MAIL.ink};font-size:38px;font-weight:700;line-height:1.1;">${amountLabel}</p>
-    <p style="margin:8px 0 22px;color:${isOverdue ? MAIL.danger : MAIL.ink};font-size:16px;font-weight:600;">${isOverdue ? "Was due" : "Due"} ${escapeHtml(dueDateLabel)}</p>
+    <p style="margin:8px 0 ${details.scholarshipNote ? "8px" : "22px"};color:${isOverdue ? MAIL.danger : MAIL.ink};font-size:16px;font-weight:600;">${isOverdue ? "Was due" : "Due"} ${escapeHtml(dueDateLabel)}</p>
+    ${details.scholarshipNote ? `<p style="margin:0 0 22px;color:${MAIL.ink};font-size:14px;">${escapeHtml(details.scholarshipNote)}</p>` : ""}
   `;
 
   const buttonsHtml = `
@@ -628,6 +637,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
   const text = [
     `${heading}: ${amountLabel} ${isOverdue ? "was due" : "due on"} ${dueDateLabel}`,
     intro,
+    ...(details.scholarshipNote ? [details.scholarshipNote] : []),
     "",
     `Plan: ${details.planLabel}`,
     `Installment: ${details.installmentLabel}`,
@@ -806,7 +816,7 @@ export async function sendSupportEmailReply(input: {
     console.log(`[dev] Support email reply to ${to}: ${subject}\n${text}`);
     return;
   }
-  const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap;">${escapeHtml(text)}</div>`;
+  const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#241c18;white-space:pre-wrap;">${escapeHtml(text)}</div>`;
   const headers: Record<string, string> = { "Message-ID": messageId };
   if (inReplyTo) headers["In-Reply-To"] = inReplyTo;
   if (references.length > 0) headers["References"] = references.join(" ");

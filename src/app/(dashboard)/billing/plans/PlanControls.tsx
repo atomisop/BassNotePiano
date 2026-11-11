@@ -27,7 +27,7 @@ export interface PauseBill {
 }
 
 /**
- * Pause, change length and cancel, as rows under the plan on Billing > Plans: the same controls Settings has, opened in place
+ * Pause, change length and cancel, as quiet rows under the plan's band and tiles on Billing > Plans: the same controls Settings has, opened in place
  * (no trip to Settings). A pause that is refused because a payment is due says so on the row, with a Pay button that opens the
  * payment sheet right there.
  */
@@ -67,7 +67,10 @@ export function PlanControls({
   const rowClass = "tap flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-small font-medium text-slate-100 transition hover:text-slate-50";
 
   return (
-    <section aria-label="Change your plan" className="mb-4 divide-y divide-slate-50/8 rounded-xl bg-neu-base shadow-raised-low">
+    <section aria-label="Change your plan">
+      <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Change your plan</h2>
+      {/* Quiet rows under the tiles: each opens in place. Cancel is the rare, final one, so it is last and the quietest. */}
+      <div className="mt-3 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
       {canPause && (
         <div>
           {pauseBlocked && !paused ? (
@@ -95,6 +98,7 @@ export function PlanControls({
                     pausedAt={plan.pausedAt ?? null}
                     pausedUntil={plan.pausedUntil ?? null}
                     indefinite={plan.pausedIndefinitely ?? false}
+                    covered={plan.installmentAmountCents === 0}
                     onPause={pausePaymentPlanAction}
                   />
                 </div>
@@ -117,7 +121,7 @@ export function PlanControls({
         </div>
       )}
       <div>
-        <button type="button" aria-expanded={open === "cancel"} onClick={() => toggle("cancel")} className={rowClass}>
+        <button type="button" aria-expanded={open === "cancel"} onClick={() => toggle("cancel")} className={cn(rowClass, "text-slate-400")}>
           <span>Cancel plan</span>
           <ChevronDown aria-hidden className={cn("h-4 w-4 shrink-0 text-slate-500 transition-transform", open === "cancel" && "rotate-180")} />
         </button>
@@ -126,6 +130,7 @@ export function PlanControls({
             <ManageSubscriptions key="cancel" activePlan={plan} onChangeTerm={changePaymentPlanTermAction} onCancel={cancelPaymentPlanBySelfAction} startOn="cancel" />
           </div>
         </Collapse>
+      </div>
       </div>
 
       {bill && (

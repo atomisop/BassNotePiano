@@ -38,14 +38,15 @@ export function formatEtEndTime(scheduledAtIso: string, credits: number): string
   return end.toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
 }
 
-export function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+/** In the viewer's own clock. `timeZone` is only for a first paint that must match the server's (see ScheduleClient). */
+export function formatDateTime(iso: string, timeZone?: string) {
+  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone });
 }
 
 /** The clock time a booking that spent `credits` ends at: a class (CREDITS_PER_CLASS credits) runs CLASS_MINUTES. */
-export function formatEndTime(scheduledAtIso: string, credits: number): string {
+export function formatEndTime(scheduledAtIso: string, credits: number, timeZone?: string): string {
   const end = new Date(new Date(scheduledAtIso).getTime() + (credits / CREDITS_PER_CLASS) * CLASS_MINUTES * 60_000);
-  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone });
 }
 
 /**

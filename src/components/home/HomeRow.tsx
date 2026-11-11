@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 export const HOME_ROW_CLASS =
   "group flex min-h-16 w-full items-center gap-3.5 px-4 py-3 text-left transition hover:bg-slate-50/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
 
-/** The icon tile at the start of a row: a small rounded square with a soft orange wash and a lit top edge, so it reads as an object. */
+/** The icon tile at the start of a row: a small rounded square with a soft orange tint, the same as on the action tiles. */
 export const HOME_ROW_ICON_CLASS =
-  "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-linear-to-b from-signal/24 to-signal/8 text-signal-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-inset ring-signal/20 [&_svg]:h-5 [&_svg]:w-5";
+  "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-signal/16 text-signal-fg [&_svg]:h-5 [&_svg]:w-5";
 
 /** A row's inside: a small warm icon, the line, a quieter detail, and whatever sits at the right (a figure, a ring) before the chevron. */
 export function HomeRowInner({ icon, title, detail, trailing }: { icon: ReactNode; title: ReactNode; detail?: ReactNode; trailing?: ReactNode }) {
@@ -19,7 +19,7 @@ export function HomeRowInner({ icon, title, detail, trailing }: { icon: ReactNod
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-body font-semibold text-slate-50">{title}</span>
+        <span className="line-clamp-2 text-body font-semibold leading-snug text-slate-50">{title}</span>
         {detail && <span className="block truncate text-small text-slate-500">{detail}</span>}
       </span>
       {trailing && <span className="shrink-0">{trailing}</span>}
@@ -44,17 +44,21 @@ export function HomeRow({ href, external, ...inner }: { href: string; external?:
 }
 
 /**
- * A titled group of rows: one soft panel (a faint fill and a hairline edge, no shadow) with hairlines between the rows, like a
- * grouped list on a phone. Enough shape to read as a set, without boxing every row.
+ * A group of rows: one quiet card (DESIGN.md, "Band, sheet and tiles" 6: a solid step above the page, no outline) with hairlines
+ * between the rows, like a grouped list on a phone. Its heading is a small quiet label, the same as the tiles' (`ActionTiles`), so
+ * the hero stays the only loud thing on Home. Without a `title` the card stands alone under whatever it belongs to; give `label`
+ * then, so it still has a name for screen readers.
  */
-export function HomeRows({ title, aside, children, className }: { title: string; aside?: ReactNode; children: ReactNode; className?: string }) {
+export function HomeRows({ title, label, aside, children, className }: { title?: string; label?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section aria-label={title} className={cn("min-w-0", className)}>
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 className="text-title font-semibold text-slate-50">{title}</h2>
-        {aside && <span className="text-small text-slate-400">{aside}</span>}
-      </div>
-      <ul data-stagger="" className="mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">{children}</ul>
+    <section aria-label={title ?? label} className={cn("min-w-0", className)}>
+      {(title || aside) && (
+        <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+          {title && <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">{title}</h2>}
+          {aside && <span className="text-small text-slate-400">{aside}</span>}
+        </div>
+      )}
+      <ul data-stagger="" className="divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low">{children}</ul>
     </section>
   );
 }

@@ -6,7 +6,7 @@ import { PricingBento } from "@/components/stageshow/scenes/PricingBento";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { SPRING } from "@/lib/motionTokens";
-import type { PricingConfig } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, type PricingConfig } from "@/lib/classCreditPricing";
 
 const container = {
   hidden: {},
@@ -31,14 +31,19 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-3xl px-6 pb-4 pt-28 text-center"
+        className="relative mx-auto max-w-3xl px-6 pb-8 pt-28 text-center"
       >
         <motion.h1
           variants={item}
-          className="text-balance font-serif text-hero leading-[1.02] tracking-tight text-slate-50 sm:text-hero"
+          className="text-balance font-serif text-hero leading-[1.02] tracking-tight text-slate-50"
         >
           Learn live with us on Discord.
         </motion.h1>
+        {/* One quiet line under the one headline, then straight to the plans: the cards are what this page is for. A second
+            eyebrow and heading used to sit between them and said "live on Discord" again. */}
+        <motion.p variants={item} className="mx-auto mt-3 max-w-xl text-pretty text-body text-slate-400">
+          One-on-one with your teacher, {CLASS_MINUTES} minutes a week. Pick the plan that fits.
+        </motion.p>
       </motion.section>
 
       <motion.section
@@ -49,16 +54,8 @@ export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
         id="plans"
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >
-        {/* The page title above is the one headline; this is its quiet subtitle, so the prices in the cards are the next
-            thing the eye lands on. */}
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Weekly classes</p>
-          <h2 className="mt-1 text-body text-slate-400">Live one-on-one coaching on Discord</h2>
-        </div>
-
-        <div className="mt-10">
-          <PaymentPlanTierGrid pricing={pricing} />
-        </div>
+        <h2 className="sr-only">Plans</h2>
+        <PaymentPlanTierGrid pricing={pricing} />
 
         <div className="mx-auto mt-16 max-w-3xl">
           <PricingBento pricing={pricing} />

@@ -4,6 +4,8 @@ import { claimNoticeMarker } from "@/lib/studentNotices";
 import { etDayKey } from "@/lib/fingerPractice";
 import { getFollowUpPeople } from "@/lib/adminFollowUps";
 import { planBillTarget, type PlanBillTarget } from "@/lib/planBillPayer";
+import { describeBillScholarship } from "@/lib/scholarshipPlans";
+import { scholarshipOverdueLine } from "@/lib/scholarshipWording";
 
 /**
  * The one-click reminder behind People > Accounts' "Follow up". Each kind has fixed, kind wording (the teacher does not type
@@ -28,7 +30,7 @@ async function stillApplies(kind: ReminderKind, userId: string, now: Date): Prom
   const t = now.getTime();
   switch (kind) {
     case "overdue":
-      return (await prisma.paymentPlan.count({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now } } })) > 0;
+      return (await prisma.paymentPlan.count({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now }, installmentAmountCents: { gt: 0 } } })) > 0;
     case "atRisk": {
       const plan = await prisma.paymentPlan.count({ where: { userId, status: "ACTIVE", createdAt: { lt: new Date(t - 7 * DAY) } } });
       if (plan === 0) return false;
@@ -45,12 +47,12 @@ async function stillApplies(kind: ReminderKind, userId: string, now: Date): Prom
 
 /** Who pays the person's overdue bill and which bill it is (the oldest overdue plan), or null when nothing is overdue. */
 async function overdueBill(userId: string, now: Date): Promise<PlanBillTarget | null> {
-  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now } }, orderBy: { nextDueDate: "asc" }, select: { id: true } });
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now }, installmentAmountCents: { gt: 0 } }, orderBy: { nextDueDate: "asc" }, select: { id: true } });
   return plan ? planBillTarget(plan.id) : null;
 }
 
 /** The overdue notice, worded for whoever pays: the person themselves, a payer paying one member's bill, or the group's combined bill. */
-function overdueNotice(target: PlanBillTarget | null): { title: string; body: string; path: string } {
+function overdueNotice(target: PlanBillTarget | null, scholarshipLine: string | null = null): { title: string; body: string; path: string } {
   const bill = target?.bill;
   const amount = bill ? ` of ${money(bill.amountCents)}` : "";
   const path = target?.payPath ?? "/billing/plans";
@@ -71,7 +73,8 @@ function overdueNotice(target: PlanBillTarget | null): { title: string; body: st
   }
   return {
     title: "Your next payment is overdue",
-    body: `Your class plan payment is past its due date. Please pay it to keep your weekly class. ${PAID_ALREADY}`,
+    // A partial scholarship: the reminder names what is left to pay.
+    body: `Your class plan payment is past its due date. ${scholarshipLine ? `${scholarshipLine} ` : ""}Please pay it to keep your weekly class. ${PAID_ALREADY}`,
     path,
   };
 }
@@ -99,7 +102,13 @@ export async function sendFollowUpReminder(kind: ReminderKind, userId: string, n
 
   switch (kind) {
     case "overdue": {
-      const notice = overdueNotice(bill);
+      let scholarshipLine: string | null = null;
+      if (bill?.bill && !bill.bill.combined && !bill.paysForSomeoneElse) {
+        const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", nextDueDate: { lt: now }, installmentAmountCents: { gt: 0 } }, orderBy: { nextDueDate: "asc" }, select: { userId: true, term: true, listAmountCents: true, familyGroupId: true } });
+        const scholarship = plan ? await describeBillScholarship(plan, bill.bill.amountCents) : null;
+        if (scholarship) scholarshipLine = scholarshipOverdueLine(scholarship);
+      }
+      const notice = overdueNotice(bill, scholarshipLine);
       await createNotification({
         userId: recipientId,
         type: "PAYMENT_PLAN_UPDATED",

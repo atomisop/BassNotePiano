@@ -7,6 +7,7 @@ import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { groupNotStartedError } from "@/lib/planFixes";
+import { nextBillSentence } from "@/lib/planSetupRules";
 
 /**
  * A late payer: the student was taught (or is being taught) before paying, then pays after their time has passed. Done by hand
@@ -112,7 +113,7 @@ export async function settleLatePayment(planId: string, adminId: string, input: 
     userId,
     type: "PAYMENT_APPROVED",
     title: "Payment received",
-    body: `Thank you. ${charged > 0 ? `${formatCredits(storedToCredits(charged))} credit${charged === CREDITS_PER_CLASS ? " was" : "s were"} used for the class you already took. ` : ""}Your next payment is due ${newDue.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}.`,
+    body: `Thank you. ${charged > 0 ? `${formatCredits(storedToCredits(charged))} credit${charged === CREDITS_PER_CLASS ? " was" : "s were"} used for the class you already took. ` : ""}${nextBillSentence(plan.installmentAmountCents, newDue.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" }))}`,
     emailCategory: "payments",
   });
   await logAudit({ actorId: adminId, action: "plan.settle-late", targetType: "PaymentPlan", targetId: planId, detail: `next bill ${newDue.toISOString().slice(0, 10)}, charged ${charged}` });

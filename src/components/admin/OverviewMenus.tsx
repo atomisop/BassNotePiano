@@ -3,9 +3,10 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "@/components/ui/appIcons";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-const BUTTON =
-  "tap inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-slate-50/6 px-4 text-small font-semibold text-slate-100 ring-1 ring-inset ring-slate-50/10 transition hover:bg-slate-50/10";
+// The standard secondary button (raised in both themes; flat grey read as switched off on Paper), at the 44px touch height.
+const BUTTON = buttonVariants({ variant: "secondary", className: "min-h-11 cursor-pointer px-4 font-semibold" });
 
 /**
  * The two buttons at the top of the Overview, side by side and alike: Needs you (the jobs waiting right now) and Follow up (the people to
@@ -20,7 +21,7 @@ export function OverviewMenus({ needsCount, followCount, needs, follow, classNam
     count === 0 ? (
       <span className="inline-flex min-h-11 items-center rounded-full px-4 text-small font-medium text-slate-500 ring-1 ring-inset ring-slate-50/8">{label} · all clear</span>
     ) : (
-      <button type="button" onClick={() => toggle(which)} aria-expanded={open === which} aria-controls={panelId} className={BUTTON}>
+      <button type="button" onClick={() => toggle(which)} aria-expanded={open === which} aria-controls={panelId} data-keep-chrome="" className={BUTTON}>
         {label}
         <span className="min-w-6 rounded-full bg-signal px-1.5 py-0.5 text-center text-caption font-semibold tabular-nums text-white">{count}</span>
         <ChevronDown aria-hidden className={cn("h-4 w-4 text-slate-400 transition-transform", open === which && "rotate-180")} />

@@ -20,6 +20,7 @@ import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
+import { AuthHeading } from "@/components/auth/AuthHeading";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 
 const cardVariants = {
@@ -138,11 +139,9 @@ function ResetPasswordForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Reset password</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Choose a new password</h1>
-      <p className="mt-1.5 text-small text-slate-500 sm:mt-2">
-        Code sent to <span className="text-slate-300">{email}</span>.
-      </p>
+      <AuthHeading title="Choose a new password">
+        Code sent to <span className="text-slate-200">{email}</span>.
+      </AuthHeading>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-3 space-y-2 sm:mt-6 sm:space-y-4">
         <div>

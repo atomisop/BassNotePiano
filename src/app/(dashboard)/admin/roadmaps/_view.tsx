@@ -18,8 +18,8 @@ export async function RoadmapsView() {
   const roadmaps = await listRoadmapsForAdmin();
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Roadmaps</h1>
-      <p className="mt-2 max-w-2xl text-small text-slate-500"><Hint>Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you already give. A new roadmap starts hidden: add its scales, tap a scale&apos;s lesson count to add its lessons, then turn it on.</Hint></p>
+      <h1 className="sr-only">Roadmaps</h1>
+      <p className="mt-2 max-w-2xl text-small text-slate-500">Students go through the roadmaps in this order. Each one opens after they finish the one before, through the same scale approvals you already give. A new roadmap starts hidden: add its scales, tap a scale&apos;s lesson count to add its lessons, then turn it on.</p>
       <div className="mt-6">
         <RoadmapsAdmin
           roadmaps={roadmaps.map((r) => ({

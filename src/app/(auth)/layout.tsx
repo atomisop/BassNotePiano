@@ -74,8 +74,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}
       <header>
-        <Link href="/" aria-label="Bass Note Piano, home" className="relative mb-3 flex flex-col items-center text-center sm:mb-8">
-          <BrandLockup height={112} className="mb-1" priority />
+        <Link href="/" aria-label="Bass Note Piano, home" className="relative mb-4 flex flex-col items-center text-center sm:mb-8">
+          {/* The form is what this screen is for, so on a phone the lockup is a smaller mark above it (two sizes, one shown
+              per width: the component sizes itself in pixels). */}
+          <span className="sm:hidden">
+            <BrandLockup height={80} priority />
+          </span>
+          <span className="hidden sm:block">
+            <BrandLockup height={112} className="mb-1" priority />
+          </span>
           {/* Hidden below `sm` specifically, the one purely decorative line
               here, so it's the first thing to give way on the shortest
               phone screens where the reset-password card's own three

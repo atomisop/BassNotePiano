@@ -9,6 +9,7 @@ import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
 import { Hint } from "@/components/ui/Hint";
 import { CardFoot } from "@/components/ui/CardKit";
+import { FigureLead } from "@/components/admin/AdminLead";
 
 import { SectionPills } from "@/components/admin/SectionPills";
 import { ActivityView } from "../activity/_view";
@@ -46,10 +47,18 @@ async function SystemView() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">System</h1>
+      <h1 className="sr-only">System</h1>
+      {/* The system's one fact, figure first: whether every automatic task is running. */}
+      <FigureLead
+        className="mt-4"
+        figure={stoppedJobs > 0 ? stoppedJobs : jobs.length}
+        tone={stoppedJobs > 0 ? "danger" : "default"}
+        label={stoppedJobs > 0 ? `automatic task${stoppedJobs === 1 ? "" : "s"} stopped` : "automatic tasks, all running"}
+        meta={[pausedJobs > 0 ? `${pausedJobs} paused` : null, `${viewsWeek.toLocaleString()} page views in 7 days`].filter(Boolean).join(" · ")}
+      />
       {/* The site's machinery (moved here from the Overview 2026-10-30): the scheduled jobs and the page views, then the content
           security policy reports. */}
-      <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <PhoneAccordion
           id="tasks"
           alwaysCollapsible
@@ -89,7 +98,7 @@ async function SystemView() {
         {rows.length === 0 ? (
           <>
             <h2 className="mt-1 text-title font-semibold text-slate-50">No reports yet</h2>
-            <p className="mt-1 text-small text-slate-400"><Hint>Reports arrive as people use the site; check again after a few days of normal use.</Hint></p>
+            <p className="mt-1 text-small text-slate-400">Reports arrive as people use the site; check again after a few days of normal use.</p>
           </>
         ) : realRecent.length === 0 ? (
           <>

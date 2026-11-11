@@ -1,7 +1,6 @@
 import type { PlanCancellationReason } from "@prisma/client";
 import type { PlanCancellationFeedback } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
-import { Hint } from "@/components/ui/Hint";
 import { Meta } from "@/components/ui/CardKit";
 import Link from "next/link";
 
@@ -43,7 +42,7 @@ function formatDate(d: Date): string {
 export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCancellationFeedback[] }) {
   if (feedback.length === 0) {
     return (
-      <p className="mt-6 rounded-xl p-6 text-center text-small text-slate-500 bg-neu-base shadow-raised-low"><Hint>Nothing here yet. This fills in as students cancel their own plan and leave a reason.</Hint></p>
+      <p className="mt-6 rounded-xl p-6 text-center text-small text-slate-500 bg-neu-base shadow-raised-low">Nothing here yet. This fills in as students cancel their own plan and leave a reason.</p>
     );
   }
 

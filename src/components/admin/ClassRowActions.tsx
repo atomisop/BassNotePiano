@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, EllipsisVertical, MapPin, MessageSquare, NotebookPen, Sparkles, X } from "@/components/ui/appIcons";
+import { ArrowRightLeft, MapPin, MessageSquare, NotebookPen, Sparkles, X } from "@/components/ui/appIcons";
 import { DiscordIcon } from "@/components/ui/icons";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -410,7 +410,7 @@ export function ClassRowMenu({ row, notifyPlace }: { row: ClassActionRow; notify
 
   return (
     <>
-      <ActionMenu label="More" align="right" icon={<EllipsisVertical aria-hidden className="h-4 w-4" />}>
+      <ActionMenu label="More" align="right">
         {row.active && (
           <button type="button" className={item} onClick={() => setOpen("move")}>
             <ArrowRightLeft aria-hidden className="h-4 w-4" />

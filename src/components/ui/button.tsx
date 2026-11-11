@@ -39,7 +39,7 @@ const buttonCva = cva(
           lift,
         ),
         // Quiet, raised paper/ink button for every secondary action.
-        secondary: cn("liquid text-slate-50 hover:text-white", lift),
+        secondary: cn("liquid text-slate-50", lift),
         outline: cn("liquid text-slate-100", lift),
         ghost: cn("text-slate-300 hover:text-slate-50 hover:liquid", lift),
         destructive: cn("liquid text-red-300", lift),

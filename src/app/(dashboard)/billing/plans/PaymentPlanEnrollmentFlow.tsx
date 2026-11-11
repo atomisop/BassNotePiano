@@ -35,6 +35,7 @@ import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { Hint } from "@/components/ui/Hint";
 import { CardHead, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { groupPlanSentence, planBillName, planBillState } from "@/components/billing/planBillState";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -105,6 +106,11 @@ interface PaymentPlanEnrollmentFlowProps {
   initialSlotKey?: string | null;
   /** ?who=parent&child=: that linked child's email, already on the form. */
   initialChildEmail?: string | null;
+  /**
+   * The page already shows this plan's bill on its band (the amount, with Pay on the sheet) and the everyday links as tiles, so
+   * this component leaves those out and keeps only what the band does not carry.
+   */
+  billOnBand?: boolean;
 }
 
 /**
@@ -270,6 +276,7 @@ export function PaymentPlanEnrollmentFlow({
   initialParentMode = false,
   initialSlotKey = null,
   initialChildEmail = null,
+  billOnBand = false,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
@@ -387,27 +394,14 @@ export function PaymentPlanEnrollmentFlow({
     const planLabel = describePaymentPlan(plan.cadence, plan.term);
     const progressPercent = Math.min(100, (plan.installmentsPaid / plan.termMonths) * 100);
 
-    // A plan exists the moment it is set up (its weekly time is held), but it only starts once the first payment
-    // arrives. Say which of those two states this is, in plain words, at the top of the card.
     const waitingForFirstPayment = plan.installmentsPaid === 0;
-    const firstAmount = installment ? (installment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" }) : null;
-    // Status only when it is news (DESIGN.md, Hierarchy 5): a running plan gets no badge, the waiting and problem states do.
-    const planState: { label: string | null; tone: "warning" | "danger"; note: string | null } = !waitingForFirstPayment
-      ? { label: null, tone: "warning", note: null }
-      : memberView
-        ? { label: "Waiting for the first payment", tone: "warning", note: null }
-        : installment?.status === "PENDING_REVIEW"
-          ? { label: "Payment sent, we are checking it", tone: "warning", note: "Thanks. Your plan starts as soon as we confirm it." }
-          : installment?.status === "REJECTED"
-            ? { label: "Payment problem", tone: "danger", note: "We could not match your payment. See below to try again." }
-            : {
-                label: "Waiting for your first payment",
-                tone: "warning",
-                note: `Your weekly time is held for you${plan.heldUntil ? ` until ${new Date(plan.heldUntil).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}` : ""}. Your plan, credits and classes start when your first payment${firstAmount ? ` of ${firstAmount}` : ""} arrives. Send it below, or the time is released to someone else.`,
-              };
+    const planState = planBillState(plan, installment, memberView);
+    // With a plan the page loaded with, its band and tiles carry the bill; a plan started on the form a moment ago shows it here.
+    const onBand = billOnBand && Boolean(initialPlan);
+    const showSwitch = !fam && !pendingSwitch && plan.installmentsPaid >= 1;
 
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className={onBand ? undefined : "mx-auto max-w-2xl"}>
         {pendingSwitch && (
           <div className="mb-6">
             <p className="mb-3 px-1 text-small text-slate-400">
@@ -429,7 +423,7 @@ export function PaymentPlanEnrollmentFlow({
         )}
         {/* The plan card above (MyPlanSummary) already names the plan and its next bill, so this card only appears while there is
             news: the plan was just started here, or it is still waiting for its first payment. The pay button is its one primary. */}
-        {(planState.label || !initialPlan) && (
+        {!onBand && (planState.label || !initialPlan) && (
           <div className="mb-4 rounded-card bg-neu-base p-5 shadow-raised-mid">
             <CardHead
               as="p"
@@ -442,24 +436,12 @@ export function PaymentPlanEnrollmentFlow({
             <ProgressBar className="mt-3" value={progressPercent} label="Bills paid" />
           </div>
         )}
-        {fam && (
-          <p className="mb-4 px-1 text-small text-slate-400">
-            {memberView
-              ? fam.waitingForStart
-                ? `This is a group plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
-                : `This is a group plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill, together with everyone else's, from their own bank account. You never have to pay it yourself.`
-              : fam.waitingForStart
-                ? `Group plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
-                : `Group plan for ${fam.memberCount} accounts. You pay one combined 28-day bill for everyone, from your own bank account, and get one receipt.`}
-            {fam.memberNames && fam.memberNames.length > 0 && ` In this group: ${fam.memberNames.join(", ")}.`}
-            {fam.weeklyTime && ` Your own weekly class: ${fam.weeklyTime}. It is not a shared class, and everyone else in the group picks their own times.`}
-          </p>
-        )}
-        {memberView && !fam.waitingForStart ? null : installment ? (
+        {!onBand && fam && <p className="mb-4 px-1 text-small text-slate-400">{groupPlanSentence(fam)}</p>}
+        {onBand || (memberView && !fam.waitingForStart) ? null : installment ? (
           <ZelleUnlockGate
             status={installment.status}
             rejectionReason={installment.rejectionReason}
-            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : installment.isBundle ? `One bill for ${fam?.memberCount ?? "everyone in the"} accounts` : `Bill ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleCode={planBillName(plan, installment, fam)}
             scaleTitle={planLabel}
             eyebrowLabel={fam ? "Group plan" : "Payment Plan"}
             amountCents={installment.amountCents}
@@ -483,8 +465,8 @@ export function PaymentPlanEnrollmentFlow({
           </div>
         )}
         {familyBills.length > 0 && (
-          <section aria-label="Other members' 28-day bills" className="mt-6 space-y-3">
-            <p className="px-1 text-small font-semibold uppercase tracking-caps text-slate-400">Other members&apos; 28-day bills</p>
+          <section aria-label="Other members' 28-day bills" className={`space-y-3 ${onBand ? "mb-6" : "mt-6"}`}>
+            <p className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Other members&apos; 28-day bills</p>
             {familyBills.map((bill) => (
               <div key={bill.payment.id} className="rounded-card bg-neu-base p-4 shadow-raised-low">
                 <div className="mb-3 flex items-baseline justify-between gap-3">
@@ -507,15 +489,17 @@ export function PaymentPlanEnrollmentFlow({
           </section>
         )}
         {/* Plan changes are quiet rows at the end, one hairline apart, never competing with the bill. */}
-        <div className="mt-8 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
-          {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
-            <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
-          )}
-          <Link href="/billing/plans?who=parent" className="tap group flex items-center justify-between gap-3 px-4 py-3 text-small font-medium text-slate-200 hover:text-slate-50">
-            Pay for your child&apos;s plan
-            <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
-          </Link>
-        </div>
+        {(showSwitch || !onBand) && (
+          <div className={`divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low ${onBand ? "" : "mt-8"}`}>
+            {showSwitch && <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />}
+            {!onBand && (
+              <Link href="/billing/plans?who=parent" className="tap group flex items-center justify-between gap-3 px-4 py-3 text-small font-medium text-slate-200 hover:text-slate-50">
+                Pay for your child&apos;s plan
+                <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5" />
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     );
   }

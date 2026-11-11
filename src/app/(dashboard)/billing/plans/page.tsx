@@ -19,6 +19,10 @@ import { hasParentControl, isParentOf } from "@/lib/parentLinks";
 import { parseSlotKey, pauseNeedsPayment, slotKey } from "@/lib/inPlaceLinks";
 import { pauseBlockedReason, isIndefinitePause } from "@/lib/planPause";
 import { PlanControls } from "./PlanControls";
+import { PlanBillSheet } from "@/components/billing/PlanBillSheet";
+import { planBillState } from "@/components/billing/planBillState";
+import { ActionTiles } from "@/components/ui/ActionTiles";
+import { CalendarClock, CalendarDays, FileText, UserPlus, Users } from "@/components/ui/appIcons";
 
 export const metadata = { title: "Payment plans" };
 
@@ -148,7 +152,8 @@ export default async function BillingPlansPage(
   const now = new Date();
   const pausedNow = Boolean(activePlan?.pauseUntil && activePlan.pauseUntil > now);
   // A child whose parent controls their schedule changes nothing here (the server refuses it), so they get no dead-end rows.
-  const controls = activePlan && !(await hasParentControl(session.user.id))
+  const parentControlled = activePlan ? await hasParentControl(session.user.id) : false;
+  const controls = activePlan && !parentControlled
     ? {
         plan: {
           cadence: activePlan.cadence,
@@ -172,6 +177,31 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
+  // With a plan, the screen is about one fact, the next bill: it goes on the band, with Pay on the sheet. (Opened for a child's
+  // plan, ?who=parent, the screen is a form instead, so the plan is only a quiet card above it.)
+  const showBand = Boolean(activePlan) && !initialParentMode;
+  const memberView = family !== null && !family.isPayer;
+  const planLabel = activePlan ? describePaymentPlan(activePlan.cadence, activePlan.term) : "";
+  const billPlan = activePlan
+    ? {
+        installmentsPaid: activePlan.installmentsPaid,
+        termMonths: activePlan.termMonths,
+        // Until the first payment arrives the weekly time is only held: when it would be let go.
+        heldUntil: activePlan.installmentsPaid === 0 ? new Date(activePlan.createdAt.getTime() + firstBillLapseDays * 86_400_000).toISOString() : null,
+      }
+    : null;
+  const billInstallment = shownInstallment
+    ? {
+        id: shownInstallment.id,
+        status: shownInstallment.status,
+        rejectionReason: shownInstallment.rejectionReason,
+        amountCents: shownInstallment.amountCents,
+        installmentNumber: shownInstallment.installmentNumber,
+        isBundle: shownInstallment.purpose === "FAMILY_PLAN_INSTALLMENT",
+      }
+    : null;
+  const nextInstallmentDueDate = activePlan && !shownInstallment ? (openInstallmentResult?.nextDueDate ?? activePlan.nextDueDate).toISOString() : undefined;
+
   // Phones: one column. Tablets and computers: the page is wide, so the plan form can sit in two columns (see NewPlanForm).
   return (
     <div className="mx-auto w-full max-w-2xl md:max-w-6xl">
@@ -188,7 +218,7 @@ export default async function BillingPlansPage(
           }))}
         />
       </div>
-      <div data-deck-header className="deck-header -mt-4 pt-4 text-center md:text-left">
+      <div data-deck-header className={`deck-header -mt-4 pt-4 ${showBand ? "" : "text-center md:text-left"}`}>
         <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
@@ -196,26 +226,51 @@ export default async function BillingPlansPage(
       <div className="mt-8">
         <div className="mx-auto max-w-2xl md:max-w-none">
           <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
-          {activePlan && <MyPlanSummary userId={session.user.id} />}
-          {controls && !initialParentMode && (
-            <PlanControls
-              plan={controls.plan}
-              canPause={!activePlan?.familyGroupId}
-              pauseBlocked={controls.pauseBlocked}
-              pauseNeedsPay={pauseNeedsPayment(controls.pauseBlocked) && payable !== null}
-              bill={
-                payable
-                  ? {
-                      id: payable.id,
-                      amountCents: payable.amountCents,
-                      title: `Installment ${payable.installmentNumber ?? (activePlan?.installmentsPaid ?? 0) + 1} of ${activePlan?.termMonths ?? 1}`,
-                      eyebrow: activePlan ? describePaymentPlan(activePlan.cadence, activePlan.term) : "Payment plan",
-                    }
-                  : null
-              }
-              zelleHandle={zelleHandle}
-            />
+          {activePlan && billPlan && showBand && (
+            <div className="mb-6 flex flex-col gap-6">
+              <MyPlanSummary
+                userId={session.user.id}
+                variant="band"
+                // The amount on the band is what this person is about to send: their open bill (a group's is everyone's together),
+                // or the plan's price per bill between bills. Someone whose group has not started yet owes nothing, so no amount.
+                dueCents={memberView ? (family?.waitingForStart ? null : undefined) : (billInstallment?.amountCents ?? undefined)}
+                headline={planBillState(billPlan, billInstallment, memberView).label}
+              >
+                <PlanBillSheet key="bill" planLabel={planLabel} plan={billPlan} installment={billInstallment} group={family} zelleHandle={zelleHandle} nextInstallmentDueDate={nextInstallmentDueDate} covered={activePlan.installmentAmountCents === 0 && !billInstallment} />
+              </MyPlanSummary>
+              <ActionTiles
+                title="What do you want to do?"
+                items={[
+                  { href: "/billing/history", label: "Payment history", detail: "Bills and receipts", icon: <FileText /> },
+                  !activePlan.familyGroupId && activePlan.reservedScheduleId && !parentControlled
+                    ? { href: "/lessons?changeTime=", label: "Weekly time", detail: "Change your day", icon: <CalendarClock /> }
+                    : { href: "/lessons", label: "My classes", detail: "See what is booked", icon: <CalendarDays /> },
+                  { href: "/billing/plans?who=parent", label: "For my child", detail: "Pay for their plan", icon: <Users /> },
+                  { href: "/account?tab=account", label: "Invite a friend", detail: "Share your link", icon: <UserPlus /> },
+                ]}
+              />
+              {controls && (
+                <PlanControls
+                  plan={controls.plan}
+                  canPause={!activePlan.familyGroupId}
+                  pauseBlocked={controls.pauseBlocked}
+                  pauseNeedsPay={pauseNeedsPayment(controls.pauseBlocked) && payable !== null}
+                  bill={
+                    payable
+                      ? {
+                          id: payable.id,
+                          amountCents: payable.amountCents,
+                          title: `Installment ${payable.installmentNumber ?? activePlan.installmentsPaid + 1} of ${activePlan.termMonths}`,
+                          eyebrow: planLabel,
+                        }
+                      : null
+                  }
+                  zelleHandle={zelleHandle}
+                />
+              )}
+            </div>
           )}
+          {activePlan && !showBand && <MyPlanSummary userId={session.user.id} />}
         </div>
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
@@ -228,34 +283,10 @@ export default async function BillingPlansPage(
           pricing={pricing}
           personalDiscountPercent={personalDiscount.percent}
           scholarshipPercent={personalDiscount.scholarshipPercent}
-          activePlan={
-            activePlan
-              ? {
-                  id: activePlan.id,
-                  cadence: activePlan.cadence,
-                  term: activePlan.term,
-                  installmentsPaid: activePlan.installmentsPaid,
-                  termMonths: activePlan.termMonths,
-                  // Until the first payment arrives the weekly time is only held: when it would be let go.
-                  heldUntil: activePlan.installmentsPaid === 0 ? new Date(activePlan.createdAt.getTime() + firstBillLapseDays * 86_400_000).toISOString() : null,
-                }
-              : null
-          }
-          openInstallment={
-            shownInstallment
-              ? {
-                  id: shownInstallment.id,
-                  status: shownInstallment.status,
-                  rejectionReason: shownInstallment.rejectionReason,
-                  amountCents: shownInstallment.amountCents,
-                  installmentNumber: shownInstallment.installmentNumber,
-                  isBundle: shownInstallment.purpose === "FAMILY_PLAN_INSTALLMENT",
-                }
-              : null
-          }
-          nextInstallmentDueDate={
-            activePlan && !shownInstallment ? (openInstallmentResult?.nextDueDate ?? activePlan.nextDueDate).toISOString() : undefined
-          }
+          billOnBand={showBand}
+          activePlan={activePlan && billPlan ? { id: activePlan.id, cadence: activePlan.cadence, term: activePlan.term, ...billPlan } : null}
+          openInstallment={billInstallment}
+          nextInstallmentDueDate={nextInstallmentDueDate}
           family={family}
           familyBills={familyBills}
           pendingSwitch={pendingSwitch}

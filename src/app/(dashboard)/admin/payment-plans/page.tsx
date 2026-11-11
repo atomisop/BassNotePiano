@@ -9,6 +9,8 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { SectionPills } from "@/components/admin/SectionPills";
 import { PricingView } from "../pricing/_view";
 import { ScholarshipsView } from "../scholarships/_view";
+import { FigureLead } from "@/components/admin/AdminLead";
+import { AlertCircle, Check, List, MessageSquare, PlayCircle, X } from "@/components/ui/appIcons";
 import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
 
 // "Overdue" isn't a real PaymentPlanStatus, it's derived (ACTIVE && past its
@@ -21,14 +23,17 @@ import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } fr
 // separate concern, and didn't earn a whole top-level nav slot on its own.
 type FilterValue = PaymentPlanStatus | "OVERDUE" | "ALL" | "FEEDBACK";
 
-const FILTERS: { label: string; value: FilterValue }[] = [
-  { label: "Active", value: "ACTIVE" },
-  { label: "Overdue", value: "OVERDUE" },
-  { label: "Completed", value: "COMPLETED" },
-  { label: "Canceled", value: "CANCELED" },
-  { label: "All", value: "ALL" },
-  { label: "Feedback", value: "FEEDBACK" },
+// Each status is an icon, the chosen one with its word (the same control as Payments), so all six fit across a phone.
+const FILTERS: { label: string; value: FilterValue; icon: React.ReactNode }[] = [
+  { label: "Active", value: "ACTIVE", icon: <PlayCircle /> },
+  { label: "Overdue", value: "OVERDUE", icon: <AlertCircle /> },
+  { label: "Completed", value: "COMPLETED", icon: <Check /> },
+  { label: "Canceled", value: "CANCELED", icon: <X /> },
+  { label: "All", value: "ALL", icon: <List /> },
+  { label: "Feedback", value: "FEEDBACK", icon: <MessageSquare /> },
 ];
+
+const formatUsd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 export const metadata = { title: "Admin: Payment plans" };
 
@@ -44,20 +49,20 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
       <div>
         <h1 className="sr-only">Plans</h1>
 
-        <div className="mt-6">
+        <div className="mt-3">
           <AdminFilterTabs
             label="Plan status"
             mobile="scroll"
+            iconOnly
             items={FILTERS.map((filter) => ({
               label: filter.label,
+              icon: filter.icon,
               href: filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`,
               active: activeFilter === filter.value,
             }))}
           />
         </div>
-        <p className="mt-4 text-small tabular-nums text-slate-500">
-          {feedback.length} cancellation{feedback.length === 1 ? "" : "s"}
-        </p>
+        <FigureLead className="mt-4" figure={feedback.length} label={`cancellation${feedback.length === 1 ? "" : "s"} with a reason`} />
 
         <PlanCancellationFeedbackList feedback={feedback} />
       </div>
@@ -70,28 +75,44 @@ async function PlansView(props: { searchParams: Promise<{ status?: string }> }) 
   const firstBillLapseDays = await getNumberSetting("payments.firstBillLapseDays");
   const fetched = await getAdminPaymentPlans(statusParam);
   const plans = activeFilter === "OVERDUE" ? fetched.filter((plan) => plan.isOverdue) : fetched;
+  // Plans that are running and have paid at least once: the same set the Overview counts as "every 28 days".
+  const running = plans.filter((plan) => plan.status === "ACTIVE" && plan.installmentsPaid >= 1);
+  const overdue = plans.filter((plan) => plan.isOverdue).length;
 
   return (
     <div>
       <h1 className="sr-only">Payment Plans</h1>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AdminFilterTabs
           label="Plan status"
           mobile="scroll"
+          iconOnly
           items={FILTERS.map((filter) => ({
             label: filter.label,
+            icon: filter.icon,
             href: filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`,
             active: activeFilter === filter.value,
           }))}
         />
       </div>
-      {/* The count is a quiet line under the tabs, so the plans themselves are the first loud thing on the page. */}
-      <p className="mt-4 text-small tabular-nums text-slate-500">
-        {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
-      </p>
+      {/* The screen's one fact on one line, figure first: how many plans, what they bring in every 28 days, and who is late. */}
+      <FigureLead
+        className="mt-4"
+        figure={plans.length}
+        tone={activeFilter === "OVERDUE" && plans.length > 0 ? "danger" : "default"}
+        label={activeFilter === "ALL" ? `plan${plans.length === 1 ? "" : "s"}` : `${activeLabel.toLowerCase()} plan${plans.length === 1 ? "" : "s"}`}
+        meta={
+          running.length > 0 ? (
+            <>
+              {formatUsd(running.reduce((sum, plan) => sum + plan.installmentAmountCents, 0))} every 28 days
+              {activeFilter !== "OVERDUE" && (overdue > 0 ? <span className="text-red-400"> · {overdue} overdue</span> : " · no one is late")}
+            </>
+          ) : undefined
+        }
+      />
 
-      <div className="mt-3">
+      <div className="mt-4">
         <PaymentPlanList
           plans={plans}
           onCancel={cancelPaymentPlanAction}

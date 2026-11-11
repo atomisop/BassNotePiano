@@ -5,14 +5,15 @@ The rules every screen follows. Tokens live in `src/app/globals.css` (the `@them
 never a raw hex, px size or font name.
 
 ```text
-Feeling:  a calm, flat, dark practice studio. Content first, chrome quiet, one warm accent.
+Feeling:  a calm, flat, warm practice studio: cream linen, espresso and one burnt orange. Content first, chrome quiet.
 Type:     Baloo 2 for page titles only. Inside the app everything else is the system font (SF Pro on Apple devices),
           labels in sentence case; the public pages use Sora. JetBrains Mono for keys and codes.
           Six steps: caption 12 · small 13 · body 16 · title 20 · headline 24 · hero 28 to 44 (fluid), plus one big figure for counters.
           Weights: 400 text, 500 labels, 600 titles and buttons. Tabular numbers everywhere in the app.
-Colour:   ground #121212, cards one solid step lighter, an 11-step neutral ramp (slate-50 … slate-950).
-          One accent, the logo orange (signal), meaning "your next step" or "tap this": at most 3 per screen.
-          States: success (emerald), warning (amber-300), danger (red). Light theme mirrors all of it.
+Colour:   three colours, 60 / 30 / 10: Cream Linen, Espresso Bean, Burnt Orange. Dark (Espresso): ground #241C18, cards one solid
+          step lighter (#2F2520). Light (Linen): ground #EFE8DC, cards #FAF6EE. An 11-step warm ramp (slate-50 … slate-950).
+          One accent, Burnt Orange #E8641E (signal), meaning "your next step" or "tap this": at most 3 per screen.
+          States: success (emerald), warning (amber-300), danger (a crimson red, clearly apart from the orange).
 Shape:    soft. 8 small controls and chips · 12 buttons' boxes, fields and rows · 16 cards · 24 sheets.
           Buttons and filter chips are full pills. No other radius.
 Depth:    cards are a solid fill with no border or shadow. Buttons are raised (the `liquid` fill with a soft shadow, decided
@@ -38,16 +39,59 @@ Marketing pages may use larger display sizes for their hero only.
 
 ## Colour roles
 
-| Role | Class | Notes |
+The palette is three colours used 60 / 30 / 10 (owner, 2026-11-11). Every neutral is warm: no blue-gray, no pure gray.
+
+| Colour | Share | Values | Where it goes |
+|---|---|---|---|
+| Cream Linen | 60% | `#EFE8DC` (239 232 220), lighter `#FAF6EE` (250 246 238) | Linen: the page and the cards. Espresso: all text. |
+| Espresso Bean | 30% | `#3B2F2A` (59 47 42), deepest `#241C18` (36 28 24) | Linen: all text, hairlines, shadows. Espresso: the page, cards (`#2F2520`), the lift and dock (`#3B2F2A`). |
+| Burnt Orange | 10% | `#E8641E` (232 100 30) | The one accent: the primary button, the current tab, the next step, progress. |
+
+The light theme (id `paper`) is **Linen**; the dark theme (id `ink`, the default) is **Espresso**. The ids and the default did not change.
+
+| Role | Class | Linen (light) | Espresso (dark) |
+|---|---|---|---|
+| Page | `bg-ground`, `bg-slate-950` | `#EFE8DC` | `#241C18` |
+| Card | `bg-neu-base` (via `Card`) | `#FAF6EE` | `#2F2520` |
+| Card inside a card, hover | `bg-neu-lift` | `#FFFCF7` | `#3B2F2A` |
+| Text | `text-slate-50` | `#241C18` | `#FAF6EE` |
+| Secondary text | `text-slate-300` / `text-slate-400` | `#3B2F2A` / `#483B34` | `#CFC5B6` / `#BAAE9F` |
+| Labels and meta | `text-slate-500` (never below it for text) | `#56473F` | `#AA9E8F` |
+| Hairline | `border-slate-800` | `#DED4C4` | `#42352F` |
+| Accent fill | `bg-signal` + `text-signal-ink` | `#E8641E` + espresso `#241C18` | the same |
+| Accent text | `text-signal-fg` | `#96320A` | `#F4884A` |
+| Warning | `text-amber-300` | `#8C3C0E` | `#F5A472` |
+| Danger | `text-red-400`, `bg-red-500` + white | `#A8162E`, `#BE223A` | `#FA707A`, `#D62C3E` |
+| Success | `emerald-400` (ink or paper inside the app, where green is not a second accent) | `#266E3E` | `#6ECF82` |
+
+Rules that follow from the orange's lightness:
+
+- **The label on an orange fill is espresso** (`text-signal-ink`, 5.0:1). Cream on `#E8641E` is 3.1:1 and white 3.3:1, so neither is ever
+  the label; globals.css turns a stray `text-white` / `text-slate-950` / `text-black` on `bg-signal` into the ink.
+- **Orange text is `text-signal-fg`**, never the accent itself: the accent is about 3:1 on cream and under 4.5:1 on a brown card.
+- **Red is crimson** (hue about 350) and the accent is hue 21, so a late bill never reads as "tap this".
+- `white` and `black` in Tailwind classes are a cream white (`#FFFCF7`) and an espresso black (`#140E0B`).
+- The roadmap artwork gradients (`ROADMAP_ARTWORKS`), the drawn piano keys and fretboard, photos and logo files keep their own colours.
+
+Contrast (WCAG 2, text needs 4.5:1, large figures and edges 3:1), page / card:
+
+| Pair | Linen | Espresso |
 |---|---|---|
-| Page | `bg-ground` | `#121212` dark, `#f2f2f5` light |
-| Card | `bg-neu-base` (via `Card`) | one solid step above the page |
-| Card inside a card, hover | `bg-neu-lift` | one more step |
-| Text | `text-slate-50` | primary |
-| Secondary text | `text-slate-300` / `text-slate-400` | never below `slate-500` for text |
-| Hairline | `border-slate-800` | dividers inside cards |
-| Accent | `bg-signal` + `text-signal-ink`, `text-signal-fg` | the next step only |
-| Success, warning, danger | `emerald-400`, `amber-300`, `red-400` | states, never decoration |
+| `slate-50` text | 13.8 / 15.5 | 15.5 / 13.9 |
+| `slate-300` text | 10.6 / 12.0 | 9.8 / 8.8 |
+| `slate-400` text | 8.8 / 10.0 | 7.7 / 6.9 |
+| `slate-500` text | 7.3 / 8.2 | 6.4 / 5.7 |
+| `slate-600` (the faintest text tone) | 5.9 / 6.6 | 5.2 / 4.6 |
+| `signal-fg` text | 6.3 / 7.1 | 6.8 / 6.0 |
+| `signal-fg` on an orange-tinted card (`bg-signal/16`) | 5.9 | 4.9 |
+| `red-400` text | 6.1 / 6.9 | 6.1 / 5.5 |
+| `amber-300` warning text | 6.2 / 7.0 | 8.3 / 7.4 |
+| espresso label on `bg-signal` | 5.0 | 5.0 |
+| white label on `bg-red-500` | 5.9 | 4.8 |
+| the orange fill against its ground (an edge, 3:1) | 2.8 / 3.1 | 5.0 / 4.5 |
+
+The one figure under its bar is the orange fill on the Linen page (2.8:1 as a shape): a filled button there is always identified by its
+5.0:1 label, never by its edge alone.
 
 ## Shape
 
@@ -93,6 +137,23 @@ thing per card, and one thing per screen, still stands out. The rules come from 
 
 Shared pieces (`src/components/ui/CardKit.tsx`): `CardHead` (eyebrow, title, subtitle, status), `Facts` + `Fact` (value over label), `Meta`
 (one quiet line joined with " · "), `Callout` (the one problem), `CardFoot` (the actions). Use them; do not rebuild them per screen.
+
+## Band, sheet and tiles (2026-11-11, owner: whole app)
+
+The look every main screen shares, learned from a super-app redesign the owner liked: less on the screen, the main thing first, the rest
+one tap away.
+
+1. **One band per screen** (`HeroBand`, `src/components/ui/HeroBand.tsx`): a colored sky over piano keys carrying the screen's ONE fact
+   (the next class, the amount due, the streak, the count waiting). A figure is `text-hero`; its label is the small line over it. Never
+   two bands on a screen, and never a band on a form, a dialog or a detail page that is mostly a list of settings.
+2. **A sheet over the band's edge** holds that fact's controls: one primary button, one or two quiet ones, the rest in More.
+3. **Tiles for what people do next** (`ActionTiles`): two to four soft cards with a tinted icon, a bold name and one quiet line. They
+   replace rows of text links and scattered buttons. More than four choices is a list, not tiles.
+4. **Do it again**: where a person repeats something (book the same time, pay the same bill, message the same person), offer the repeat
+   as one tap near the top, built from what they last did.
+5. **Filter inside the search**: a list with categories gets one search field with a scope chip or icon pills, not a second row of tabs.
+6. **Quiet cards under it**: `rounded-card bg-neu-base shadow-raised-low`, no outlines; rows with hairlines for lists (`Hierarchy` 8).
+7. Both themes, 390px and 320px wide, nothing under the dock (`pb-32`), menus never clipped by a rounded parent.
 
 ## Spacing
 

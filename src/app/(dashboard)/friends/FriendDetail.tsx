@@ -22,7 +22,7 @@ export function FriendDetail({ username }: { username: string }) {
     };
   }, [username]);
 
-  if (profile === undefined) return <div className="h-24 animate-pulse rounded-lg bg-slate-50/5" aria-label="Loading" />;
+  if (profile === undefined) return <div className="h-24 animate-pulse rounded-control bg-slate-50/5" aria-label="Loading" />;
   if (profile === null) return <p className="text-small text-slate-400"><Hint>Couldn&apos;t load this profile. Try again in a moment.</Hint></p>;
 
   // The streak is the one line you read first; the rest are small facts, value first (DESIGN.md, Hierarchy rule 3).

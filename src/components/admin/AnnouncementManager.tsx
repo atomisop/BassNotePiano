@@ -13,7 +13,6 @@ import {
   updateAnnouncementAction,
 } from "@/app/(dashboard)/admin/announcements/actions";
 import { buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { CardFoot, Meta } from "@/components/ui/CardKit";
 
@@ -216,7 +215,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             <span className="text-small font-medium text-slate-200">Message</span>
             <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} rows={4} className={`${editField} h-auto resize-none py-2.5`} />
           </label>
-          <p className="text-small text-slate-500"><Hint>The banner and the bell entries change at once. Emails already sent stay as they were.</Hint></p>
+          <p className="text-small text-slate-500">The banner and the bell entries change at once. Emails already sent stay as they were.</p>
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
             <button

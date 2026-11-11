@@ -122,9 +122,10 @@ export function PhoneCard({ state }: { state: PhoneState }) {
 
   const shown = mode === "view" && state.phone ? formatPhone(state.phone) : null;
 
+  // A row of the Contact group's card in Settings (SettingsGroup draws the surface), so it has no box of its own.
   return (
-    <div ref={ref} data-phone-card className="glass-surface p-5 md:p-6">
-      <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
+    <div ref={ref} data-phone-card className="p-5 md:p-6">
+      <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
         Phone number
         <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
       </h2>

@@ -17,7 +17,6 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import type { DiscountCandidate, PricingFormValues } from "@/app/(dashboard)/admin/pricing/actions";
 import { toast } from "@/components/ui/Toaster";
-import { Hint } from "@/components/ui/Hint";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Callout, Meta } from "@/components/ui/CardKit";
 
@@ -338,7 +337,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
           ))}
         </ul>
       )}
-      {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500"><Hint>Nobody found. Admins and banned accounts are left out.</Hint></p>}
+      {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500">Nobody found. Admins and banned accounts are left out.</p>}
 
       {picked && (
         <div className="mt-3 rounded-control bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">

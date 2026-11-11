@@ -21,7 +21,7 @@ export function MarkAllReadButton() {
           router.refresh();
         })
       }
-      className={buttonVariants({ variant: "secondary" })}
+      className={buttonVariants({ variant: "primary", size: "sm" })}
     >
       {pending && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
       Mark all read

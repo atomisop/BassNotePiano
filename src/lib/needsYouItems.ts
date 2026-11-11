@@ -66,7 +66,7 @@ export async function getNeedsYouItems(kind: NeedsYouKind, opts: { isOwner: bool
     }
     case "overdue": {
       const plans = await prisma.paymentPlan.findMany({
-        where: { status: "ACTIVE", nextDueDate: { lt: now } },
+        where: { status: "ACTIVE", nextDueDate: { lt: now }, installmentAmountCents: { gt: 0 } },
         orderBy: { nextDueDate: "asc" },
         take: take * 3,
         select: { nextDueDate: true, installmentAmountCents: true, user: { select: { id: true, name: true, email: true } } },

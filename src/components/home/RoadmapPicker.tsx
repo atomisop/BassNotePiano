@@ -31,8 +31,8 @@ export function RoadmapPicker({ roadmaps, selectedId }: { roadmaps: PickerRoadma
                 scroll={false}
                 aria-current={selected ? "page" : undefined}
                 className={cn(
-                  "tap flex w-52 items-center gap-3 rounded-card bg-neu-base p-2.5 shadow-raised-mid transition",
-                  selected ? "ring-2 ring-signal" : "hover:brightness-110",
+                  "tap press-soft flex w-52 items-center gap-3 rounded-card bg-neu-base p-2.5 shadow-raised-low transition",
+                  selected ? "ring-2 ring-inset ring-signal" : "hover:shadow-raised-mid",
                 )}
               >
                 <RoadmapArtwork artwork={r.artwork} className={cn("h-12 w-12 shrink-0", !s.open && "opacity-50")} />

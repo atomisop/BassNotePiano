@@ -31,7 +31,7 @@ export function GlanceTiles({ items, columns = 3, className }: { items: Glance[]
         <li key={g.label} className="min-w-0">
           <Link
             href={g.href}
-            className="group flex h-full min-w-0 flex-col rounded-card bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8 transition hover:bg-slate-50/7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+            className="press-soft group flex h-full min-w-0 flex-col rounded-card bg-neu-base p-3 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
           >
             {/* The label stays first in the markup, so the link still reads "Streak, 12 days", and is drawn under the figure. */}
             <span className="flex min-w-0 flex-col-reverse">

@@ -18,7 +18,7 @@ export async function MessagesView(props: { searchParams: Promise<{ tab?: string
     <div>
       <h1 className="sr-only">Messages</h1>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AdminFilterTabs
           label="Message type"
           items={[
@@ -29,7 +29,7 @@ export async function MessagesView(props: { searchParams: Promise<{ tab?: string
         />
       </div>
 
-      <div className="mt-6">{sentTab ? <SentView searchParams={Promise.resolve(searchParams)} /> : announcementsTab ? <Announcements /> : <Direct to={parseMessageRecipients(searchParams.to)} />}</div>
+      <div className="mt-4">{sentTab ? <SentView searchParams={Promise.resolve(searchParams)} /> : announcementsTab ? <Announcements /> : <Direct to={parseMessageRecipients(searchParams.to)} />}</div>
     </div>
   );
 }

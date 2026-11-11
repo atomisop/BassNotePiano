@@ -17,8 +17,11 @@
 .pb-cap { font-size: 14px; color: var(--ss-text-strong); font-weight: 500; line-height: 1.4; }
 .pb-rest { position: absolute; left: 470px; top: 330px; width: 1px; height: 1px; }
 .pb .ss-stage[data-layout='compact'] { --gutter: 16px; }
-.pb .ss-stage[data-layout='compact'] .pb-plan { width: 326px; height: 330px; padding: 20px; }
+.pb .ss-stage[data-layout='compact'] .pb-plan { width: 326px; height: 236px; padding: 20px; }
 .pb .ss-stage[data-layout='compact'] .pb-amount { font-size: 60px; }
 .pb .ss-stage[data-layout='compact'] .pb-per { font-size: 14px; margin-left: 6px; }
-.pb .ss-stage[data-layout='compact'] .pb-cycle { left: 16px; top: 362px; width: 326px; height: 176px; }
-.pb .ss-stage[data-layout='compact'] .pb-rest { left: 320px; top: 440px; }
+.pb .ss-stage[data-layout='compact'] .pb-cycle { left: 16px; top: 268px; width: 326px; height: 176px; }
+.pb .ss-stage[data-layout='compact'] .pb-rest { left: 320px; top: 346px; }
+/* The chosen plan length is plainly the chosen one: the orange accent as a soft fill with a hairline, and its words in the accent. */
+.pb .pb-seg .ss-seg__thumb { background: var(--ss-accent-soft); box-shadow: inset 0 0 0 1px var(--ss-accent); }
+.pb .pb-seg .ss-seg__option[data-on] { color: var(--ss-accent-text); font-weight: 600; }

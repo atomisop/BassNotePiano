@@ -37,7 +37,7 @@ export function ParentRequestCard({ requests }: { requests: { linkId: string; pa
   return (
     <section aria-label="Parent requests" className="space-y-3">
       {waiting.map((r) => (
-        <div key={r.linkId} className="rounded-card bg-neu-base p-5">
+        <div key={r.linkId} className="rounded-card bg-neu-base p-5 shadow-raised-low">
           <div className="flex items-start gap-3">
             <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-signal/12 text-signal-fg">
               <ShieldCheck className="h-5 w-5" />

@@ -59,7 +59,8 @@ function Pill({
     >
       {label}
       {comingSoon && (
-        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-caption font-medium text-slate-400">Coming soon</span>
+        // A plain fact, so a quiet word and not a chip inside a chip (DESIGN.md, Hierarchy rule 10); the same as onboarding.
+        <span className="whitespace-nowrap text-caption text-slate-400">Coming soon</span>
       )}
     </button>
   );
@@ -122,7 +123,7 @@ export function ClassRegistrationForm() {
     return (
       <div ref={thanksRef} role="status" className="glass-surface-elevated flex flex-col items-center p-8 text-center">
         <PianoCat size={88} smile />
-        <h3 className="mt-4 font-serif text-title text-slate-50">Thanks, {fullName.split(" ")[0]}!</h3>
+        <h2 className="mt-4 font-serif text-title text-slate-50">Thanks, {fullName.split(" ")[0]}!</h2>
         <p className="mt-2 text-body text-slate-300">An instructor will reach out to you soon.</p>
         <p className="mt-1 text-small text-slate-400">
           We&apos;ll contact you at {email} or {phone}.
@@ -216,7 +217,8 @@ export function ClassRegistrationForm() {
         <p id="reg-instrument-label" className="mb-1.5 text-small font-medium text-slate-400">
           Instrument
         </p>
-        <div className="flex flex-wrap gap-2">
+        {/* An even grid on phones (two equal columns, an odd last one across both), the loose row from sm up. */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap max-sm:[&>button:last-child:nth-child(odd)]:col-span-2 max-sm:[&>button]:justify-center">
           {INSTRUMENTS.map((opt) => (
             <Pill
               key={opt.value}

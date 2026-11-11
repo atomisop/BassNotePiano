@@ -23,7 +23,7 @@ export default async function AdminSettingsPage() {
 
   return (
     <div>
-      <h1 data-page-title="" className="sr-only">Settings</h1>
+      <h1 className="sr-only">Settings</h1>
       <p className="mt-2 text-small text-slate-500">
         {SETTING_DEFS.length} controls across {SETTING_CATEGORIES.length} areas. Switches save the moment you flip them. Every change is recorded in the audit log.
       </p>

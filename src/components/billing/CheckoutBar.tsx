@@ -33,14 +33,15 @@ export function CheckoutBar(props: {
 
 function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; total?: string | null; hint: string | null; actionLabel: string; onAction: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-card bg-neu-lift p-4 ring-1 ring-slate-50/10 md:gap-6 md:px-6 md:py-5">
+    <div className="flex items-center gap-3 rounded-card bg-neu-base p-4 shadow-raised-mid md:gap-6 md:px-6 md:py-5">
       <div className="min-w-0 flex-1" aria-live="polite">
-        {/* The price is the focal figure of the whole form: the biggest number on it, with what it covers small beside it. */}
+        {/* The price is the focal figure of the whole form: the biggest number on it, with what it covers small under it. */}
         <p className="leading-tight">
-          <span className="text-title font-semibold tabular-nums text-slate-50 md:text-headline">
-            <NumberTicker value={priceCents} format={usd} />
-          </span>{" "}
-          <span className="text-small text-slate-400">{priceNote}</span>
+          <span className="block text-headline font-semibold tabular-nums text-slate-50">
+            {/* Nothing to pay (a full scholarship): never "$0.00". */}
+            {priceCents === 0 ? "Covered" : <NumberTicker value={priceCents} format={usd} />}
+          </span>
+          <span className="mt-0.5 block text-small text-slate-400">{priceNote}</span>
         </p>
         {total && <p className="mt-1 text-caption leading-snug text-slate-500">{total}</p>}
       </div>

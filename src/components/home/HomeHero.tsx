@@ -32,7 +32,7 @@ export function HomeHero({
         <p className="text-small font-medium text-white/80">{eyebrow}</p>
         {/* The one biggest line on Home at every width (the greeting above it is a step smaller). */}
         <h2 className="mt-2 max-w-xl text-hero font-bold leading-tight text-balance">{title}</h2>
-        {detail && <p className="mt-2 line-clamp-2 max-w-xl text-body text-white/80">{detail}</p>}
+        {detail && <p className="mt-2 line-clamp-3 max-w-xl text-body text-white/80">{detail}</p>}
         <div className="mt-5 flex flex-wrap items-center gap-3 pb-2">{actions}</div>
         {progress && (
           <Link

@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, Flame } from "@/components/ui/appIcons";
+import { Check, Map, Trophy, Video } from "@/components/ui/appIcons";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DAILY_GOAL_SECONDS, etDayKey, getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { STREAK_GOALS, longestStreak, nextStreakGoal, practicedThisMonth, streakCalendar } from "@/lib/streakRules";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { Card, Eyebrow } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Card";
 import { Fact, Facts } from "@/components/ui/CardKit";
+import { HeroBand } from "@/components/ui/HeroBand";
+import { ActionTiles } from "@/components/ui/ActionTiles";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PageBack } from "@/components/ui/BackLink";
@@ -16,11 +18,15 @@ export const metadata = { title: "Your streak" };
 
 const WEEKS_PHONE = 12;
 const WEEKS_WIDE = 26;
+/** A quiet card under the band (DESIGN.md, "Band, sheet and tiles" 6); each one is a card of the deck. */
+const QUIET_CARD = "deck-card relative rounded-card bg-neu-base shadow-raised-low";
+const CARD_LABEL = "text-caption font-medium uppercase tracking-caps text-slate-500";
 const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
 /**
- * The practice streak in full (the flame in the top bar opens it): days in a row, today's 10 minutes, the best run, the next goal, and
- * a calendar of every practiced day for the last half year (about four months on a phone).
+ * The practice streak in full (the flame in the top bar opens it): the days in a row on the band with today's 10 minutes on its sheet,
+ * a few tiles for where to go next, then quiet cards: a calendar of every practiced day for the last half year (about three months on
+ * a phone), the best run and the next goal.
  */
 export default async function StreakPage() {
   const session = await getServerAuthSession();
@@ -55,30 +61,9 @@ export default async function StreakPage() {
 
       <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="grid min-w-0 content-start gap-3">
-          {/* The streak itself: the flame, the number, and what to do today. */}
-          <Card className="deck-card overflow-hidden p-5 md:p-6">
-            <div className="flex items-center gap-5">
-              <div
-                className={cn(
-                  "flex h-20 w-20 shrink-0 items-center justify-center rounded-full md:h-24 md:w-24",
-                  status.completedToday ? "bg-signal/16" : "bg-neu-base shadow-pressed-low",
-                )}
-              >
-                <Flame
-                  aria-hidden
-                  className={cn("h-10 w-10 md:h-12 md:w-12", status.completedToday ? "text-signal-fg" : "text-slate-400")}
-                  fill={status.completedToday ? "currentColor" : "none"}
-                  strokeWidth={1.8}
-                />
-              </div>
-              {/* The one figure on the screen; its label is a quiet word under it. */}
-              <div className="min-w-0">
-                <p className="text-figure font-bold tabular-nums text-slate-50">{status.streak}</p>
-                <p className="mt-1 text-body text-slate-400">{status.streak === 1 ? "day" : "days"} in a row</p>
-              </div>
-            </div>
-            <p className="mt-5 text-body text-slate-400">{headline}</p>
-            <div className="mt-4">
+          {/* The one fact here: the days in a row, on the band. Today's 10 minutes and its button sit on the sheet under it. */}
+          <HeroBand eyebrow="Right now" title={status.streak === 1 ? "Day in a row" : "Days in a row"} figure={status.streak} meta={headline} className="deck-card">
+            <div className="pt-3">
               <div className="flex items-center justify-between text-small text-slate-500">
                 <span>Today</span>
                 <span className="font-medium tabular-nums text-slate-300">
@@ -86,27 +71,39 @@ export default async function StreakPage() {
                 </span>
               </div>
               <div
-                className="mt-2 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low"
+                className="mt-2 h-2 overflow-hidden rounded-full bg-slate-50/10"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={DAILY_GOAL_SECONDS}
                 aria-valuenow={status.todaySeconds}
                 aria-label="Practice today"
               >
-                <div className="h-full rounded-full bg-signal" style={{ width: `${Math.round((status.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
+                <div className="h-full rounded-full bg-signal" style={{ width: `${Math.min(100, Math.round((status.todaySeconds / DAILY_GOAL_SECONDS) * 100))}%` }} />
               </div>
+              {!status.completedToday && (
+                <div className="mt-4 flex justify-end">
+                  <Link href="/practice" className={buttonVariants({ className: "w-full sm:w-auto" })}>
+                    {status.todaySeconds > 0 ? "Continue practice" : "Practice now"}
+                  </Link>
+                </div>
+              )}
             </div>
-            {!status.completedToday && (
-              <Link href="/practice" className={cn(buttonVariants(), "mt-5")}>
-                {status.todaySeconds > 0 ? "Continue practice" : "Practice now"}
-              </Link>
-            )}
-          </Card>
+          </HeroBand>
+
+          <ActionTiles
+            title="Where to next"
+            items={[
+              { href: "/leaderboard", label: "Leaderboard", detail: "Minutes this week", icon: <Trophy /> },
+              { href: "/roadmap", label: "Roadmap", detail: "Your scales", icon: <Map /> },
+              { href: "/lessons", label: "Classes", detail: "Your live lessons", icon: <Video /> },
+            ]}
+            className="py-2"
+          />
 
           {/* Every practiced day: a column per week, Sunday at the top, today ringed. */}
-          <Card className="deck-card p-5 md:p-6">
+          <section aria-label="Practice days" className={cn(QUIET_CARD, "p-5 md:p-6")}>
             <div className="flex items-center justify-between">
-              <Eyebrow>Practice days</Eyebrow>
+              <h2 className={CARD_LABEL}>Practice days</h2>
               <span className="text-small text-slate-400">
                 <span className="md:hidden">Last {WEEKS_PHONE} weeks</span>
                 <span className="hidden md:inline">Last 6 months</span>
@@ -131,7 +128,7 @@ export default async function StreakPage() {
                         title={cell.future ? undefined : `${cell.day}: ${cell.practiced ? "practiced" : "not practiced"}`}
                         className={cn(
                           "block h-4 w-4 rounded-[0.25rem] md:h-5 md:w-5 lg:h-4 lg:w-4 2xl:h-5 2xl:w-5",
-                          cell.future ? "bg-transparent" : cell.practiced ? "bg-signal" : "bg-neu-base shadow-pressed-low",
+                          cell.future ? "bg-transparent" : cell.practiced ? "bg-signal" : "bg-slate-50/8",
                           cell.isToday && "ring-[1.5px] ring-inset ring-slate-300",
                         )}
                       />
@@ -140,28 +137,28 @@ export default async function StreakPage() {
                 ))}
               </div>
             </div>
-          </Card>
+          </section>
         </div>
 
         <div className="grid min-w-0 content-start gap-3">
           {/* Supporting figures, a step quieter than the streak itself: value first, a small label under it. */}
-          <Card className="deck-card p-4 md:p-5">
+          <div className={cn(QUIET_CARD, "p-4 md:p-5")}>
             <Facts columns={3} className="grid-cols-3">
               <Fact label="Best streak" value={dayCount(best)} />
               <Fact label="This month" value={dayCount(practicedThisMonth(days, today))} />
               <Fact label="All time" value={dayCount(days.length)} />
             </Facts>
-          </Card>
+          </div>
 
-          <Card className="deck-card p-5">
-            <Eyebrow>{goal ? "Next goal" : "Every goal reached"}</Eyebrow>
+          <section aria-label={goal ? "Next goal" : "Every goal reached"} className={cn(QUIET_CARD, "p-5")}>
+            <h2 className={CARD_LABEL}>{goal ? "Next goal" : "Every goal reached"}</h2>
             {goal ? (
               <>
                 <div className="mt-2 flex items-baseline justify-between gap-3">
                   <p className="text-title font-semibold tabular-nums text-slate-50">{goal} days in a row</p>
                   <p className="shrink-0 text-small tabular-nums text-slate-400">{goal - status.streak} to go</p>
                 </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low">
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-50/10">
                   <div className="h-full rounded-full bg-signal" style={{ width: `${Math.round((status.streak / goal) * 100)}%` }} />
                 </div>
               </>
@@ -187,7 +184,7 @@ export default async function StreakPage() {
                 );
               })}
             </ul>
-          </Card>
+          </section>
         </div>
       </div>
     </WideLayout>

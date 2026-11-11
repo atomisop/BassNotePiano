@@ -36,6 +36,8 @@ async function getBillDue(userId: string): Promise<MeStatus["billDue"]> {
     where: {
       status: "AWAITING_TRANSFER",
       purpose: "PAYMENT_PLAN_INSTALLMENT",
+      // A $0 bill (a full scholarship) is never a bill to pay: it settles by itself and the bar never shows for it.
+      amountCents: { gt: 0 },
       installmentNumber: { gte: 2 },
       paymentPlan: {
         status: "ACTIVE",

@@ -79,7 +79,7 @@ export function RoadmapKeys() {
           <rect key={i} x={i * 10 + 0.4} y="4" width="9.2" height="36" rx="1" fill="#fff" fillOpacity="0.5" />
         ))}
         {blackAfter.map((i) => (
-          <rect key={`b${i}`} x={i * 10 + 6.6} y="4" width="6.8" height="22" rx="0.8" fill="#1d1a22" />
+          <rect key={`b${i}`} x={i * 10 + 6.6} y="4" width="6.8" height="22" rx="0.8" fill="#241c18" />
         ))}
       </g>
     </svg>

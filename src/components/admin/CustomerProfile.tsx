@@ -149,7 +149,7 @@ function NotesSection({ studentId }: { studentId: string }) {
         </button>
       }
     >
-      {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500"><Hint>Permanent notes on this student. Mark any as hidden from them.</Hint></p>}
+      {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500">Permanent notes on this student. Mark any as hidden from them.</p>}
     </SectionCard>
   );
 }
@@ -527,7 +527,11 @@ export function CustomerProfile({
       {error && <Callout tone="danger">{error}</Callout>}
 
       {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions">
+      <div
+        className="grid grid-cols-2 gap-2 max-sm:[&>.relative>button]:w-full max-sm:[&>.relative>button]:border max-sm:[&>.relative>button]:border-slate-50/12 max-sm:[&>.relative]:w-full max-sm:[&>button]:w-full max-sm:[&>button]:border max-sm:[&>button]:border-slate-50/12 sm:flex sm:flex-wrap sm:items-center"
+        role="group"
+        aria-label="Quick actions"
+      >
         <QuickMessageButton userId={user.id} name={user.name ?? user.email} />
         <button
           type="button"
@@ -556,11 +560,11 @@ export function CustomerProfile({
           Book a class
         </button>
         {planMenu}
-        <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
           Payments
         </button>
-        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="ml-auto" />
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="col-span-2 px-1 pt-1 sm:ml-auto sm:p-0" />
       </div>
 
       {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
@@ -648,8 +652,7 @@ export function CustomerProfile({
 
             <Facts className="mt-4">
               <Fact label="Joined" value={formatDate(user.createdAt)} />
-              <Fact label="Last active" value={user.lastActivityAt ? formatDate(user.lastActivityAt) : "Never"} tone={user.lastActivityAt ? "default" : "muted"} />
-              <Fact label="Streak" value={`${user.currentStreak} ${user.currentStreak === 1 ? "day" : "days"}`} tone={user.currentStreak > 0 ? "default" : "muted"} />
+              {/* Streak and Last active are in the summary at the top of the page, once. */}
               <Fact label={user.phone && user.phoneVerifiedAt ? "Phone, verified" : "Phone"} value={user.phone ? formatPhone(user.phone) : "None"} tone={user.phone ? "default" : "muted"} />
             </Facts>
 

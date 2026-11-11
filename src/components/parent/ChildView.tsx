@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, Circle, Flame, Lock } from "@/components/ui/appIcons";
 import { Tabs } from "@/components/ui/Tabs";
 import { ChildClasses } from "@/components/parent/ChildClasses";
 import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
-import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels"; // Eastern, like the band and the weekly time: the same words on the server and in the browser
 import { Hint } from "@/components/ui/Hint";
-import { Callout, CardFoot, CardHead, Fact, Facts } from "@/components/ui/CardKit";
+import { Callout, CardFoot, CardHead, Fact, Facts, Meta } from "@/components/ui/CardKit";
+import { HeroBand } from "@/components/ui/HeroBand";
 import { StatusDot } from "@/components/ui/StatusDot";
 
 type TabId = "progress" | "practice" | "classes" | "plan";
@@ -20,23 +21,45 @@ function dayLabel(day: string) {
   return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-/** One linked child, in four tabs: how far they have got, how they have practiced, their classes, and their plan. */
-export function ChildView({ view, openMoveFor }: { view: ChildViewData; openMoveFor?: string | null }) {
+// Class times are the studio's (Eastern), the same as the weekly time written beside them, and the same on the server and in the browser.
+const classDay = (iso: string) => new Date(iso).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "short", day: "numeric" });
+const classTime = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
+
+/**
+ * One linked child: the next class on the band (the one fact a parent opens this for), then four tabs: how far they have got, how
+ * they have practiced, their classes, and their plan.
+ */
+export function ChildView({
+  view,
+  openMoveFor,
+  sheet,
+  afterHero,
+}: {
+  view: ChildViewData;
+  openMoveFor?: string | null;
+  /** The band's sheet: the one thing to do first for this child, when there is one. */
+  sheet?: ReactNode;
+  /** Drawn between the band and the tabs (what is owed for this child). */
+  afterHero?: ReactNode;
+}) {
   const [tab, setTab] = useState<TabId>("classes");
   const open = view.scales.filter((s) => !s.locked);
+  const next = view.upcoming[0] ?? null;
+  const facts = <Meta items={[view.plan ? (view.plan.weeklyTime ?? "No weekly time") : "No plan", view.creditsLabel]} />;
   return (
     <div className="mt-6">
-      {/* The one fact a parent opens this for (the next class) is the big line; the plan and credits sit small beside it. */}
-      <section aria-label="At a glance" className="mb-5 rounded-card bg-neu-base p-5 shadow-raised-mid">
-        <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Next class</p>
-        <p className={`mt-1 text-title font-semibold tabular-nums ${view.upcoming[0] ? "text-slate-50" : "text-slate-400"}`}>
-          {view.upcoming[0] ? formatDateTime(view.upcoming[0].scheduledAt) : "None booked"}
-        </p>
-        <Facts columns={2} className="mt-4 border-t border-slate-50/8 pt-4">
-          <Fact label="Weekly time" value={view.plan ? (view.plan.weeklyTime ?? "None") : "No plan"} tone={view.plan?.weeklyTime ? "default" : "muted"} />
-          <Fact label="Credits" value={view.creditsLabel} />
-        </Facts>
-      </section>
+      <div className="mb-6 flex flex-col gap-6">
+        {next ? (
+          <HeroBand eyebrow="Next class" title={classDay(next.scheduledAt)} figure={classTime(next.scheduledAt)} meta={facts}>
+            {sheet}
+          </HeroBand>
+        ) : (
+          <HeroBand eyebrow="Next class" title="None booked" meta={facts}>
+            {sheet}
+          </HeroBand>
+        )}
+        {afterHero}
+      </div>
       <div className="lg:flex lg:justify-start">
         <Tabs
           label="Sections"
@@ -92,7 +115,7 @@ export function ChildView({ view, openMoveFor }: { view: ChildViewData; openMove
       )}
 
       {tab === "practice" && (
-        <section className="tab-in mt-6 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Practice">
+        <section className="tab-in mt-6 rounded-card bg-neu-base p-5 shadow-raised-low" aria-label="Practice">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-small text-slate-400">
             <span>
               <span className="tabular-nums text-slate-50">{view.practice.doneLast7}/7</span> days this week
@@ -147,7 +170,7 @@ export function ChildView({ view, openMoveFor }: { view: ChildViewData; openMove
               </CardFoot>
             </div>
           ) : (
-            <p className="rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No plan right now. Start one from the Parent mode page.</Hint></p>
+            <p className="rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No plan right now. Start one from the Parent mode page.</Hint></p>
           )}
         </section>
       )}

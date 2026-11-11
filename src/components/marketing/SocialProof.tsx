@@ -20,7 +20,7 @@ const PROOF_POINTS = [
 
 export function SocialProof() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
+    <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-24 md:pb-40 md:pt-40">
       <WordsPullUp
         text="Nothing here asks you to take our word for it."
         className="max-w-[18ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-display text-cream"

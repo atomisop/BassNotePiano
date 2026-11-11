@@ -195,7 +195,7 @@ export function SlotCalendarPicker({
               </div>
             </div>
           )}
-          {allowAnyDay && daySlots.length === 0 && dayHeld.length === 0 && <p className="mb-2 text-small text-slate-500"><Hint>No weekly times that day. Type a start time to create one.</Hint></p>}
+          {allowAnyDay && daySlots.length === 0 && dayHeld.length === 0 && <p className="mb-2 text-small text-slate-500">No weekly times that day. Type a start time to create one.</p>}
           {allowAnyDay && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 flex items-center gap-1 text-caption font-medium text-slate-500">
@@ -216,7 +216,7 @@ export function SlotCalendarPicker({
               />
             </div>
           )}
-          {!allowAnyDay && daySlots.length === 0 && <p className="text-small text-slate-500"><Hint>No open times that day.</Hint></p>}
+          {!allowAnyDay && daySlots.length === 0 && <p className="text-small text-slate-500">No open times that day.</p>}
         </div>
       )}
     </div>

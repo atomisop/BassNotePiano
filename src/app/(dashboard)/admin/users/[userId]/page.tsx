@@ -179,11 +179,11 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       {/* Only the admin menu pins; a student's name and Back scroll with their page. */}
       <div>
         <PageBack href="/admin/users" />
-        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
+        {/* The name is an ordinary heading in the page: the phone's top card holds the admin menu, so a title there is jammed under the logo. */}
+        <h1 className="mt-3 px-1 text-headline font-semibold text-balance text-slate-50">{profile.user.name ?? profile.user.email}</h1>
       </div>
 
-      <Facts className="mt-5 rounded-card bg-neu-base p-4 shadow-raised-mid md:p-5">
+      <Facts className="mt-4 rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
         {facts.map((f) =>
           f.extra ? (
             <FactWithExtra key={f.label} label={f.label} value={f.value} tone={f.tone} extra={f.extra} className={f.wide ? "col-span-2" : undefined} />

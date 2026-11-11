@@ -20,9 +20,9 @@ export async function settleFreeBill(paymentId: string, opts: { quiet?: boolean 
 }
 
 /** Settles every open $0 plan bill an account has (after a scholarship that makes the plan free is claimed). */
-export async function settleFreeBillsFor(userId: string): Promise<number> {
+export async function settleFreeBillsFor(userId: string, opts: { quiet?: boolean } = {}): Promise<number> {
   const open = await prisma.zellePayment.findMany({ where: { userId, amountCents: 0, purpose: "PAYMENT_PLAN_INSTALLMENT", status: "AWAITING_TRANSFER" }, select: { id: true } });
   let settled = 0;
-  for (const bill of open) if (await settleFreeBill(bill.id)) settled++;
+  for (const bill of open) if (await settleFreeBill(bill.id, opts)) settled++;
   return settled;
 }
