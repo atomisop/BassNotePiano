@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useDeferredValue, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { motion } from "framer-motion";
@@ -27,8 +27,10 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "TERM_6", label: "6 Months" },
 ];
 
-/** The card that gets the orange glow and the rising stars (a marketing choice, not the lowest price). */
+/** The card that gets the glow and the rising stars (a marketing choice, not the lowest price). */
 const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
+/** Plans that carry their colour (the tint, the glow ring, the badge and the button). Only the featured one also gets the stars. */
+const COLORED_TERMS: readonly PaymentPlanTerm[] = ["TERM_3", FEATURED_TERM];
 
 /**
  * One look per plan length, for Just me and for a group. Every value is a registered CSS colour (globals.css), so flipping between
@@ -134,7 +136,10 @@ export function PaymentPlanTierGrid({
   // One plan on offer: a 45-minute class a week.
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [pickedAudience, setAudience] = useState<Audience>("solo");
-  const audience = select ? select.audience : pickedAudience;
+  // The switch itself reads `pickedAudience`, so it answers on the very next frame; the cards (and every number on them) follow
+  // from the deferred copy a moment later, without holding the switch back.
+  const deferredAudience = useDeferredValue(pickedAudience);
+  const audience = select ? select.audience : deferredAudience;
   const solo = (cents: number, term: PaymentPlanTerm) => {
     const percent = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
     return percent > 0 ? discountedPlanPriceCents(cents, percent) : cents;
@@ -150,6 +155,7 @@ export function PaymentPlanTierGrid({
     const family = calculateFamilyBundleTotal(cadence, option.value, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
     const isMonthly = option.value === "MONTHLY";
     const featured = option.value === FEATURED_TERM;
+    const colored = COLORED_TERMS.includes(option.value);
 
     const perStudentCents = isFamily ? family.perStudentMonthlyCents : solo(rate.installmentAmountCents, option.value);
     const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
@@ -188,8 +194,8 @@ export function PaymentPlanTierGrid({
           ...(isMonthly || perStudentCents === 0 ? [] : [<>Whole plan: <NumberTicker value={perStudentCents * rate.termMonths} format={formatUsd} /></>]),
         ];
 
-    // Von Restorff: only the featured plan is lit (its colour, glow and stars) and only its button is solid. The other two are
-    // plain cards with a quiet button, so the eye lands on one plan and then compares prices.
+    // The featured plan is lit most (colour, glow and rising stars). The 3 Month plan carries its colour too, still, with no motion. A coloured
+    // plan has the solid button; the 1 Month plan stays a plain card with a quiet button.
     const primaryCta = "tier-accent-bg text-black hover:brightness-110";
     const quietCta = "bg-slate-50/8 text-slate-50 hover:bg-slate-50/12";
     const ctaBase = "tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed active:scale-[0.99]";
@@ -200,11 +206,11 @@ export function PaymentPlanTierGrid({
           <div
             style={tierVars(look(option.value))}
             className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"} ${
-              featured ? "" : "transition hover:shadow-raised-high"
+              colored ? "" : "transition hover:shadow-raised-high"
             }`}
           >
             {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
-            {featured &&
+            {colored &&
               (["solo", "family"] as const).map((who) => (
                 <div
                   key={who}
@@ -227,18 +233,14 @@ export function PaymentPlanTierGrid({
             {/* Which plan, quietly: the price below is the one loud thing on the card. */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <p className="text-body font-semibold text-slate-50">{option.label}</p>
-              <span className={featured ? "tier-accent-bg rounded-full px-2.5 py-0.5 text-small font-semibold text-black" : "text-small text-slate-400"}>
+              <span className={colored ? "tier-accent-bg rounded-full px-2.5 py-0.5 text-small font-semibold text-black" : "text-small text-slate-400"}>
                 {tierLook(option.value).tag}
               </span>
             </div>
 
             <div>
               <p className={`text-small tabular-nums text-slate-500 ${narrow ? "min-h-5" : "h-5"}`}>
-                {percentOff > 0 && (
-                  <span className="line-through">
-                    <NumberTicker value={monthlyBaseline} format={formatUsd} />
-                  </span>
-                )}
+                {percentOff > 0 && <NumberTicker value={monthlyBaseline} format={formatUsd} strike />}
                 {percentOff > 0 && (
                   <span className="ml-2 font-semibold text-slate-300">
                     −<NumberTicker value={percentOff} />%
@@ -275,7 +277,7 @@ export function PaymentPlanTierGrid({
                     className={
                       current
                         ? "tap flex h-12 w-full items-center justify-center rounded-full bg-neu-base text-small font-semibold text-slate-400 shadow-pressed-low"
-                        : `${ctaBase} ${featured ? primaryCta : quietCta} disabled:opacity-60`
+                        : `${ctaBase} ${colored ? primaryCta : quietCta} disabled:opacity-60`
                     }
                   >
                     {switchTo.pendingTerm === option.value && <MorphingSquare size={14} className="mr-2 shrink-0" />}
@@ -292,7 +294,7 @@ export function PaymentPlanTierGrid({
                 );
               }
               return (
-                <Link href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`} className={`${ctaBase} ${featured ? primaryCta : quietCta}`}>
+                <Link href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`} className={`${ctaBase} ${colored ? primaryCta : quietCta}`}>
                   {isFamily ? "Bundle & save" : "Start plan"}
                 </Link>
               );
@@ -309,7 +311,7 @@ export function PaymentPlanTierGrid({
       <div className={`mx-auto mb-8 flex flex-col items-center gap-3 ${switchTo || select ? "hidden" : ""}`}>
         <Segmented
           label="Who is learning"
-          value={audience}
+          value={pickedAudience}
           onChange={(v) => setAudience(v as Audience)}
           options={[
             { value: "solo", label: "Just me" },
@@ -323,16 +325,27 @@ export function PaymentPlanTierGrid({
         )}
       </div>
 
-      {/* Phones: one plan at a time, swipe left and right (the 6-month "best value" plan opens first). */}
-      <div className={narrow ? "@xl:hidden" : "lg:hidden"}>
-        <SnapCarousel label="Plans" peek={34} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-12 py-14">
+      {narrow ? (
+        // Settings: the plans are stacked, one under the other. Nothing slides sideways on this screen.
+        <div className="flex flex-col gap-4 @xl:hidden">
           {TERM_OPTIONS.map((option) => (
-            <div key={option.value} className="relative flex h-full flex-col">
+            <div key={option.value} className="relative flex flex-col">
               {renderCard(option).node}
             </div>
           ))}
-        </SnapCarousel>
-      </div>
+        </div>
+      ) : (
+        // Phones on the public pricing page: one plan at a time, swipe left and right (the 6-month plan opens first).
+        <div className="lg:hidden">
+          <SnapCarousel label="Plans" peek={34} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-12 py-14">
+            {TERM_OPTIONS.map((option) => (
+              <div key={option.value} className="relative flex h-full flex-col">
+                {renderCard(option).node}
+              </div>
+            ))}
+          </SnapCarousel>
+        </div>
+      )}
 
       <motion.div
         // No `key` on purpose: the cards stay mounted when you flip Solo/Family

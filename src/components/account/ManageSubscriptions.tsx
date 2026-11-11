@@ -13,7 +13,6 @@ import { COVERED_BY_SCHOLARSHIP, NOTHING_TO_PAY, isCoveredPlan } from "@/lib/sch
 import { usePricing } from "@/components/billing/PricingContext";
 import { toast } from "@/components/ui/Toaster";
 import { Dialog } from "@/components/ui/Dialog";
-import { Hint } from "@/components/ui/Hint";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { planProgress } from "@/lib/planProgress";
 import { Fact, Facts } from "@/components/ui/CardKit";
@@ -208,7 +207,6 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
     <div className="space-y-6">
       {!activePlan && (
         <div>
-          <p className="mb-6 text-center text-small text-slate-400"><Hint>No active plan yet. Pick one to start.</Hint></p>
           <PaymentPlanTierGrid narrow pricing={pricing} personalDiscountPercent={personalDiscountPercent} scholarshipPercent={scholarshipPercent} />
         </div>
       )}
@@ -278,10 +276,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
           {activePlan.family && (
             <div className="border-t border-slate-50/8 pt-4 text-small text-slate-400">
-              <p className="flex items-center gap-1 font-semibold text-slate-100">
-                Group plan
-                <Hint>The length and weekly time of a group plan are changed by the teacher.</Hint>
-              </p>
+              <p className="font-semibold text-slate-100">Group plan</p>
+              <p className="mt-1">The length and weekly time of a group plan are changed by the teacher.</p>
               <p className="mt-1">In this group: {activePlan.family.memberNames.join(", ")}.</p>
               {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
               <p className="mt-1">
@@ -401,7 +397,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
           {(cancelStage === "reason" || cancelStage === "canceling") && (
             <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
               <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
-              <p className="mt-1 text-small text-slate-500"><Hint>This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.</Hint></p>
+              <p className="mt-1 text-small text-slate-400">This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.</p>
               <div className="mt-3 space-y-1.5">
                 {CANCELLATION_REASONS.map((r) => (
                   <label key={r.value} className="flex cursor-pointer items-center gap-2 text-small text-slate-300">
