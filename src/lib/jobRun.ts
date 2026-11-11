@@ -5,6 +5,9 @@ import { isJobPaused, pausedJobNames } from "@/lib/jobPause";
 /** How long a job that did nothing may go without a new run row: the watchdog windows are all 2 hours or more. */
 const QUIET_RUN_MS = 15 * 60 * 1000;
 
+/** When this server last saw (or wrote) a run row for each job that runs quietly. Per server, never stored. */
+const lastRowAt = new Map<string, number>();
+
 /**
  * Runs one scheduled job and records that it ran, and whether it worked, so a job that stops shows up.
  *
@@ -21,12 +24,21 @@ export async function runJob<T>(name: string, fn: () => Promise<T>, options?: { 
   try {
     const result = await fn();
     if (options?.quietWhen?.(result)) {
+      // This server already saw a recent row: skip even the read that checks for one (an idle every-minute job otherwise reads it
+      // every run). A different server only ever costs one extra row, and the watchdog's windows are all 2 hours or more.
+      const seen = lastRowAt.get(name);
+      if (seen && Date.now() - seen < QUIET_RUN_MS) return result;
       const last = await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true } }).catch(() => null);
-      if (last && Date.now() - last.ranAt.getTime() < QUIET_RUN_MS) return result;
+      if (last && Date.now() - last.ranAt.getTime() < QUIET_RUN_MS) {
+        lastRowAt.set(name, last.ranAt.getTime());
+        return result;
+      }
     }
-    await prisma.jobRun.create({ data: { name, ok: true } }).catch(() => undefined);
+    const row = await prisma.jobRun.create({ data: { name, ok: true } }).catch(() => null);
+    if (row) lastRowAt.set(name, row.ranAt.getTime());
     return result;
   } catch (err) {
+    lastRowAt.delete(name); // the newest row is about to be a failure: the next quiet run must look again
     await prisma.jobRun
       .create({ data: { name, ok: false, note: err instanceof Error ? err.message.slice(0, 300) : "failed" } })
       .catch(() => undefined);
