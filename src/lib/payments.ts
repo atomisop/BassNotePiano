@@ -443,7 +443,9 @@ export async function submitZellePaymentReference(
 
   // If the money's email already arrived, settle now, otherwise fall back to
   // the returning-student rule.
-  if (!(await settleWithStoredReceipt(submitted.id).catch(() => false))) {
+  // A payment a person already REJECTED and the student sent in again always waits for a person: the returning-student rule must
+  // never turn a rejection into an approval just by pressing submit a second time.
+  if (!(await settleWithStoredReceipt(submitted.id).catch(() => false)) && payment.status !== "REJECTED") {
     await maybeAutoApprovePayment(submitted);
   }
   await notifyAdminsIfStillPending(submitted.id);
@@ -860,7 +862,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
             await grantCurriculumAccess(recipient.userId, tx);
           }
         } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
-          scholarshipRenewed = (await applyPlanInstallment(tx, { userId: payment.userId, paymentPlanId: payment.paymentPlanId, lessonQuantity: payment.lessonQuantity })).renewed;
+          scholarshipRenewed = (await applyPlanInstallment(tx, { userId: payment.userId, paymentPlanId: payment.paymentPlanId, lessonQuantity: payment.lessonQuantity, installmentNumber: payment.installmentNumber })).renewed;
         } else if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
           // One payment starts every member's plan, in this same transaction, or none of them: if any member's plan is no
           // longer waiting to start (canceled, lapsed), the whole approval fails and the payment stays for a person to refund.
@@ -1146,7 +1148,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
  */
 export async function applyPlanInstallment(
   tx: Prisma.TransactionClient,
-  args: { userId: string; paymentPlanId: string; lessonQuantity: number; /** True for a plan created inside this same transaction: the ledger row is written outside it, so the link is added after commit. */ planIsNew?: boolean },
+  args: { userId: string; paymentPlanId: string; lessonQuantity: number; /** The bill's own number: a bill whose number the plan has already paid is a duplicate and is refused, so one bill is never paid twice in credits. */ installmentNumber?: number | null; /** True for a plan created inside this same transaction: the ledger row is written outside it, so the link is added after commit. */ planIsNew?: boolean },
 ): Promise<{ /** The plan's last bill settled and, being fully covered by a 100% scholarship, it went on for another six cycles. */ renewed: boolean }> {
   // Fetched before granting (unlike the other branches) because the
   // grant's own expiresAt needs it: this installment's credits are good
@@ -1154,6 +1156,9 @@ export async function applyPlanInstallment(
   // *next* installment becomes due. cycleEnd is computed once and
   // reused for both, below.
   const plan = await tx.paymentPlan.findUnique({ where: { id: args.paymentPlanId } });
+  if (plan && args.installmentNumber != null && plan.status === "ACTIVE" && args.installmentNumber <= plan.installmentsPaid) {
+    throw new Error(`Installment ${args.installmentNumber} of this plan is already paid. Refund this payment instead of approving it.`);
+  }
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
   let cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;

@@ -375,6 +375,12 @@ async function getOrCreateMemberInstallmentPayment(
     });
     if (already) return already;
     createdHere = true;
+    // A bill a person rejected for this same installment is closed now that a fresh one opens, so the two can never both be approved
+    // (that would grant the month's credits twice). The student pays the new one.
+    await tx.zellePayment.updateMany({
+      where: { paymentPlanId: planId, status: "REJECTED", installmentNumber: plan.installmentsPaid + 1 },
+      data: { status: "EXPIRED" },
+    });
     return tx.zellePayment.create({
       data: {
         userId: plan.userId,
