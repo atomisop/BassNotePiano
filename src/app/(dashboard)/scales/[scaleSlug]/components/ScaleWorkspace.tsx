@@ -312,7 +312,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       </ol>
 
       {!freeTrial && (
-        <div className="mt-4 border-t border-ink/[0.08] pt-4">
+        <div className="mt-4 border-t border-slate-50/8 pt-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-small font-semibold text-slate-200">Practice</p>
@@ -330,7 +330,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       )}
 
       {freeTrial && (
-        <div className="mt-4 border-t border-ink/[0.08] pt-4 text-small text-slate-400">
+        <div className="mt-4 border-t border-slate-50/8 pt-4 text-small text-slate-400">
           <p>
             <span className="font-semibold text-slate-200">Free trial</span> until{" "}
             {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
@@ -526,7 +526,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
 
       {/* Tools as a row of icons on phones and tablets */}
       {!isDesktop && (
-        <div className="mt-4 flex gap-1 overflow-x-auto rounded-card bg-slate-50/4 p-1 ring-1 ring-inset ring-slate-50/8" role="toolbar" aria-label="Lesson tools">
+        <div className="mt-4 flex gap-1 overflow-x-auto rounded-card bg-neu-base p-1 shadow-raised-low" role="toolbar" aria-label="Lesson tools">
           {TOOLS.map((t) => toolButton(t, "row"))}
         </div>
       )}
@@ -546,7 +546,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           <aside className="sticky top-0 overflow-hidden" aria-hidden={!outlineOpen} {...inertWhen(!outlineOpen)}>
             {/* The outline is a quiet panel, a step below the lesson card beside it. */}
             <div className="max-h-[calc(100svh-9rem)] w-[17.5rem] overflow-y-auto pr-6">
-              <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">{outline}</div>
+              <div className="rounded-card bg-neu-base p-4 shadow-raised-low">{outline}</div>
             </div>
           </aside>
 
@@ -572,7 +572,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           </aside>
 
           <div className="sticky top-0 pl-4" role="toolbar" aria-label="Lesson tools" aria-orientation="vertical">
-            <div className="flex flex-col items-center gap-1 rounded-card bg-slate-50/4 p-1 ring-1 ring-inset ring-slate-50/8">
+            <div className="flex flex-col items-center gap-1 rounded-card bg-neu-base p-1 shadow-raised-low">
               {TOOLS.map((t) => toolButton(t, "rail"))}
             </div>
           </div>

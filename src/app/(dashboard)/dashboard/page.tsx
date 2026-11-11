@@ -20,7 +20,8 @@ import { BadgesSheetButton } from "@/components/home/BadgesSheetButton";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeRow, HomeRows } from "@/components/home/HomeRow";
 import { GlanceTiles } from "@/components/home/GlanceTiles";
-import { PathCard, ShelfCard } from "@/components/home/ShelfCards";
+import { PathCard } from "@/components/home/ShelfCards";
+import { ActionTiles } from "@/components/ui/ActionTiles";
 import { Shelf, ShelfItem } from "@/components/ui/Shelf";
 import { BADGES } from "@/lib/badges";
 import { ParentRequestCard } from "@/components/home/ParentRequestCard";
@@ -62,7 +63,9 @@ export default async function HomePage() {
     return (
       <WideLayout>
         {greeting}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10">
+        {/* One column for a new student (the hero, then the three things the studio is, one tap each); a parent who only manages
+            children gets them beside it on a computer. */}
+        <div className={cn("grid grid-cols-1 gap-8", parentOnly ? "lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-10" : "max-w-4xl")}>
           <div className="grid min-w-0 grid-cols-1 gap-6">
             {data.parentRequests.length > 0 && <ParentRequestCard requests={data.parentRequests} />}
             <HomeHero
@@ -84,22 +87,22 @@ export default async function HomePage() {
                 </>
               }
             />
+            <ActionTiles
+              title="How it works"
+              items={[
+                { href: "/lessons", label: "Live classes", detail: "A real teacher every week, at a time you pick.", icon: <Video /> },
+                { href: "/roadmap", label: "Your roadmap", detail: "Scales one at a time, opened by your teacher.", icon: <Map /> },
+                { href: "/practice", label: "Daily practice", detail: "10 minutes a day builds your streak and your hands.", icon: <Flame /> },
+              ]}
+            />
+            {!parentOnly && <TipLine tip={data.tip} />}
           </div>
-          <div className="grid min-w-0 grid-cols-1 gap-8">
-            {parentOnly && <ChildrenRows kids={data.children} />}
-            <HomeRows title="How it works">
-              <li>
-                <HomeRow href="/lessons" icon={<Video />} title="Live classes on Discord" detail="A real teacher every week, at a time you pick." />
-              </li>
-              <li>
-                <HomeRow href="/roadmap" icon={<Map />} title="Your roadmap" detail="Scales one at a time, opened by your teacher as you go." />
-              </li>
-              <li>
-                <HomeRow href="/practice" icon={<Flame />} title="10 minutes a day" detail="Daily finger practice builds your streak and your hands." />
-              </li>
-            </HomeRows>
-            <TipLine tip={data.tip} />
-          </div>
+          {parentOnly && (
+            <div className="grid min-w-0 grid-cols-1 gap-8">
+              <ChildrenRows kids={data.children} />
+              <TipLine tip={data.tip} />
+            </div>
+          )}
         </div>
       </WideLayout>
     );
@@ -114,7 +117,7 @@ export default async function HomePage() {
 
   /**
    * Home, one hero then rows: the roadmap picture carries today's one thing, and everything else is a quiet line on the page
-   * (no cards), so the next step is the only loud thing here. On a computer the hero sits on the left and the rows on the right.
+   * (tiles and hairline rows on quiet cards), so the next step is the only loud thing here. On a computer the hero sits on the left and the rows on the right.
    */
   return (
     <WideLayout>
@@ -209,37 +212,36 @@ export default async function HomePage() {
 
           {data.children.length > 0 && <ChildrenRows kids={data.children} />}
 
-          {/* Studio as a shelf you swipe through, the way Spotify shows its rows. */}
-          <Shelf title="Studio">
-            <ShelfItem>
-              <ShelfCard
-                href="/leaderboard"
-                icon={<Trophy />}
-                title={myRow ? `You're ${ordinal(myRow.place)} this week` : "Leaderboard"}
-                detail={leader ? `${leader.name} leads with ${leader.minutes} min` : "Nobody has practiced yet"}
-              />
-            </ShelfItem>
-            <ShelfItem>
-              <ShelfCard
-                href="/friends"
-                icon={<Users />}
-                title={data.friendCount > 0 ? `${data.friendCount} friend${data.friendCount === 1 ? "" : "s"}` : "Friends"}
-                detail={
-                  data.friendsPracticing.length > 0
-                    ? `${data.friendsPracticing.slice(0, 2).join(", ")} ${data.friendsPracticing.length === 1 ? "is" : "are"} practicing`
-                    : data.friendCount > 0
-                      ? "Nobody is practicing right now"
-                      : "Practice is more fun with friends"
-                }
-              />
-            </ShelfItem>
-            <ShelfItem>
-              <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} card />
-            </ShelfItem>
-            <ShelfItem>
-              <ShelfCard href="/streak" icon={<Flame />} title={`${practice.streak} day streak`} detail={practice.completedToday ? "Done for today" : "Practice today to keep it"} />
-            </ShelfItem>
-          </Shelf>
+          {/* The studio around you: two tiles, one tap each, and the badges (which open in a sheet) as a row under them. */}
+          <div className="grid min-w-0 gap-3">
+            <ActionTiles
+              title="Studio"
+              items={[
+                {
+                  href: "/leaderboard",
+                  label: "Leaderboard",
+                  detail: myRow ? `You're ${ordinal(myRow.place)} this week` : leader ? `${leader.name} leads with ${leader.minutes} min` : "Nobody has practiced yet",
+                  icon: <Trophy />,
+                },
+                {
+                  href: "/friends",
+                  label: data.friendCount > 0 ? `${data.friendCount} friend${data.friendCount === 1 ? "" : "s"}` : "Friends",
+                  detail:
+                    data.friendsPracticing.length > 0
+                      ? `${data.friendsPracticing.slice(0, 2).join(", ")} ${data.friendsPracticing.length === 1 ? "is" : "are"} practicing`
+                      : data.friendCount > 0
+                        ? "Nobody is practicing right now"
+                        : "Practice is more fun with friends",
+                  icon: <Users />,
+                },
+              ]}
+            />
+            <HomeRows label="Badges">
+              <li>
+                <BadgesSheetButton earnedCodes={data.earnedBadgeCodes} total={BADGES.length} />
+              </li>
+            </HomeRows>
+          </div>
 
           <TipLine tip={data.tip} className="lg:hidden" />
         </div>

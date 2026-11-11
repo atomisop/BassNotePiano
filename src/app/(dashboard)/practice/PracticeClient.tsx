@@ -2,10 +2,10 @@
 
 import { Celebrate } from "@/components/ui/Celebrate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Pause, Play, Plus } from "@/components/ui/appIcons";
-import { Card, Eyebrow } from "@/components/ui/Card";
+import { CalendarCheck, Music2, Minus, Pause, Play, Plus, Trophy } from "@/components/ui/appIcons";
+import { HeroBand } from "@/components/ui/HeroBand";
+import { ActionTiles } from "@/components/ui/ActionTiles";
 import { buttonVariants } from "@/components/ui/button";
-import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Tabs } from "@/components/ui/Tabs";
 import { useMetronome, METRONOME_MAX_BPM, METRONOME_MIN_BPM } from "@/components/scales/useMetronome";
 import {
@@ -333,28 +333,28 @@ export function PracticeClient({
       </div>
 
       {/* Three blocks, in the order you use them: today's timer and the tempo (side by side on computers), then the exercise.
-          The timer is the screen's hero (DESIGN.md, Hierarchy rule 10): wider, raised, with the time as its one big figure and Start as
-          its one primary button. The tempo beside it is a quiet panel. */}
-      <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:gap-(--space-group)">
+          The timer is the screen's one fact, so it rides the band (DESIGN.md, "Band, sheet and tiles"): the time is the biggest thing
+          here and Start, its one primary button, sits on the sheet. The tempo beside it is a quiet card. */}
+      <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start md:gap-(--space-group)">
       {/* ---- Today ---- */}
-      <Card className="!p-4 md:!p-6">
-        <div className="flex items-center gap-4 md:gap-5">
-          <ProgressRing
-            value={shownSeconds}
-            max={DAILY_GOAL_SECONDS}
-            size={88}
-            strokeWidth={8}
-            label={`Practice today: ${mmss(shownSeconds)} of ${mmss(DAILY_GOAL_SECONDS)}`}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-figure font-bold leading-none tabular-nums text-slate-50">{mmss(shownSeconds)}</p>
-            <p className="mt-2 text-small text-slate-400">
-              {status.completedToday ? "Done for today" : running ? `Practicing · ${minutesToGo} min to go` : `${minutesToGo} min to go today`}
-            </p>
-            <p className="mt-0.5 text-caption text-slate-500">{status.streak} day streak</p>
-          </div>
+      <HeroBand
+        eyebrow="Today"
+        title={status.completedToday ? "Done for today" : running ? `Practicing · ${minutesToGo} min to go` : `${minutesToGo} min to go today`}
+        figure={mmss(shownSeconds)}
+        meta={`${status.streak} day streak`}
+      >
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-slate-50/10"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={DAILY_GOAL_SECONDS}
+          aria-valuenow={shownSeconds}
+          aria-label={`Practice today: ${mmss(shownSeconds)} of ${mmss(DAILY_GOAL_SECONDS)}`}
+        >
+          <div className="h-full origin-left rounded-full bg-signal transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `scaleX(${shownSeconds / DAILY_GOAL_SECONDS})` }} />
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+        {/* On a computer the row is reversed, so the one primary button sits at the right edge of the sheet. */}
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-row-reverse sm:flex-wrap">
           {doneAndIdle && continueLink(true)}
           <button
             type="button"
@@ -377,21 +377,21 @@ export function PracticeClient({
         )}
         {justCompleted && <Celebrate />}
         {justCompleted && (
-          <p className="mt-3 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
+          <p className="mt-3 rounded-control bg-slate-50/6 px-4 py-3 text-small font-semibold text-slate-50">
             10 minutes done. {"\u{1F389}"}
           </p>
         )}
-      </Card>
+      </HeroBand>
 
       {/* ---- Metronome ---- a quiet panel, a step below the timer. */}
-      <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8 md:p-6">
+      <section aria-label="Tempo" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-6">
         <div className="flex items-center justify-between gap-3">
-          <Eyebrow>Tempo</Eyebrow>
+          <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Tempo</h2>
           <div className="flex items-center gap-1.5" aria-hidden>
             {Array.from({ length: metronome.beatsPerBar }).map((_, i) => (
               <span
                 key={i}
-                className={`h-3 w-3 rounded-full transition ${metronome.running && metronome.beat === i ? "bg-signal" : "bg-neu-base shadow-pressed-low"}`}
+                className={`h-3 w-3 rounded-full transition ${metronome.running && metronome.beat === i ? "bg-signal" : "bg-slate-50/10"}`}
               />
             ))}
           </div>
@@ -427,7 +427,7 @@ export function PracticeClient({
           {metronome.running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           {metronome.running ? "Stop the beat" : "Beat only, no timer"}
         </button>
-      </div>
+      </section>
       </div>
 
       {/* ---- Exercises ---- */}
@@ -492,6 +492,15 @@ export function PracticeClient({
         </details>
       </section>
 
+      {/* Where practice leads, one tap each. At the foot, so the exercise stays right under the timer. */}
+      <ActionTiles
+        title="After practice"
+        items={[
+          { href: nextHref ?? "/roadmap", label: nextHref ? "Your lesson" : "Roadmap", detail: nextHref ? "Pick up where you left off" : "Your scales", icon: <Music2 /> },
+          { href: "/streak", label: "Your streak", detail: `${status.streak} ${status.streak === 1 ? "day" : "days"} in a row`, icon: <CalendarCheck /> },
+          { href: "/leaderboard", label: "Leaderboard", detail: "Minutes this week", icon: <Trophy /> },
+        ]}
+      />
     </div>
   );
 }
