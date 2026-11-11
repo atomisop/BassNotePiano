@@ -1594,6 +1594,7 @@
   50% { opacity: 0.9; transform: scale(1.2); }
 }
 .link-dot {
+  corner-shape: round;
   width: 5px;
   height: 5px;
   border-radius: 9999px;
@@ -1603,6 +1604,7 @@
 .link-tile-a { animation: link-tile 3.2s ease-in-out infinite; }
 .link-tile-b { animation: link-tile 3.2s ease-in-out 0.4s infinite; }
 .link-star {
+  corner-shape: round;
   position: absolute;
   width: 3px;
   height: 3px;
@@ -1829,15 +1831,25 @@ input[type="radio"],
   }
 }
 
+/* The Apple curve (continuous corners) on EVERY rounded box, cards, sheets, buttons, fields, chips, tiles, images (2026-11-12, owner). Circles
+   are left alone: a squircle on a circle turns it into a rounded square, so anything fully round (rounded-full, a 50% radius) keeps the true
+   circle. The base layer keeps this at the lowest weight, so a rule that sets its own corner-shape (the dock's `round`) still wins. */
 @supports (corner-shape: squircle) {
-  .rounded-control,
-  .rounded-card,
-  .rounded-sheet,
-  .rounded-t-sheet,
-  .rounded-xl,
-  .rounded-2xl,
-  .rounded-3xl {
-    corner-shape: squircle;
+  @layer base {
+    *,
+    *::before,
+    *::after {
+      corner-shape: squircle;
+    }
+    .rounded-full,
+    [class*="rounded-full"],
+    [style*="border-radius: 50%"],
+    [style*="border-radius:50%"],
+    [class*="rounded-[50%]"],
+    .rounded-full::before,
+    .rounded-full::after {
+      corner-shape: round;
+    }
   }
 }
 
@@ -2998,6 +3010,7 @@ html[data-splash] .bnp-splash {
   display: none;
 }
 .bnp-splash-ring {
+  corner-shape: round;
   position: absolute;
   inset: 0;
   border-radius: 9999px;
