@@ -1477,7 +1477,10 @@ export async function recordPlanPaymentReceived(planId: string, adminId: string)
   });
   if (plan.status !== "ACTIVE") throw new Error("Only an active plan can have a payment recorded.");
 
-  const verified = plan.installmentPayments.filter((p) => p.status === "VERIFIED").length;
+  // A group member's first month is paid inside the group's combined start payment, not as a bill of its own: count it as paid, or
+  // a started member would get a phantom "recorded" row for a month that is already settled.
+  const startPaid = plan.familyGroupId ? (await prisma.zellePayment.count({ where: { purpose: "FAMILY_PLAN_START", status: "VERIFIED", familyGroupId: plan.familyGroupId } })) > 0 : false;
+  const verified = plan.installmentPayments.filter((p) => p.status === "VERIFIED").length + (startPaid ? 1 : 0);
   const open = plan.installmentPayments.find((p) => p.status === "PENDING_REVIEW" || p.status === "AWAITING_TRANSFER");
   const { approveZellePayment } = await import("@/lib/payments");
 

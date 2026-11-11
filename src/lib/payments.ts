@@ -507,6 +507,8 @@ async function maybeAutoApprovePayment(payment: { id: string; userId: string; pu
         where: {
           userId: payment.userId,
           status: "VERIFIED",
+          // A $0 bill (a scholarship covering the plan) moved no money: it is no proof the student pays what they owe.
+          amountCents: { gt: 0 },
           OR: [{ autoApproved: false }, { checkedAt: { not: null } }],
         },
       }),

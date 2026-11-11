@@ -845,6 +845,7 @@ export async function bookClass(
               refunded: false,
               canceledReason: null,
               familyBookingGroupId: null,
+              reservedByPlanId: null, // a reused row is a fresh booking, not the plan's weekly class
             },
           });
         }
@@ -1384,6 +1385,7 @@ export async function bookFamilyClass(
             refunded: false,
             canceledReason: null,
             familyBookingGroupId,
+            reservedByPlanId: null,
           };
 
           created.push(
@@ -1743,15 +1745,14 @@ export interface WeeklyCreditUsage {
  * my week is spoken for," not which purchase paid for which class.
  */
 export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCreditUsage> {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekStart = new Date(startOfToday.getTime() - startOfToday.getDay() * 24 * 60 * 60 * 1000);
-  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // The week is the studio's (Eastern) Sunday to Saturday, the same one the booking limit counts, not the server's own clock's.
+  const { year, month, day } = todayInEt();
+  const { start: weekStart, end: weekEnd } = weekRangeForOccurrence(new Date(Date.UTC(year, month - 1, day)));
 
   const [plan, bookings] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { cadence: true } }),
     prisma.classBooking.findMany({
-      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: weekStart, lt: weekEnd } },
+      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, occurrenceDate: { gte: weekStart, lt: weekEnd } },
       select: { creditsSpent: true },
     }),
   ]);

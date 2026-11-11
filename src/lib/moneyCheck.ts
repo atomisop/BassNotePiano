@@ -101,6 +101,10 @@ export async function applyMoneyFix(admin: { id: string; email: string | null },
     return "Bill closed.";
   }
   if (fix === "setPaid") {
+    // A finished plan set back to fewer bills would reopen already overdue, then lapse and lock the student: that call is the owner's,
+    // made on the student's page (Plan progress) where the date is chosen, never one click here.
+    const state = await prisma.paymentPlan.findUniqueOrThrow({ where: { id }, select: { status: true } });
+    if (state.status !== "ACTIVE") throw new Error("This plan is finished. Use Plan progress on the student's page, where you choose the next bill date.");
     const plan = await prisma.paymentPlan.findUniqueOrThrow({
       where: { id },
       select: { nextDueDate: true, installmentPayments: { where: { purpose: "PAYMENT_PLAN_INSTALLMENT", status: "VERIFIED" }, select: { id: true } }, familyGroupId: true },

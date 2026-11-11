@@ -62,12 +62,6 @@ export const runPaymentPlanReservations = () =>
       continue; // no booking while the underlying schedule is off
     }
 
-    // Reactivated after a prior deactivation, clear the guard so a future
-    // deactivation can notify again.
-    if (plan.reservedSlotInactiveNotifiedAt) {
-      await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: null } });
-    }
-
     const chunk = chunksForSchedule(reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) {
       // The reserved time no longer exists (for example a short leftover slot dropped when classes became 45 minutes).
@@ -84,6 +78,12 @@ export const runPaymentPlanReservations = () =>
         await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: new Date() } });
       }
       continue;
+    }
+
+    // The time exists again (reactivated after a prior deactivation, or the chunk is back): clear the guard so a future problem
+    // can notify again. Cleared only here, AFTER the chunk check, or a time that is gone would alert on every run.
+    if (plan.reservedSlotInactiveNotifiedAt) {
+      await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: null } });
     }
 
     // What the plan itself pays for each week: 1 credit for a 30-minute plan,

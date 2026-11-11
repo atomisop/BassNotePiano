@@ -28,10 +28,16 @@ export async function syncGroupBundle(groupId: string, zelleHandle: string): Pro
       },
       select: { id: true, amountCents: true, bundleId: true },
     });
-    const existing = await tx.zellePayment.findFirst({
+    let existing = await tx.zellePayment.findFirst({
       where: { purpose: "FAMILY_PLAN_INSTALLMENT", familyGroupId: groupId, status: "AWAITING_TRANSFER", submittedAt: null },
       orderBy: { createdAt: "desc" },
     });
+    // A combined bill made for a payer who has since been replaced is closed and rebuilt for the current one (only the payer may pay it).
+    if (existing && existing.userId !== group.payerId) {
+      await tx.zellePayment.updateMany({ where: { bundleId: existing.id }, data: { bundleId: null } });
+      await tx.zellePayment.update({ where: { id: existing.id }, data: { status: "EXPIRED" } });
+      existing = null;
+    }
     if (rows.length < 2) {
       if (existing) {
         await tx.zellePayment.updateMany({ where: { bundleId: existing.id }, data: { bundleId: null } });
