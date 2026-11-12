@@ -19,6 +19,9 @@ export class ScholarshipError extends Error {}
 /** One answer for every reason a code cannot be used, so a wrong guess never reveals which codes exist or whose they are. */
 const NOT_VALID = "That code isn't valid for this account. Check the 16 digits and that you're signed in with the email it was made for.";
 
+/** The same, when a group's payer types a code on someone else's row: the code must have been made for THAT person's email. */
+const NOT_VALID_FOR_MEMBER = "That code isn't valid for this person. Check the 16 digits and that it was made for the email on this row.";
+
 const sameInbox = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** The account a code can be made for: a real student account (not an admin, not banned). Null when there is none. */
@@ -132,22 +135,32 @@ export async function listClaimedScholarships(userId: string) {
  * Claims a code for the signed-in account. The account's email must be the one the code was made for. The claim is one atomic
  * conditional update (unclaimed, not revoked, not lapsed, right email), so two taps or two devices can never both succeed.
  */
-export async function claimScholarshipCode(userId: string, rawCode: unknown): Promise<{ percent: number; planChange: PlanPriceChange | null }> {
+export async function claimScholarshipCode(
+  userId: string,
+  rawCode: unknown,
+  /**
+   * Set only by `claimScholarshipForMember` (groupScholarship.ts), which has ALREADY checked that this account has accepted the
+   * payer's group invitation or parent link: the payer typed the code on the member's row. Everything else is the same, and the code
+   * must still have been made for the member's own email. Tries are counted against the payer, and the member is told.
+   */
+  by?: { id: string; email: string | null; name: string | null },
+): Promise<{ percent: number; planChange: PlanPriceChange | null }> {
+  const invalid = by ? NOT_VALID_FOR_MEMBER : NOT_VALID;
   // Guessing a 16 digit number is hopeless, but every try is still counted so nobody can hammer it.
-  await consumeRateLimit(prisma, `scholarship-claim:${userId}`, { windowMinutes: 60, max: 10, message: "Too many tries. Please wait an hour and try again." });
+  await consumeRateLimit(prisma, `scholarship-claim:${by?.id ?? userId}`, { windowMinutes: 60, max: 10, message: "Too many tries. Please wait an hour and try again." });
   const code = normalizeScholarshipCode(rawCode);
-  if (!code) throw new ScholarshipError("Enter all 16 digits of your scholarship code.");
+  if (!code) throw new ScholarshipError(by ? "Enter all 16 digits of the scholarship code." : "Enter all 16 digits of your scholarship code.");
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, emailVerified: true, bannedAt: true, role: true } });
-  if (!user || user.bannedAt) throw new ScholarshipError(NOT_VALID);
-  if (user.role === "ADMIN") throw new ScholarshipError("An admin account doesn't need a scholarship.");
-  if (!user.emailVerified) throw new ScholarshipError("Verify your email first, then claim your scholarship.");
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, emailVerified: true, bannedAt: true, role: true } });
+  if (!user || user.bannedAt) throw new ScholarshipError(invalid);
+  if (user.role === "ADMIN") throw new ScholarshipError(by ? invalid : "An admin account doesn't need a scholarship.");
+  if (!user.emailVerified) throw new ScholarshipError(by ? invalid : "Verify your email first, then claim your scholarship.");
 
   const row = await prisma.scholarshipCode.findUnique({ where: { code } });
-  if (!row || !sameInbox(row.assignedEmail, user.email)) throw new ScholarshipError(NOT_VALID);
+  if (!row || !sameInbox(row.assignedEmail, user.email)) throw new ScholarshipError(invalid);
   const status = scholarshipStatus(row);
   if (status === "claimed" || status === "ended") throw new ScholarshipError("That code has already been claimed.");
-  if (status !== "available" || row.percent < 1) throw new ScholarshipError(NOT_VALID);
+  if (status !== "available" || row.percent < 1) throw new ScholarshipError(invalid);
 
   const now = new Date();
   const planChange = await prisma.$transaction(async (tx) => {
@@ -159,8 +172,21 @@ export async function claimScholarshipCode(userId: string, rawCode: unknown): Pr
     // A running 6 Month plan is repriced now; any other length is untouched (the discount only prices the 6 Month plan).
     return applyToRunningPlan(tx, user.id);
   });
-  await logAudit({ actorId: user.id, actorEmail: user.email, action: "scholarship.claim", detail: `${row.id}: ${row.percent}% off the 6 Month plan` });
+  await logAudit({
+    actorId: by?.id ?? user.id,
+    actorEmail: by?.email ?? user.email,
+    action: "scholarship.claim",
+    detail: `${row.id}: ${row.percent}% off the 6 Month plan${by ? ` (typed by ${by.email ?? by.id} for ${user.email}, who had accepted their group)` : ""}`,
+  });
   await tellPriceChange(user.id, planChange);
+  // The person whose code it is hears about it: somebody else typed it, so it is never a silent change to their account.
+  if (by) {
+    await noticePlanUpdated({
+      userId: user.id,
+      title: "Your scholarship was used for a group plan",
+      body: `${by.name ?? by.email ?? "The person setting up your group plan"} typed your scholarship code. It takes ${row.percent}% off your share of the 6 Month plan${row.percent >= MAX_SCHOLARSHIP_PERCENT ? ", so your share is covered" : ""}.`,
+    }).catch((err) => console.error("Member scholarship notice failed (non-blocking):", err));
+  }
   // A 100% scholarship on a running 6 Month plan leaves its open, unsent bill at $0: settle it now rather than wait for a job. Quiet
   // when the "Your scholarship covers your plan" notice above already told them, so there is one notice. A bill already sent in for
   // review with real money is not touched (applyToRunningPlan leaves it, and only a $0 bill can settle itself).

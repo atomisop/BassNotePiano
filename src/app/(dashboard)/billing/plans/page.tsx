@@ -88,6 +88,8 @@ export default async function BillingPlansPage(
   // members' monthly bills.
   let family: { isPayer: boolean; payerName: string | null; memberCount: number; waitingForStart: boolean; memberNames: string[]; weeklyTime: string | null } | null = null;
   let startPayment: Awaited<ReturnType<typeof prisma.zellePayment.findFirst>> = null;
+  // The group's one combined bill, when the payer's OWN share is covered ($0, so their own plan has no bill to show) but other members still owe.
+  let groupBill: Awaited<ReturnType<typeof getOrCreateOpenInstallmentPayment>>["payment"] = null;
   const familyBills: { planId: string; memberName: string; payment: { id: string; status: ZellePaymentStatus; rejectionReason: string | null; amountCents: number; installmentNumber: number | null } }[] = [];
   if (activePlan?.familyGroupId) {
     const group = await prisma.familyPlanGroup.findUnique({
@@ -113,6 +115,7 @@ export default async function BillingPlansPage(
         for (const member of group.plans.filter((plan) => plan.userId !== session.user.id)) {
           const { payment } = await getOrCreateOpenInstallmentPayment(member.id, zelleHandle);
           // The group's combined bill is shown above as the one bill; only a member's own ordinary bill is listed here.
+          if (payment && payment.purpose === "FAMILY_PLAN_INSTALLMENT") groupBill ??= payment;
           if (payment && payment.purpose !== "FAMILY_PLAN_INSTALLMENT") {
             familyBills.push({
               planId: member.id,
@@ -145,7 +148,7 @@ export default async function BillingPlansPage(
       }
     }
   }
-  const shownInstallment = startPayment ?? openInstallmentResult?.payment ?? null;
+  const shownInstallment = startPayment ?? openInstallmentResult?.payment ?? groupBill ?? null;
 
   // Pause, change length and cancel, right under the plan (the same controls as Settings). A pause the server would refuse is
   // said up front, and when it is waiting on a payment, the Pay button opens that bill's payment sheet in place.

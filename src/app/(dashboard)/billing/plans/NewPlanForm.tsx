@@ -1,10 +1,10 @@
 "use client";
 
 import { SwitchLook } from "@/components/ui/switch";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
-import { CLASS_MINUTES, discountPercentForTerm, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, discountPercentForTerm, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, SCHOLARSHIP_TERM, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, showScholarshipClaim, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
@@ -88,6 +88,8 @@ export function NewPlanForm({
   initialSlotKey = null,
   initialMembers,
   onClaimScholarship,
+  onClaimMemberScholarship,
+  loadMemberScholarship,
 }: {
   pricing: PricingConfig;
   personalDiscountPercent?: number;
@@ -100,6 +102,10 @@ export function NewPlanForm({
   initialMembers?: string[];
   /** Claims a scholarship code right here (the 6 Month card). Leave out to hide "Have a scholarship code?". */
   onClaimScholarship?: (code: string) => Promise<{ ok: true; percent: number } | { ok: false; error: string }>;
+  /** Group and parent plans: the payer types a code on one person's row. The server accepts it only for someone who has accepted them. */
+  onClaimMemberScholarship?: (email: string, code: string) => Promise<{ ok: true; percent: number } | { ok: false; error: string }>;
+  /** The scholarship percent a person who accepted already holds (0 for none), so their share is right before anyone types a code. */
+  loadMemberScholarship?: (email: string) => Promise<number | null>;
   loadSlots: () => Promise<ReservableSlot[]>;
   onStart: (input: StartPlanInput) => Promise<StartPlanResult>;
   /** Times other students hold, and the ones this person is waiting for. Leave both out to hide waiting for a time. */
@@ -125,6 +131,9 @@ export function NewPlanForm({
   // A scholarship claimed here prices the 6 Month plan at once (the server already saved it).
   const [scholarship, setScholarship] = useState(scholarshipPercent);
   useEffect(() => setScholarship(scholarshipPercent), [scholarshipPercent]);
+  // On a group or parent plan every person has their OWN scholarship (their email's). Keyed by the lowercased email.
+  const [memberScholarships, setMemberScholarships] = useState<Record<string, number>>({});
+  const percentAsked = useRef(new Set<string>());
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slot, setSlot] = useState<ReservableSlot | null>(null);
@@ -257,12 +266,31 @@ export function NewPlanForm({
   const parentTotals = isParent ? { includeSelf } : undefined;
   // The discount the chosen length actually gets (a scholarship only counts on the 6 Month plan).
   const termDiscount = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent: scholarship }, term);
-  const totals = useMemo(
-    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent: scholarship, parent: parentTotals }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarship, isParent, includeSelf],
-  );
   const rowStates = isFamily ? memberRows.map((_, i) => stateFor(i)) : [];
+  // Each person's own scholarship, in the order the totals count people: the rows, then you. A row counts only once that person has
+  // accepted (it is the server that prices a group, and it only prices people who have said yes).
+  const rowPercent = (i: number) => (rowStates[i] === "accepted" ? (memberScholarships[memberRows[i].trim().toLowerCase()] ?? 0) : 0);
+  const personPercents = isFamily ? [...memberRows.map((_, i) => rowPercent(i)), scholarship] : [];
+  const totals = useMemo(
+    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarshipPercent: scholarship, parent: parentTotals, memberScholarships: personPercents }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, scholarship, isParent, includeSelf, personPercents.join(",")],
+  );
+  // Someone who accepted may already hold a scholarship (claimed on their own account): their share must be right before any code is typed.
+  useEffect(() => {
+    if (!loadMemberScholarship || !isFamily) return;
+    memberRows.forEach((row, i) => {
+      const email = row.trim().toLowerCase();
+      if (!email || rowStates[i] !== "accepted" || percentAsked.current.has(email)) return;
+      percentAsked.current.add(email);
+      loadMemberScholarship(email)
+        .then((percent) => {
+          if (percent !== null) setMemberScholarships((m) => ({ ...m, [email]: percent }));
+        })
+        .catch(() => percentAsked.current.delete(email));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberRows, rowStates.join("|"), isFamily, loadMemberScholarship]);
   const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
   const toInvite = gated ? memberRows.filter((_, i) => rowStates[i] === "ready").map((r) => r.trim()) : [];
   const accountHint = rowStates.includes("checking")
@@ -303,13 +331,18 @@ export function NewPlanForm({
   const hint = (timeMissing ? null : missing) ?? accountHint ?? timeMissing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
+  // Who each share belongs to, in the order the totals count them (the rows, then you). Shown when shares differ.
+  const personLabels = isFamily ? [...memberRows.map((r) => r.trim() || "Another person"), ...(isParent && !includeSelf ? [] : ["You"])] : [];
+  const sharesDiffer = isFamily && totals.sharesCents.some((s) => s !== totals.perPaymentCents);
   const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
 
   // A full scholarship on this plan: there is no price to show anywhere on the form, only that it is covered.
   const free = !isFamily && totals.perPaymentCents === 0;
-  const barNote = free ? "by your scholarship" : isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
+  // A group where every person's own scholarship covers their share: nothing to pay either.
+  const freeGroup = isFamily && totals.firstPaymentCents === 0;
+  const barNote = free ? "by your scholarship" : freeGroup ? "by scholarships" : isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
   // The whole plan, so a 3 or 6 month plan shows what it adds up to before anyone starts.
-  const barTotal = free ? "Nothing to pay." : totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
+  const barTotal = free || freeGroup ? "Nothing to pay." : totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
   async function start() {
     if (hint !== null || (!isParent && !slot)) return;
@@ -439,6 +472,7 @@ export function NewPlanForm({
           )}
           <ul className="mt-3 space-y-2">
             {isParent ? (
+              <>
               <li className="flex min-h-11 items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-1.5 text-small text-slate-300 shadow-pressed-low">
                 <span className="font-medium text-slate-100">You pay</span>
                 <button
@@ -453,11 +487,29 @@ export function NewPlanForm({
                   <span>{includeSelf ? "I'm learning too" : "Just for them"}</span>
                   <SwitchLook on={includeSelf} />
                 </button>
-              </li>
+                </li>
+                {includeSelf && term === SCHOLARSHIP_TERM && onClaimScholarship && (
+                  <li>
+                    {scholarship > 0 ? (
+                      <PersonScholarship you percent={scholarship} shareCents={totals.sharesCents[totals.sharesCents.length - 1]} />
+                    ) : (
+                      <ScholarshipClaim onClaim={onClaimScholarship} onClaimed={(percent) => setScholarship(percent)} />
+                    )}
+                  </li>
+                )}
+              </>
             ) : (
-              <li className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
-                <span className="font-medium text-slate-100">You</span>
-                <span>pays for everyone</span>
+              <li>
+                <div className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
+                  <span className="font-medium text-slate-100">You</span>
+                  <span>pays for everyone</span>
+                </div>
+                {term === SCHOLARSHIP_TERM && onClaimScholarship &&
+                  (scholarship > 0 ? (
+                    <PersonScholarship you percent={scholarship} shareCents={totals.sharesCents[totals.sharesCents.length - 1]} />
+                  ) : (
+                    <ScholarshipClaim onClaim={onClaimScholarship} onClaimed={(percent) => setScholarship(percent)} />
+                  ))}
               </li>
             )}
             {memberRows.map((email, i) => (
@@ -490,7 +542,20 @@ export function NewPlanForm({
                   </button>
                 )}
                 </div>
-                <AccountCheckLine state={stateFor(i)} email={email.trim()} />
+                {/* Each person's own scholarship, on the 6 Month plan only, and only for someone who has accepted (the server checks it).
+                    It sits on the same line as THEIR "Accepted", so it is never mistaken for the next person's. */}
+                <div className="flex flex-wrap items-start justify-between gap-x-3">
+                  <AccountCheckLine state={stateFor(i)} email={email.trim()} />
+                  {term === SCHOLARSHIP_TERM && onClaimMemberScholarship && stateFor(i) === "accepted" && rowPercent(i) === 0 && (
+                    <ScholarshipClaim
+                      onClaim={(code) => onClaimMemberScholarship(email.trim(), code)}
+                      onClaimed={(percent) => setMemberScholarships((m) => ({ ...m, [email.trim().toLowerCase()]: percent }))}
+                    />
+                  )}
+                </div>
+                {term === SCHOLARSHIP_TERM && onClaimMemberScholarship && stateFor(i) === "accepted" && rowPercent(i) > 0 && (
+                  <PersonScholarship percent={rowPercent(i)} shareCents={totals.sharesCents[i]} />
+                )}
               </li>
             ))}
           </ul>
@@ -633,6 +698,12 @@ export function NewPlanForm({
               })
             : timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
           <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{free ? "Covered by your scholarship" : <RollingNumber text={usd(totals.perPaymentCents)} />}</Row>
+          {sharesDiffer &&
+            personLabels.map((label, idx) => (
+              <Row key={`${label}-${idx}`} label={label}>
+                {totals.sharesCents[idx] === 0 ? "Covered by scholarship" : usd(totals.sharesCents[idx])}
+              </Row>
+            ))}
           {!isFamily && termDiscount > 0 && !free && (
             <Row label="Your discount">
               {termDiscount}% off <span className="text-slate-500 line-through">{usd(totals.listPerPaymentCents)}</span>
@@ -643,9 +714,9 @@ export function NewPlanForm({
           </Row>
           <div className="flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
             <span>{isFamily ? `First payment, all ${totals.people}` : "Due now"}</span>
-            {free ? "Nothing to pay" : <RollingNumber text={usd(totals.firstPaymentCents)} />}
+            {free || freeGroup ? "Nothing to pay" : <RollingNumber text={usd(totals.firstPaymentCents)} />}
           </div>
-          {totals.payments > 1 && !free && (
+          {totals.payments > 1 && !free && !freeGroup && (
             <Row label={isFamily ? "Whole plan, everyone" : "Whole plan"}><RollingNumber text={usd(totals.allPeopleTermCents)} /></Row>
           )}
         </dl>
@@ -691,6 +762,7 @@ function ScholarshipClaim({
   onClaim: (code: string) => Promise<{ ok: true; percent: number } | { ok: false; error: string }>;
   onClaimed: (percent: number) => void;
 }) {
+  const inputId = useId();
   const [open, setOpen] = useState(false);
   const [raw, setRaw] = useState("");
   const [busy, setBusy] = useState(false);
@@ -711,7 +783,7 @@ function ScholarshipClaim({
 
   if (!open) {
     return (
-      <div className="mt-2 flex justify-end">
+      <div className="mt-1 flex justify-end">
         <button type="button" onClick={() => setOpen(true)} className="tap inline-flex items-center text-small font-medium text-slate-300 underline underline-offset-4 hover:text-slate-50">
           Have a scholarship code?
         </button>
@@ -719,13 +791,13 @@ function ScholarshipClaim({
     );
   }
   return (
-    <form onSubmit={claim} className="mt-3 rounded-control bg-neu-base p-3 shadow-raised-low">
-      <label htmlFor="plan-scholarship-code" className="text-small font-medium text-slate-200">
+    <form onSubmit={claim} className="mt-3 w-full basis-full rounded-control bg-neu-base p-3 shadow-raised-low">
+      <label htmlFor={inputId} className="text-small font-medium text-slate-200">
         Scholarship code <span className="font-normal text-slate-500">· 6 Month plan only</span>
       </label>
       <div className="mt-2 flex gap-2">
         <input
-          id="plan-scholarship-code"
+          id={inputId}
           inputMode="numeric"
           autoComplete="off"
           placeholder="0000 0000 0000 0000"
@@ -745,6 +817,16 @@ function ScholarshipClaim({
         </p>
       )}
     </form>
+  );
+}
+
+/** One person's scholarship on a group or parent plan, said plainly under their row: the percent, and what their share comes to. */
+function PersonScholarship({ percent, shareCents, you = false }: { percent: number; shareCents: number | undefined; you?: boolean }) {
+  const whose = you ? "your" : "their";
+  return (
+    <p className="mt-1.5 px-1 text-small text-slate-400">
+      {percent}% scholarship{shareCents === 0 ? `: ${whose} share is covered.` : shareCents !== undefined ? ` · ${whose} share is ${usd(shareCents)} every 28 days.` : "."}
+    </p>
   );
 }
 

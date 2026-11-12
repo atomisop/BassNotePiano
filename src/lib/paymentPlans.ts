@@ -14,6 +14,8 @@ import { assertEveryoneAccepted, FamilyInviteError, spendInvites } from "@/lib/f
 import { getPricingConfig } from "@/lib/pricing";
 import { duplicateWeeklyTime, PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { groupShareCents } from "@/lib/groupShares";
+import { scholarshipPercentsFor } from "@/lib/scholarshipPercents";
 import {
   chunksForSchedule,
   classesInWindow,
@@ -361,7 +363,8 @@ async function getOrCreateMemberInstallmentPayment(
   // A family plan needs at least two paying people. Down to one, the person pays the solo price from this bill on.
   let amountCents = plan.installmentAmountCents;
   if (plan.familyGroupId && (await activeFamilySize(plan.familyGroupId)) < 2) {
-    amountCents = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig()).installmentAmountCents;
+    const solo = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig()).installmentAmountCents;
+    amountCents = groupShareCents(solo, plan.term, (await scholarshipPercentsFor([plan.userId])).get(plan.userId) ?? 0);
   }
 
   // One open bill per plan, even when a page load and the daily job (or several tabs) ask at the same moment: they take turns on a
@@ -1598,7 +1601,8 @@ export async function noticeFamilyShrank(groupId: string): Promise<void> {
   });
   if (remaining.length !== 1) return;
   const [last] = remaining;
-  const solo = calculatePaymentPlanRate(last.cadence, last.term, await getPricingConfig()).installmentAmountCents;
+  const soloList = calculatePaymentPlanRate(last.cadence, last.term, await getPricingConfig()).installmentAmountCents;
+  const solo = groupShareCents(soloList, last.term, (await scholarshipPercentsFor([last.userId])).get(last.userId) ?? 0);
   await noticePlanUpdated({
     userId: last.userId,
     title: "Your group is down to one person",
@@ -1736,8 +1740,16 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!reservedScheduleId || reservedChunkIndex === null) throw new PaymentPlanError("Pick the weekly time first.");
 
   const pricing = await getPricingConfig();
+  // The group rate is the same for everyone; each person's OWN scholarship then takes its percent off THEIR share (6 Month plan only,
+  // see groupShares.ts). The server reads the percents from the accounts, so a screen can never charge less than it should.
   const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length, pricing).perStudentMonthlyCents;
-  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  const percents = await scholarshipPercentsFor(members.map((m) => m.id));
+  const shareOf = new Map(members.map((m) => [m.id, groupShareCents(perMemberCents, term, percents.get(m.id) ?? 0)]));
+  const firstPaymentCents = members.reduce((sum, m) => sum + shareOf.get(m.id)!, 0);
+  // A screen that does not show scholarships (it shows the plain group price) is not refused: the person pays the smaller real amount.
+  // The refusal itself is raised INSIDE the transaction, after the check that everyone has accepted: a price that depends on someone's
+  // scholarship must never be testable against a person who has not said yes (a wrong guess would otherwise reveal it).
+  const priceChanged = input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== firstPaymentCents && input.expectedFirstPaymentCents !== perMemberCents * members.length;
   await assertNotHoardingTimes(payerId);
   const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
@@ -1755,6 +1767,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
           if (err instanceof FamilyInviteError) throw new PaymentPlanError(err.message);
           throw err;
         }
+        if (priceChanged) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
         // Every other member must be able to start: none may already be on a plan. (A subscribed sibling cancels their own plan first.)
         const busy = await tx.paymentPlan.findFirst({ where: { userId: { in: planMembers.map((m) => m.id) }, status: "ACTIVE" }, select: { userId: true } });
         if (busy) {
@@ -1780,7 +1793,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
                 userId: member.id,
                 cadence,
                 term,
-                installmentAmountCents: perMemberCents,
+                installmentAmountCents: shareOf.get(member.id)!,
+                // The group price before this person's scholarship, kept so the plan can show what it was and be put back.
+                listAmountCents: shareOf.get(member.id)! < perMemberCents ? perMemberCents : null,
                 creditsPerInstallment: rate.creditsPerInstallment,
                 termMonths: rate.termMonths,
                 nextDueDate: new Date(),
@@ -1796,7 +1811,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
           data: {
             userId: payerId,
             purpose: "FAMILY_PLAN_START",
-            amountCents: perMemberCents * members.length,
+            amountCents: firstPaymentCents,
             zelleHandle,
             familyGroupId: group.id,
             status: "AWAITING_TRANSFER",
@@ -1810,7 +1825,12 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
 
     await prisma.user.updateMany({ where: { id: { in: memberIds } }, data: { notifyEmailReminders: true } });
     const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-    await noticePlanUpdated({
+    // Everyone is covered by a scholarship: there is no payment to wait for, so the plan starts now (like a free solo plan).
+    if (firstPaymentCents === 0) {
+      const { settleFreeStart } = await import("@/lib/freeBills");
+      await settleFreeStart(created.startPayment.id).catch((err) => console.error("Covered group start failed (the owner can approve it from Billing):", err));
+      await noticePlanUpdated({ userId: payerId, title: "Your group plan started", body: `${describePaymentPlan(cadence, term)} for ${members.length} accounts started. Scholarships cover everyone's share, so there is nothing to pay.` });
+    } else await noticePlanUpdated({
       userId: payerId,
       title: "Your group plan is set up",
       body: oldPlan
@@ -1821,7 +1841,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
       await noticePlanUpdated({
         userId: other.id,
         title: "You were added to a group plan",
-        body: `${payer.name ?? payer.email} set up a group plan that includes you. When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
+        body: `${payer.name ?? payer.email} set up a group plan that includes you. ${shareOf.get(other.id) === 0 ? "Your scholarship covers your share. " : ""}When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
       }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
     }
     return created;
@@ -1914,8 +1934,14 @@ export async function createParentPlans(input: CreateParentPlansInput) {
   if (duplicateWeeklyTime([...slotFor.values()])) throw new PaymentPlanError("Two people picked the same weekly time. Each person needs their own.");
 
   const pricing = await getPricingConfig();
+  // The same rule as a group plan: one price per person, then each person's OWN scholarship takes its percent off THEIR share.
   const perMemberCents = parentPlanPerPersonCents(cadence, term, members.length, pricing);
-  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  const percents = await scholarshipPercentsFor(members.map((m) => m.id));
+  const shareOf = new Map(members.map((m) => [m.id, groupShareCents(perMemberCents, term, percents.get(m.id) ?? 0)]));
+  const firstPaymentCents = members.reduce((sum, m) => sum + shareOf.get(m.id)!, 0);
+  // Raised inside the transaction after the parent-link check (see createFamilyPlans): a price tied to someone's scholarship is never
+  // testable against a person who has not accepted.
+  const priceChanged = input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== firstPaymentCents && input.expectedFirstPaymentCents !== perMemberCents * members.length;
   await assertNotHoardingTimes(payerId);
   const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
@@ -1928,6 +1954,7 @@ export async function createParentPlans(input: CreateParentPlansInput) {
         const linked = new Set(links.map((l) => l.childId));
         const notLinked = orderedKids.filter((k) => !linked.has(k.id));
         if (notLinked.length > 0) throw new PaymentPlanError(`${notLinked.map((k) => k.email).join(", ")} ${notLinked.length === 1 ? "is" : "are"} not linked to you yet. Ask them to accept your request first.`);
+        if (priceChanged) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
 
         // Nobody may already be on a plan. A child's plan status is not told to the parent: only that someone cannot start.
         const busyKid = await tx.paymentPlan.findFirst({ where: { userId: { in: orderedKids.map((k) => k.id) }, status: "ACTIVE" }, select: { userId: true } });
@@ -1947,7 +1974,8 @@ export async function createParentPlans(input: CreateParentPlansInput) {
                 userId: member.id,
                 cadence,
                 term,
-                installmentAmountCents: perMemberCents,
+                installmentAmountCents: shareOf.get(member.id)!,
+                listAmountCents: shareOf.get(member.id)! < perMemberCents ? perMemberCents : null,
                 creditsPerInstallment: rate.creditsPerInstallment,
                 termMonths: rate.termMonths,
                 nextDueDate: new Date(),
@@ -1959,7 +1987,7 @@ export async function createParentPlans(input: CreateParentPlansInput) {
           );
         }
         const startPayment = await tx.zellePayment.create({
-          data: { userId: payerId, purpose: "FAMILY_PLAN_START", amountCents: perMemberCents * members.length, zelleHandle, familyGroupId: group.id, status: "AWAITING_TRANSFER" },
+          data: { userId: payerId, purpose: "FAMILY_PLAN_START", amountCents: firstPaymentCents, zelleHandle, familyGroupId: group.id, status: "AWAITING_TRANSFER" },
         });
         return { group, plans, startPayment };
       },
@@ -1968,7 +1996,12 @@ export async function createParentPlans(input: CreateParentPlansInput) {
 
     await prisma.user.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { notifyEmailReminders: true } });
     const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-    await noticePlanUpdated({
+    // Everyone's share is covered by their own scholarship: nothing to pay, so the plan starts now (like a free solo plan).
+    if (firstPaymentCents === 0) {
+      const { settleFreeStart } = await import("@/lib/freeBills");
+      await settleFreeStart(created.startPayment.id).catch((err) => console.error("Covered group start failed (the owner can approve it from Billing):", err));
+      await noticePlanUpdated({ userId: payerId, title: "Your plan started", body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? members[0].name ?? members[0].email : `${members.length} accounts`} started. Scholarships cover every share, so there is nothing to pay.` });
+    } else await noticePlanUpdated({
       userId: payerId,
       title: "Your plan is set up",
       body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? members[0].name ?? members[0].email : `${members.length} accounts`} is set up. Send the first payment (${money(created.startPayment.amountCents)}) from your own bank account to start the classes. You pay every 28-day bill from the Parent mode page.`,

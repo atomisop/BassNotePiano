@@ -887,12 +887,18 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
               });
               await tx.zellePayment.updateMany({ where: { paymentPlanId: old.id, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
             }
+            // The payer's own share: what the combined payment asked for, less what the other members' plans cost. (Every member can
+            // have a different share once scholarships count, so it is NOT a copy of another member's price.)
+            const othersTotal = plans.reduce((sum, p) => sum + p.installmentAmountCents, 0);
+            const groupRate = template.listAmountCents ?? template.installmentAmountCents;
+            const payerShare = Math.min(groupRate, Math.max(0, payment.amountCents - othersTotal));
             const mine = await tx.paymentPlan.create({
               data: {
                 userId: group.payerId,
                 cadence: template.cadence,
                 term: template.term,
-                installmentAmountCents: template.installmentAmountCents,
+                installmentAmountCents: payerShare,
+                listAmountCents: payerShare < groupRate ? groupRate : null,
                 creditsPerInstallment: template.creditsPerInstallment,
                 termMonths: template.termMonths,
                 nextDueDate: new Date(),
