@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { GoogleRefusalNotice, GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { AuthHeading } from "@/components/auth/AuthHeading";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { startNavigation } from "@/lib/navigationState";
@@ -52,6 +53,8 @@ function LoginCard() {
       {/* The same title and line as the Log in panel on the public pages (MarketingNav), so the two ways in read as one. */}
       <AuthHeading title="Log in">Pick up your roadmap right where you left it.</AuthHeading>
       <div className="mt-6">
+        <GoogleRefusalNotice error={searchParams.get("error")} />
+        <GoogleSignInButton callbackUrl={callbackUrl} />
         <LoginForm callbackUrl={callbackUrl} />
       </div>
     </motion.div>

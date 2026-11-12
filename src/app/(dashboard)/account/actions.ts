@@ -61,6 +61,9 @@ export async function updateNameAction(newName: string) {
 // out afterwards so a change you didn't make is noticed.
 // ---------------------------------------------------------------------------
 
+// An account that signs in with Google has no password yet: Forgot password (emailed code) is how it gets one.
+const NO_PASSWORD_MESSAGE = "You sign in with Google, so there is no password to change yet. Use Forgot password on the sign-in screen to add one.";
+
 async function checkPasswordChange(currentPassword: string, newPassword: string) {
   const passwordError = passwordRequirementError(newPassword);
   if (passwordError) {
@@ -70,6 +73,7 @@ async function checkPasswordChange(currentPassword: string, newPassword: string)
   const childBlocked = await childAccountBlock(id);
   if (childBlocked) return childBlocked;
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
+  if (user && !user.passwordHash) return { ok: false as const, error: NO_PASSWORD_MESSAGE };
   if (!user?.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
   }
@@ -109,6 +113,7 @@ async function checkEmailChange(currentPassword: string, newEmailInput: string) 
   if (isOwnerEmail(user.email)) {
     return { ok: false as const, error: "This is the studio owner address, which is set on the server, so it can't be changed here." };
   }
+  if (!user.passwordHash) return { ok: false as const, error: NO_PASSWORD_MESSAGE };
   if (!user.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
   }
@@ -452,7 +457,7 @@ async function verifyCurrentPassword(userId: string, currentPassword: string) {
     // An account with no password (nothing in this app issues one today,
     // but the column is nullable) has no credential to check against,
     // fail closed rather than silently skipping the check.
-    return { ok: false as const, error: "This account has no password set. Message the studio to have your account removed." };
+    return { ok: false as const, error: "You sign in with Google and have no password. Add one first with Forgot password on the sign-in screen, then delete your account here." };
   }
   if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };

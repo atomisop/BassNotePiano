@@ -22,6 +22,7 @@ import { Hint } from "@/components/ui/Hint";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { loginHref } from "@/lib/inPlaceLinks";
 import { AuthHeading } from "@/components/auth/AuthHeading";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -136,7 +137,11 @@ function RegisterForm() {
         <p className="mt-3 text-small text-slate-300"><Hint>A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</Hint></p>
       )}
 
-      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
+      <div className="mt-6">
+        <GoogleSignInButton callbackUrl="/dashboard" label="Sign up with Google" />
+      </div>
+
+      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="space-y-4">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="reg-hp">Leave this empty</label>
         <input id="reg-hp" name="bn_trap_x7" type="text" tabIndex={-1} autoComplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" value={website} onChange={(e) => setWebsite(e.target.value)} />
