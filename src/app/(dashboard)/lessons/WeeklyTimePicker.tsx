@@ -7,7 +7,6 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { seatsLeftNote } from "@/lib/seatRules";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -87,7 +86,7 @@ export function WeeklyTimePicker({
           if (key) setTimesOpen(true);
         }}
       />
-      {!selected && <p className="mt-3 text-small text-slate-500"><Hint>Pick a day, then a time.</Hint></p>}
+      {!selected && <p className="mt-3 text-small text-slate-500">Pick a day, then a time.</p>}
 
       <SlideOverPanel
         open={timesOpen && !!selectedDateKey}

@@ -4,7 +4,6 @@ import { getServerAuthSession } from "@/lib/auth";
 import { loadPaymentReceipt } from "@/lib/paymentReceipt";
 import { PageBack } from "@/components/ui/BackLink";
 import { PrintReceiptButton } from "@/components/billing/PrintReceiptButton";
-import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Receipt" };
 
@@ -65,7 +64,7 @@ export default async function ReceiptPage(props: { params: Promise<{ paymentId: 
           ))}
         </dl>
 
-        <p className="mt-6 text-small text-slate-500"><Hint>Questions about this payment? Write to music@bassnotepiano.com.</Hint></p>
+        <p className="mt-6 text-small text-slate-500">Questions about this payment? Write to music@bassnotepiano.com.</p>
       </article>
 
       <div className="mt-5 print:hidden">

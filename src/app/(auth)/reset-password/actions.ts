@@ -2,6 +2,7 @@
 
 import { passwordRequirementError } from "@/lib/passwordRules";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createSilentCode, createAndSendCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { withTimingFloor } from "@/lib/timingSafe";
@@ -31,9 +32,12 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
+  // The code was sent to ONE address, so it may reset only the account still sitting at that address (an account moved to another
+  // address since, see changeSignupEmailAction, must not be reset, or signed in, by a code that went to the old one).
+  const address = email.trim().toLowerCase();
   const user = await prisma.$transaction(async (tx) => {
     const updated = await tx.user.update({
-      where: { id: result.userId! },
+      where: { id: result.userId!, email: address },
       // Bumping sessionVersion signs out every device holding an older
       // token: the point of resetting a password is often "someone else
       // may have my account", and a stolen session must not survive it.
@@ -41,7 +45,11 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
       select: { id: true, email: true, name: true },
     });
     return updated;
+  }).catch((err) => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") return null;
+    throw err;
   });
+  if (!user) return { ok: false as const, error: "Something went wrong. Request a new code." };
 
   try {
     await sendPasswordChangedEmail(user.email, user.name);

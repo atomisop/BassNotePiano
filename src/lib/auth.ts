@@ -229,6 +229,9 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({ where: { id: result.userId } });
         if (!user) return null;
+        // The code was checked against the address typed, so it signs in only the account still at that address: one that moved to
+        // another address since (an unconfirmed sign-up fixing a typo) must not be signed in by a code that went to the old one.
+        if (user.email.toLowerCase() !== normalizedEmail) return null;
         // A banned account can never get a session, whichever way it asks for one (password, emailed code, reset, verify).
         if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
         // An account locked for non-payment cannot get a session either; the sign-in screens open /account-locked.

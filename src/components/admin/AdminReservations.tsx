@@ -13,7 +13,6 @@ import type { ReservableHour, ReservationGroup, ReservedHour } from "@/lib/owner
 import { addCreditLabel, offDayQuestion } from "@/lib/adminBookingRules";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
-import { Hint } from "@/components/ui/Hint";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Meta } from "@/components/ui/CardKit";
 

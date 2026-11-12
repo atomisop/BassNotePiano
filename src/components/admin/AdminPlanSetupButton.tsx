@@ -6,7 +6,6 @@ import { NotifyToggle, useNotifyStudent } from "@/components/admin/NotifyToggle"
 import { CalendarPlus } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { toast } from "@/components/ui/Toaster";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { planSetupApplyAction, planSetupContextAction, planSetupPreviewAction, resumePlanAdminAction } from "@/app/(dashboard)/admin/payment-plans/actions";
@@ -370,8 +369,8 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
               <div>
                 <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                   First class
-                  <Hint label="About the first class">Nothing is booked before it. A running plan&apos;s next bill and credits move out by the weeks skipped, so no paid class is lost.</Hint>
                 </span>
+                <p className="mb-1.5 text-caption text-slate-500">Nothing is booked before it. A running plan&apos;s next bill and credits move out by the weeks skipped, so no paid class is lost.</p>
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   {slot.dates.slice(0, 4).map((d) => (
                     <button key={d} type="button" data-no-lens="" aria-pressed={firstClass === d} onClick={() => setFirstClass(d)} className={`${chip(firstClass === d)} flex flex-col items-start`}>
@@ -419,8 +418,8 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
             <div>
               <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                 Scholarship
-                <Hint label="About scholarships">A scholarship takes a percent off the 6 Month plan, so it always means 6 Months. Full makes every bill $0: each one settles by itself and they get their credits and classes like any subscriber. It is recorded on Billing &gt; Scholarships, where it can be ended.</Hint>
               </span>
+              <p className="mb-1.5 text-caption text-slate-500">Any scholarship means the 6 Month plan. Full makes every bill $0.</p>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" data-no-lens="" aria-pressed={pick === "keep"} onClick={() => setPick("keep")} className={chip(pick === "keep")}>
                   {current > 0 ? `Keep ${current}%` : "None"}

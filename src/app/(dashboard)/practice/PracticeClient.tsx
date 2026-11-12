@@ -19,7 +19,6 @@ import { DAILY_GOAL_SECONDS, type FingerPracticeStatus } from "@/lib/fingerPract
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { announceChange } from "@/lib/liveEvents";
 import { PageBack } from "@/components/ui/BackLink";
-import { Hint } from "@/components/ui/Hint";
 
 type Instrument = "PIANO" | "GUITAR";
 
@@ -73,7 +72,7 @@ function PianoSectionView({ section, activeStep }: { section: PianoSection; acti
 
   return (
     <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
-      <h3 className="text-body font-semibold text-slate-50">{section.label}<Hint className="ml-1.5">Note on top, finger number below</Hint></h3>
+      <h3 className="text-body font-semibold text-slate-50">{section.label}</h3>
 
       {/* Steps in groups of four (one bar), with a gap between groups. */}
       <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-2" aria-label={`${section.label}, notes and fingers`}>

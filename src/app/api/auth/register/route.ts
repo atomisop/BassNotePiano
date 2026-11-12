@@ -8,13 +8,14 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
+import { newSignupClaim, pendingSignupPayload } from "@/lib/pendingSignup";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
 import { assessPhone } from "@/lib/phoneValidity";
 import { isPhoneConflict, isPhoneTaken, PHONE_TAKEN, phoneVerifyMode } from "@/lib/phoneVerification";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { FULL_NAME_MESSAGE, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
+import { FULL_NAME_MESSAGE, MAX_PERSON_NAME_LENGTH, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
   if ((await getBoolSetting("signup.requireFullName")) && !hasFirstAndLastName(name)) {
     return NextResponse.json({ error: FULL_NAME_MESSAGE }, { status: 400 });
   }
+  if (name.length > MAX_PERSON_NAME_LENGTH) return NextResponse.json({ error: "That name is too long." }, { status: 400 });
   if (!name || !EMAIL_PATTERN.test(email)) {
     return NextResponse.json({ error: "Enter a name and a valid email." }, { status: 400 });
   }
@@ -96,6 +98,8 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  // Handed to THIS browser only; the code's payload holds just its hash (see pendingSignup.ts).
+  const signup = newSignupClaim();
 
   try {
     const user = await prisma.user.create({
@@ -115,7 +119,12 @@ export async function POST(req: NextRequest) {
     if (body?.ref) await attachReferral(user.id, body.ref);
     // The account exists either way. If the email could not be sent the screen says so and offers "Resend", instead of
     // moving on to "enter your code" as if one were on its way.
-    const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    const sent = await createAndSendCode({
+      email: user.email,
+      userId: user.id,
+      purpose: "EMAIL_VERIFY",
+      payload: pendingSignupPayload({ name, passwordHash, claimHash: signup.claimHash }),
+    });
     // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
     // After the code goes out and never blocking: a failed alert must not leave
     // the account created but the person stuck without a code.
@@ -126,29 +135,33 @@ export async function POST(req: NextRequest) {
       emailCategory: "social",
       cta: { label: "View account", path: `/admin/users/${user.id}` },
     }).catch((err) => reportError(err, "New account alert failed"));
-    return NextResponse.json({ ...user, emailSent: sent.ok }, { status: 201 });
+    return NextResponse.json({ ...user, emailSent: sent.ok, claim: signup.claim }, { status: 201 });
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // An account nobody has ever confirmed belongs to no one yet. Whoever really owns the inbox registering again takes it over
-      // (new password, old sessions ended), so a stranger cannot hold someone else's address with a password only they know.
+      // An account nobody has ever confirmed belongs to no one yet, so the person who really owns the inbox may register again and end
+      // up with the password they chose. But typing someone else's address must never put a stranger's password on an account its
+      // owner then confirms. So NOTHING on the account changes here: the new name and password wait inside the emailed code, and are
+      // applied only when that code is entered by this same browser (the `claim` below, see pendingSignup.ts). If a stranger asks
+      // for the code, the owner can still confirm the account, but the account keeps the password it already had.
       const existing = await prisma.user.findFirst({ where: { email, emailVerified: null }, select: { id: true, email: true } });
       if (existing) {
-        // The new code is asked for FIRST: when too many were already sent it throws, and the account must be left exactly as it
-        // was (the old password still works, the newest code is still good), not half taken over. This throw is raised inside
-        // this catch block, so the RateLimitError branch below never sees it: it is answered here or it becomes a bare 500.
+        // The new code is asked for FIRST and nothing else is written: when too many were already sent it throws, and the account is
+        // left exactly as it was. This throw is raised inside this catch block, so the RateLimitError branch below never sees it:
+        // it is answered here or it becomes a bare 500.
         let resent: { ok: boolean };
         try {
-          resent = await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" });
+          resent = await createAndSendCode({
+            email: existing.email,
+            userId: existing.id,
+            purpose: "EMAIL_VERIFY",
+            payload: pendingSignupPayload({ name, passwordHash, claimHash: signup.claimHash }),
+          });
         } catch (codeErr) {
           if (codeErr instanceof RateLimitError) return NextResponse.json({ error: TOO_MANY_CODES_MESSAGE }, { status: 429 });
           throw codeErr;
         }
-        // The account was unconfirmed when it was read, but a code was sent in between: if its owner confirmed it meanwhile it is a real
-        // account now and its password must not be replaced by whoever registered over it. Zero rows means exactly that.
-        const taken = await prisma.user.updateMany({ where: { id: existing.id, emailVerified: null }, data: { name, passwordHash, sessionVersion: { increment: 1 } } });
-        if (taken.count !== 1) return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
-        return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok }, { status: 201 });
+        return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok, claim: signup.claim }, { status: 201 });
       }
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }

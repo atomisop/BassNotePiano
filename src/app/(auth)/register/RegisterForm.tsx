@@ -17,12 +17,11 @@ import { CheckIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
-import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { Hint } from "@/components/ui/Hint";
+import { FULL_NAME_MESSAGE, MAX_PERSON_NAME_LENGTH, hasFirstAndLastName } from "@/lib/studentName";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { loginHref } from "@/lib/inPlaceLinks";
 import { AuthHeading } from "@/components/auth/AuthHeading";
-import { readSignupDraft, saveSignupDraft } from "@/lib/signupDraft";
+import { readSignupDraft, saveSignupClaim, saveSignupDraft } from "@/lib/signupDraft";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -136,6 +135,8 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
     // emailed. Signing in happens at the end of that flow, not here.
     const created = await res.json().catch(() => null);
     saveSignupDraft({ name, email });
+    // The proof that THIS browser chose the password, needed to finish signing up over an account that was started earlier.
+    saveSignupClaim(created?.claim, email);
     const params = new URLSearchParams({ email, callbackUrl });
     if (created?.emailSent === false) params.set("sendFailed", "1");
     router.push(`/verify-email?${params}`);
@@ -156,7 +157,7 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           : "We'll email you a 6-digit code to confirm your address."}
       </AuthHeading>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
-        <p className="mt-3 text-small text-slate-300"><Hint>A friend invited you. Start a 3 Month or 6 Month plan and you both get 10% off for 3 months.</Hint></p>
+        <p className="mt-3 text-small text-slate-300">A friend invited you. Start a 3 Month or 6 Month plan and you both get 10% off for 3 months.</p>
       )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
@@ -173,6 +174,7 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
             type="text"
             autoComplete="name"
             placeholder="First and last name"
+            maxLength={MAX_PERSON_NAME_LENGTH}
             required
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -6,7 +6,6 @@ import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { ChevronRight, Layers, Lightbulb, Music2, Users } from "@/components/ui/appIcons";
 import { getCollectedInventory, getInsightInputs, getPeopleRows, getScaleReport, type CellState, type PersonRow, type ScaleReportRow } from "@/lib/adminData";
 import { buildInsights, MIN_SAMPLE, STALL_DAYS, type Insight } from "@/lib/adminInsightsRules";
-import { Hint } from "@/components/ui/Hint";
 import { Fact, Facts } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
 
@@ -28,7 +27,8 @@ export async function DataView(props: { searchParams: Promise<{ tab?: string; q?
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data<Hint className="ml-1.5">Only the owner can see this.</Hint></h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Data</h1>
+        <p className="mt-3 text-small text-slate-400">Only the owner can see this.</p>
       </div>
     );
   }
@@ -37,7 +37,7 @@ export async function DataView(props: { searchParams: Promise<{ tab?: string; q?
 
   return (
     <div>
-      <h1 className="sr-only">Data<Hint className="ml-1.5">Everything the app keeps about your students, read in one place. Nothing on this page changes anything.</Hint></h1>
+      <h1 className="sr-only">Data</h1>
 
       <div className="mt-3">
         <AdminFilterTabs label="Data views" iconOnly items={TABS.map((t) => ({ label: t.label, icon: t.icon, href: `/admin/security?section=data&tab=${t.value}`, active: tab === t.value }))} />
@@ -73,7 +73,7 @@ async function ScalesView() {
 
       <section aria-labelledby="by-scale" className="grid gap-3">
         <div>
-          <h2 id="by-scale" className="text-title font-semibold text-slate-50">Progress by scale<Hint className="ml-1.5">Each bar is a step of the scale&apos;s checklist, out of everyone who has the scale open.</Hint></h2>
+          <h2 id="by-scale" className="text-title font-semibold text-slate-50">Progress by scale</h2>
         </div>
         <div className="grid gap-3 lg:grid-cols-2">
           {report.scales.map((s) => (
@@ -84,7 +84,7 @@ async function ScalesView() {
 
       <section aria-labelledby="who-where" className="grid gap-3">
         <div>
-          <h2 id="who-where" className="text-title font-semibold text-slate-50">Who is where<Hint className="ml-1.5">One row per student, one square per scale, most finished first.</Hint></h2>
+          <h2 id="who-where" className="text-title font-semibold text-slate-50">Who is where</h2>
         </div>
         <Legend />
         {report.grid.length === 0 ? (

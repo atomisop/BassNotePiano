@@ -887,7 +887,7 @@ export function AssistantWidget() {
             <div data-lenis-prevent className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
                 <>
-                  <p className="text-small text-slate-400"><Hint>Hi, I&apos;m Atom. Ask me anything about Bass Note Piano.</Hint></p>
+                  <p className="text-small text-slate-400">Hi, I&apos;m Atom. Ask me anything about Bass Note Piano.</p>
                 </>
               )}
 
@@ -913,7 +913,7 @@ export function AssistantWidget() {
                     </div>
                   )}
                   {!hasSupportReply && threadStatus === "OPEN" && !supportTyping && (
-                    <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500"><Hint>You&apos;re connected. Our support team has been notified and will reply here shortly.</Hint></p>
+                    <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">You&apos;re connected. Our support team has been notified and will reply here shortly.</p>
                   )}
                   {threadPoll.failed && (
                     <RegionError
@@ -945,7 +945,7 @@ export function AssistantWidget() {
 
               {escalationOffer && (
                 <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
-                  <p className="text-small text-slate-300"><Hint>Want me to connect you with our customer service team? A real person can dig into your account directly.</Hint></p>
+                  <p className="text-small text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
                   <div className="flex gap-2">
                     <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       No, keep trying

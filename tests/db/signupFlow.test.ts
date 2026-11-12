@@ -18,12 +18,13 @@ vi.mock("@/lib/verification", async (importOriginal) => {
 
 import bcrypt from "bcryptjs";
 import { POST as register } from "@/app/api/auth/register/route";
-import { changeSignupEmailAction, verifyEmailAction } from "@/app/(auth)/verify-email/actions";
+import { changeSignupEmailAction, resendVerificationEmailAction, verifyEmailAction } from "@/app/(auth)/verify-email/actions";
 import { checkUsernameAvailableAction, saveOnboardingAction, suggestUsernamesAction } from "@/app/onboarding/actions";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { forgetInstrumentInterest, recordInstrumentInterest, WAITLIST_SOURCE } from "@/lib/instrumentInterest";
 import * as verification from "@/lib/verification";
 import { createSilentCode, verifyCode } from "@/lib/verification";
+import { readPendingSignup } from "@/lib/pendingSignup";
 import { USERNAME_UNAVAILABLE_MESSAGE, usernameProblem } from "@/lib/usernameRules";
 import { newTag, prisma } from "./helpers";
 
@@ -102,13 +103,98 @@ describe("the free trial starts when the email is confirmed, not at sign-up", ()
 });
 
 describe("registering again over an account that never confirmed", () => {
-  it("takes it over with the new password when codes can still be sent", async () => {
+  // The emailed code cannot be read back from a test, so a code carrying the SAME pending password as the one the route just sent is
+  // issued directly: that is exactly what the person would type from their inbox.
+  async function codeLikeTheEmailedOne(address: string, userId: string) {
+    const latest = await prisma.verificationCode.findFirst({ where: { email: address, purpose: "EMAIL_VERIFY" }, orderBy: { createdAt: "desc" } });
+    expect(readPendingSignup(latest?.payload)).not.toBeNull();
+    return (await createSilentCode({ email: address, userId, purpose: "EMAIL_VERIFY", payload: latest!.payload as never })).code;
+  }
+
+  it("does NOT change the account when someone registers over it: the new password only waits inside the code", async () => {
     const address = email("again");
     emails.push(address);
-    expect((await post({ email: address, password: PASSWORD })).status).toBe(201);
-    expect((await post({ email: address, password: "Different!9" })).status).toBe(201);
+    expect((await post({ email: address, password: PASSWORD, name: "Real Owner" })).status).toBe(201);
+    const before = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+
+    const second = await post({ email: address, password: "Stranger!99", name: "Some Stranger" });
+    expect(second.status).toBe(201);
+    expect(typeof (await second.json()).claim).toBe("string");
+
+    const after = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+    expect(after.passwordHash).toBe(before.passwordHash);
+    expect(after.name).toBe("Real Owner");
+    expect(after.sessionVersion).toBe(before.sessionVersion);
+    expect(after.emailVerified).toBeNull();
+    // The waiting password is in the code, hashed, and not in plain text anywhere.
+    const latest = await prisma.verificationCode.findFirstOrThrow({ where: { email: address, purpose: "EMAIL_VERIFY" }, orderBy: { createdAt: "desc" } });
+    expect(JSON.stringify(latest.payload)).not.toContain("Stranger!99");
+  });
+
+  it("a stranger registers over an unconfirmed account and the owner confirms: the owner keeps the password the owner chose", async () => {
+    const address = email("stranger");
+    emails.push(address);
+    const first = await post({ email: address, password: PASSWORD });
+    expect(first.status).toBe(201);
+    const { claim: ownersClaim } = await first.json();
+    const owner = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+
+    // The stranger asks for a newer code. It replaces the owner's, and its payload holds the stranger's password.
+    expect((await post({ email: address, password: "Stranger!99" })).status).toBe(201);
+
+    // The owner enters the code that arrived (the stranger's) from the browser that registered: the claim matches the OWNER's earlier
+    // registration, so the owner's password is the one that takes effect.
+    const confirmed = await verifyEmailAction(address, await codeLikeTheEmailedOne(address, owner.id), ownersClaim);
+    expect(confirmed).toMatchObject({ ok: true, passwordForgotten: false });
     const row = await prisma.user.findUniqueOrThrow({ where: { email: address } });
-    expect(await bcrypt.compare("Different!9", row.passwordHash!)).toBe(true);
+    expect(row.emailVerified).not.toBeNull();
+    expect(await bcrypt.compare(PASSWORD, row.passwordHash!)).toBe(true);
+    expect(await bcrypt.compare("Stranger!99", row.passwordHash!)).toBe(false);
+  });
+
+  it("the owner registering again over a squatter's account ends up with the password the owner chose", async () => {
+    const address = email("squatted");
+    emails.push(address);
+    // A squatter started an account with this address and a password of their own.
+    expect((await post({ email: address, password: "Squatter!77", name: "A Squatter" })).status).toBe(201);
+    const squatted = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+
+    // The real owner registers again from their own browser, which is handed a claim.
+    const res = await post({ email: address, password: "Owner!pass1", name: "The Owner" });
+    const { claim } = await res.json();
+    expect(await bcrypt.compare("Squatter!77", (await prisma.user.findUniqueOrThrow({ where: { email: address } })).passwordHash!)).toBe(true);
+
+    const confirmed = await verifyEmailAction(address, await codeLikeTheEmailedOne(address, squatted.id), claim);
+    expect(confirmed.ok).toBe(true);
+    const row = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+    expect(row.emailVerified).not.toBeNull();
+    expect(row.name).toBe("The Owner");
+    expect(await bcrypt.compare("Owner!pass1", row.passwordHash!)).toBe(true);
+    expect(await bcrypt.compare("Squatter!77", row.passwordHash!)).toBe(false);
+    expect(row.sessionVersion).toBe(squatted.sessionVersion + 1);
+  });
+
+  it("tapping Resend keeps the password the registering browser chose", async () => {
+    const address = email("resend");
+    emails.push(address);
+    expect((await post({ email: address, password: PASSWORD })).status).toBe(201);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+    const { claim } = await (await post({ email: address, password: "Chosen!pass9", name: "Chosen Name" })).json();
+
+    expect(await resendVerificationEmailAction(address)).toEqual({ ok: true });
+    const confirmed = await verifyEmailAction(address, await codeLikeTheEmailedOne(address, user.id), claim);
+    expect(confirmed.ok).toBe(true);
+    expect(await bcrypt.compare("Chosen!pass9", (await prisma.user.findUniqueOrThrow({ where: { email: address } })).passwordHash!)).toBe(true);
+  });
+
+  it("a first sign-up and a sign-up over an unconfirmed account answer in the same shape, so they cannot be told apart", async () => {
+    const fresh = email("shape-new");
+    const started = email("shape-started");
+    emails.push(fresh, started);
+    const a = await (await post({ email: fresh, password: PASSWORD })).json();
+    await post({ email: started, password: PASSWORD });
+    const b = await (await post({ email: started, password: "Another!pass1" })).json();
+    expect(Object.keys(a).sort()).toEqual(Object.keys(b).sort());
   });
 
   it("answers 429 and changes nothing when too many codes were already sent (it used to be a bare 500)", async () => {
@@ -207,20 +293,22 @@ describe("things that change while a request is in flight (found by the security
     expect(row.trialEndsAt).toBeNull();
   });
 
-  it("registering over an unconfirmed account cannot overwrite the password if its owner confirmed it while the new code was being sent", async () => {
+  it("a password waiting in a code is never applied to an account that was confirmed in the meantime", async () => {
     const address = email("race-takeover");
     emails.push(address);
     expect((await post({ email: address, password: PASSWORD })).status).toBe(201);
-    vi.mocked(verification.createAndSendCode).mockImplementationOnce(async (params) => {
-      await prisma.user.update({ where: { email: params.email }, data: { emailVerified: new Date() } });
-      return { ok: true };
-    });
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+    // Someone registers over it (a code with a waiting password is sent)...
+    const { claim } = await (await post({ email: address, password: "Stranger!99" })).json();
+    const latest = await prisma.verificationCode.findFirstOrThrow({ where: { email: address, purpose: "EMAIL_VERIFY" }, orderBy: { createdAt: "desc" } });
+    const { code } = await createSilentCode({ email: address, userId: user.id, purpose: "EMAIL_VERIFY", payload: latest.payload as never });
+    // ...but the real owner confirmed first (their own code), so the account is a real, confirmed one now.
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
 
-    const res = await post({ email: address, password: "Stranger!99" });
-    expect(res.status).toBe(409);
+    await verifyEmailAction(address, code, claim);
     const row = await prisma.user.findUniqueOrThrow({ where: { email: address } });
-    expect(await bcrypt.compare(PASSWORD, row.passwordHash!)).toBe(true); // still the owner's password
-    expect(row.emailVerified).not.toBeNull();
+    expect(await bcrypt.compare(PASSWORD, row.passwordHash!)).toBe(true); // the confirmed account's password is untouched
+    expect(row.sessionVersion).toBe(user.sessionVersion);
   });
 });
 

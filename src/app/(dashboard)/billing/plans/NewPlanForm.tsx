@@ -6,7 +6,7 @@ import { X } from "@/components/ui/appIcons";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, discountPercentForTerm, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
-import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, type Audience } from "@/lib/planCheckout";
+import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, showScholarshipClaim, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
 import { useFamilyInvites, type FamilyInviteApi } from "@/components/billing/useFamilyInvites";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
@@ -14,7 +14,6 @@ import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { CheckoutBar } from "@/components/billing/CheckoutBar";
 import { WeekdayTimePicker } from "@/components/billing/WeekdayTimePicker";
 import { Dialog } from "@/components/ui/Dialog";
-import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
@@ -384,15 +383,10 @@ export function NewPlanForm({
             );
           })}
         </div>
-        {/* A scholarship only prices the 6 Month plan, so its code is entered right under that card and the price changes here. */}
-        {onClaimScholarship && !isFamily && scholarship === 0 && (
-          <ScholarshipClaim
-            onClaim={onClaimScholarship}
-            onClaimed={(percent) => {
-              setScholarship(percent);
-              setTerm("TERM_6");
-            }}
-          />
+        {/* A scholarship only prices the 6 Month plan, so its code is asked for only while that length is chosen (showScholarshipClaim),
+            right under the lengths, and the price changes here. On any other length there is no link at all. */}
+        {onClaimScholarship && showScholarshipClaim({ canClaim: true, audience, term, scholarshipPercent: scholarship }) && (
+          <ScholarshipClaim onClaim={onClaimScholarship} onClaimed={(percent) => setScholarship(percent)} />
         )}
       </div>
 
@@ -403,7 +397,7 @@ export function NewPlanForm({
       {isFamily && (
         <section aria-label="People on this plan" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
           {parent && !parent.only && (
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-4">
               {/* The same one-track switch as "Just me / Me and others": one highlight, so it is always clear which kind is on. */}
               <Tabs
                 label="Kind of plan"
@@ -414,7 +408,11 @@ export function NewPlanForm({
                 value={parentMode ? "PARENT" : "GROUP"}
                 onChange={(next) => setParentMode(next === "PARENT")}
               />
-              <Hint>Group: you hold the one weekly class time, and everyone else books their own. Parent mode: the weekly time is your child&apos;s, and you can see and change their schedule from your account.</Hint>
+              <p className="mt-2 text-small text-slate-400">
+                {parentMode
+                  ? "The weekly time is your child's, and you can see and change their schedule from your account."
+                  : "You hold the one weekly class time, and everyone else books their own."}
+              </p>
             </div>
           )}
           <div className="flex items-baseline justify-between gap-3">
@@ -533,7 +531,7 @@ export function NewPlanForm({
         {isParent && (
           <div className="mb-3 space-y-2" role="group" aria-label="Whose weekly time">
             {holders.length === 0 ? (
-              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low"><Hint>Add a child above, then pick a time for each person.</Hint></p>
+              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low">Add a child above, then pick a time for each person.</p>
             ) : (
               holders.map((h) => {
                 const t = timeOf(h.key);
@@ -564,7 +562,7 @@ export function NewPlanForm({
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 && wait.taken.length === 0 ? (
-          <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low"><Hint>No open weekly times right now.</Hint></p>
+          <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low">No open weekly times right now.</p>
         ) : (
           <>
             {isParent && current && <p className="mb-2 text-small text-slate-400">Time for <span className="font-medium text-slate-100">{current.label}</span></p>}

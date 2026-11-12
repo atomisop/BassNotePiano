@@ -10,7 +10,6 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { listChildSummaries, listParentBills } from "@/lib/parentChildren";
 import { submitPlanInstallmentPaymentAction } from "../billing/plans/actions";
 // Eastern: this page is drawn on the server, whose own clock is not the studio's.
@@ -123,10 +122,9 @@ export default async function ParentPage() {
       <section className="mt-6" aria-label="Your children">
         <h2 className="flex items-center gap-1 px-1 text-caption font-medium text-slate-500">
           <span className="uppercase tracking-caps">Your children</span>
-          <Hint>Open a child to see their progress and practice, change their class times and weekly time, and check their plan.</Hint>
         </h2>
         {children.length === 0 ? (
-          <p className="mt-3 rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No linked children yet. Add one with the form.</Hint></p>
+          <p className="mt-3 rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No linked children yet. Add one with the form.</p>
         ) : (
           // One row per child: the name and the one fact that matters (their next class), the rest a quiet line, the whole row opens them.
           <ul className="mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low">

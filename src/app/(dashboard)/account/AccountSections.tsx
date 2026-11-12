@@ -24,7 +24,6 @@ import { changePaymentPlanTermAction } from "./actions";
 import Link from "next/link";
 import { announceChange } from "@/lib/liveEvents";
 import { normalizeScholarshipCode } from "@/lib/scholarshipRules";
-import { Hint } from "@/components/ui/Hint";
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
 
@@ -137,7 +136,7 @@ export function PasswordSection() {
 
           {awaitingCode && (
             <div className="space-y-2">
-              <p className="text-small text-slate-500"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
+              <p className="text-small text-slate-500">Enter the 6-digit code we emailed you.</p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -432,10 +431,10 @@ export function PushCard() {
       value={state === "on" ? "On for this device" : state === "off" ? "Off" : state === "blocked" ? "Blocked in this browser" : state === "needs-home-screen" ? "Needs the Home Screen app" : "Not supported here"}
     >
       {state === "needs-home-screen" && (
-        <p className="mt-3 text-small text-slate-300"><Hint>On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.</Hint></p>
+        <p className="mt-3 text-small text-slate-300">On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.</p>
       )}
-      {state === "unsupported" && <p className="mt-3 text-small text-slate-500"><Hint>Not supported here. Email still works.</Hint></p>}
-      {state === "blocked" && <p className="mt-3 text-small text-slate-300"><Hint>Blocked. Allow them in your browser settings.</Hint></p>}
+      {state === "unsupported" && <p className="mt-3 text-small text-slate-500">Not supported here. Email still works.</p>}
+      {state === "blocked" && <p className="mt-3 text-small text-slate-300">Blocked. Allow them in your browser settings.</p>}
       {state === "off" && (
         <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}`}>
           {busy ? "Working…" : "Turn on reminders here"}
@@ -499,7 +498,7 @@ export function CalendarFeedCard() {
       {links === undefined ? (
         <p className="mt-3 text-small text-slate-500">Loading…</p>
       ) : links === null ? (
-        <p className="mt-3 text-small text-slate-500"><Hint>Couldn&apos;t load your link. Refresh the page.</Hint></p>
+        <p className="mt-3 text-small text-slate-500">Couldn&apos;t load your link. Refresh the page.</p>
       ) : (
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -736,7 +735,7 @@ export function DangerZoneSection() {
 
         {stage === "code" && (
           <form onSubmit={handleDelete} className="mt-4 space-y-3">
-            <p className="text-small text-slate-500"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
+            <p className="text-small text-slate-500">Enter the 6-digit code we emailed you.</p>
             <input
               type="text"
               inputMode="numeric"

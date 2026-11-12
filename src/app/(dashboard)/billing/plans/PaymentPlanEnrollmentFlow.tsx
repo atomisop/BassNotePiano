@@ -32,7 +32,6 @@ import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } f
 import { claimScholarshipAction } from "../../account/scholarship-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
-import { Hint } from "@/components/ui/Hint";
 import { CardHead, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { groupPlanSentence, planBillName, planBillState } from "@/components/billing/planBillState";
@@ -236,7 +235,7 @@ function SwitchToFamilyPanel({
         </>
       ) : (
         <>
-          <p className="text-small text-slate-400"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
+          <p className="text-small text-slate-400">Enter the 6-digit code we emailed you.</p>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={CHUNKED_CODE_LENGTH} value={chunkCode(code)} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123 456" aria-label="Code" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">

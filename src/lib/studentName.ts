@@ -7,6 +7,9 @@ export function hasFirstAndLastName(name: string | null | undefined): boolean {
   return words.length >= 2;
 }
 
+/** The longest name an account may have. Checked where a name is accepted, so everything built from it (the pending sign-up included) can rely on it. */
+export const MAX_PERSON_NAME_LENGTH = 120;
+
 export const FULL_NAME_MESSAGE = "Enter your first and last name, the way it appears on your bank or Venmo account.";
 
 /** A name as it is stored: no control characters (a carriage return or line break inside a name can break files built from it, such as the calendar feed), single spaces, trimmed. */

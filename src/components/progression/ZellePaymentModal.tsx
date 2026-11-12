@@ -17,7 +17,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { toast } from "@/components/ui/Toaster";
 import { Check, X } from "@/components/ui/appIcons";
-import { Hint } from "@/components/ui/Hint";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -488,7 +487,7 @@ export function ZellePaymentModal({
                           <div className="rounded-xl bg-white p-3">
                             <QRCodeSVG value={venmo.web} size={148} />
                           </div>
-                          <p className="text-small text-slate-500"><Hint>Scan with your phone camera</Hint></p>
+                          <p className="text-small text-slate-500">Scan with your phone camera</p>
                         </div>
                       </>
                     )}
@@ -527,7 +526,7 @@ export function ZellePaymentModal({
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-body text-slate-100">{reference}</p>
-                          <p className="text-caption text-slate-500"><Hint>Put this in the message</Hint></p>
+                          <p className="text-caption text-slate-500">Put this in the message</p>
                         </div>
                         <button
                           type="button"
@@ -553,7 +552,7 @@ export function ZellePaymentModal({
                         </li>
                       )}
                     </ol>
-                    <p className="mt-3 text-small text-slate-500"><Hint>We only accept Zelle and Venmo.</Hint></p>
+                    <p className="mt-3 text-small text-slate-500">We only accept Zelle and Venmo.</p>
 
                     <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-3 text-small font-medium text-slate-200 shadow-pressed-low" role="status">
                       <MorphingSquare size={13} className="shrink-0" />

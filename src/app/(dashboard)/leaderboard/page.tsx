@@ -13,7 +13,6 @@ import { LeaderSpot, LeaderboardRows } from "@/components/home/LeaderboardRows";
 import { Meta } from "@/components/ui/CardKit";
 import { LeaderboardPrivacySwitch } from "@/components/home/LeaderboardPrivacySwitch";
 import { PageBack } from "@/components/ui/BackLink";
-import { Hint } from "@/components/ui/Hint";
 
 export const metadata = { title: "Leaderboard" };
 
@@ -100,8 +99,8 @@ export default async function LeaderboardPage() {
 
         <section aria-label="The board" className={cn(QUIET_CARD, "p-4 md:p-5")}>
           <div className="flex items-center justify-between gap-3 px-2.5 pb-3">
-            <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">The board</h2>
-            <Hint align="right">Practice minutes this week. A new week starts every Sunday.</Hint>
+            <h2 className="shrink-0 whitespace-nowrap text-caption font-medium uppercase tracking-caps text-slate-500">The board</h2>
+            <span className="text-right text-caption text-slate-500">Minutes this week. New week every Sunday.</span>
           </div>
           {board.rows.length > 0 ? (
             <>
@@ -134,7 +133,7 @@ export default async function LeaderboardPage() {
         {session.user.role !== "ADMIN" && (
           <div className={cn(QUIET_CARD, "p-4 md:p-5")}>
             {board.viewerIsLinkedChild ? (
-              <p className="text-small text-slate-400"><Hint>Accounts linked to a parent are never shown on the leaderboard.</Hint></p>
+              <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
             ) : (
               <LeaderboardPrivacySwitch initialHidden={board.viewerHidden} />
             )}

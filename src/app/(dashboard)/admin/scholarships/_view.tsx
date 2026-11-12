@@ -3,14 +3,14 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listScholarshipCodes } from "@/lib/scholarships";
 import { formatScholarshipCode, scholarshipStatus } from "@/lib/scholarshipRules";
 import { ScholarshipManager, type ScholarshipRow } from "@/components/admin/ScholarshipManager";
-import { Hint } from "@/components/ui/Hint";
 
 export async function ScholarshipsView() {
   const session = await getServerAuthSession();
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 className="sr-only">Scholarships<Hint className="ml-1.5">Only the owner can manage scholarship codes.</Hint></h1>
+        <h1 className="sr-only">Scholarships</h1>
+        <p className="mt-3 text-small text-slate-400">Only the owner can manage scholarship codes.</p>
       </div>
     );
   }

@@ -22,7 +22,6 @@ import { formatEtShort } from "@/lib/classScheduleLabels";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 import { toast } from "@/components/ui/Toaster";
-import { Hint } from "@/components/ui/Hint";
 import { ActionMenu, ActionMenuLabel } from "@/components/ui/ActionMenu";
 import { CardFoot, Callout, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
@@ -771,7 +770,7 @@ export function CustomerProfile({
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
                 <p className="mt-1 text-small text-slate-300">
                   They are signed out for good, their plan and booked classes are canceled, and they leave your Discord.{" "}
-                  <Hint>Their trial and free access end too. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.</Hint>
+                  Their trial and free access end too. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
                 </p>
                 <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
                   Private note for yourself (optional)

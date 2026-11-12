@@ -9,10 +9,21 @@ import {
   discountedPlanPriceCents,
   discountPercentForTerm,
   PLAN_CADENCE_CREDITS_PER_WEEK,
+  SCHOLARSHIP_TERM,
   type PricingConfig,
 } from "@/lib/classCreditPricing";
 
 export type Audience = "SOLO" | "FAMILY";
+
+/**
+ * Whether "Have a scholarship code?" is offered on the plan screen. A scholarship prices ONE plan length, the 6 Month plan
+ * (`SCHOLARSHIP_TERM`), so the link appears only while that length is the chosen one and is gone for every other length. It is also
+ * gone when the screen cannot claim one, for a plan that is not for one person (a group or parent plan prices every member at the
+ * group rate, see checkoutTotals), and once a scholarship is already claimed.
+ */
+export function showScholarshipClaim(input: { canClaim: boolean; audience: Audience; term: string; scholarshipPercent: number }): boolean {
+  return input.canClaim && input.audience === "SOLO" && input.term === SCHOLARSHIP_TERM && input.scholarshipPercent === 0;
+}
 
 /** The pricing page links here with ?who=family or ?who=solo. Anything else is a solo plan. */
 export function parseAudience(value: string | null | undefined): Audience {

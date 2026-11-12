@@ -29,7 +29,6 @@ import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import { SectionCompleteCelebration } from "./SectionCompleteCelebration";
 import { FilesPanel, MetronomePanel, NotesPanel } from "./LessonTools";
 import { BackLink } from "@/components/ui/BackLink";
-import { Hint } from "@/components/ui/Hint";
 
 // react-pdf/pdfjs-dist adds well over 100kB of first-load JS for a viewer
 // most scale pages never open, so it loads on demand, only once a PDF lesson
@@ -605,7 +604,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
 }
 
 function NoScaleContent() {
-  return <p className="text-small text-slate-400"><Hint>Interactive content for this scale is coming soon.</Hint></p>;
+  return <p className="text-small text-slate-400">Interactive content for this scale is coming soon.</p>;
 }
 
 function OutlineItem({

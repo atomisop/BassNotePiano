@@ -22,7 +22,7 @@ import { AuthHeading } from "@/components/auth/AuthHeading";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { PasswordInput } from "@/components/ui/password-input";
 import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
-import { clearSignupDraft, readSignupDraft, saveSignupDraft } from "@/lib/signupDraft";
+import { clearSignupClaim, clearSignupDraft, readSignupClaim, readSignupDraft, saveSignupClaim, saveSignupDraft } from "@/lib/signupDraft";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -49,13 +49,15 @@ function VerifyEmailForm() {
   const [changeBusy, setChangeBusy] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
   const [changedTo, setChangedTo] = useState<string | null>(null);
+  // Set when the email was confirmed but the password on file had to be cleared: the move on waits for a tap on "Continue".
+  const [afterConfirm, setAfterConfirm] = useState<(() => void) | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
 
-    const result = await verifyEmailAction(email, code);
+    const result = await verifyEmailAction(email, code, readSignupClaim(email));
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
       setSubmitting(false);
@@ -72,15 +74,26 @@ function VerifyEmailForm() {
 
     // Confirmed: the sign-up form no longer needs to remember anything.
     clearSignupDraft();
-    startNavigation();
-    // A new account still has to confirm its phone number, which is part of creating it.
-    if (result.needsPhone) {
-      router.push(`/verify-phone?${new URLSearchParams({ callbackUrl: safeCallbackPath(callbackUrl), ...(result.phoneCodeSent ? { sent: "1" } : {}) })}`);
+    clearSignupClaim();
+    const proceed = () => {
+      startNavigation();
+      // A new account still has to confirm its phone number, which is part of creating it.
+      if (result.needsPhone) {
+        router.push(`/verify-phone?${new URLSearchParams({ callbackUrl: safeCallbackPath(callbackUrl), ...(result.phoneCodeSent ? { sent: "1" } : {}) })}`);
+        router.refresh();
+        return;
+      }
+      router.push(safeCallbackPath(callbackUrl));
       router.refresh();
+    };
+    // The email is confirmed but the server could not tell which password this browser chose, so it cleared the one on file (a stranger
+    // may have set it). Say so before moving on, so the next sign-in is not a surprise.
+    if (result.passwordForgotten) {
+      setSubmitting(false);
+      setAfterConfirm(() => proceed);
       return;
     }
-    router.push(safeCallbackPath(callbackUrl));
-    router.refresh();
+    proceed();
   }
 
   const cooldown = useResendCooldown();
@@ -115,6 +128,9 @@ function VerifyEmailForm() {
       }
       // Back on the sign-up form the corrected address is waiting too.
       saveSignupDraft({ name: readSignupDraft()?.name ?? "", email: result.email });
+      // The old address's codes are closed by the move. The password was just proven here, so this browser gets a claim for the new
+      // address and keeps that password through its confirmation.
+      saveSignupClaim(result.claim, result.email);
       setChanging(false);
       setNewEmail("");
       setChangePassword("");
@@ -130,6 +146,21 @@ function VerifyEmailForm() {
     } finally {
       setChangeBusy(false);
     }
+  }
+
+  if (afterConfirm) {
+    return (
+      <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
+        <AuthHeading title="Email confirmed">You are signed in.</AuthHeading>
+        <p className="mt-4 text-small text-slate-300">
+          We could not tell which password you chose for this account, so for your safety it was cleared. Next time, tap &ldquo;Email me a code instead&rdquo; on the log in
+          screen, or tap &ldquo;Forgot?&rdquo; beside the password to choose a new one.
+        </p>
+        <Button type="button" onClick={afterConfirm} className="cta-sheen mt-6 w-full">
+          Continue
+        </Button>
+      </motion.div>
+    );
   }
 
   if (!email) {

@@ -4,14 +4,14 @@ import { getAllSettings } from "@/lib/siteSettings";
 import { listAccountDiscounts } from "@/lib/accountDiscounts";
 import { PricingManager, type PricingDiscountRow } from "@/components/admin/PricingManager";
 import { clearAccountDiscountAction, savePricingAction, searchDiscountCandidatesAction, setAccountDiscountAction, type PricingFormValues } from "./actions";
-import { Hint } from "@/components/ui/Hint";
 
 export async function PricingView() {
   const session = await getServerAuthSession();
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing<Hint className="ml-1.5">Only the owner can change prices and discounts.</Hint></h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Pricing</h1>
+        <p className="mt-3 text-small text-slate-400">Only the owner can change prices and discounts.</p>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export async function PricingView() {
 
   return (
     <div>
-      <h1 className="sr-only">Pricing<Hint className="ml-1.5">What a plan costs, and who gets a percentage off. Every change is recorded in the audit log.</Hint></h1>
+      <h1 className="sr-only">Pricing</h1>
       <div className="mt-6">
         <PricingManager
           initial={initial}

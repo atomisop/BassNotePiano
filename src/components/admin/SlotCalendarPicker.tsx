@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { BookingCalendar, dayKey } from "@/app/(dashboard)/lessons/BookingCalendar";
-import { Hint } from "@/components/ui/Hint";
 import { isOffDay, weekdayOf } from "@/lib/adminBookingRules";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -158,7 +157,6 @@ export function SlotCalendarPicker({
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 flex items-center gap-1 text-caption font-medium text-slate-500">
                 Kept by a plan
-                <Hint label="About plan times">Free this week, but another student&apos;s weekly plan keeps this time. You can still use it; you will be asked first.</Hint>
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {dayHeld.map((s) => {
@@ -200,7 +198,6 @@ export function SlotCalendarPicker({
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 flex items-center gap-1 text-caption font-medium text-slate-500">
                 {daySlots.length > 0 ? "Or any start time" : "Start time (Eastern)"}
-                <Hint label="About custom times">The class is 45 minutes and only has to not overlap another class. Back to back is fine.</Hint>
               </p>
               {clash && <p className="mb-1.5 text-small text-amber-300">That overlaps {clash.name.split(" ")[0]}&apos;s class at {timeOf(clash.scheduledAt)}.</p>}
               <input

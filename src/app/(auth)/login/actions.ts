@@ -10,10 +10,11 @@ import { withTimingFloor } from "@/lib/timingSafe";
 import { BANNED_MESSAGE } from "@/lib/ban";
 import { peekSecondStep } from "@/lib/adminTwoStep";
 import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
+import { newSignupClaim, pendingSignupPayload } from "@/lib/pendingSignup";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
-  | { ok: true; needsEmailVerification: true }
+  | { ok: true; needsEmailVerification: true; claim: string }
   | { ok: true; needsSecondStep: true }
   | { ok: true; needsEmailVerification: false; autoCode: string };
 
@@ -119,9 +120,17 @@ async function loginStepOneWork(email: string, password: string, secondStep?: st
 
   try {
     if (!user.emailVerified) {
-      const sendResult = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+      // The right password was just typed in THIS browser, so this browser may keep that password through the confirmation: it gets a
+      // claim, and the code carries the account's own hash. A code someone else triggers has no matching claim (see pendingSignup.ts).
+      const { claim, claimHash } = newSignupClaim();
+      const sendResult = await createAndSendCode({
+        email: user.email,
+        userId: user.id,
+        purpose: "EMAIL_VERIFY",
+        payload: pendingSignupPayload({ name: user.name?.trim() || user.email.split("@")[0], passwordHash: user.passwordHash, claimHash }),
+      });
       if (!sendResult.ok) return { ok: false, error: "Couldn't send the verification email. Try again in a moment." };
-      return { ok: true, needsEmailVerification: true };
+      return { ok: true, needsEmailVerification: true, claim };
     }
 
     const { code } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });

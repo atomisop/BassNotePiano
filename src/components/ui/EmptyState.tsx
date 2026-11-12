@@ -1,4 +1,3 @@
-import { Hint } from "@/components/ui/Hint";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -42,7 +41,7 @@ export function EmptyState({
         </div>
       )}
       <p className="text-title font-semibold text-slate-50">{title}</p>
-      {description && <p className="mt-1.5 max-w-[42ch] text-small text-slate-400"><Hint>{description}</Hint></p>}
+      {description && <p className="mt-1.5 max-w-[42ch] text-small text-slate-400">{description}</p>}
 
       {actionLabel && actionHref && (
         <Link
