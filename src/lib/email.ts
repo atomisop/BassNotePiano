@@ -756,7 +756,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
     "Friends to practice with, a chat with the studio, and Atom, our assistant, for quick questions",
   ];
   const steps = [
-    { label: "Finish your profile", detail: "Add a photo and a username so friends can find you.", url: getAppUrl("/profile") },
+    { label: "Finish your profile", detail: "Add a photo so friends and your teacher know it is you.", url: getAppUrl("/profile") },
     { label: "Pick a class plan and a weekly time", detail: "Your curriculum opens with your live classes, one scale at a time.", url: getAppUrl("/billing/plans") },
     { label: "Try today's finger exercises", detail: "Ten minutes is all it takes to unlock your lessons for the day.", url: getAppUrl("/practice") },
     { label: "Say hi to Atom", detail: "Ask anything about classes, pricing or how things work.", url: getAppUrl("/dashboard") },

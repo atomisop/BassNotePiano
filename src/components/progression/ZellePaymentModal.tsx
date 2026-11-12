@@ -15,7 +15,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { toast } from "@/components/ui/Toaster";
 import { Check, X } from "@/components/ui/appIcons";
-import { Hint } from "@/components/ui/Hint";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -484,7 +483,7 @@ export function ZellePaymentModal({
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-body text-slate-100">{reference}</p>
-                          <p className="text-caption text-slate-500"><Hint>Put this in the message</Hint></p>
+                          <p className="text-caption text-slate-500">Put this in the message</p>
                         </div>
                         <button
                           type="button"
@@ -509,7 +508,7 @@ export function ZellePaymentModal({
                         </li>
                       )}
                     </ol>
-                    <p className="mt-3 text-small text-slate-500"><Hint>We only accept Zelle.</Hint></p>
+                    <p className="mt-3 text-small text-slate-500">We only accept Zelle.</p>
                     <p className="mt-1 text-small text-slate-500">Sent the wrong amount, or left the code out? Ask us with Ask AI and we will sort it out.</p>
 
                     <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-3 text-small font-medium text-slate-200 shadow-pressed-low" role="status">

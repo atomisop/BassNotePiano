@@ -8,7 +8,6 @@ import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPracticeConstants";
 import type { SidebarCard } from "@/lib/sidebarCards";
-import { Hint } from "@/components/ui/Hint";
 
 // The cards change slowly (the countdown ticks in the browser), so the server is asked every 3 minutes, and only while the tab is in view
 // on a screen wide enough to show the sidebar.
@@ -376,7 +375,7 @@ export function SidebarSpotlight({
 
   if (mode === "list") {
     return slots.length === 0 ? (
-      <p className="px-1 py-4 text-center text-small text-slate-400"><Hint>Nothing needs you right now.</Hint></p>
+      <p className="px-1 py-4 text-center text-small text-slate-400">Nothing needs you right now.</p>
     ) : (
       <div className="grid gap-2">
         {slots.map((s) => (

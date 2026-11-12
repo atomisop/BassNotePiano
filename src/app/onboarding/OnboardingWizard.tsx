@@ -9,7 +9,7 @@ import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { safeCallbackPath } from "@/lib/safeRedirect";
-import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
+import { saveOnboardingAction, checkUsernameAvailableAction, suggestUsernamesAction } from "./actions";
 import { GuardedButton } from "@/components/ui/GuardedButton";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -94,6 +94,21 @@ function RadioOption({
   );
 }
 
+/** The same look as RadioOption, on a real checkbox: for "tell me when it opens", where more than one can be ticked. */
+function CheckOption({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
+  return (
+    <label
+      className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
+        checked ? "text-signal-fg shadow-pressed-low ring-1 ring-signal" : "text-slate-300 shadow-raised-low hover:text-slate-50"
+      }`}
+    >
+      <input type="checkbox" checked={checked} onChange={onToggle} className="sr-only" />
+      <span>{label}</span>
+      <span className="shrink-0 text-caption text-slate-500">{checked ? "We'll tell you" : "Tell me"}</span>
+    </label>
+  );
+}
+
 export function OnboardingWizard({ initialInstrument = null }: { initialInstrument?: PrimaryInstrument | null }) {
   const router = useRouter();
   const { update } = useSession();
@@ -102,6 +117,10 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
   const [step, setStep] = useState(0);
   const [username, setUsernameValue] = useState("");
   const [instrument, setInstrument] = useState<PrimaryInstrument | null>(initialInstrument);
+  // Instruments we do not teach yet that the student wants to hear about (they cannot be picked as THE instrument).
+  const [waitlist, setWaitlist] = useState<PrimaryInstrument[]>([]);
+  // Free usernames built from their name: shown before they type, and again whenever the one they tried is not usable.
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
   const [goal, setGoal] = useState<LearningGoal | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -124,6 +143,19 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
     }
   }, []);
 
+  // Offer a few free usernames from their name so the first field is a tap, not an invention. Best effort: no suggestions is fine.
+  useEffect(() => {
+    let cancelled = false;
+    suggestUsernamesAction()
+      .then((list) => {
+        if (!cancelled) setSuggestions(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // A new step moves focus to its heading so a keyboard or screen reader user lands on it.
   useEffect(() => {
     if (firstRender.current) {
@@ -139,19 +171,33 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
   }, [error, step]);
 
   const usernameValid = username.trim().length >= 3;
-  const canAdvance = step === 0 ? usernameValid && instrument !== null : true;
+  // Someone who only wants an instrument we do not teach yet can still go on: they are saved as "Other" and put on the list.
+  const hasInstrumentChoice = instrument !== null || waitlist.length > 0;
+  const canAdvance = step === 0 ? usernameValid && hasInstrumentChoice : true;
 
   function chooseInstrument(value: PrimaryInstrument) {
     touchedInstrument.current = true;
     setInstrument(value);
   }
 
+  function toggleWaitlist(value: PrimaryInstrument) {
+    setWaitlist((current) => (current.includes(value) ? current.filter((v) => v !== value) : [...current, value]));
+  }
+
   async function save() {
-    if (!instrument) return;
+    if (!hasInstrumentChoice) return;
     setSubmitting(true);
-    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres: [], learningGoal: goal });
+    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres: [], learningGoal: goal, waitlist });
     if (!result.ok) {
       setError(result.error);
+      // A username problem found only now (taken a moment ago) is fixed on the first step, where the field is: take them there with
+      // the reason and fresh suggestions, instead of leaving the message on a screen with nothing to type in.
+      if (/username|taken|available|characters/i.test(result.error)) {
+        setStep(0);
+        checkUsernameAvailableAction(username)
+          .then((again) => setSuggestions(again.suggestions ?? []))
+          .catch(() => undefined);
+      }
       setSubmitting(false);
       return;
     }
@@ -176,6 +222,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
       setCheckingUsername(false);
       if (!result.available) {
         setError(result.reason ?? "That username isn't available.");
+        setSuggestions(result.suggestions ?? []);
         return;
       }
     }
@@ -246,6 +293,24 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
                 <p id={usernameHintId} className="mt-1.5 text-small text-slate-400">
                   3 to 20 characters: lowercase letters, numbers and underscores.
                 </p>
+                {suggestions.length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2" role="group" aria-label="Suggested usernames">
+                    <span className="text-small text-slate-500">Try</span>
+                    {suggestions.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          setUsernameValue(name);
+                          setError(null);
+                        }}
+                        className="tap inline-flex items-center rounded-full bg-neu-base px-3 py-1 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-50"
+                      >
+                        @{name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <fieldset>
@@ -263,6 +328,19 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
                     />
                   ))}
                 </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="mb-1 text-small font-medium text-slate-400">Want drums or vocal?</legend>
+                <p className="mb-2 text-small text-slate-500">We don&apos;t teach them yet. Tick one and we&apos;ll tell you first when it opens.</p>
+                <div className="space-y-2">
+                  {INSTRUMENTS.filter((opt) => INSTRUMENTS_COMING_SOON.has(opt.value)).map((opt) => (
+                    <CheckOption key={opt.value} label={opt.label} checked={waitlist.includes(opt.value)} onToggle={() => toggleWaitlist(opt.value)} />
+                  ))}
+                </div>
+                {instrument === null && waitlist.length > 0 && (
+                  <p className="mt-2 text-small text-slate-400">Until they open we&apos;ll set your instrument to Other. You can change it any time in your profile.</p>
+                )}
               </fieldset>
             </>
           )}
@@ -306,7 +384,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
           </button>
         )}
         <GuardedButton
-          reason={busy ? null : step === 0 && !usernameValid ? "Username needs 3 or more characters" : step === 0 && instrument === null ? "Pick your instrument" : null}
+          reason={busy ? null : step === 0 && !usernameValid ? "Username needs 3 or more characters" : step === 0 && !hasInstrumentChoice ? "Pick your instrument" : null}
           onClick={() => {
             if (!busy && canAdvance) void handleNext();
           }}

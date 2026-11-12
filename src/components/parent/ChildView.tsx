@@ -7,7 +7,6 @@ import { ChildClasses } from "@/components/parent/ChildClasses";
 import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
 import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels"; // Eastern, like the band and the weekly time: the same words on the server and in the browser
-import { Hint } from "@/components/ui/Hint";
 import { Callout, CardFoot, CardHead, Fact, Facts, Meta } from "@/components/ui/CardKit";
 import { HeroBand } from "@/components/ui/HeroBand";
 import { StatusDot } from "@/components/ui/StatusDot";
@@ -160,7 +159,7 @@ export function ChildView({
               {!view.hasWeeklyTime && (
                 <Callout tone="warning" className="mt-4">
                   <p className="font-semibold">No weekly time yet</p>
-                  <p className="mt-0.5 opacity-90"><Hint>Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</Hint></p>
+                  <p className="mt-0.5 opacity-90">Only classes you book by hand are on the calendar. Set a weekly time and every class in the 28 days is booked at once.</p>
                 </Callout>
               )}
               <CardFoot className="justify-between">
@@ -170,7 +169,7 @@ export function ChildView({
               </CardFoot>
             </div>
           ) : (
-            <p className="rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low"><Hint>No plan right now. Start one from the Parent mode page.</Hint></p>
+            <p className="rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No plan right now. Start one from the Parent mode page.</p>
           )}
         </section>
       )}

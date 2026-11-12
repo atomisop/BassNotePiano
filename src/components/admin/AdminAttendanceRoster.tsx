@@ -3,7 +3,6 @@
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatEtShort, formatEtEndTime } from "@/lib/classScheduleLabels";
-import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { BookingAttendance } from "@/components/admin/BookingAttendance";
 import { ClassMoveCancelButtons } from "@/components/admin/ClassRowActions";
@@ -89,11 +88,6 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                 <div className="min-w-0">
                   <p className="flex items-center gap-1 truncate text-body font-semibold text-slate-50">
                     {name}
-                    <Hint label={`More about ${name}'s class`}>
-                      {entry.studentEmail}
-                      <br />
-                      Until {formatEtEndTime(occ.scheduledAt, entry.creditsSpent)} · {creditsLabelFromStored(entry.creditsSpent)}
-                    </Hint>
                   </p>
                   {entry.focus.scaleLabel && (
                     <p className="truncate text-small text-slate-400">
@@ -153,7 +147,6 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAtt
             >
               {buckets[s.id].length}
             </span>
-            <Hint label={`About ${s.title}`}>{s.hint}</Hint>
           </h2>
           <div className="space-y-2">
             <ViewMore items={buckets[s.id]} initial={s.id === "done" ? 4 : 6}>

@@ -37,7 +37,6 @@ import {
   SignedInDevicesCard,
 } from "./AccountSections";
 import { Meta } from "@/components/ui/CardKit";
-import { Hint } from "@/components/ui/Hint";
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
   name: string | null;
@@ -429,7 +428,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
       <AccountGroup id="privacy" title="Privacy & data">
         <SectionCard title="Studio leaderboard">
           {account.leaderboardLinkedChild ? (
-            <p className="text-small text-slate-400"><Hint>Hidden while linked to a parent.</Hint></p>
+            <p className="text-small text-slate-400">Hidden while linked to a parent.</p>
           ) : (
             <LeaderboardPrivacySwitch initialHidden={account.leaderboardHidden} />
           )}

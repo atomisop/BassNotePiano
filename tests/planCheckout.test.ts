@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PRICING, MAX_FAMILY_MEMBERS, MIN_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
-import { checkoutTotals, duplicateWeeklyTime, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, parseAudience, parseParentMode } from "@/lib/planCheckout";
+import { checkoutTotals, duplicateWeeklyTime, headcount, missingForCheckout, parentHeadcount, parentTimeHolders, parseAudience, parseParentMode, showScholarshipClaim } from "@/lib/planCheckout";
 import { DAY_ORDER, formatTimeLabel, formatTimeRange } from "@/lib/weeklyTimeLabels";
 
 const base = { cadence: OFFERED_PLAN_CADENCE, pricing: DEFAULT_PRICING, memberRows: [] as string[] };
@@ -178,5 +178,21 @@ describe("parent mode weekly times", () => {
     expect(duplicateWeeklyTime([{ scheduleId: "a", chunkIndex: 0 }, { scheduleId: "a", chunkIndex: 1 }])).toBe(false);
     expect(duplicateWeeklyTime([{ scheduleId: "a", chunkIndex: 0 }, { scheduleId: "b", chunkIndex: 0 }, { scheduleId: "a", chunkIndex: 0 }])).toBe(true);
     expect(duplicateWeeklyTime([])).toBe(false);
+  });
+});
+
+describe("showScholarshipClaim: the code link belongs to the 6 Month plan only", () => {
+  const base = { canClaim: true, audience: "SOLO" as const, term: "TERM_6", scholarshipPercent: 0 };
+
+  it("shows on the 6 Month plan", () => {
+    expect(showScholarshipClaim(base)).toBe(true);
+  });
+  it("is gone on every other plan length", () => {
+    for (const term of ["MONTHLY", "TERM_3", "TERM_12", "", "term_6"]) expect(showScholarshipClaim({ ...base, term })).toBe(false);
+  });
+  it("is gone for a group or parent plan, once a scholarship is claimed, and where claiming is not possible", () => {
+    expect(showScholarshipClaim({ ...base, audience: "FAMILY" })).toBe(false);
+    expect(showScholarshipClaim({ ...base, scholarshipPercent: 50 })).toBe(false);
+    expect(showScholarshipClaim({ ...base, canClaim: false })).toBe(false);
   });
 });

@@ -26,3 +26,19 @@ export async function settleFreeBillsFor(userId: string, opts: { quiet?: boolean
   for (const bill of open) if (await settleFreeBill(bill.id, opts)) settled++;
   return settled;
 }
+
+/**
+ * A group's combined FIRST payment of $0 (every person's share is covered by their own scholarship) has nothing to pay, so it settles
+ * by itself and starts every member's plan, through the ordinary approval. The caller tells the payer itself, so no notice or
+ * receipt goes out from here (the members still hear that their plan started, as for any group). Safe to call twice.
+ */
+export async function settleFreeStart(paymentId: string): Promise<boolean> {
+  const now = new Date();
+  const moved = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, amountCents: 0, purpose: "FAMILY_PLAN_START", status: "AWAITING_TRANSFER" },
+    data: { status: "PENDING_REVIEW", submittedAt: now, checkedAt: now, zelleHandle: "Covered by scholarships" },
+  });
+  if (moved.count === 0) return false;
+  await approveZellePayment(paymentId, null, { auto: true, skipReceipt: true, skipStudentNotice: true });
+  return true;
+}

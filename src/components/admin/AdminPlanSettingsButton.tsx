@@ -11,7 +11,6 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { restartPlanAction, setPlanLengthAction, setPlanPriceAction, waiveNextBillAction } from "@/app/(dashboard)/admin/payment-plans/actions";
 import { clearAccountDiscountAction, setAccountDiscountAction } from "@/app/(dashboard)/admin/pricing/actions";
-import { Hint } from "@/components/ui/Hint";
 import { PlanFixPanel } from "@/components/admin/PlanFixPanel";
 import type { PlanFix } from "@/lib/planFixes";
 import { MAX_PERSONAL_DISCOUNT_PERCENT } from "@/lib/classCreditPricing";
@@ -147,12 +146,12 @@ export function AdminPlanSettingsButton(props: {
             <section className="grid gap-2 border-t border-slate-50/10 pt-4">
               <h3 className="text-body font-semibold text-slate-50">
                 Personal discount
-                <Hint className="ml-1.5">
-                  {props.groupPlan
-                    ? "A percent off this account's own plans. This plan is part of a group, which keeps the group rate, so it changes their next solo plan only."
-                    : "A percent off this account's plan. The running plan and an unpaid bill change now, and they are told. Bills already paid never change."}
-                </Hint>
               </h3>
+              <p className="text-small text-slate-400">
+                {props.groupPlan
+                  ? "A percent off this account's own plans. This plan is part of a group, which keeps the group rate, so it changes their next solo plan only."
+                  : "A percent off this account's plan. The running plan and an unpaid bill change now, and they are told. Bills already paid never change."}
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-2">
                   <span className="sr-only">Percent off</span>
@@ -219,7 +218,8 @@ export function AdminPlanSettingsButton(props: {
           </section>
 
           <section className="grid gap-2 border-t border-slate-50/10 pt-4">
-            <h3 className="text-body font-semibold text-slate-50">Next 28 days free<Hint className="ml-1.5">Counts as a paid bill: their classes and credits for the cycle are added and the next bill moves 28 days out. Recorded as a $0 payment.</Hint></h3>
+            <h3 className="text-body font-semibold text-slate-50">Next 28 days free</h3>
+            <p className="text-small text-slate-400">Counts as a paid bill: their classes and credits for the cycle are added and the next bill moves 28 days out. Recorded as a $0 payment.</p>
             {props.installmentsPaid < 1 && (
               // The first payment has to be on record before a later bill can be waived: record it right here.
               <PlanFixPanel fix={{ kind: "record-payment", planId: props.planId }} notify={notify} onDone={() => setOpen(false)} />

@@ -7,7 +7,6 @@ import { clearCspViolationsAction } from "./actions";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
-import { Hint } from "@/components/ui/Hint";
 import { CardFoot } from "@/components/ui/CardKit";
 import { FigureLead } from "@/components/admin/AdminLead";
 
@@ -25,7 +24,8 @@ async function SystemView() {
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System<Hint className="ml-1.5">Only the owner can see this.</Hint></h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">System</h1>
+        <p className="mt-3 text-small text-slate-400">Only the owner can see this.</p>
       </div>
     );
   }
@@ -90,7 +90,8 @@ async function SystemView() {
         </PhoneAccordion>
       </div>
 
-      <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy<Hint className="ml-1.5">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</Hint></h2>
+      <h2 className="mt-10 text-title font-semibold text-slate-50">Content security policy</h2>
+      <p className="mt-1 text-small text-slate-400">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</p>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">
         {/* The answer is the card's focal point; the question is its quiet eyebrow and the reasons follow in muted text. */}

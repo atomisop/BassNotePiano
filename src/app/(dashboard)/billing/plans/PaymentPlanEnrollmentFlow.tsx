@@ -20,6 +20,8 @@ import {
   getReservableSlotsAction,
   getWaitlistAction,
   checkFamilyMemberAction,
+  claimMemberScholarshipAction,
+  memberScholarshipAction,
   cancelFamilyInviteAction,
   listMyFamilyInvitesAction,
   sendFamilyInviteAction,
@@ -32,7 +34,6 @@ import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } f
 import { claimScholarshipAction } from "../../account/scholarship-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
-import { Hint } from "@/components/ui/Hint";
 import { CardHead, Meta } from "@/components/ui/CardKit";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { groupPlanSentence, planBillName, planBillState } from "@/components/billing/planBillState";
@@ -126,6 +127,7 @@ function SwitchToFamilyPanel({
   pricing: PricingConfig;
   onStarted: (payment: OpenInstallmentSummary, memberCount: number) => void;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [emails, setEmails] = useState<string[]>([""]);
   const [step, setStep] = useState<"people" | "confirm">("people");
@@ -160,6 +162,12 @@ function SwitchToFamilyPanel({
     const result = await confirmSwitchToFamilyAction(password, code, term, null, null, typed, price.perStudentMonthlyCents * people).catch(() => null);
     setBusy(false);
     if (!result || !result.ok || !result.startPaymentId || result.amountCents === null) return setError(result?.error ?? "Something went wrong. Try again.");
+    // Every share is covered by a scholarship: the group started by itself, so there is no payment to make.
+    if (result.amountCents === 0) {
+      setOpen(false);
+      router.refresh();
+      return;
+    }
     onStarted({ id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 }, result.memberCount);
   }
 
@@ -236,7 +244,7 @@ function SwitchToFamilyPanel({
         </>
       ) : (
         <>
-          <p className="text-small text-slate-400"><Hint>Enter the 6-digit code we emailed you.</Hint></p>
+          <p className="text-small text-slate-400">Enter the 6-digit code we emailed you.</p>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={CHUNKED_CODE_LENGTH} value={chunkCode(code)} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123 456" aria-label="Code" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
@@ -336,6 +344,16 @@ export function PaymentPlanEnrollmentFlow({
         return { ok: false, error: result.error ?? "Something went wrong starting the group plan." };
       }
       startKey.current = newIdempotencyKey();
+      if (result.amountCents === 0) {
+        // Every person's share is covered by their own scholarship: the group started by itself, so there is nothing to pay.
+        setEnrolled({
+          plan: { id: result.planId, cadence, term, installmentsPaid: 1, termMonths: termPayments },
+          installment: null,
+          family: { isPayer: true, payerName: null, memberCount: result.memberCount, waitingForStart: false },
+        });
+        router.refresh();
+        return { ok: true };
+      }
       setEnrolled({
         plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
         installment: { id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },
@@ -372,6 +390,7 @@ export function PaymentPlanEnrollmentFlow({
       <NewPlanForm
         pricing={pricing}
         personalDiscountPercent={0}
+        scholarshipPercent={scholarshipPercent}
         initialTerm={initialTerm}
         initialAudience="FAMILY"
         initialSlotKey={initialSlotKey}
@@ -379,6 +398,9 @@ export function PaymentPlanEnrollmentFlow({
         loadSlots={() => getReservableSlotsAction(cadence)}
         onStart={startPlan}
         checkMember={checkFamilyMemberAction}
+        onClaimScholarship={claimScholarshipAction}
+        onClaimMemberScholarship={claimMemberScholarshipAction}
+        loadMemberScholarship={memberScholarshipAction}
         inviteApi={INVITE_API}
         parent={{ inviteApi: PARENT_API, canIncludeSelf: !initialPlan, startOn: true, only: true }}
         loadWaitlist={getWaitlistAction}
@@ -513,6 +535,8 @@ export function PaymentPlanEnrollmentFlow({
       initialAudience={initialAudience}
       initialSlotKey={initialSlotKey}
       onClaimScholarship={claimScholarshipAction}
+      onClaimMemberScholarship={claimMemberScholarshipAction}
+      loadMemberScholarship={memberScholarshipAction}
       loadSlots={() => getReservableSlotsAction(cadence)}
       onStart={startPlan}
       checkMember={checkFamilyMemberAction}

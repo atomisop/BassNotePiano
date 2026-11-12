@@ -22,6 +22,9 @@ export async function syncGroupBundle(groupId: string, zelleHandle: string): Pro
         purpose: "PAYMENT_PLAN_INSTALLMENT",
         status: "AWAITING_TRANSFER",
         submittedAt: null,
+        // A person whose own scholarship covers their whole share has nothing to pay: that $0 bill settles by itself and is never
+        // held in the payer's combined bill (it would only make the payer's bill look like it had a line to pay).
+        amountCents: { gt: 0 },
         // Not a bill already held in a combined bill that was sent, is being reviewed, or was rejected.
         OR: [{ bundleId: null }, { bundle: { status: "AWAITING_TRANSFER" } }],
         paymentPlan: { familyGroupId: groupId, status: "ACTIVE", installmentsPaid: { gt: 0 } },

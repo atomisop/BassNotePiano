@@ -15,11 +15,14 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
-import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
+import { verifyEmailAction, resendVerificationEmailAction, changeSignupEmailAction } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
 import { BackLink } from "@/components/ui/BackLink";
 import { AuthHeading } from "@/components/auth/AuthHeading";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
+import { PasswordInput } from "@/components/ui/password-input";
+import { EmailTypoHint } from "@/components/auth/EmailTypoHint";
+import { clearSignupClaim, clearSignupDraft, readSignupClaim, readSignupDraft, saveSignupClaim, saveSignupDraft } from "@/lib/signupDraft";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -39,13 +42,22 @@ function VerifyEmailForm() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [resent, setResent] = useState(false);
+  // "Wrong email?": fix a typo here instead of starting the whole form again.
+  const [changing, setChanging] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [changePassword, setChangePassword] = useState("");
+  const [changeBusy, setChangeBusy] = useState(false);
+  const [changeError, setChangeError] = useState<string | null>(null);
+  const [changedTo, setChangedTo] = useState<string | null>(null);
+  // Set when the email was confirmed but the password on file had to be cleared: the move on waits for a tap on "Continue".
+  const [afterConfirm, setAfterConfirm] = useState<(() => void) | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
 
-    const result = await verifyEmailAction(email, code);
+    const result = await verifyEmailAction(email, code, readSignupClaim(email));
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
       setSubmitting(false);
@@ -60,15 +72,28 @@ function VerifyEmailForm() {
       return;
     }
 
-    startNavigation();
-    // A new account still has to confirm its phone number, which is part of creating it.
-    if (result.needsPhone) {
-      router.push(`/verify-phone?${new URLSearchParams({ callbackUrl: safeCallbackPath(callbackUrl), ...(result.phoneCodeSent ? { sent: "1" } : {}) })}`);
+    // Confirmed: the sign-up form no longer needs to remember anything.
+    clearSignupDraft();
+    clearSignupClaim();
+    const proceed = () => {
+      startNavigation();
+      // A new account still has to confirm its phone number, which is part of creating it.
+      if (result.needsPhone) {
+        router.push(`/verify-phone?${new URLSearchParams({ callbackUrl: safeCallbackPath(callbackUrl), ...(result.phoneCodeSent ? { sent: "1" } : {}) })}`);
+        router.refresh();
+        return;
+      }
+      router.push(safeCallbackPath(callbackUrl));
       router.refresh();
+    };
+    // The email is confirmed but the server could not tell which password this browser chose, so it cleared the one on file (a stranger
+    // may have set it). Say so before moving on, so the next sign-in is not a surprise.
+    if (result.passwordForgotten) {
+      setSubmitting(false);
+      setAfterConfirm(() => proceed);
       return;
     }
-    router.push(safeCallbackPath(callbackUrl));
-    router.refresh();
+    proceed();
   }
 
   const cooldown = useResendCooldown();
@@ -89,6 +114,53 @@ function VerifyEmailForm() {
     }
     setResent(true);
     cooldown.start();
+  }
+
+  async function handleChangeEmail(e: FormEvent) {
+    e.preventDefault();
+    setChangeError(null);
+    setChangeBusy(true);
+    try {
+      const result = await changeSignupEmailAction(email, changePassword, newEmail);
+      if (!result.ok) {
+        setChangeError(result.error);
+        return;
+      }
+      // Back on the sign-up form the corrected address is waiting too.
+      saveSignupDraft({ name: readSignupDraft()?.name ?? "", email: result.email });
+      // The old address's codes are closed by the move. The password was just proven here, so this browser gets a claim for the new
+      // address and keeps that password through its confirmation.
+      saveSignupClaim(result.claim, result.email);
+      setChanging(false);
+      setNewEmail("");
+      setChangePassword("");
+      setCode("");
+      setResent(false);
+      setError(result.emailSent ? null : "We changed your email but couldn't send the code just now. Tap Resend below to try again.");
+      setChangedTo(result.emailSent ? result.email : null);
+      if (result.emailSent) cooldown.start();
+      const params = new URLSearchParams({ email: result.email, callbackUrl });
+      router.replace(`/verify-email?${params}`);
+    } catch {
+      setChangeError("That didn't go through. Check your connection and try again.");
+    } finally {
+      setChangeBusy(false);
+    }
+  }
+
+  if (afterConfirm) {
+    return (
+      <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
+        <AuthHeading title="Email confirmed">You are signed in.</AuthHeading>
+        <p className="mt-4 text-small text-slate-300">
+          We could not tell which password you chose for this account, so for your safety it was cleared. Next time, tap &ldquo;Email me a code instead&rdquo; on the log in
+          screen, or tap &ldquo;Forgot?&rdquo; beside the password to choose a new one.
+        </p>
+        <Button type="button" onClick={afterConfirm} className="cta-sheen mt-6 w-full">
+          Continue
+        </Button>
+      </motion.div>
+    );
   }
 
   if (!email) {
@@ -127,6 +199,58 @@ function VerifyEmailForm() {
       <AuthHeading title="Verify your email">
         Code sent to <span className="text-slate-200">{email}</span>.
       </AuthHeading>
+      {!changing && (
+        <button
+          type="button"
+          onClick={() => setChanging(true)}
+          className="tap mt-1 inline-flex items-center text-small font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50"
+        >
+          Wrong email? Change it
+        </button>
+      )}
+      {changing && (
+        <form onSubmit={handleChangeEmail} className="mt-4 space-y-3 rounded-xl bg-slate-50/5 p-4">
+          <div>
+            <Label htmlFor="new-email" className={fieldLabel}>
+              Correct email
+            </Label>
+            <Input id="new-email" type="email" autoComplete="email" spellCheck={false} required autoFocus value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+            <EmailTypoHint value={newEmail} onFix={setNewEmail} />
+          </div>
+          <div>
+            <Label htmlFor="change-password" className={fieldLabel}>
+              Your password
+            </Label>
+            <PasswordInput id="change-password" autoComplete="current-password" required value={changePassword} onChange={(e) => setChangePassword(e.target.value)} />
+            <p className="mt-1.5 text-small text-slate-500">The one you just chose. It shows this is you.</p>
+          </div>
+          {changeError && (
+            <p role="alert" className="text-small text-red-400">
+              {changeError}
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button type="submit" size="sm" loading={changeBusy} className="flex-1">
+              {changeBusy ? "Sending…" : "Send code to this email"}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setChanging(false);
+                setChangeError(null);
+              }}
+              className="tap inline-flex items-center px-2 text-small text-slate-400 transition hover:text-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+      {changedTo && (
+        <p role="status" className="mt-3 text-small text-slate-300">
+          Email changed. A new code is on its way to {changedTo}.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>

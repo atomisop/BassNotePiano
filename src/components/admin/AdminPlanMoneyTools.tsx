@@ -9,7 +9,6 @@ import { Dialog } from "@/components/ui/Dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
-import { Hint } from "@/components/ui/Hint";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { formatEtShort } from "@/lib/classScheduleLabels";
 import type { PlanFix } from "@/lib/planFixes";
@@ -261,8 +260,9 @@ export function AdminSettleLateButton({ planId, compact = false }: { planId: str
             </label>
             <div className="space-y-1.5">
               <p className="text-small font-medium text-slate-200">
-                Classes taught before they paid<Hint className="ml-1.5">Ticked classes are marked present, which spends their credit.</Hint>
+                Classes taught before they paid
               </p>
+              <p className="text-caption text-slate-500">Ticked classes are marked present, which spends their credit.</p>
               {preview.taught.length === 0 && <p className="text-small text-slate-500">None booked and unmarked.</p>}
               {preview.taught.map((t) => (
                 <label key={t.id} className="flex items-center gap-2 text-small text-slate-300">
