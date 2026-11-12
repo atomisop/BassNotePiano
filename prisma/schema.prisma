@@ -852,6 +852,8 @@ model User {
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
   sessionVersion    Int                @default(1)
+  // Ids of single sessions the person signed out from the devices list (newest 200). A session whose id is here is refused, whatever the device label.
+  revokedSessionIds String[]           @default([])
   // Bumped by "make a new calendar link" in Settings; the personal calendar feed link is signed with it, so the old link stops working.
   calendarVersion   Int                @default(0)
   // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
@@ -1173,6 +1175,8 @@ model KnownDevice {
   country     String?
   // Set when the person signs this one device out from the list; cleared by the next sign-in on it. Other sessions are untouched.
   signedOutAt DateTime?
+  // The sessions (ids baked into their tokens) last seen on this device, newest 20. Signing the device out revokes exactly these.
+  sessionIds  String[]  @default([])
 
   @@unique([userId, deviceHash])
 }

@@ -1334,9 +1334,18 @@ export async function refundZellePayment(
   }
   if (opts.cancelPlan && payment.paymentPlanId) {
     const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
-    await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
-      warnings.push(`The plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
-    });
+    const finished = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId }, select: { status: true } });
+    if (finished?.status === "COMPLETED") {
+      // A finished plan (a 1 Month plan after its one bill) cannot be "canceled" the usual way, but a refund still ends it, and with it the access.
+      await prisma.$transaction([
+        prisma.paymentPlan.update({ where: { id: payment.paymentPlanId }, data: { status: "CANCELED", canceledAt: new Date(), canceledById: admin.id, cancellationNote: `Refund: ${note}` } }),
+        prisma.classBooking.updateMany({ where: { reservedByPlanId: payment.paymentPlanId, status: "SCHEDULED", scheduledAt: { gt: new Date() } }, data: { status: "CANCELED", refunded: true, canceledReason: "Payment refunded" } }),
+      ]);
+    } else {
+      await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
+        warnings.push(`The plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
+      });
+    }
   }
 
   await createNotification({
@@ -1401,7 +1410,9 @@ export async function undoRefundZellePayment(
             warnings.push(other ? "The plan was not restored: this person already has another running plan. Use Restart canceled plan on their page if you still want it back." : "The plan was not restored: the account is banned.");
             continue;
           }
-          await prisma.paymentPlan.update({ where: { id: planId }, data: { status: "ACTIVE", canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
+          const counts = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { installmentsPaid: true, termMonths: true } });
+          const restoredStatus = counts.installmentsPaid >= counts.termMonths ? "COMPLETED" : "ACTIVE"; // a finished plan comes back finished
+          await prisma.paymentPlan.update({ where: { id: planId }, data: { status: restoredStatus, canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
           warnings.push("A plan ended by the refund is running again. Classes canceled with it were not brought back.");
         }
       }

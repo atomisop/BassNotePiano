@@ -89,6 +89,11 @@ export interface ManageSubscriptionsProps {
 
 type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
 
+/** Switching to 3 Months is only a real alternative on a longer plan that has not already paid 3 bills (a switch below the bills paid is refused). */
+function offersDowngrade(plan: { term: string; installmentsPaid: number }): boolean {
+  return (plan.term === "TERM_6" || plan.term === "TERM_12") && plan.installmentsPaid < 3;
+}
+
 /**
  * The account-settings half of the pricing page: the same term ladder
  * /pricing shows (curriculum left out, by direct instruction, that's its
@@ -121,7 +126,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
   const [termError, setTermError] = useState<string | null>(null);
   const [cancelStage, setCancelStage] = useState<CancelStage>(
-    startOn === "cancel" && activePlan ? (activePlan.term === "TERM_6" || activePlan.term === "TERM_12" ? "downgrade-offer" : "reason") : "idle",
+    startOn === "cancel" && activePlan ? (offersDowngrade(activePlan) ? "downgrade-offer" : "reason") : "idle",
   );
   const [reason, setReason] = useState<PlanCancellationReason | null>(null);
   const [reasonNote, setReasonNote] = useState("");
@@ -153,7 +158,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
   function startCancelFlow() {
     setCancelError(null);
-    setCancelStage(activePlan?.term === "TERM_6" || activePlan?.term === "TERM_12" ? "downgrade-offer" : "reason");
+    setCancelStage(activePlan && offersDowngrade(activePlan) ? "downgrade-offer" : "reason");
   }
 
   function resetCancelFlow() {

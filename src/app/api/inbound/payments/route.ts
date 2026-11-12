@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       // whatever it settles in the owner's "unchecked" list.
       const outcome = await ingestPaymentEmail(
         { messageId, from: field("from"), subject: field("subject").slice(0, 300), body: emailBodyText(field("body-plain"), field("body-html")).slice(0, 6000) },
-        { forceCheck: true },
+        { forceCheck: true, codeOnly: true },
       );
       return NextResponse.json({ outcome });
     }

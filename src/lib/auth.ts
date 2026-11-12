@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { PAYMENT_LOCKED_CODE } from "@/lib/paymentLockCodes";
 import { BANNED_ERROR_CODE } from "@/lib/ban";
 import { cache } from "react";
@@ -235,9 +236,11 @@ export const authOptions: NextAuthOptions = {
         if (user.paymentLockedAt) throw new Error(PAYMENT_LOCKED_CODE);
 
         // A sign-in from a browser or device this account has not used before is emailed to its owner.
-        await recordSignInDevice(user, req?.headers?.["user-agent"], placeFromHeaders(req?.headers));
+        const sid = randomUUID();
+        await recordSignInDevice(user, req?.headers?.["user-agent"], placeFromHeaders(req?.headers), sid);
 
         return {
+          sid,
           id: user.id,
           name: user.name,
           email: user.email,
@@ -257,6 +260,8 @@ export const authOptions: NextAuthOptions = {
     // DB, and how often it runs is the whole staleness budget for gating.
     async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
+      // This session's own id, made by authorize at sign-in (a token from before this existed has none).
+      if (user?.sid) token.sid = user.sid;
 
       const loaded = await loadEntitlementsBounded(token.sub, 2, Boolean(user) || trigger === "update");
       if (!loaded) {
@@ -326,6 +331,7 @@ export const authOptions: NextAuthOptions = {
         session.user.unlockedScaleSlugs = token.unlockedScaleSlugs;
         session.user.completedScaleSlugs = token.completedScaleSlugs;
         session.user.onboarded = token.onboarded;
+        session.user.sid = token.sid;
       }
       return session;
     },
@@ -366,10 +372,13 @@ export const getServerAuthSession = cache(async () => {
 
   // Asked together, not one after the other: this runs on every page.
   const ua = (await headers()).get("user-agent");
+  const sid = session.user.sid;
   const [exists, deviceOut] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true } }),
-    isDeviceSignedOut(session.user.id, ua),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true, paymentLockedAt: true, revokedSessionIds: true } }),
+    // A session with its own id is judged by that id alone (the browser label is only a guess); an older one falls back to the label.
+    sid ? Promise.resolve(false) : isDeviceSignedOut(session.user.id, ua),
   ]);
+  if (exists && sid && exists.revokedSessionIds.includes(sid)) return null;
   // A ban or a non-payment lock takes effect on the very next request, not only when the old session's token is refreshed.
   // One device signed out from the list: only a browser matching it is refused, every other session carries on.
   return exists && !exists.bannedAt && !exists.paymentLockedAt && !deviceOut ? session : null;
