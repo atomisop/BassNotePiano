@@ -59,7 +59,7 @@ export async function createBookingRequests(studentId: string, selections: Reque
     try {
       const hour = await resolveRequestedHour(selection.scheduleId, selection.occurrenceDateMs, selection.chunkIndex);
 
-      const seatArgs = { scheduleId: hour.schedule.id, chunkIndex: selection.chunkIndex, occurrenceDate: hour.occurrenceDate, scheduledAt: hour.scheduledAt, strictHolders: true };
+      const seatArgs = { scheduleId: hour.schedule.id, chunkIndex: selection.chunkIndex, occurrenceDate: hour.occurrenceDate, scheduledAt: hour.scheduledAt };
       const [already, everyone, others, credits] = await Promise.all([
         prisma.bookingRequest.findFirst({ where: { studentId, scheduleId: hour.schedule.id, scheduledAt: hour.scheduledAt, status: "PENDING" }, select: { id: true } }),
         loadSeatLoad(prisma, seatArgs),
@@ -204,7 +204,7 @@ export async function getAdminBookingRequests(): Promise<AdminRequestGroup[]> {
     list.map(async (group) => {
       // With several seats an hour is only "already booked" once every seat has a class in it.
       const row = firstRow.get(group.key)!;
-      const load = await loadSeatLoad(prisma, { scheduleId: group.scheduleId, chunkIndex: row.chunkIndex, occurrenceDate: row.occurrenceDate, scheduledAt: group.scheduledAt, strictHolders: true });
+      const load = await loadSeatLoad(prisma, { scheduleId: group.scheduleId, chunkIndex: row.chunkIndex, occurrenceDate: row.occurrenceDate, scheduledAt: group.scheduledAt });
       group.alreadyBooked = load.booked >= row.schedule.seats;
     }),
   );
@@ -238,13 +238,19 @@ export async function confirmBookingRequest(requestId: string, adminId: string):
     throw new BookingRequestError("That time has already passed.");
   }
 
-  await adminBookClass(request.studentId, request.scheduleId, request.occurrenceDate.getTime(), request.chunkIndex);
-
+  // Claim the request FIRST (one winner), then book: a request the student withdrew a moment ago can no longer be confirmed into a class
+  // they did not want, and if the booking fails the request goes back to waiting.
   const decided = await prisma.bookingRequest.updateMany({ where: { id: request.id, status: "PENDING" }, data: { status: "CONFIRMED", decidedAt: new Date(), decidedById: adminId } });
-  if (decided.count === 0) return;
+  if (decided.count === 0) throw new BookingRequestError("That request was already answered.");
+  try {
+    await adminBookClass(request.studentId, request.scheduleId, request.occurrenceDate.getTime(), request.chunkIndex);
+  } catch (err) {
+    await prisma.bookingRequest.updateMany({ where: { id: request.id, status: "CONFIRMED" }, data: { status: "PENDING", decidedAt: null, decidedById: null } });
+    throw err;
+  }
 
   // The others are answered only once the last seat is gone; with seats left they stay open for the studio to confirm too.
-  const afterBooking = await loadSeatLoad(prisma, { scheduleId: request.scheduleId, chunkIndex: request.chunkIndex, occurrenceDate: request.occurrenceDate, scheduledAt: request.scheduledAt, strictHolders: true });
+  const afterBooking = await loadSeatLoad(prisma, { scheduleId: request.scheduleId, chunkIndex: request.chunkIndex, occurrenceDate: request.occurrenceDate, scheduledAt: request.scheduledAt });
   if (afterBooking.booked < request.schedule.seats) return;
   const others = await prisma.bookingRequest.findMany({
     where: { scheduleId: request.scheduleId, scheduledAt: request.scheduledAt, status: "PENDING", id: { not: request.id } },

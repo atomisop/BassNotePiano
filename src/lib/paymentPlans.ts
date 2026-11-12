@@ -817,6 +817,14 @@ export async function cancelPaymentPlanBySelf(
     }
   }
 
+  // A parent may end only a plan THEY pay for (a parent-mode group they are the payer of), never the child's own solo plan.
+  if (options.byParentId) {
+    const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
+    if (!group || group.kind !== "PARENT" || group.payerId !== options.byParentId) {
+      throw new PaymentPlanError("That plan is not one you pay for, so only your child can end it.");
+    }
+  }
+
   await assertNoOpenInstallment(plan.id);
 
   await prisma.$transaction(async (tx) => {
@@ -1125,7 +1133,8 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
   let lockedUserId: string | null = null;
   if (!options.firstBill && plan.installmentsPaid > 0) {
     const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
-    const payerId = group?.kind === "PARENT" ? group.payerId : plan.userId;
+    // The group's payer pays every member's bill (a parent a child's, a family payer the other members'), so the payer is the one locked.
+    const payerId = group ? group.payerId : plan.userId;
     if (await lockForNonPayment(payerId, plan.id)) lockedUserId = payerId;
   }
 

@@ -119,12 +119,22 @@ export const runDiscordClassChannels = () =>
           );
         }
         const ids = Array.from(new Set([...inServer.map((m) => m.student.discordId as string), ...(ownerInServer && owner?.discordId ? [owner.discordId] : [])]));
-        const channelId = await createClassChannel(
-          classChannelName(inServer.map((m) => m.student.name ?? ""), members[0].scheduledAt),
-          ids,
-        );
-        await prisma.classBooking.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { discordChannelId: channelId } });
-        created++;
+        // One run at a time per class: a slow run can overlap the next minute's (or a Run now), and both would make a channel, the
+        // second overwriting the first's id and orphaning it. A short-lived marker row is the claim; a stale one (a run that died) expires.
+        const claimKey = `discord-channel-claim:${members[0].id}`;
+        const staleBefore = new Date(Date.now() - 3 * 60_000);
+        await prisma.appSetting.deleteMany({ where: { key: claimKey, updatedAt: { lt: staleBefore } } });
+        const claimed = await prisma.appSetting.create({ data: { key: claimKey, value: "1" } }).then(() => true, () => false);
+        if (!claimed) continue;
+        try {
+          const stillOpen = await prisma.classBooking.count({ where: { id: { in: members.map((m) => m.id) }, discordChannelId: null } });
+          if (stillOpen === 0) continue; // another run finished it while this one was checking members
+          const channelId = await createClassChannel(
+            classChannelName(inServer.map((m) => m.student.name ?? ""), members[0].scheduledAt),
+            ids,
+          );
+          await prisma.classBooking.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { discordChannelId: channelId } });
+          created++;
 
         if (notifyOwner && owner?.id) {
           await createNotification({
@@ -145,6 +155,9 @@ export const runDiscordClassChannels = () =>
             emailCategory: "reminders",
             cta: { label: "Join on Discord", url: discordChannelUrl(channelId) },
           }).catch((err) => console.error("Class call notification failed (non-blocking):", err));
+        }
+        } finally {
+          await prisma.appSetting.deleteMany({ where: { key: claimKey } }).catch(() => undefined);
         }
       } catch (err) {
         console.error("Discord class channel failed (non-blocking):", err);

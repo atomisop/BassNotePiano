@@ -9,6 +9,8 @@ import { undoAttendance } from "@/lib/classScheduleAdmin";
 import { runAttendanceAutoCharge } from "@/lib/attendanceAutoCharge";
 import { getOrCreateOpenInstallmentPayment, recordPlanPaymentReceived } from "@/lib/paymentPlans";
 import { assertParentOf } from "@/lib/parentLinks";
+import { cancelPaymentPlanBySelf } from "@/lib/paymentPlans";
+import { getMeStatus } from "@/lib/meStatus";
 import { syncGroupBundle } from "@/lib/paymentBundles";
 import { applyMoneyFix } from "@/lib/moneyCheck";
 import { makeUser, newTag, prisma } from "./helpers";
@@ -216,5 +218,30 @@ describe("second round of review fixes", () => {
     });
     await expect(adjustUserCredits(admin.id, s.id, -2, "oops", { respectHeld: true })).rejects.toThrow(/holding/);
     expect((await prisma.user.findUniqueOrThrow({ where: { id: s.id } })).classCredits).toBe(4);
+  });
+});
+
+describe("third round of review fixes", () => {
+  const planData = (userId: string, extra: Record<string, unknown> = {}) => ({
+    userId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3" as const, installmentAmountCents: 16499, creditsPerInstallment: 8, termMonths: 3,
+    installmentsPaid: 1, nextDueDate: new Date(Date.now() + 25 * 86_400_000), reservedScheduleId: sched.id, reservedChunkIndex: 0, ...extra,
+  });
+
+  it("a parent can end only a plan they pay for, never their child's own plan", async () => {
+    const parent = await person("Par2");
+    const child = await person("Kid2");
+    const plan = await prisma.paymentPlan.create({ data: planData(child.id) });
+    await expect(cancelPaymentPlanBySelf(child.id, "OTHER", "ended by parent", { byParentId: parent.id })).rejects.toThrow(/not one you pay for/);
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("ACTIVE");
+  });
+
+  it("a group member who pays nothing never sees the bill bar; the payer does", async () => {
+    const payer = await person("Gp");
+    const member = await person("Gm");
+    const group = await prisma.familyPlanGroup.create({ data: { payerId: payer.id } });
+    const plan = await prisma.paymentPlan.create({ data: planData(member.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 86_400_000) }) });
+    await prisma.zellePayment.create({ data: { userId: member.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 2, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "AWAITING_TRANSFER" } });
+    expect((await getMeStatus(member.id)).billDue).toBeNull();
+    expect((await getMeStatus(payer.id)).billDue?.href).toBe("/billing/plans");
   });
 });

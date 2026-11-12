@@ -28,7 +28,7 @@ export const RUN_NOW_LOCK_STALE_MS = 10 * 60_000;
  * Daily tasks send notices or bills. Once one has run fine within this many hours it is not stopped, and running it again could
  * send the same practice reminder or bill notice twice. The backup is the exception: a second copy only replaces today's file.
  */
-export const RUN_NOW_DAILY_REPEAT_HOURS = 20;
+export const RUN_NOW_DAILY_REPEAT_HOURS = 24; // a full cycle: pressed earlier, the next scheduled run would repeat the same exact-day notices
 const REPEATABLE_DAILY = new Set(["db-backup"]);
 
 const whenEt = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });

@@ -108,7 +108,7 @@ export async function approveNextScaleAction(targetUserId: string, force: boolea
 export async function approveAllReadyScalesAction(notify = true): Promise<{ message: string }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireAdmin();
-    const progress = await getAdminProgressOverview("");
+    const progress = await getAdminProgressOverview("", { all: true });
     const ready = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY");
     let approved = 0;
     let skipped = 0;

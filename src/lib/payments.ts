@@ -960,7 +960,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
     await bookReservedWindowForPlan(payment.paymentPlanId);
     // A friend's invitation pays off once the invited person's first payment on a 3 or 6 month plan is in.
-    if (payment.installmentNumber === 1) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
+    // Never for a $0 first bill (a full scholarship): nothing was paid, so there is nothing for a friend's invitation to reward.
+    if (payment.installmentNumber === 1 && payment.amountCents > 0) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
 
     // A first payment going through is the moment someone becomes a subscriber: tell the admins who and when.
     if (payment.installmentNumber === 1) {

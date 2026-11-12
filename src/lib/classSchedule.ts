@@ -778,7 +778,7 @@ export async function bookClass(
         // the same admin-defined window (a different start time) is a
         // separate appointment slot and shouldn't block this one.
         // Seats: other students' classes (and weekly plans keeping this time, below) use up the slot's seats; your own class does not.
-        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt, ignoreStudentIds: [studentId] });
         if (seatLoad.booked >= schedule.seats) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
@@ -1946,7 +1946,7 @@ export async function rescheduleClassBooking(
           await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id, overridePlanHold);
         } else {
           // Seats, same rule as bookClass: other students' classes use seats; your own moving class does not.
-          const seatLoad = await loadSeatLoad(tx, { scheduleId: newScheduleId, chunkIndex: newChunkIndex, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+          const seatLoad = await loadSeatLoad(tx, { scheduleId: newScheduleId, chunkIndex: newChunkIndex, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, ignoreStudentIds: [studentId] });
           if (seatLoad.booked >= newSchedule!.seats) {
             throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
           }

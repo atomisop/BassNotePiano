@@ -612,6 +612,9 @@ export function SignedInDevicesCard() {
       )}
       {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       {devices && devices.some((d) => !d.isThisDevice) && (
+        <p className="mt-3 text-small text-slate-400">Devices are told apart by browser and system only. If you do not recognize one, use Sign out of all other devices, which ends every other session for certain.</p>
+      )}
+      {devices && devices.some((d) => !d.isThisDevice) && (
         <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 mt-3 text-red-300 hover:text-red-200" })}>
           {busyId === "all" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           Sign out of all other devices

@@ -16,8 +16,16 @@ export async function sendTrialNotices(now = new Date()): Promise<{ ending: numb
   let ended = 0;
   for (const u of candidates) {
     const over = (u.trialEndsAt as Date).getTime() <= now.getTime();
-    if (!(await claimNoticeMarker(`trial-notice:${over ? "ended" : "ending"}:${u.id}`))) continue;
-    await noticeTrial({ userId: u.id, ended: over });
+    const marker = `trial-notice:${over ? "ended" : "ending"}:${u.id}`;
+    if (!(await claimNoticeMarker(marker))) continue;
+    try {
+      await noticeTrial({ userId: u.id, ended: over });
+    } catch (err) {
+      // Give the one-time marker back so the next run tries this person again, and keep going for everyone else.
+      await prisma.appSetting.deleteMany({ where: { key: marker } }).catch(() => undefined);
+      console.error(`Trial notice failed for ${u.id} (continuing):`, err);
+      continue;
+    }
     if (over) ended++;
     else ending++;
   }
