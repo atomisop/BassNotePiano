@@ -67,6 +67,7 @@ export default async function ParentChildPage({ params, searchParams }: { params
                     <p className="shrink-0 text-small text-slate-500">{bill.planName}</p>
                   </div>
                   <ZelleUnlockGate
+                startOpen={false}
                     status={bill.status}
                     rejectionReason={bill.rejectionReason}
                     scaleCode={`${bill.childName}: ${bill.label}`}

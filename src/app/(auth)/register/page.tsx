@@ -131,7 +131,7 @@ function RegisterForm() {
     >
       {/* The same plain title as every other sign-in screen: no icon over it and no centering, so moving between Log in and
           Create account changes the fields and nothing else. */}
-      <AuthHeading title="Create your account" />
+      <AuthHeading title="Create your account">Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character.</AuthHeading>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
         <p className="mt-3 text-small text-slate-300"><Hint>A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</Hint></p>
       )}

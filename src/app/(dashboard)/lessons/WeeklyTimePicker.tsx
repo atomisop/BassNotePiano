@@ -127,7 +127,7 @@ export function WeeklyTimePicker({
         <div className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 shadow-pressed-low">
           <p className="text-small text-slate-300">
             Move your weekly class to every <span className="font-semibold text-slate-50">{DAY_LABELS[selected.dayOfWeek]}</span>,{" "}
-            <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)}</span>?
+            <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)} ET</span>?
           </p>
           <button
             type="button"

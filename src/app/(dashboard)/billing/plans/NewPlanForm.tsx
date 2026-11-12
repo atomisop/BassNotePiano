@@ -304,11 +304,12 @@ export function NewPlanForm({
   const hint = (timeMissing ? null : missing) ?? accountHint ?? timeMissing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
-  const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
+  const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)} ET` : null;
 
   // A full scholarship on this plan: there is no price to show anywhere on the form, only that it is covered.
   const free = !isFamily && totals.perPaymentCents === 0;
-  const barNote = free ? "by your scholarship" : isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
+  const classesNote = `${totals.classesPerPayment} classes of ${CLASS_MINUTES} min`;
+  const barNote = free ? "by your scholarship" : isFamily ? "first payment" : totals.payments === 1 ? `for 28 days, ${classesNote}` : `every 28 days, ${classesNote}`;
   // The whole plan, so a 3 or 6 month plan shows what it adds up to before anyone starts.
   const barTotal = free ? "Nothing to pay." : totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
@@ -524,7 +525,7 @@ export function NewPlanForm({
       </div>
 
       <div>
-        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{isParent ? "Weekly times, one for each person" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        <p className="mb-3 px-1 text-caption font-medium uppercase tracking-caps text-slate-500">{isParent ? "Weekly times (Eastern time), one for each person" : isFamily ? "Your weekly time (Eastern time, only you)" : "Your weekly time (Eastern time)"}</p>
         {slotGone && (
           <p role="status" className="mb-2 text-small text-amber-300">
             The time you picked was just taken. Pick another one below.
@@ -551,7 +552,7 @@ export function NewPlanForm({
                   >
                     <span className="min-w-0 truncate font-medium">{h.label}</span>
                     <span className={cn("shrink-0 tabular-nums", t ? "text-slate-100" : "text-slate-500")}>
-                      {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)}` : on ? "Pick below" : "No time yet"}
+                      {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)} ET` : on ? "Pick below" : "No time yet"}
                     </span>
                   </button>
                 );
@@ -629,7 +630,7 @@ export function NewPlanForm({
                 const t = timeOf(h.key);
                 return (
                   <Row key={h.key} label={h.key === "self" ? "Your weekly time" : `${h.label}'s weekly time`}>
-                    {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)}` : "Not picked"}
+                    {t ? `${DAY_NAMES[t.dayOfWeek]}s, ${formatTimeRange(t.startTime, CLASS_MINUTES)} ET` : "Not picked"}
                   </Row>
                 );
               })

@@ -1574,7 +1574,7 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
   await sendPaymentPlanInvoiceEmail(target.payer.email, {
     scholarshipNote: scholarship ? (overdueDays ? scholarshipOverdueLine(scholarship) : scholarshipDueLine(scholarship)) : undefined,
     planLabel: bill.combined ? `Combined bill for ${bill.people} people` : target.paysForSomeoneElse ? `${planName} for ${target.member.name}` : planName,
-    installmentLabel: bill.combined ? "One payment covers everyone" : `Installment ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
+    installmentLabel: bill.combined ? "One payment covers everyone" : `Bill ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
     amountCents: bill.amountCents,
     dueDate: plan.nextDueDate,
     cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),

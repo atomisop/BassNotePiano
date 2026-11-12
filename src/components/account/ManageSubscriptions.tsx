@@ -269,7 +269,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
             {canSwitch && (
               <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
-                Switch plan
+                Change length
               </button>
             )}
           </div>
@@ -311,7 +311,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
       <Dialog
         open={confirmTerm !== null}
         onOpenChange={(open) => !open && pendingTerm === null && setConfirmTerm(null)}
-        title={switchPreview ? `Switch to ${switchPreview.label}?` : "Switch plan"}
+        title={switchPreview ? `Switch to ${switchPreview.label}?` : "Change length"}
         footer={
           <div className="flex flex-wrap gap-2">
             <button
@@ -366,7 +366,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
           {/* The one destructive action: quiet red words at the end, still behind its reason step and confirm. */}
           {cancelStage === "idle" && (
             <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}>
-              Cancel subscription
+              Cancel plan
             </button>
           )}
 
@@ -397,7 +397,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
           {(cancelStage === "reason" || cancelStage === "canceling") && (
             <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
               <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
-              <p className="mt-1 text-small text-slate-400">This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.</p>
+              <p className="mt-1 text-small text-slate-400">This ends your plan and frees your reserved weekly time right away. You keep your lessons until the 28 days you already paid for run out. It can&apos;t be undone from here.</p>
               <div className="mt-3 space-y-1.5">
                 {CANCELLATION_REASONS.map((r) => (
                   <label key={r.value} className="flex cursor-pointer items-center gap-2 text-small text-slate-300">
@@ -432,7 +432,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                   className={buttonVariants({ variant: "danger" })}
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
+                  {cancelStage === "canceling" ? "Canceling…" : "Cancel my plan"}
                 </button>
                 <button
                   type="button"
