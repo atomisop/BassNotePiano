@@ -89,7 +89,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
           iconOnly
           items={[
             { label: "Everyone", icon: <Users />, href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: everyone },
-            { label: "Approve", selectLabel: "Needs approval", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
+            { label: "Next scale", selectLabel: "Ready for the next scale", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", icon: <Moon />, href: `/admin/users?filter=idle${q}`, active: notPracticing },
             ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, icon: FOLLOW_UP_TABS[f].icon, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
             { label: "Complimentary", icon: <Star />, href: `/admin/users?filter=comped${q}`, active: complimentary },

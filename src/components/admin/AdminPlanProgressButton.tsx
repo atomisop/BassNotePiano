@@ -44,7 +44,7 @@ export function AdminPlanProgressButton({ planId, billsPaid, termMonths, current
     <>
       <button type="button" onClick={() => { setPaid(billsPaid); setDay(currentDay); setRefusal(null); setOpen(true); }} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: compact ? "h-8 px-2.5" : "" })}>
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Plan progress
+        Fix bills paid or date
       </button>
       <Dialog
         open={open}

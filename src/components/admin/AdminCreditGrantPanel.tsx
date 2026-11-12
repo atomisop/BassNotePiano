@@ -167,6 +167,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
       {/* Left: search + select + adjustment form */}
       <div>
+        <p className="mb-2 px-1 text-small text-slate-500">Pick a student to add or take away class credits. One credit is one 45 minute class. Every change is logged below.</p>
         <input
           type="search"
           value={query}

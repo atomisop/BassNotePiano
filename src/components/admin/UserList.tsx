@@ -89,7 +89,7 @@ export function UserList({
   return (
     <div>
       <AdminListSearch value={query} onChange={handleSearchChange} placeholder="Search a name or email" shown={rows.length} total={rows.length} />
-      <NotifyToggle on={notify} onChange={setNotify} label="Notify students" className="mb-4 mt-3 px-1" />
+      <NotifyToggle on={notify} onChange={setNotify} label="Notify students when I release a scale" className="mb-4 mt-3 px-1" />
 
       {error && <p className="mb-3 text-small text-red-400">{error}</p>}
 

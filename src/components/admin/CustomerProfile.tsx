@@ -563,9 +563,9 @@ export function CustomerProfile({
         {planMenu}
         <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
-          Payments
+          Money
         </button>
-        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="col-span-2 px-1 pt-1 sm:ml-auto sm:p-0" />
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} when I change something`} className="col-span-2 px-1 pt-1 sm:ml-auto sm:p-0" />
       </div>
 
       {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
