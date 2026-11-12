@@ -343,7 +343,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                           {formatSigned(storedToCredits(row.amount))}
                         </span>
                       </div>
-                      <Meta className="mt-0.5" items={[new Date(row.createdAt).toLocaleString(), `by ${row.adjustedBy.name ?? row.adjustedBy.email}`]} />
+                      <Meta className="mt-0.5" items={[new Date(row.createdAt).toLocaleString(undefined, { timeZone: "America/New_York" }), `by ${row.adjustedBy.name ?? row.adjustedBy.email}`]} />
                     </li>
                   ))}
                 </ul>
@@ -371,7 +371,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                     </span>
                   </div>
                   <p className="mt-0.5 text-small text-slate-400">{row.reasonNote}</p>
-                  <Meta className="mt-0.5" items={[new Date(row.createdAtMs).toLocaleString(), `by ${row.adjustedByName ?? row.adjustedByEmail}`]} />
+                  <Meta className="mt-0.5" items={[new Date(row.createdAtMs).toLocaleString(undefined, { timeZone: "America/New_York" }), `by ${row.adjustedByName ?? row.adjustedByEmail}`]} />
                 </li>
               ))}
             </ul>

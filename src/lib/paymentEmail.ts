@@ -591,6 +591,9 @@ async function pickByAmountAlone<T extends OpenPayment & { userId: string; creat
   const only = candidates.length === 1 ? candidates[0] : oldestOfSameStudent(candidates);
   if (!only || only.amountCents !== receipt.amountCents) return null;
   if (familyPayerOf(only)) return null; // a family bill is only ever settled by the family's payer, never by amount alone
+  // "Prices end in .99, which nobody sends by accident" holds for plan bills only. A whole-dollar amount (the flat extra class price, a round
+  // discount) is an everyday transfer amount, so it is never claimed by amount alone: it needs the BNP code or the sender's name.
+  if (only.amountCents % 100 === 0) return null;
   if (Date.now() - only.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return null;
   if (memoHasOtherReference(receipt.memo, only.id)) return null;
   if (!(await getBoolSetting("payments.matchByAmount"))) return null;

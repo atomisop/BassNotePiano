@@ -30,6 +30,8 @@ export function normalizeReferralCode(raw: unknown): string | null {
  */
 export function rewardWouldHelp(existing: { percent: number; expiresAt: Date | null } | null, newExpiresAt: Date): boolean {
   if (!existing) return true;
+  // A permanent discount (the owner's own) is never swapped for a timed one: when the timed one ended, the person would be left with none.
+  if (existing.expiresAt === null) return false;
   if (existing.percent > REFERRAL_PERCENT) return false;
   if (existing.percent === REFERRAL_PERCENT) return existing.expiresAt !== null && existing.expiresAt.getTime() < newExpiresAt.getTime();
   return true;

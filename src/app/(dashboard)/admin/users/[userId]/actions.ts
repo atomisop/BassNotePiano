@@ -34,14 +34,14 @@ async function requireAdmin() {
  * now, without touching a password. Useful for "I think my account was
  * compromised" or "I'm locked out of a stuck session" support requests.
  */
-export async function adminForceSignOutAction(targetUserId: string) {
+export async function adminForceSignOutAction(targetUserId: string, notify = true) {
   const admin = await requireAdmin();
   // Signing another admin (or the owner) out is for the owner only; staff can do it for students.
   const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { role: true } });
   if (target?.role === "ADMIN" && !isOwnerEmail(admin.email)) return;
   await prisma.user.update({ where: { id: targetUserId }, data: { sessionVersion: { increment: 1 } } });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.sign-out-everywhere", targetType: "User", targetId: targetUserId });
-  await noticeAccountChange(targetUserId, { kind: "signed-out-everywhere", by: "admin" });
+  await withStudentNotice(notify, () => noticeAccountChange(targetUserId, { kind: "signed-out-everywhere", by: "admin" }));
   revalidatePath("/", "layout");
 }
 

@@ -39,7 +39,15 @@ export interface GrantCreditsOptions {
  * every other write in this file, see the file header for why this always
  * runs on the plain `prisma` client rather than a caller's `tx`.
  */
-export async function recordCreditGrant(userId: string, quantity: number, options: GrantCreditsOptions): Promise<void> {
+export async function recordCreditGrant(userId: string, quantity: number, options: GrantCreditsOptions, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<void> {
+  // Inside a caller's transaction the row is written ON it (not best-effort): if the approval rolls back, the ledger row goes with it, so a
+  // phantom grant can never expire later and take real credits. A failed write there also fails the approval, which is the safe side.
+  if (db !== prisma) {
+    await db.creditGrant.create({
+      data: { userId, source: options.source, paymentPlanId: options.paymentPlanId, creditsGranted: quantity, creditsRemaining: quantity, expiresAt: options.expiresAt ?? null },
+    });
+    return;
+  }
   try {
     await prisma.creditGrant.create({
       data: {
@@ -78,7 +86,7 @@ export async function grantCredits(
   db: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<void> {
   await db.user.update({ where: { id: userId }, data: { classCredits: { increment: quantity } } });
-  await recordCreditGrant(userId, quantity, options);
+  await recordCreditGrant(userId, quantity, options, db);
 }
 
 /**

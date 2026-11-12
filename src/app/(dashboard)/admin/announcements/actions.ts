@@ -22,6 +22,7 @@ export async function createAnnouncementAction(title: string, body: string, send
   try {
     const adminId = await requireAdminId();
     await createAnnouncement(adminId, title, body, sendEmail);
+    await logAudit({ actorId: adminId, action: "announcement.create", targetType: "Announcement", targetId: "new", detail: `${title}${sendEmail ? " (also emailed)" : ""}` }).catch(() => undefined);
     revalidatePath("/admin/announcements");
     return { ok: true as const };
   } catch (err) {
@@ -31,8 +32,9 @@ export async function createAnnouncementAction(title: string, body: string, send
 
 export async function setAnnouncementActiveAction(id: string, active: boolean) {
   try {
-    await requireAdminId();
+    const adminId = await requireAdminId();
     await setAnnouncementActive(id, active);
+    await logAudit({ actorId: adminId, action: "announcement.active", targetType: "Announcement", targetId: id, detail: active ? "Turned on" : "Turned off" }).catch(() => undefined);
     revalidatePath("/admin/announcements");
     return { ok: true as const };
   } catch (err) {
@@ -42,8 +44,9 @@ export async function setAnnouncementActiveAction(id: string, active: boolean) {
 
 export async function deleteAnnouncementAction(id: string) {
   try {
-    await requireAdminId();
+    const adminId = await requireAdminId();
     await deleteAnnouncement(id);
+    await logAudit({ actorId: adminId, action: "announcement.delete", targetType: "Announcement", targetId: id, detail: "Deleted" }).catch(() => undefined);
     revalidatePath("/admin/announcements");
     return { ok: true as const };
   } catch (err) {

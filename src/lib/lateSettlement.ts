@@ -92,7 +92,9 @@ export async function settleLatePayment(planId: string, adminId: string, input: 
   // The next bill lands 28 days from today (the day they actually paid), and this cycle's credits last until then.
   const newDue = addBillingCycles(new Date(), 1);
   await prisma.$transaction(async (tx) => {
-    const fresh = await tx.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { status: true } });
+    const fresh = await tx.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { status: true, nextDueDate: true } });
+    // Only ever moved LATER: a plan that was not really overdue (its date is already past 28 days out) must not lose paid days.
+    if (fresh.nextDueDate.getTime() >= newDue.getTime()) return;
     if (fresh.status === "ACTIVE") await tx.paymentPlan.update({ where: { id: planId }, data: { nextDueDate: newDue } });
     const grant = await tx.creditGrant.findFirst({ where: { userId, paymentPlanId: planId, source: "PAYMENT_PLAN_INSTALLMENT", expiredAt: null }, orderBy: { createdAt: "desc" }, select: { id: true } });
     if (grant) await tx.creditGrant.update({ where: { id: grant.id }, data: { expiresAt: newDue } });

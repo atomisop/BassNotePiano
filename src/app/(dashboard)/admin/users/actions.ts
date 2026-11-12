@@ -67,7 +67,8 @@ export async function setCurriculumAccessAction(targetUserId: string, hasAccess:
 
 export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: string, unlock: boolean, notify = true) {
   return withStudentNotice(notify, async () => {
-    await requireAdmin();
+    const admin = await requireAdmin();
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "scale.release", targetType: "User", targetId: targetUserId, detail: `${unlock ? "Unlocked" : "Locked"} ${scaleSlug} by hand` });
     if (unlock) {
       // Opening a scale by hand tells the student the same way a teacher approval does (only when it was not open already).
       const wasOpen = await prisma.scaleProgress.findFirst({ where: { userId: targetUserId, scaleGroup: { slug: scaleSlug }, unlockedAt: { not: null } }, select: { id: true } });
@@ -87,9 +88,10 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
  */
 export async function approveNextScaleAction(targetUserId: string, force: boolean, notify = true) {
   return withStudentNotice(notify, async () => {
-    await requireAdmin();
+    const admin = await requireAdmin();
     try {
       await approveNextScale(targetUserId, { force });
+      await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "scale.release", targetType: "User", targetId: targetUserId, detail: force ? "Released the next scale (past the usual rules)" : "Released the next scale" });
     } catch (err) {
       if (err instanceof ScaleApprovalError) throw new Error(err.message);
       throw err;
@@ -105,8 +107,8 @@ export async function approveNextScaleAction(targetUserId: string, force: boolea
  */
 export async function approveAllReadyScalesAction(notify = true): Promise<{ message: string }> {
   return withStudentNotice(notify, async () => {
-    await requireAdmin();
-    const progress = await getAdminProgressOverview("");
+    const admin = await requireAdmin();
+    const progress = await getAdminProgressOverview("", { all: true });
     const ready = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY");
     let approved = 0;
     let skipped = 0;
@@ -119,6 +121,7 @@ export async function approveAllReadyScalesAction(notify = true): Promise<{ mess
         skipped++;
       }
     }
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "scale.release", targetType: "User", targetId: admin.id, detail: `Approve all ready: released for ${approved}, ${skipped} skipped` });
     revalidatePath("/", "layout");
     const base = approved === 1 ? "Released the next scale for 1 student." : `Released the next scale for ${approved} students.`;
     return { message: skipped > 0 ? `${base} ${skipped} could not be released (see their row).` : base };
@@ -129,7 +132,8 @@ export async function approveAllReadyScalesAction(notify = true): Promise<{ mess
 // permanently unless the studio chooses to clear it, there's no
 // self-service "clear my chat" for the student, only this admin action.
 export async function clearAssistantHistoryAction(targetUserId: string) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   await clearPersistedHistory(targetUserId);
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "assistant.clear-history", targetType: "User", targetId: targetUserId, detail: "Cleared their saved Atom chats" });
   revalidatePath("/", "layout");
 }

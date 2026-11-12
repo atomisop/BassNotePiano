@@ -17,7 +17,9 @@ describe("referral rules", () => {
   it("never lowers an existing discount", () => {
     const later = new Date("2027-03-01");
     expect(rewardWouldHelp(null, later)).toBe(true);
-    expect(rewardWouldHelp({ percent: 5, expiresAt: null }, later)).toBe(true);
+    // A permanent discount is never swapped for a timed one (the person would lose it when the timed one ends).
+    expect(rewardWouldHelp({ percent: 5, expiresAt: null }, later)).toBe(false);
+    expect(rewardWouldHelp({ percent: 5, expiresAt: new Date("2027-02-01") }, later)).toBe(true);
     expect(rewardWouldHelp({ percent: 20, expiresAt: null }, later)).toBe(false);
     expect(rewardWouldHelp({ percent: 10, expiresAt: null }, later)).toBe(false);
     expect(rewardWouldHelp({ percent: 10, expiresAt: new Date("2027-02-01") }, later)).toBe(true);

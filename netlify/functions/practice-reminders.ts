@@ -59,14 +59,19 @@ export const runPracticeReminders = () =>
     const gap = daysSince(user.lastActivityDate, now);
     if (!triggerDays.includes(gap)) continue;
 
-    await createNotification({
-      userId: user.id,
-      type: "PRACTICE_REMINDER",
-      title: "Time for a practice session?",
-      body: `It's been ${gap} day${gap === 1 ? "" : "s"} since your last practice. Pick up where you left off.`,
-      emailCategory: "reminders",
-    });
-    sent++;
+    // One person's failure must not stop everyone after them (the gap day is an exact match, so they would not be retried).
+    try {
+      await createNotification({
+        userId: user.id,
+        type: "PRACTICE_REMINDER",
+        title: "Time for a practice session?",
+        body: `It's been ${gap} day${gap === 1 ? "" : "s"} since your last practice. Pick up where you left off.`,
+        emailCategory: "reminders",
+      });
+      sent++;
+    } catch (err) {
+      console.error(`Practice reminder failed for user ${user.id} (continuing):`, err);
+    }
   }
 
   console.log(`Practice reminders: sent ${sent} of ${users.length} eligible users`);

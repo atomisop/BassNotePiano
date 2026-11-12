@@ -57,8 +57,9 @@ export async function updateClassScheduleAction(scheduleId: string, input: Class
 }
 
 export async function setClassScheduleActiveAction(scheduleId: string, active: boolean, cancelUpcoming = false) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const canceled = await setClassScheduleActive(scheduleId, active, { cancelUpcoming });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "schedule.active", targetType: "ClassSchedule", targetId: scheduleId, detail: `${active ? "Turned on" : "Turned off"} a weekly time${cancelUpcoming ? `, canceled ${typeof canceled === "number" ? canceled : "its"} upcoming classes` : ""}` }).catch(() => undefined);
   revalidatePath("/", "layout");
   return { ok: true as const, canceled };
 }

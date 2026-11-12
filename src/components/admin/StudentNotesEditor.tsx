@@ -13,7 +13,7 @@ import { IconSwap } from "@/components/ui/IconSwap";
 import { Meta } from "@/components/ui/CardKit";
 
 function when(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
 /**

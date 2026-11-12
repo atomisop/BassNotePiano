@@ -452,6 +452,6 @@ export function discountedPlanPriceCents(listCents: number, percent: number): nu
   if (!Number.isFinite(percent) || percent <= 0) return listCents;
   // 100% is a free plan (only a scholarship can give it): the bill is $0 and settles by itself (freeBills.ts).
   if (percent >= MAX_SCHOLARSHIP_PERCENT) return 0;
-  const capped = Math.min(percent, MAX_PERSONAL_DISCOUNT_PERCENT);
-  return Math.max(99, toCharmPriceCents(Math.round(listCents * (1 - capped / 100))));
+  // No cap here: a personal discount is limited to MAX_PERSONAL_DISCOUNT_PERCENT where it is set, but a scholarship may be 91 to 99.
+  return Math.max(99, toCharmPriceCents(Math.round(listCents * (1 - Math.min(percent, 99.5) / 100))));
 }

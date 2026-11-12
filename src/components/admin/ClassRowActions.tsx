@@ -279,7 +279,7 @@ export function ScaleReleaseDialog({
     scale.state === "NEEDS_CHECKLIST"
       ? "They have not finished the previous scale's lessons, practice and quiz yet."
       : scale.state === "WAITING_PACE" && scale.availableAt
-        ? `One new scale a week: this one opens by the usual rules on ${new Date(scale.availableAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
+        ? `One new scale a week: this one opens by the usual rules on ${new Date(scale.availableAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}.`
         : null;
   return (
     <Dialog

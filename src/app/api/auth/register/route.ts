@@ -129,13 +129,13 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // An account nobody has ever confirmed belongs to no one yet. Whoever really owns the inbox registering again takes it over
-      // (new password, old sessions ended), so a stranger cannot hold someone else's address with a password only they know.
+      // An account nobody has confirmed yet is never taken over by a second sign-up: that would let a stranger who knows the address
+      // set the password (the real owner confirming the emailed code would then confirm the stranger's password). The inbox owner gets a
+      // fresh code and signs in with the password already on the account, or uses "Forgot password" (which proves the inbox too).
       const existing = await prisma.user.findFirst({ where: { email, emailVerified: null }, select: { id: true, email: true } });
       if (existing) {
-        await prisma.user.update({ where: { id: existing.id }, data: { name, passwordHash, sessionVersion: { increment: 1 } } });
-        const resent = await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" });
-        return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok }, { status: 201 });
+        await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" }).catch(() => undefined);
+        return NextResponse.json({ error: "An account with that email is waiting to be confirmed. We sent that inbox a new code. Use the password you chose first, or Forgot password." }, { status: 409 });
       }
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }

@@ -54,7 +54,7 @@ export const runPaymentPlanReservations = () =>
           type: "RESERVED_SLOT_UNAVAILABLE",
           title: "Your reserved class time isn't offered anymore",
           body: "The weekly time your payment plan reserves was deactivated. Pick a new one in Lessons and your classes move with it.",
-          emailCategory: "payments",
+          emailCategory: "classes",
         }).catch((err) => console.error(`RESERVED_SLOT_UNAVAILABLE notification failed for plan ${plan.id} (non-blocking):`, err));
         await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: now } });
         notifiedInactive++;
@@ -117,8 +117,14 @@ export const runPaymentPlanReservations = () =>
       if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
 
       // A paid month is every one of this weekday inside the cycle: four, or five when the cycle holds five.
-      if ((await classesLeftInPaidMonth(plan)) <= 0) break;
-      await topUpIfFifth(plan, creditsPerClass);
+      // One plan that throws here must not stop every plan after it: log it and move on to the next plan.
+      try {
+        if ((await classesLeftInPaidMonth(plan)) <= 0) break;
+        await topUpIfFifth(plan, creditsPerClass);
+      } catch (err) {
+        console.error(`Weekly booking check failed for plan ${plan.id} (skipping this plan):`, err);
+        break;
+      }
 
       const available = await getEffectiveClassCredits(plan.userId);
       if (available < creditsPerClass) {

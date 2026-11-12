@@ -39,7 +39,7 @@ export async function adjustUserCreditsAction(targetUserId: string, amount: numb
     // Taking credits back is fine for staff; adding them is giving away value, which only the owner does.
     if (amount > 0 && !isOwnerEmail(admin.email)) return { ok: false as const, error: "Only the owner can add credits." };
     try {
-      const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
+      const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote, { respectHeld: true });
       await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
       revalidatePath("/", "layout");
       return { ok: true as const, balance: result.balance };

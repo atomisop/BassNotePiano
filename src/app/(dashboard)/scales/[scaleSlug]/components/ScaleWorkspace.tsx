@@ -333,7 +333,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         <div className="mt-4 border-t border-slate-50/8 pt-4 text-small text-slate-400">
           <p>
             <span className="font-semibold text-slate-200">Free trial</span> until{" "}
-            {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
+            {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}.
           </p>
           <Link href="/billing/plans" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2" })}>
             See class plans
