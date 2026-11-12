@@ -129,7 +129,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
     getNumberSetting("access.scaleUnlockIntervalDays"),
   ]);
   const trialLine = trialOn
-    ? `Every new account gets a ${trialDays}-day free trial of just the first ${trialLessons} lessons of Scale 1 (once per person), starting when the account is created.`
+    ? `Every new account gets a ${trialDays}-day free trial of just the first ${trialLessons} lessons of Scale 1 (once per person), starting when the person confirms their email with the 6-digit code.`
     : "There is no free trial right now.";
   const cutoff = `${cancelHours} hour${cancelHours === 1 ? "" : "s"}`;
   const scaleList = SCALE_GROUPS.map(

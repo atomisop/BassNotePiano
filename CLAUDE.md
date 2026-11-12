@@ -235,8 +235,9 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   previous scale's checklist is complete and 7+ days passed since the last
   unlock; the admin can force past both. Approval sets
   `ScaleProgress.unlockedAt`, which only counts while entitlement is active.
-- **Free trial**: every new account starts it at sign-up (`startTrialForEmail` in
-  the register route; decided 2026-11-09): `User.trialEndsAt` (3 days, once per
+- **Free trial**: every new account starts it when its email is CONFIRMED (`startTrialForEmail`
+  in `verifyEmailAction`, not the register route; moved 2026-11-12 so the 3 days never run while someone waits for their code, and the once-per-inbox
+  marker is only spent on a real inbox; accounts made before that keep the trial they already had): `User.trialEndsAt` (3 days, once per
   person and per inbox, never cleared; off with `trial.enabled`). Trial opens only Scale 1's first 3 lessons
   (`TRIAL_LESSON_COUNT`), no practice/quiz; locked lessons are sent to the
   client as titles only.
@@ -435,6 +436,19 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
 time after `payments.firstBillLapseDays`; new lesson files get a random key. Read `docs/ABUSE-AUDIT.md` before changing money,
 booking or access code: it lists what was checked and the business decisions left open.
+
+## Sign-up and first-run friction (added 2026-11-12)
+
+Fixes from a review of everything a new user hits between "Create account" and the first lesson. The shape to keep:
+
+- **Sign-up page** (`(auth)/register/page.tsx` is a small SERVER page that reads `trial.enabled` / `trial.days` and renders the client `RegisterForm.tsx`; `force-dynamic`, and it opens without the line if settings cannot be read). The line under the title says when the trial starts and that a 6-digit code comes next, and never promises a trial that is switched off. The referral hint names plans the way the rest of the app does ("3 Month or 6 Month").
+- **The captcha says when it cannot load** (`TurnstileWidget` reports a `CaptchaState` through `onState`: off / loading / ready / blocked; the script's `error`, a 12 second wait or the widget's `error-callback` mean blocked). Blocked shows plain words and "try again" under the widget, and the sign-up button is switched off; a tap before the token arrives says "one moment" instead of sending a request the server must refuse. `ClassRegistrationForm` gets the message too.
+- **Going Back from "verify your email" keeps the form** (`src/lib/signupDraft.ts`, sessionStorage, name and email only, NEVER the password; cleared once the email is confirmed).
+- **"Wrong email? Change it"** on the verify screen (`changeSignupEmailAction`): only for an account that has never been confirmed, proved by the password chosen at sign-up, checked server-side on every call; one error for a wrong password, an unknown address, a confirmed account and a banned one (no probing); rate limited per old address and per network; the old address's open codes are closed in the same transaction as the move.
+- **Registering again over an unconfirmed account** asks for the new code FIRST. When the code limit is hit it answers 429 and changes nothing (before, the `RateLimitError` was thrown inside the catch block and became a bare 500).
+- **Usernames**: the rules have no database in them and live in `src/lib/usernameRules.ts` (`usernameProblem`, `usernameCandidates`, `numberedVariants`); `social.ts` re-exports them. The first wizard step now refuses every name the last step refuses (reserved words are matched as SUBSTRINGS, so "badminton" and "atomic" are refused; that is the policy, not a bug). The wizard offers free names built from the student's name (`suggestUsernamesAction`, also after a refusal), and a username error on the last step sends them back to the first step where the field is.
+- **Drums and Vocal stay switched off as an instrument** (see `INSTRUMENTS_COMING_SOON`: a clickable "coming soon" read as a bug). Instead the wizard has a separate "tell me when it opens" tick (`src/lib/instrumentInterest.ts`): a student who ticks one and picks nothing else is saved as Other, and an INTERESTED `Contact` (source `WAITLIST_SOURCE`) shows on Admin > People with the instrument beside the name (merged by email with their account, instrument only; the note is on the contact's own page under Added). No migration. Deleting the account removes only the entry this feature made.
+- Tests: `tests/db/signupFlow.test.ts` (trial timing, the 429, the email change, usernames, the list), `tests/usernameRules.test.ts`, `tests/signupDraft.test.ts`, `tests/instrumentInterest.test.ts`.
 
 ## Passwords (added 2026-10-11)
 

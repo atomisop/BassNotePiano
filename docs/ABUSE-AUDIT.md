@@ -6,7 +6,7 @@ What was checked, what was closed, and what is left on purpose. Tests: `tests/db
 
 | Gap | How it was used | Fix |
 |---|---|---|
-| Repeat free trial by deleting the account | Delete the account, register the same inbox again: a second 3-day trial. | The trial is remembered per inbox for good (`trial-used:<inbox>` marker, claimed atomically in `startTrialForEmail`), so deletion and two sign-ups racing cannot give a second one. |
+| Repeat free trial by deleting the account | Delete the account, register the same inbox again: a second 3-day trial. | The trial is remembered per inbox for good (`trial-used:<inbox>` marker, claimed atomically in `startTrialForEmail`, which runs when the email is confirmed, not at sign-up), so deletion and two sign-ups racing cannot give a second one. |
 | Repeat free trial with plus tags | `name+2@outlook.com` counted as a new person (only Gmail was folded). | `canonicalEmail` drops the plus tag at every domain (dots still only for Gmail). |
 | Squatting on a weekly time | Start a plan and never pay: it held the weekly slot for up to 7 days, then start another. | A plan whose first bill is unpaid after `payments.firstBillLapseDays` (default 2, Settings > Payments) is canceled and the time is free; a payment waiting for review stops it. Runs in the daily installments job. |
 | Guessable lesson file addresses | Lesson video and PDF files sit at public R2 addresses built from the lesson name and upload time. | New uploads get a 32 character random token in the address. Existing files keep their old address (see below). |

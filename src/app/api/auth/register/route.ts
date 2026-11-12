@@ -3,7 +3,6 @@ import { reportError } from "@/lib/reportError";
 import { attachReferral } from "@/lib/referrals";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
-import { startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
@@ -23,6 +22,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Sign-up costs a bcrypt hash, a row, and an outbound email per call, so it
 // is capped per IP before any of that runs.
 const SIGNUP_LIMIT = { windowMinutes: 60, max: 10, message: "Too many sign-up attempts from this network. Try again in an hour." };
+
+/** Said when this address has already been sent several codes in a row: the newest one is still good, so point at it. */
+const TOO_MANY_CODES_MESSAGE =
+  "We've already sent this address several codes. The newest one still works for a few minutes: check your inbox and the Promotions, Updates and Spam folders, or try again in about 15 minutes.";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
@@ -106,10 +109,8 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, email: true },
     });
-    // Every new account starts with the free trial (decided 2026-11-09, when class applications were removed). Still one per
-    // person: startTrialForEmail refuses an inbox that ever had one, and does nothing while the owner has trials switched off.
-    // Best-effort, never blocks sign-up.
-    await startTrialForEmail(user.email).catch((err) => reportError(err, "Starting the free trial failed"));
+    // The free trial does NOT start here. It starts when the email is confirmed (verifyEmailAction), so the clock never runs
+    // while someone is still waiting for their code, and an inbox is only spent on an address that really belongs to them.
     // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
     if (body?.ref) await attachReferral(user.id, body.ref);
     // The account exists either way. If the email could not be sent the screen says so and offers "Resend", instead of
@@ -133,8 +134,20 @@ export async function POST(req: NextRequest) {
       // (new password, old sessions ended), so a stranger cannot hold someone else's address with a password only they know.
       const existing = await prisma.user.findFirst({ where: { email, emailVerified: null }, select: { id: true, email: true } });
       if (existing) {
-        await prisma.user.update({ where: { id: existing.id }, data: { name, passwordHash, sessionVersion: { increment: 1 } } });
-        const resent = await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" });
+        // The new code is asked for FIRST: when too many were already sent it throws, and the account must be left exactly as it
+        // was (the old password still works, the newest code is still good), not half taken over. This throw is raised inside
+        // this catch block, so the RateLimitError branch below never sees it: it is answered here or it becomes a bare 500.
+        let resent: { ok: boolean };
+        try {
+          resent = await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" });
+        } catch (codeErr) {
+          if (codeErr instanceof RateLimitError) return NextResponse.json({ error: TOO_MANY_CODES_MESSAGE }, { status: 429 });
+          throw codeErr;
+        }
+        // The account was unconfirmed when it was read, but a code was sent in between: if its owner confirmed it meanwhile it is a real
+        // account now and its password must not be replaced by whoever registered over it. Zero rows means exactly that.
+        const taken = await prisma.user.updateMany({ where: { id: existing.id, emailVerified: null }, data: { name, passwordHash, sessionVersion: { increment: 1 } } });
+        if (taken.count !== 1) return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
         return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok }, { status: 201 });
       }
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
