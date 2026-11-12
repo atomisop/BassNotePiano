@@ -561,6 +561,8 @@ and does nothing when nothing is new. The owner ships something at once from Act
 the PR merges. Never push to `release` by hand and never force it; the script refuses a `release` that holds anything `main` lacks. The one-time Netlify settings (Production branch `release`, Branch deploys only for `staging`, Deploy Previews for all pull
 requests) are in the doc: until they are set, Netlify still deploys `main` and the workflow is harmless.
 
+**Netlify builds need a bigger Node heap (2026-11-12).** Every production build from #413 to #420 failed on Netlify with "JavaScript heap out of memory" (Node exit 134, which Netlify prints as "non-zero exit code: 2") while CI, whose machine has more memory, passed, so the live site stayed on #414 for a day. `netlify.toml` now sets `NODE_OPTIONS = "--max-old-space-size=4096"` under `[build.environment]`. A failed Netlify build with exit code 2 is not proof the code is wrong: open the deploy log first. As of this date Netlify's Production branch was still `main` (each merge deployed at once; the `release` branch existed but nothing built from it); update this line when that setting is switched.
+
 ## Workflow this session (and prior Claude sessions in this repo) actually follow
 
 1. Branch per unit of work, PR against `main`, `subscribe_pr_activity`,

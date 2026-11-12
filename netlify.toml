@@ -16,6 +16,10 @@
   # Before this, Netlify's build image used its own unpinned default, which
   # could silently drift from whatever a developer's local machine runs.
   NODE_VERSION = "24"
+  # Netlify's build machine gave Node a heap of about 2 GB, and the production build runs out of it while compiling ("JavaScript heap
+  # out of memory", exit code 134, which Netlify shows as exit code 2). Every production deploy failed that way from 2026-11-11 on.
+  # 4 GB gives the compile room. GitHub's CI machine has more memory, so its build never showed the problem.
+  NODE_OPTIONS = "--max-old-space-size=4096"
   # Netlify fails a build when the value of an environment variable appears in a committed file. A bucket name is not a secret
   # and the setup doc (docs/PRIVATE-LESSON-FILES.md) names it, so this one key is exempt. Real secrets stay scanned.
   SECRETS_SCAN_OMIT_KEYS = "R2_PRIVATE_BUCKET_NAME"
