@@ -90,7 +90,7 @@ export const runAdminDailySummary = () =>
       ? { text: `Scheduled ${stoppedJobs.length === 1 ? "job has" : "jobs have"} stopped: ${stoppedJobs.join(", ")}`, url: getAppUrl("/admin") }
       : null,
     pipelineQuiet
-      ? { text: "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script", url: getAppUrl("/admin/payments") }
+      ? { text: "No bank email has arrived in two days while payments are waiting, check the Gmail script", url: getAppUrl("/admin/payments") }
       : null,
     rejected.length
       ? {

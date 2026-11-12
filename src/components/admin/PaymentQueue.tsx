@@ -622,7 +622,7 @@ export function PaymentQueue({
           ) : step === "refund" ? (
             <div className="mt-4 space-y-3 border-t border-slate-50/8 pt-3">
               <p className="text-small text-slate-300">
-                Mark {formatUsd(payment.amountCents)} as refunded. Send the money back yourself on Zelle or Venmo.
+                Mark {formatUsd(payment.amountCents)} as refunded. Send the money back yourself on Zelle.
               </p>
               <input
                 value={refundNote}

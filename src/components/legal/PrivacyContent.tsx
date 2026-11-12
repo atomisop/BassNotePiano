@@ -40,7 +40,7 @@ export function PrivacyContent() {
           What you give us directly: your name, email, and password when you register; your
           profile photo, instrument, skill level, and goals if you fill those in; messages you
           send to the studio through the app; private notes you write on a scale&apos;s lesson
-          page (visible only to you, deleted with your account); and, when you pay by Zelle or Venmo, the sender name
+          page (visible only to you, deleted with your account); and, when you pay by Zelle, the sender name
           and reference code you type in so we can match your transfer. If you use the class
           registration form before creating an account, that&apos;s your name, email, phone number,
           instrument, skill level, and anything you add in the notes field.
@@ -58,7 +58,7 @@ export function PrivacyContent() {
           If you add a phone number, we keep it so we can match your payments and reach you. It is not shared with anyone else.
           If you connect Discord, we keep your Discord user ID and name so we can add you to your private class call, and we
           remove you from our server if you disconnect or delete your account. If you email the studio, the message and your
-          address are saved with our support conversations. For payments, your bank or Venmo emails us a notice of a transfer
+          address are saved with our support conversations. For payments, your bank emails us a notice of a transfer
           (the sender name, the amount and the note you typed); we read those only to match them to your payment.
         </p>
         <p>
@@ -76,7 +76,7 @@ export function PrivacyContent() {
 
       <PrivacySection title="What we don't collect">
         <p>
-          We never see or store your bank account or card numbers. Zelle and Venmo payments move directly
+          We never see or store your bank account or card numbers. Zelle payments move directly
           between your account and ours; the reference code you submit is just how we confirm which
           transfer was yours. We also don&apos;t run ad-tracking pixels or sell any of your data to
           anyone, ever, including to Google, whose AI we use to power Atom (more on that below).

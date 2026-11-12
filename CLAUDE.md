@@ -200,6 +200,8 @@ Accounts now need a first and last name (`src/lib/studentName.ts`).
 
 **Soft trust**: when Mailgun gives NO verdict (not a failure) but the message carries a signature from the sender's own domain and Gmail recorded the bank's signature as passing (`checkForwardedBankMail().soft`), the email is read like a verified one and anything it settles stays in the owner's "unchecked" list (`ingestPaymentEmail(..., { forceCheck: true })`). An explicit failure, another domain, or no Gmail hint still only reaches the hold path above.
 
+**Venmo is no longer accepted (2026-11-12, the owner).** The payment sheet offers Zelle only (no Venmo tab, link or QR), `submitZellePaymentReference` always stores `method = ZELLE`, and every sentence a person reads says Zelle. The `VENMO` enum value, the Venmo email parser and the "Venmo" label on old payments, receipts and history stay on purpose: rows and emails that already exist still have to read correctly, and a stray Venmo email is still understood. `NEXT_PUBLIC_VENMO_HANDLE` is no longer read.
+
 **Payment emails arrive by forwarding** (added 2026-10-10, `docs/PAYMENT-EMAIL-FORWARDING.md`): Gmail forwards bank/SoFi/Venmo mail to
 the private address `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`; a Mailgun route posts it to `/api/inbound/payments`, which
 checks the private address, Mailgun's signature, a bank sender domain and the bank's own DKIM signature aligned with the sender

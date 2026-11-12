@@ -53,8 +53,7 @@ export function TermsContent() {
         <p>
           <span className="font-medium text-slate-50">Starting.</span> Your plan starts when your first payment is approved. The price on
           the review screen is the price you pay. If our prices change while you are looking at it, you are asked to review it again before anything is
-          created. After you start, your plan keeps the price it started at. Paying by Zelle or Venmo is described under &quot;Payment &amp; Zelle or
-          Venmo&quot; below.
+          created. After you start, your plan keeps the price it started at. Paying by Zelle is described under &quot;Payment &amp; Zelle&quot; below.
         </p>
         <p>
           <span className="font-medium text-slate-50">Your weekly time.</span> The day and time you pick is yours alone and is booked
@@ -129,7 +128,7 @@ export function TermsContent() {
       <TermsSection title="Class credits & bundles">
         <p>
           Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 1 Month,
-          3 Months, or 6 Months, paid one Zelle or Venmo installment every 28 days (so 13 bills a year, not 12; a plan&apos;s &ldquo;month&rdquo; is one 28-day bill), longer terms at a lower rate. Enrolling
+          3 Months, or 6 Months, paid one Zelle installment every 28 days (so 13 bills a year, not 12; a plan&apos;s &ldquo;month&rdquo; is one 28-day bill), longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
@@ -173,16 +172,16 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
-      <TermsSection title="Payment & Zelle or Venmo">
+      <TermsSection title="Payment & Zelle">
         <p>
-          Payments go through Zelle or Venmo and are checked by hand before access or credits are granted, which is why
+          Payments go through Zelle and are checked by hand before access or credits are granted, which is why
           it&apos;s not instant. For returning students, an installment unlocks right away and is checked
           afterward. Submitting a fake or altered payment reference to get access is fraud and results in
           the access being revoked and the account closed, no warning.
         </p>
         <p>
           Once access has been granted, reversing the underlying bank transfer instead of contacting us directly
-          (a &quot;chargeback&quot; on a Zelle or Venmo payment) will get the account suspended while we sort it out.
+          (a &quot;chargeback&quot; on a Zelle payment) will get the account suspended while we sort it out.
         </p>
       </TermsSection>
 

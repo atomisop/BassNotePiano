@@ -115,7 +115,7 @@ export async function cancelBillAction(paymentId: string): Promise<{ ok: boolean
   }
 }
 
-/** Attaches a bank or Venmo email that matched nobody to an open payment for the same amount, and approves it. */
+/** Attaches a bank email that matched nobody to an open payment for the same amount, and approves it. */
 export async function matchReceiptAction(receiptId: string, paymentId: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireOwnerAdmin();
