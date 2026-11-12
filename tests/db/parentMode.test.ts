@@ -94,7 +94,7 @@ describe("linking a child's account", () => {
     await expect(sendParentLink(parent.id, nameless.email)).rejects.toThrow(/first and last name/);
   });
 
-  it("a declined request is not asked again for a while, and either side can end a link", async () => {
+  it("a declined request is not asked again for a while, and only the parent can end an accepted link", async () => {
     const parent = await account("ld", "Parent Tester");
     const child = await account("ldc", "Kiddo Tester");
     await sendParentLink(parent.id, child.email);
@@ -103,8 +103,9 @@ describe("linking a child's account", () => {
     expect(await sendParentLink(parent.id, child.email)).toBe("DECLINED");
 
     const { parent: p2, child: c2 } = await linked("Second Kid");
-    // The child ends it from their side.
-    await endParentLink(c2.id, p2.id);
+    // The child cannot end it from their side once it is accepted; the parent can.
+    await expect(endParentLink(c2.id, p2.id)).rejects.toThrow(/Only your parent/);
+    await endParentLink(p2.id, c2.id);
     await expect(assertParentOf(p2.id, c2.id)).rejects.toBeInstanceOf(ParentLinkError);
   });
 

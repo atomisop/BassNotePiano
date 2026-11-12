@@ -171,8 +171,11 @@ export async function respondToParentLink(childId: string, linkId: string, accep
 
 /** Ends a link from either side (the parent removing a child, a child removing a parent) or withdraws a waiting request. */
 export async function endParentLink(userId: string, otherId: string): Promise<void> {
-  // A child who ends a link is remembered like a "no": the same parent cannot ask again straight away (see PARENT_LINK_DECLINE_DAYS).
-  await prisma.parentLink.updateMany({ where: { parentId: otherId, childId: userId, status: { in: ["PENDING", "ACCEPTED"] } }, data: { status: "DECLINED", respondedAt: new Date() } });
+  // A child may turn down a request that is still waiting, but once a parent is linked only the parent can end it.
+  const accepted = await prisma.parentLink.findFirst({ where: { parentId: otherId, childId: userId, status: "ACCEPTED" }, select: { id: true } });
+  if (accepted) throw new ParentLinkError("Only your parent can remove this link.");
+  // A child who turns a request down is remembered like a "no": the same parent cannot ask again straight away (see PARENT_LINK_DECLINE_DAYS).
+  await prisma.parentLink.updateMany({ where: { parentId: otherId, childId: userId, status: "PENDING" }, data: { status: "DECLINED", respondedAt: new Date() } });
   await prisma.parentLink.deleteMany({
     where: { status: { not: "DECLINED" }, parentId: userId, childId: otherId },
   });
@@ -261,6 +264,14 @@ export async function listLinksToChild(childId: string): Promise<{ requests: Par
 /** True when a parent is linked to this account: the schedule is theirs to change, not the child's. */
 export async function hasParentControl(childId: string): Promise<boolean> {
   return Boolean(await prisma.parentLink.findFirst({ where: { childId, status: "ACCEPTED" }, select: { id: true } }));
+}
+
+/** What a child account is told when it tries to change something only its parent may (its email, its password, deleting it, ending the link). */
+export const CHILD_ACCOUNT_MESSAGE = "Your parent manages this account, so they handle this. Ask them to do it from Parent mode.";
+
+/** For the account actions a child may not do: null when the account is free to proceed, otherwise the refusal to hand back. */
+export async function childAccountBlock(userId: string): Promise<{ ok: false; error: string } | null> {
+  return (await hasParentControl(userId)) ? { ok: false, error: CHILD_ACCOUNT_MESSAGE } : null;
 }
 
 export const PARENT_CONTROL_MESSAGE = "Your schedule is controlled by your parent.";

@@ -202,9 +202,8 @@ export function ParentLinksPanel() {
                 {state.parents.map((p) => (
                   <li key={p.parentId} className="flex items-center justify-between gap-3 py-2.5">
                     <p className="min-w-0 truncate text-body font-medium text-slate-100">{p.name}</p>
-                    <button type="button" disabled={busy === `end:${p.parentId}`} onClick={() => void run(`end:${p.parentId}`, () => endParentLinkAction(p.parentId), "Link ended")} className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0 text-red-300 hover:text-red-200" })}>
-                      End link
-                    </button>
+                    {/* Only the parent can end an accepted link: a child account is managed by its parent. */}
+                    <span className="shrink-0 text-small text-slate-500">Only your parent can end this</span>
                   </li>
                 ))}
               </ul>

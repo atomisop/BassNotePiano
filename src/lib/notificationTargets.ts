@@ -54,6 +54,7 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   BANNER_DISCORD: "/lessons",
   BANNER_PRACTICE: "/practice",
   FRIEND_NUDGE: "/practice",
+  FRIEND_PARENT_REVIEW: "/parent",
   PARENT_CLASS_ASK: "/parent",
   GROUP_INVITE: "/billing/plans",
 };

@@ -80,7 +80,46 @@ export async function isBlockedEitherWay(userIdA: string, userIdB: string): Prom
   return Boolean(block);
 }
 
+/** The parents of whichever of these two people is a child account (an accepted parent link): empty when neither is. */
+async function childrenAmong(userIds: string[]): Promise<Map<string, string[]>> {
+  const links = await prisma.parentLink.findMany({ where: { childId: { in: userIds }, status: "ACCEPTED" }, select: { childId: true, parentId: true } });
+  const byChild = new Map<string, string[]>();
+  for (const l of links) byChild.set(l.childId, [...(byChild.get(l.childId) ?? []), l.parentId]);
+  return byChild;
+}
+
+/** Both sides said yes. A friendship with a child in it starts only when that child's parent approves; otherwise it starts now. */
 async function acceptFriendRequestById(requestId: string) {
+  const pending = await prisma.friendRequest.findUniqueOrThrow({ where: { id: requestId } });
+  const kids = await childrenAmong([pending.senderId, pending.receiverId]);
+  if (kids.size === 0) return finalizeFriendship(requestId);
+
+  const request = await prisma.friendRequest.update({ where: { id: requestId }, data: { status: "PARENT_REVIEW", respondedAt: new Date() } });
+  for (const [childId, parentIds] of kids) {
+    await prisma.friendParentApproval.upsert({ where: { requestId_childId: { requestId, childId } }, update: { approvedAt: null, parentId: null }, create: { requestId, childId } });
+    const otherId = childId === request.senderId ? request.receiverId : request.senderId;
+    const [child, other] = await Promise.all([
+      prisma.user.findUnique({ where: { id: childId }, select: { name: true } }),
+      prisma.user.findUnique({ where: { id: otherId }, select: { username: true, name: true } }),
+    ]);
+    const childName = child?.name?.split(" ")[0] ?? "Your child";
+    const otherName = other?.username ? `@${other.username}` : (other?.name?.split(" ")[0] ?? "someone");
+    for (const parentId of parentIds) {
+      await createNotification({
+        userId: parentId,
+        type: "FRIEND_PARENT_REVIEW",
+        title: `${childName} has a friend request to approve`,
+        body: `${childName} and ${otherName} both said yes to being friends. It only starts when you approve it.`,
+        emailCategory: "social",
+        cta: { label: "Review it", path: `/parent/${childId}` },
+      }).catch((err) => console.error("Friend review notice failed (non-blocking):", err));
+    }
+  }
+  return request;
+}
+
+/** The friendship starts: marked accepted, the other person told, social badges checked. */
+export async function finalizeFriendship(requestId: string) {
   const request = await prisma.friendRequest.update({
     where: { id: requestId },
     data: { status: "ACCEPTED", respondedAt: new Date() },
@@ -130,6 +169,7 @@ async function requestFriendship(senderId: string, receiverId: string, via: "use
   // Already friends (their request to us accepted is checked below): never reset a friendship to waiting.
   const own = await prisma.friendRequest.findUnique({ where: { senderId_receiverId: { senderId, receiverId } }, select: { status: true } });
   if (own?.status === "ACCEPTED") throw new SocialError("You're already friends.");
+  if (own?.status === "PARENT_REVIEW") throw new SocialError("That friend request is waiting for a parent to approve.");
 
   // Requests an ask by email made are limited by the ask's own daily cap, and are left out here: counting them would let the hourly
   // cap tell the sender how many of their asks reached an account.
@@ -150,6 +190,7 @@ async function requestFriendship(senderId: string, receiverId: string, via: "use
     where: { senderId_receiverId: { senderId: receiverId, receiverId: senderId } },
   });
   if (reverse?.status === "ACCEPTED") throw new SocialError("You're already friends.");
+  if (reverse?.status === "PARENT_REVIEW") throw new SocialError("That friend request is waiting for a parent to approve.");
   if (reverse?.status === "PENDING") return acceptFriendRequestById(reverse.id);
 
   const sender = await prisma.user.findUniqueOrThrow({ where: { id: senderId }, select: { name: true, username: true } });

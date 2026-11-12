@@ -40,9 +40,10 @@ export async function sendFriendRequestAction(receiverUsername: string) {
 export async function respondToFriendRequestAction(requestId: string, accept: boolean) {
   try {
     const userId = await requireUserId();
-    await respondToFriendRequest(userId, requestId, accept);
+    const result = await respondToFriendRequest(userId, requestId, accept);
     revalidatePath("/friends");
-    return { ok: true as const };
+    // A child's friendship waits for their parent: the screen says so instead of looking like nothing happened.
+    return { ok: true as const, waitingForParent: result.status === "PARENT_REVIEW" };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }

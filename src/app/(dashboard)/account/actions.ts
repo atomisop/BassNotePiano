@@ -6,7 +6,7 @@ import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { canonicalEmail } from "@/lib/canonicalEmail";
-import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
+import { childAccountBlock, hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
 import { leaveSessionProof } from "@/lib/sessionProofCookie";
 import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
@@ -67,6 +67,8 @@ async function checkPasswordChange(currentPassword: string, newPassword: string)
     return { ok: false as const, error: passwordError };
   }
   const { id } = await requireSession();
+  const childBlocked = await childAccountBlock(id);
+  if (childBlocked) return childBlocked;
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
   if (!user?.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
@@ -98,6 +100,8 @@ export async function requestPasswordChangeCodeAction(currentPassword: string, n
 
 async function checkEmailChange(currentPassword: string, newEmailInput: string) {
   const { id } = await requireSession();
+  const childBlocked = await childAccountBlock(id);
+  if (childBlocked) return childBlocked;
   const newEmail = newEmailInput.trim().toLowerCase();
   if (!looksLikeEmail(newEmail)) return { ok: false as const, error: "Enter a valid email address." };
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
@@ -439,6 +443,9 @@ export async function updateUsernameAction(newUsername: string) {
 const DELETE_ACCOUNT_CODE_PURPOSE = "DELETE_ACCOUNT" as const;
 
 async function verifyCurrentPassword(userId: string, currentPassword: string) {
+  // Only used to confirm deleting the account, which a child account cannot do (its parent manages it).
+  const childBlocked = await childAccountBlock(userId);
+  if (childBlocked) return childBlocked;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } });
   if (!user) return { ok: false as const, error: "Something went wrong. Try signing in again." };
   if (!user.passwordHash) {

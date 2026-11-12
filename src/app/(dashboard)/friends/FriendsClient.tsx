@@ -165,7 +165,8 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
     hide(`req:${requestId}`);
     const done = await action.run(async () => {
       try {
-        await respondToFriendRequestAction(requestId, accept);
+        const result = await respondToFriendRequestAction(requestId, accept);
+        if (result.ok && "waitingForParent" in result && result.waitingForParent) toast.success("Sent to a parent to approve. It starts once they say yes.");
       } catch (err) {
         unhide(`req:${requestId}`);
         throw err;

@@ -52,6 +52,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/roadmap"), kind: "default" },
   PARENT_LINK_REQUEST: { label: "Answer the request", url: getAppUrl("/account?tab=account#parent-mode"), kind: "default" },
   PARENT_LINK_ACCEPTED: { label: "Open Parent mode", url: getAppUrl("/parent"), kind: "default" },
+  FRIEND_PARENT_REVIEW: { label: "Review it", url: getAppUrl("/parent"), kind: "default" },
   PARENT_CLASS_ASK: { label: "Move or skip it", url: getAppUrl("/parent"), kind: "default" },
   GROUP_INVITE: { label: "Accept or decline", url: getAppUrl("/billing/plans"), kind: "default" },
   BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
