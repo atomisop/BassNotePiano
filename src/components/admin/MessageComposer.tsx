@@ -224,12 +224,15 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
         </div>
 
         <div className="mt-4 space-y-1 border-t border-slate-50/8 pt-3">
+          <p className="pb-1 text-small text-slate-500">
+            {sendEmail ? "They get it in their Mail inbox in the app and by email." : "They get it in their Mail inbox in the app only."}
+          </p>
           <div className="flex items-center justify-between gap-3 py-1">
-            <label htmlFor="composer-send-email" className="cursor-pointer text-small font-medium text-slate-200">Send email</label>
+            <label htmlFor="composer-send-email" className="cursor-pointer text-small font-medium text-slate-200">Also send by email</label>
             <Switch id="composer-send-email" checked={sendEmail} onCheckedChange={setSendEmail} aria-label="Also send this message by email" />
           </div>
           <div className="flex items-center justify-between gap-3 py-1">
-            <label htmlFor="composer-support-cta" className="cursor-pointer text-small font-medium text-slate-200">Include &ldquo;Click here to contact support&rdquo;</label>
+            <label htmlFor="composer-support-cta" className="cursor-pointer text-small font-medium text-slate-200">Add a &ldquo;Contact support&rdquo; button to the message</label>
             <Switch id="composer-support-cta" checked={supportCta} onCheckedChange={setSupportCta} aria-label="Include a contact support link" />
           </div>
         </div>
@@ -294,8 +297,8 @@ export function MessageComposer({ sent, prefill = [] }: { sent: SentRow[]; prefi
                     <div className="border-t border-slate-50/8 px-4 pb-4 pt-3">
                       <p className="whitespace-pre-wrap text-body text-slate-200">{m.body}</p>
                       <p className="mt-3 text-small text-slate-500">
-                        {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString()}
-                        {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString()}` : ""}
+                        {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString(undefined, { timeZone: "America/New_York" })}
+                        {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString(undefined, { timeZone: "America/New_York" })}` : ""}
                       </p>
                     </div>
                   </Collapse>

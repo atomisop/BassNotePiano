@@ -1,5 +1,6 @@
 "use client";
 
+import { useViewerClockReady, viewerLocale } from "@/lib/viewerClock";
 import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
@@ -98,6 +99,7 @@ export function ClassBookingClient({
   initialBookings: BookingRow[];
   zelleHandle: string;
 }) {
+  useViewerClockReady(); // redraws once when the viewer's own clock and language take over (see viewerClock.ts)
   const [credits, setCredits] = useState(initialCredits);
   const [extraPayment, setExtraPayment] = useState<{ id: string; status: ZellePaymentStatus; amountCents: number; when: string } | null>(null);
   const [payBusyKey, setPayBusyKey] = useState<string | null>(null);
@@ -673,7 +675,7 @@ export function ClassBookingClient({
                 aria-label={`${formatCredits(storedToCredits(credits))} credits to spend`}
               >
                 <Ticket aria-hidden className="h-4 w-4 text-signal-fg" strokeWidth={1.75} />
-                {formatCredits(storedToCredits(credits))}
+                {formatCredits(storedToCredits(credits))} {storedToCredits(credits) === 1 ? "credit" : "credits"}
               </p>
             </div>
 
@@ -800,7 +802,7 @@ export function ClassBookingClient({
             <div ref={timesRef} className="mt-6 scroll-mt-20">
               {selectedDateKey && (
                 <p className="mb-3 text-title font-semibold text-slate-50">
-                  {new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
+                  {new Date(selectedDateKey).toLocaleDateString(viewerLocale(), { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
                 </p>
               )}
               {!selectedDateKey ? null : displayRows.length === 0 ? (

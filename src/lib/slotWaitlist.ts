@@ -101,7 +101,7 @@ export async function leaveWaitlist(userId: string, scheduleId: string, chunkInd
  * the next, so a freed time is offered to one person at a time. Also clears entries for people who already hold a plan on that time, and old ones.
  */
 export async function notifyOpenedSlots(now: Date = new Date()): Promise<{ notified: number; cleared: number }> {
-  const entries = await prisma.slotWaitlist.findMany({ orderBy: { createdAt: "asc" }, include: { schedule: { select: { dayOfWeek: true, startTime: true, label: true, active: true } } } });
+  const entries = await prisma.slotWaitlist.findMany({ orderBy: { createdAt: "asc" }, include: { schedule: { select: { dayOfWeek: true, startTime: true, durationMin: true, label: true, active: true } } } });
   if (entries.length === 0) return { notified: 0, cleared: 0 };
 
   let cleared = 0;
@@ -138,11 +138,14 @@ export async function notifyOpenedSlots(now: Date = new Date()): Promise<{ notif
     const claimed = await prisma.slotWaitlist.updateMany({ where: { id: next.id, notifiedAt: null }, data: { notifiedAt: now } });
     if (claimed.count !== 1) continue;
     const day = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"][next.schedule.dayOfWeek];
+    // The hour that opened, so someone waiting on several times of one weekday knows which one it is.
+    const chunk = chunksForSchedule(next.schedule)[next.chunkIndex];
+    const at = chunk ? ` at ${formatTimeLabel(addMinutesToHHmm(next.schedule.startTime, chunk.offsetMin))}` : "";
     await createNotification({
       userId: next.userId,
       type: "SLOT_WAITLIST_OPENED",
       title: "Your weekly time is open",
-      body: `${day} ${next.schedule.label ? `(${next.schedule.label}) ` : ""}just opened up. Times go to whoever picks them first, so start your plan soon if you want it.`,
+      body: `${day}${at} ${next.schedule.label ? `(${next.schedule.label}) ` : ""}just opened up. Times go to whoever picks them first, so start your plan soon if you want it.`,
       emailCategory: "classes",
       // Opens the weekly-time picker with this time chosen (or the plan form with it, for someone with no plan yet).
       cta: { label: "Pick your time", path: `/lessons?changeTime=${encodeURIComponent(slotKey(next.scheduleId, next.chunkIndex))}` },

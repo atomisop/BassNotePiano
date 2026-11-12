@@ -127,9 +127,10 @@ export async function MyPlanSummary({
         )}
       </div>
       <Facts columns={2} className="mt-4 border-t border-slate-50/8 pt-4">
-        <Fact label="This cycle" value={classesLeft} tone={left > 0 ? "default" : "muted"} />
+        <Fact label="Left in these 28 days" value={classesLeft} tone={left > 0 ? "default" : "muted"} />
         {!covered && <Fact label="Bills paid" value={`${plan.installmentsPaid} of ${plan.termMonths}`} />}
       </Facts>
+      <p className="mt-3 text-small text-slate-500">Classes left counts the weekly classes your plan still covers in this 28 days. The credit number at the top of the screen is what you can book with right now, extra classes included.</p>
     </section>
   );
 }

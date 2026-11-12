@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-// Is the bank and Venmo email pipeline alive, and what is stuck in it?
+// Is the bank email pipeline alive, and what is stuck in it?
 // Only reads, and imports nothing but prisma, so the scheduled functions can
 // use it too (they run outside Next).
 
@@ -78,7 +78,7 @@ export async function countUnmatchedReceipts(now = new Date()): Promise<number> 
  */
 export function pipelineProblem(health: Pick<PaymentPipelineHealth, "status">): string | null {
   return health.status === "quiet"
-    ? `payment emails: payments are waiting and no bank or Venmo email has arrived for over ${QUIET_AFTER_HOURS} hours (check the Gmail forwarding script)`
+    ? `payment emails: payments are waiting and no bank email has arrived for over ${QUIET_AFTER_HOURS} hours (check the Gmail forwarding script)`
     : null;
 }
 

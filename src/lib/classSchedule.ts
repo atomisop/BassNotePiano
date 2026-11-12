@@ -778,7 +778,7 @@ export async function bookClass(
         // the same admin-defined window (a different start time) is a
         // separate appointment slot and shouldn't block this one.
         // Seats: other students' classes (and weekly plans keeping this time, below) use up the slot's seats; your own class does not.
-        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+        const seatLoad = await loadSeatLoad(tx, { scheduleId, chunkIndex, occurrenceDate, scheduledAt, ignoreStudentIds: [studentId] });
         if (seatLoad.booked >= schedule.seats) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
@@ -1599,6 +1599,20 @@ export async function createReservedBookingIfAbsent(
       console.error(
         `Reserved booking conflict: plan ${planId}'s student ${studentId} found no free seat at schedule ${scheduleId}, ${occurrenceDate.toISOString()}: skipped, needs admin attention.`,
       );
+      // A paid weekly class that cannot be booked must reach a person: tell the owner once per plan and day (a marker row keeps the
+      // daily job from repeating it).
+      const marker = `seat-conflict:${planId}:${occurrenceDate.toISOString().slice(0, 10)}`;
+      const fresh = await db.appSetting.create({ data: { key: marker, value: "1" } }).then(() => true, () => false);
+      if (fresh) {
+        const { notifyAdmins } = await import("@/lib/adminNotifications");
+        await notifyAdmins("SLOT_PROBLEM", {
+          type: "ADMIN_ALERT",
+          title: "A paid weekly class could not be booked",
+          body: `A subscriber's weekly time on ${occurrenceDate.toISOString().slice(0, 10)} is full (another student holds it), so their class was not booked. Move one of them.`,
+          emailCategory: "classes",
+          cta: { label: "Open the schedule", path: "/admin/schedule" },
+        }).catch(() => undefined);
+      }
       return null;
     }
   }
@@ -1801,10 +1815,11 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   // still SCHEDULED at this point has never been attendance-marked, there
   // is nothing to refund because nothing was ever actually taken. `refunded`
   // stays true regardless, meaning "this booking never cost you anything."
-  await prisma.classBooking.update({
-    where: { id: bookingId },
+  const canceled = await prisma.classBooking.updateMany({
+    where: { id: bookingId, status: "SCHEDULED" },
     data: { status: "CANCELED", refunded: true, ...(booking.reservedByPlanId ? { canceledReason: SKIPPED_BY_STUDENT } : {}) },
   });
+  if (canceled.count !== 1) throw new ClassBookingError("This booking isn't active.");
 
   await createNotification({
     userId: studentId,
@@ -1931,7 +1946,7 @@ export async function rescheduleClassBooking(
           await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id, overridePlanHold);
         } else {
           // Seats, same rule as bookClass: other students' classes use seats; your own moving class does not.
-          const seatLoad = await loadSeatLoad(tx, { scheduleId: newScheduleId, chunkIndex: newChunkIndex, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, strictHolders: true, ignoreStudentIds: [studentId] });
+          const seatLoad = await loadSeatLoad(tx, { scheduleId: newScheduleId, chunkIndex: newChunkIndex, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, ignoreStudentIds: [studentId] });
           if (seatLoad.booked >= newSchedule!.seats) {
             throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
           }

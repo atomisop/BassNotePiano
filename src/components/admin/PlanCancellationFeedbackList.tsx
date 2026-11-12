@@ -23,7 +23,7 @@ const REASON_LABELS: Record<PlanCancellationReason, string> = {
 };
 
 function formatDate(d: Date): string {
-  return d.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" });
 }
 
 /**

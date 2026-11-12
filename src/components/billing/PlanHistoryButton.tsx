@@ -18,7 +18,7 @@ export interface PastPlanRow {
 const STATUS_LABEL: Record<PastPlanRow["status"], string> = { COMPLETED: "Completed", CANCELED: "Canceled", ACTIVE: "Active" };
 
 function day(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
 /** The clock in the corner of the plan screen: opens every earlier plan, so the page itself stays short. */

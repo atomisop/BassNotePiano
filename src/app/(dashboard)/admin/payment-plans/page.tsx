@@ -139,7 +139,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
           base="/admin/payment-plans"
           label="Plan views"
           active={section}
-          items={[{ label: "Plans", value: null }, { label: "Prices", value: "prices" }, { label: "Scholarships", value: "scholarships" }]}
+          items={[{ label: "Running", value: null }, { label: "Prices", value: "prices" }, { label: "Scholarships", value: "scholarships" }]}
         />
       )}
       {section === "prices" ? <PricingView /> : section === "scholarships" ? <ScholarshipsView /> : <PlansView searchParams={Promise.resolve(sp)} />}

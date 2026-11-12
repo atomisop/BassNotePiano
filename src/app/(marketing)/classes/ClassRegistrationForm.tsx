@@ -124,7 +124,7 @@ export function ClassRegistrationForm() {
       <div ref={thanksRef} role="status" className="glass-surface-elevated flex flex-col items-center p-8 text-center">
         <PianoCat size={88} smile />
         <h2 className="mt-4 font-serif text-title text-slate-50">Thanks, {fullName.split(" ")[0]}!</h2>
-        <p className="mt-2 text-body text-slate-300">An instructor will reach out to you soon.</p>
+        <p className="mt-2 text-body text-slate-300">An instructor will reach out to you soon, by email or phone, to set up your first class.</p>
         <p className="mt-1 text-small text-slate-400">
           We&apos;ll contact you at {email} or {phone}.
         </p>
@@ -269,7 +269,7 @@ export function ClassRegistrationForm() {
         className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-        {submitting ? "Sending…" : "Send"}
+        {submitting ? "Sending…" : "Send my details"}
       </button>
 
       {/* No account is created by this form (see ClassRegistration's own

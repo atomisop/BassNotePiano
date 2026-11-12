@@ -46,7 +46,7 @@ const FIELDS: { key: keyof PricingFormValues; label: string; unit: "$" | "%"; mi
   { key: "pricing.monthlyPlanDollars", label: "1 Month plan price", unit: "$", min: 20, max: 2000, help: "Per 28-day payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
   { key: "pricing.term3DiscountPercent", label: "3 month plan discount", unit: "%", min: 0, max: 60, help: "Off the 1 month price when someone commits to 3 months (3 payments)." },
   { key: "pricing.term6DiscountPercent", label: "6 month plan discount", unit: "%", min: 0, max: 70, help: "Off the 1 month price when someone commits to 6 months (6 payments)." },
-  { key: "pricing.familyDiscountPercent", label: "Family plan extra discount", unit: "%", min: 0, max: 50, help: "Extra off, per person, on a family plan." },
+  { key: "pricing.familyDiscountPercent", label: "Group plan extra discount", unit: "%", min: 0, max: 50, help: "Extra off, per person, on a group plan." },
   { key: "pricing.extraClassPriceDollars", label: "Extra class price", unit: "$", min: 1, max: 500, help: "One extra 45 minute class, on top of a weekly class or for someone without a plan." },
 ];
 
@@ -341,7 +341,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
 
       {picked && (
         <div className="mt-3 rounded-control bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
-          {picked.plan?.family && <Callout tone="warning" className="mb-3">This account is on a family plan, which keeps the family rate. A discount here applies only if they later start a solo plan.</Callout>}
+          {picked.plan?.family && <Callout tone="warning" className="mb-3">This account is on a group plan, which keeps the group rate. A discount here applies only if they later start a solo plan.</Callout>}
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label htmlFor="dp-percent" className="text-small font-medium text-slate-200">Percent off</label>
@@ -395,7 +395,7 @@ export function PricingManager({ initial, discounts, onSavePricing, onSearch, on
   return (
     <div className="space-y-5">
       <PricesCard initial={initial} onSave={onSavePricing} />
-      <Card title="Discounts for individual accounts" blurb="A percent off one person's plan, on top of the prices above. It prices every solo plan they start or change, and moves their running plan too (bills already paid never change). A family plan keeps the family rate.">
+      <Card title="Discounts for individual accounts" blurb="A percent off one person's plan, on top of the prices above. It prices every solo plan they start or change, and moves their running plan too (bills already paid never change). A group plan keeps the group rate.">
         <NotifyToggle on={notify} onChange={setNotify} label="Notify the student when I set, change or remove a discount" className="mb-4" />
         <AddDiscount onSearch={onSearch} onSet={onSetDiscount} />
         <div className="mt-6">

@@ -3,6 +3,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { notifyAdmins } from "@/lib/adminNotifications";
+import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { chunksForSchedule, computeScheduledAt, livePaymentPlanConditions, ONE_OFF_LABEL } from "@/lib/classSchedule";
 import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
@@ -187,7 +188,15 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
     }
   }
 
-  return prisma.classSchedule.update({
+  // A change of day, start or length moves every hour of the window. Reserved days and hours the owner kept would silently move with it, so
+  // the owner releases those first; waiting booking requests name the old time, so they are declined (the students are told).
+  const timeChanged = input.dayOfWeek !== current.dayOfWeek || input.startTime !== current.startTime || durationMin !== current.durationMin;
+  if (timeChanged) {
+    const kept = await prisma.ownerReservation.count({ where: { scheduleId, releasedAt: null, occurrenceDate: { gte: new Date(new Date().toISOString().slice(0, 10)) } } });
+    if (kept > 0) throw new ClassScheduleError("The owner has reserved days or hours on this time. Release those under Reserved first, then change it.");
+  }
+
+  const updated = await prisma.classSchedule.update({
     where: { id: scheduleId },
     data: {
       dayOfWeek: input.dayOfWeek,
@@ -198,6 +207,20 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
       seats,
     },
   });
+  if (timeChanged) {
+    const waiting = await prisma.bookingRequest.findMany({ where: { scheduleId, status: "PENDING" }, select: { id: true, studentId: true, scheduledAt: true } });
+    for (const request of waiting) {
+      await prisma.bookingRequest.updateMany({ where: { id: request.id, status: "PENDING" }, data: { status: "DECLINED", decidedAt: new Date(), declineReason: "That time was changed." } });
+      await createNotification({
+        userId: request.studentId,
+        type: "BOOKING_REQUEST_DECLINED",
+        title: "Your class request was not confirmed",
+        body: `The ${formatEtDateTime(request.scheduledAt)} time you asked for was changed, so the request was closed. Pick a time from the schedule.`,
+        emailCategory: "classes",
+      }).catch(() => undefined);
+    }
+  }
+  return updated;
 }
 
 /**

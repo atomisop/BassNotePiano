@@ -98,7 +98,7 @@ export function AdminPlanSettingsButton(props: {
         className={buttonVariants({ variant: "ghost", size: "sm", className: props.compact ? "h-8 px-2.5" : "" })}
       >
         <Settings aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Plan settings
+        Length, price, discount
       </button>
       <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)} title="Plan settings">
         <NotifyToggle on={notify} onChange={setNotify} className="mb-3" />

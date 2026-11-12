@@ -12,6 +12,6 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Not signed in." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   // This tab being open is what makes its device show as active under Settings > Where you are signed in.
   const h = await headers();
-  await touchDevice(session.user.id, h.get("user-agent"), placeFromHeaders(h));
+  await touchDevice(session.user.id, h.get("user-agent"), placeFromHeaders(h), session.user.sid);
   return NextResponse.json(await getMeStatus(session.user.id), { headers: { "Cache-Control": "no-store" } });
 }

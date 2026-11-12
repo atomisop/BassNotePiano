@@ -21,10 +21,10 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { HistoryPayButton } from "./HistoryPayButton";
 
 const STATUS_LABEL: Record<string, string> = {
-  AWAITING_TRANSFER: "Not sent yet",
-  PENDING_REVIEW: "Checking",
+  AWAITING_TRANSFER: "Waiting for your payment",
+  PENDING_REVIEW: "We are checking it",
   VERIFIED: "Paid",
-  REJECTED: "Rejected",
+  REJECTED: "Could not match, try again",
   EXPIRED: "Expired",
 };
 
@@ -66,7 +66,7 @@ function describePayment(payment: {
       // A plan a full scholarship covers has no bills to count, so its rows never read "N of M".
       title: isCoveredPlan(payment.paymentPlan.installmentAmountCents)
         ? "28 days of classes"
-        : `Installment ${payment.installmentNumber ?? "?"} of ${payment.paymentPlan.termMonths}`,
+        : `Bill ${payment.installmentNumber ?? "?"} of ${payment.paymentPlan.termMonths}`,
     };
   }
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {

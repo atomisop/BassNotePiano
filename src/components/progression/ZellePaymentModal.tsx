@@ -6,8 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { AnimatedCheck } from "@/components/ui/AnimatedCheck";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { Tabs } from "@/components/ui/Tabs";
-import { QRCodeSVG } from "qrcode.react";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { normalizePhone, PHONE_HELP } from "@/lib/phone";
@@ -40,7 +38,7 @@ export interface ZellePaymentModalProps {
   onSubmit: (payload: {
     senderName: string;
     note?: string;
-    method: "ZELLE" | "VENMO";
+    method: "ZELLE";
   }) => Promise<void>;
 }
 
@@ -73,20 +71,6 @@ const stepVariants = {
   center: { opacity: 1, x: 0, transition: SPRING.smooth },
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
-
-// Venmo usernames are letters, digits, dashes and underscores. Anything else
-// in the env var would break the link, so Venmo is simply hidden.
-const VENMO_HANDLE = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "BassNotePiano").replace(/^@/, "").trim();
-const VENMO_OK = /^[A-Za-z0-9_-]{2,40}$/.test(VENMO_HANDLE);
-
-/** Pre-filled Venmo links. The app link opens Venmo on a phone, the web link is what the QR code carries. */
-function venmoLinks(amountCents: number, note: string) {
-  const query = `txn=pay&amount=${(amountCents / 100).toFixed(2)}&note=${encodeURIComponent(note)}&audience=private`;
-  return {
-    app: `venmo://paycharge?recipients=${VENMO_HANDLE}&${query}`,
-    web: `https://venmo.com/${VENMO_HANDLE}?${query}`,
-  };
-}
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -126,9 +110,9 @@ export function ZellePaymentModal({
   const [note, setNote] = useState("");
   const [precheck, setPrecheck] = useState<{ state: "reading" } | { state: "done"; matches: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
+  // Zelle is the only way to pay.
+  const method = "ZELLE" as const;
   const reference = paymentId ? paymentReferenceCode(paymentId) : null;
-  const venmo = venmoLinks(amountCents, `${scaleCode}: ${scaleTitle} (Bass Note Piano)${reference ? ` ${reference}` : ""}`);
   const [copiedWhat, setCopiedWhat] = useState<"amount" | "code" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -218,7 +202,7 @@ export function ZellePaymentModal({
   // The manual "tell us" button only appears once the automatic check has had a fair chance.
   const [waitedLong, setWaitedLong] = useState(false);
 
-  // The system watches for the payment itself: the bank or Venmo email clears it with no tap from the student.
+  // The system watches for the payment itself: the bank email clears it with no tap from the student.
   useEffect(() => {
     if (!isOpen || (step !== "instructions" && step !== "confirming")) return;
     const longTimer = window.setTimeout(() => setWaitedLong(true), 90_000);
@@ -244,7 +228,6 @@ export function ZellePaymentModal({
     setPhoneInput("");
     setPhoneConfirm("");
     setPhoneCheck(null);
-    setMethod("ZELLE");
     setSenderName("");
     setNote("");
     setError(null);
@@ -260,7 +243,7 @@ export function ZellePaymentModal({
   const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, handleClose);
 
   async function handleCopyHandle() {
-    await navigator.clipboard.writeText(method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle);
+    await navigator.clipboard.writeText(zelleHandle);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   }
@@ -366,7 +349,8 @@ export function ZellePaymentModal({
 
               <AnimatePresence mode="wait">
                 {step === "loading" && (
-                  <motion.div key="loading" variants={stepVariants} initial="enter" animate="center" exit="exit" className="flex justify-center py-10">
+                  <motion.div key="loading" variants={stepVariants} initial="enter" animate="center" exit="exit" className="flex justify-center py-10" role="status">
+                    <span className="sr-only">Getting your payment ready</span>
                     <MorphingSquare size={18} />
                   </motion.div>
                 )}
@@ -421,7 +405,7 @@ export function ZellePaymentModal({
                           <p className="mt-1.5 text-small text-slate-500">
                             {hasAccountPhone
                               ? `Type the phone number saved on your account (it ends in ${accountLast4}). It has to match, so nobody can pay as someone else.`
-                              : `The number linked to your Zelle or Venmo account. It is saved to your account too. ${PHONE_HELP}`}
+                              : `The number linked to your Zelle account. It is saved to your account too. ${PHONE_HELP}`}
                           </p>
                         )}
                       </div>
@@ -463,35 +447,6 @@ export function ZellePaymentModal({
 
                 {step === "instructions" && (
                   <motion.div key="instructions" variants={stepVariants} initial="enter" animate="center" exit="exit">
-                    {VENMO_OK && (
-                      <Tabs<"ZELLE" | "VENMO">
-                        label="Payment method"
-                        value={method}
-                        onChange={setMethod}
-                        items={[
-                          { id: "ZELLE", label: "Zelle" },
-                          { id: "VENMO", label: "Venmo" },
-                        ]}
-                        className="mb-4"
-                      />
-                    )}
-                    {method === "VENMO" && (
-                      <>
-                        <a
-                          href={venmo.app}
-                          className={buttonVariants({ variant: "primary", className: "mt-4 flex w-full md:hidden" })}
-                        >
-                          Open Venmo
-                        </a>
-                        <div className="mt-4 hidden flex-col items-center gap-2 md:flex">
-                          <div className="rounded-xl bg-white p-3">
-                            <QRCodeSVG value={venmo.web} size={148} />
-                          </div>
-                          <p className="text-small text-slate-500">Scan with your phone camera</p>
-                        </div>
-                      </>
-                    )}
-
                     {/* The amount is the sheet's one big figure; the handle and the code are what you copy, each its value over a small label. */}
                     <div className="mt-4 flex items-end justify-between gap-3">
                       <div className="min-w-0">
@@ -501,6 +456,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
+                        aria-label="Copy the amount"
                         className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copiedWhat === "amount" ? "Copied" : "Copy"}
@@ -509,12 +465,13 @@ export function ZellePaymentModal({
 
                     <div className="mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                       <div className="min-w-0">
-                        <p className="truncate font-mono text-body text-slate-100">{method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle}</p>
-                        <p className="text-caption text-slate-500">{method === "VENMO" ? "Venmo" : "Zelle handle"}</p>
+                        <p className="truncate font-mono text-body text-slate-100">{zelleHandle}</p>
+                        <p className="text-caption text-slate-500">Send to this Zelle email or phone</p>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyHandle}
+                        aria-label="Copy the Zelle email or phone"
                         className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                       >
                         {copied ? "Copied" : "Copy"}
@@ -522,7 +479,7 @@ export function ZellePaymentModal({
                     </div>
 
 
-                    {reference && method === "ZELLE" && (
+                    {reference && (
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-body text-slate-100">{reference}</p>
@@ -531,6 +488,7 @@ export function ZellePaymentModal({
                         <button
                           type="button"
                           onClick={() => handleCopy("code", reference)}
+                          aria-label="Copy the payment code"
                           className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-slate-50" })}
                         >
                           {copiedWhat === "code" ? "Copied" : "Copy"}
@@ -541,30 +499,32 @@ export function ZellePaymentModal({
                     <ol className="mt-5 space-y-2.5 text-small text-slate-300">
                       <li className="flex gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">1</span>
-                        {method === "VENMO"
-                          ? `Send exactly ${formatUsd(amountCents)} on Venmo, set to Private. Leave the note as it is.`
-                          : `Open your bank's Zelle transfer and send exactly ${formatUsd(amountCents)} to the handle above.`}
+                        Open your bank&apos;s Zelle transfer and send exactly {formatUsd(amountCents)} to the handle above.
                       </li>
-                      {reference && method === "ZELLE" && (
+                      {reference && (
                         <li className="flex gap-2.5">
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50/15 text-small font-semibold text-slate-50">2</span>
-                          Type {reference} in the message box. That is how we find your payment, even if someone else sends it for you.
+                          Type {reference} in the message (note) box. That is how we find your payment, even if someone else sends it for you.
                         </li>
                       )}
                     </ol>
-                    <p className="mt-3 text-small text-slate-500">We only accept Zelle and Venmo.</p>
+                    <p className="mt-3 text-small text-slate-500">We only accept Zelle.</p>
+                    <p className="mt-1 text-small text-slate-500">Sent the wrong amount, or left the code out? Ask us with Ask AI and we will sort it out.</p>
 
                     <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-3 text-small font-medium text-slate-200 shadow-pressed-low" role="status">
                       <MorphingSquare size={13} className="shrink-0" />
                       Waiting for your payment
                     </div>
+                    <p className="mt-2 text-center text-small text-slate-500">
+                      You can leave this open. It turns green by itself shortly after your bank sends the money, and you do not need to tap anything.
+                    </p>
                     {waitedLong && (
                       <button
                         type="button"
                         onClick={() => setStep("confirming")}
                         className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3 w-full" })}
                       >
-                        Paid and not unlocked? Tell us
+                        I have paid. Tell us
                       </button>
                     )}
                   </motion.div>
@@ -574,8 +534,9 @@ export function ZellePaymentModal({
                   <motion.div key="confirming" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     <div className="space-y-3.5">
                       <div>
-                        <label className="mb-1 block text-small font-medium text-slate-400">{method === "VENMO" ? "Name on the Venmo account" : "Name on the Zelle transfer"}</label>
+                        <label htmlFor="pay-sender-name" className="mb-1 block text-small font-medium text-slate-400">Name on the bank account you paid from</label>
                         <input
+                          id="pay-sender-name"
                           autoFocus
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
@@ -584,8 +545,9 @@ export function ZellePaymentModal({
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-small font-medium text-slate-400">Note (optional)</label>
+                        <label htmlFor="pay-extra-note" className="mb-1 block text-small font-medium text-slate-400">Note (optional)</label>
                         <textarea
+                          id="pay-extra-note"
                           value={note}
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
@@ -596,8 +558,8 @@ export function ZellePaymentModal({
 
                       {onPrecheck && (
                         <div>
-                          <label className="mb-1 block text-small font-medium text-slate-400">Screenshot of your bank&apos;s confirmation (optional)</label>
-                          <input type="file" accept="image/*" onChange={(e) => void handleScreenshot(e.target.files?.[0])} className="block w-full text-small text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-neu-base file:px-3 file:py-2 file:text-small file:font-medium file:text-slate-100" />
+                          <label htmlFor="pay-screenshot" className="mb-1 block text-small font-medium text-slate-400">Screenshot of your bank&apos;s confirmation (optional)</label>
+                          <input id="pay-screenshot" type="file" accept="image/*" onChange={(e) => void handleScreenshot(e.target.files?.[0])} className="block w-full text-small text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-neu-base file:px-3 file:py-2 file:text-small file:font-medium file:text-slate-100" />
                           {precheck?.state === "reading" && <p className="mt-1.5 text-small text-slate-400">Checking your screenshot…</p>}
                           {precheck?.state === "done" && (
                             <p role="status" className={`mt-1.5 text-small ${precheck.matches ? "text-emerald-400" : "text-amber-300"}`}>
@@ -608,7 +570,7 @@ export function ZellePaymentModal({
                         </div>
                       )}
 
-                      {error && <p className="text-small text-red-400">{error}</p>}
+                      {error && <p role="alert" className="text-small text-red-400">{error}</p>}
 
                       <div className="flex gap-2 pt-1">
                         <button
@@ -644,6 +606,7 @@ export function ZellePaymentModal({
                       <Check className="text-slate-50" size={26} />
                     </motion.div>
                     <h3 className="text-title text-slate-50">Payment received</h3>
+                    <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">Thank you. Your receipt is saved in Billing under Payment history.</p>
                     <button
                       type="button"
                       onClick={handleClose}
@@ -680,7 +643,7 @@ export function ZellePaymentModal({
                     </motion.div>
                     <h3 className="text-title text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
-                      We&apos;re verifying your transfer.
+                      We are checking your transfer against your bank&apos;s email. You can close this now. We will tell you in your notifications as soon as it is approved.
                     </p>
                     <button
                       type="button"

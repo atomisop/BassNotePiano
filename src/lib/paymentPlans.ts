@@ -468,7 +468,7 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
           }
         : plan.reservedSchedule,
     // A plan that costs nothing (a full scholarship) has no bill to be late with: its covered bill settles by itself.
-    isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now && plan.installmentAmountCents > 0,
+    isOverdue: plan.status === "ACTIVE" && plan.installmentsPaid > 0 && plan.nextDueDate.getTime() < now && plan.installmentAmountCents > 0,
   }));
 }
 
@@ -491,6 +491,19 @@ export async function getPlanCancellationFeedback(): Promise<PlanCancellationFee
     orderBy: { canceledAt: "desc" },
     include: feedbackInclude,
   });
+}
+
+/**
+ * A plan canceled while it is paused: the pause had pushed the next bill (and with it the paid access and the credits' expiry) out by its
+ * whole span, up to ten years for an indefinite pause. Ending the plan cuts the pause short first, so access ends where the PAID time
+ * really ends and not at the far date. Same arithmetic as resuming (adminResumePlan), run inside the cancel's transaction.
+ */
+async function unwindPauseOnCancel(tx: Prisma.TransactionClient, plan: { id: string; pausedAt: Date | null; pauseUntil: Date | null; nextDueDate: Date }, now: Date): Promise<void> {
+  if (!isPausedNow(plan, now) || !plan.pauseUntil) return;
+  const delta = now.getTime() - plan.pauseUntil.getTime(); // negative: the unused rest of the pause
+  await tx.paymentPlan.update({ where: { id: plan.id }, data: { pauseUntil: now, nextDueDate: new Date(plan.nextDueDate.getTime() + delta) } });
+  const grants = await tx.creditGrant.findMany({ where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } }, select: { id: true, expiresAt: true } });
+  for (const g of grants) await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + delta) } });
 }
 
 /**
@@ -521,6 +534,7 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
       throw new PaymentPlanError(`This plan isn't active (status: ${current.status}).`);
     }
 
+    await unwindPauseOnCancel(tx, current, new Date());
     await tx.paymentPlan.update({
       where: { id: planId },
       data: { status: "CANCELED", canceledAt: new Date(), canceledById: adminId, cancellationNote: trimmedNote },
@@ -568,6 +582,12 @@ async function assertNoOpenInstallment(planId: string): Promise<void> {
   // unpaid bill: close it so canceling or changing plans never waits on
   // someone to expire it. Only one they already submitted (money may be on
   // its way) still blocks, and the email match usually clears that on its own.
+  // A bill held inside a group's combined bill that the payer already sent is being reviewed too: closing it now would make the combined
+  // bill's parts stop adding up to what was paid.
+  const heldInReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, bundle: { status: "PENDING_REVIEW" } }, select: { id: true } });
+  if (heldInReview) {
+    throw new PaymentPlanError("The group's last payment is still being confirmed. Try again in a few minutes, or message support if it takes longer.");
+  }
   await prisma.zellePayment.updateMany({
     where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
     data: { status: "EXPIRED" },
@@ -820,9 +840,18 @@ export async function cancelPaymentPlanBySelf(
     }
   }
 
+  // A parent may end only a plan THEY pay for (a parent-mode group they are the payer of), never the child's own solo plan.
+  if (options.byParentId) {
+    const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
+    if (!group || group.kind !== "PARENT" || group.payerId !== options.byParentId) {
+      throw new PaymentPlanError("That plan is not one you pay for, so only your child can end it.");
+    }
+  }
+
   await assertNoOpenInstallment(plan.id);
 
   await prisma.$transaction(async (tx) => {
+    await unwindPauseOnCancel(tx, plan, new Date());
     await tx.paymentPlan.update({
       where: { id: plan.id },
       data: {
@@ -1128,7 +1157,8 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
   let lockedUserId: string | null = null;
   if (!options.firstBill && plan.installmentsPaid > 0) {
     const group = plan.familyGroupId ? await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } }) : null;
-    const payerId = group?.kind === "PARENT" ? group.payerId : plan.userId;
+    // The group's payer pays every member's bill (a parent a child's, a family payer the other members'), so the payer is the one locked.
+    const payerId = group ? group.payerId : plan.userId;
     if (await lockForNonPayment(payerId, plan.id)) lockedUserId = payerId;
   }
 
@@ -1568,7 +1598,7 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
   await sendPaymentPlanInvoiceEmail(target.payer.email, {
     scholarshipNote: scholarship ? (overdueDays ? scholarshipOverdueLine(scholarship) : scholarshipDueLine(scholarship)) : undefined,
     planLabel: bill.combined ? `Combined bill for ${bill.people} people` : target.paysForSomeoneElse ? `${planName} for ${target.member.name}` : planName,
-    installmentLabel: bill.combined ? "One payment covers everyone" : `Installment ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
+    installmentLabel: bill.combined ? "One payment covers everyone" : `Bill ${bill.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
     amountCents: bill.amountCents,
     dueDate: plan.nextDueDate,
     cycleEndsAt: addBillingCycles(plan.nextDueDate, 1),

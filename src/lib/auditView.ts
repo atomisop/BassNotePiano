@@ -86,6 +86,18 @@ const LABELS: Record<string, string> = {
   "schedule.move-window": "Moved a weekly time with everyone on it",
   "studio.move-day": "Moved a closed day's classes to other times",
   "invite.register": "Sent a sign-up invitation",
+  "schedule.active": "Turned a weekly time on or off",
+  "announcement.create": "Posted an announcement",
+  "announcement.active": "Turned an announcement on or off",
+  "announcement.delete": "Deleted an announcement",
+  "assistant.clear-history": "Cleared a person's saved Atom chats",
+  "plan.record-payment": "Recorded a payment received on a plan",
+  "plan.resend-bill": "Resent a plan bill",
+  "plan.resume": "Resumed a paused plan",
+  "user.clear-phone": "Cleared a person's phone number",
+  "user.sign-out-everywhere": "Signed a person out everywhere",
+  "job.pause": "Paused an automatic task",
+  "job.resume": "Resumed an automatic task",
 };
 
 export function auditLabel(action: string): string {

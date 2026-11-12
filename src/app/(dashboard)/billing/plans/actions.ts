@@ -217,6 +217,8 @@ export async function enrollFamilyPlanAction(
 ): Promise<EnrollFamilyPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  // A linked child's weekly time is their parent's to pick.
+  if (await hasParentControl(session.user.id)) return { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: PARENT_CONTROL_MESSAGE };
   return runOnce(session.user.id, "enroll-family-plan", idempotencyKey, () => enrollFamily(session.user.id, term, reservedScheduleId, reservedChunkIndex, memberEmails, expectedFirstPaymentCents), {
     isSuccess: (r) => r.ok,
     whileRunning: { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: "Starting the family plan. One moment." },
@@ -365,6 +367,7 @@ export async function confirmSwitchToFamilyAction(
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
   const fail = (error: string): EnrollFamilyPlanResult => ({ ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error });
+  if (await hasParentControl(session.user.id)) return fail(PARENT_CONTROL_MESSAGE);
   if (!Array.isArray(memberEmails) || memberEmails.length > 10 || memberEmails.some((e) => typeof e !== "string")) return fail("Check the email addresses and try again.");
 
   const check = await checkPassword(session.user.id, password);

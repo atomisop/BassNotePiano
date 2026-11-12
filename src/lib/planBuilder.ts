@@ -259,6 +259,8 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
           cadence: OFFERED_PLAN_CADENCE,
           term: r.term,
           installmentAmountCents: amount,
+          // The price before the personal discount, so removing or changing the discount later restores or recomputes from it.
+          listAmountCents: amount !== rate.installmentAmountCents ? rate.installmentAmountCents : null,
           creditsPerInstallment: rate.creditsPerInstallment,
           termMonths: rate.termMonths,
           installmentsPaid: r.installmentsPaid,

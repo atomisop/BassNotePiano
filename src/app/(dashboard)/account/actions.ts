@@ -33,7 +33,7 @@ import { forgetInstrumentInterest } from "@/lib/instrumentInterest";
 async function requireSession() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) throw new Error("Not signed in.");
-  return { id: session.user.id };
+  return { id: session.user.id, sid: session.user.sid };
 }
 
 // ---------------------------------------------------------------------------
@@ -247,11 +247,23 @@ export async function signOutOtherDevicesAction() {
 
 /** Signs out one device from the list (never this one: that is the normal sign out). Its session stops working on its next request. */
 export async function signOutDeviceAction(deviceId: string) {
-  const { id } = await requireSession();
+  const { id, sid } = await requireSession();
   const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
-  if (deviceId === mine) return { ok: false as const, error: "Use Sign out to leave this device." };
-  const res = await prisma.knownDevice.updateMany({ where: { id: deviceId, userId: id }, data: { signedOutAt: new Date() } });
-  if (res.count === 0) return { ok: false as const, error: "That device is no longer in the list." };
+  const device = await prisma.knownDevice.findFirst({ where: { id: deviceId, userId: id }, select: { id: true, sessionIds: true } });
+  if (!device) return { ok: false as const, error: "That device is no longer in the list." };
+  const isThisBrowserKind = deviceId === mine;
+  // Every session recorded on that device except the one making this request.
+  const toRevoke = device.sessionIds.filter((x) => x !== sid);
+  if (toRevoke.length > 0) {
+    // Each session is refused by its own id, so another browser of the same kind (or this one, signing in again) is untouched.
+    const row = await prisma.user.findUniqueOrThrow({ where: { id }, select: { revokedSessionIds: true } });
+    await prisma.user.update({ where: { id }, data: { revokedSessionIds: [...row.revokedSessionIds, ...toRevoke].slice(-200) } });
+    await prisma.knownDevice.update({ where: { id: device.id }, data: { sessionIds: sid && device.sessionIds.includes(sid) ? [sid] : [], ...(isThisBrowserKind ? {} : { signedOutAt: new Date() }) } });
+    return { ok: true as const };
+  }
+  if (isThisBrowserKind) return { ok: false as const, error: "That is the device you are on. Use Sign out to leave it." };
+  // An older session with no id of its own: only the browser label can tell it apart.
+  await prisma.knownDevice.update({ where: { id: device.id }, data: { signedOutAt: new Date() } });
   return { ok: true as const };
 }
 
@@ -264,11 +276,13 @@ export interface SignedInDevice {
   lastSeenAt: string;
   active: boolean;
   isThisDevice: boolean;
+  /** Other sessions on this same kind of device (besides the one asking), so a thief's copy next to your own can still be signed out. */
+  otherSessions: number;
 }
 
 /** Where this account is signed in: device, rough place (never the IP), when it signed in, and whether it is open right now. */
 export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
-  const { id } = await requireSession();
+  const { id, sid } = await requireSession();
   const [rows, mine] = await Promise.all([
     prisma.knownDevice.findMany({ where: { userId: id, signedOutAt: null }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
     currentDeviceId(id, (await headers()).get("user-agent")),
@@ -283,6 +297,7 @@ export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
     lastSeenAt: d.lastSeenAt.toISOString(),
     active: now - d.lastSeenAt.getTime() < DEVICE_ACTIVE_MS || d.id === mine,
     isThisDevice: d.id === mine,
+    otherSessions: d.sessionIds.filter((x) => x !== sid).length,
   }));
 }
 

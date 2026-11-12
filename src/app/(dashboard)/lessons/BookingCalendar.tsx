@@ -1,5 +1,6 @@
 "use client";
 
+import { viewerLocale } from "@/lib/viewerClock";
 import { useEffect, useMemo, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "@/components/ui/appIcons";
@@ -108,7 +109,7 @@ export function BookingCalendar({
     });
   }
 
-  const monthLabel = new Date(Date.UTC(viewMonth.year, viewMonth.monthIndex, 1)).toLocaleDateString(undefined, {
+  const monthLabel = new Date(Date.UTC(viewMonth.year, viewMonth.monthIndex, 1)).toLocaleDateString(viewerLocale(), {
     month: "long",
     year: "numeric",
     timeZone: "UTC",

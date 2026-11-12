@@ -53,6 +53,9 @@ export function parseMessageHeaders(raw: string | null | undefined): Map<string,
       if (Array.isArray(pair) && typeof pair[0] === "string" && typeof pair[1] === "string") {
         const name = pair[0].toLowerCase();
         if (!headers.has(name)) headers.set(name, pair[1]);
+        // A sender can add its own copy of Mailgun's verdict headers. Every copy is kept (joined by a newline), so a forged "pass" can never
+        // hide Mailgun's real "fail": the verdict only counts as a pass when EVERY copy says pass.
+        else if (name.startsWith("x-mailgun-")) headers.set(name, `${headers.get(name)}\n${pair[1]}`);
       }
     }
   } catch {
@@ -110,7 +113,7 @@ export function replySubject(subject: string | null): string {
 
 /** True when Mailgun's own checks say the sender really owns the domain it claims (DKIM or SPF passed). */
 export function isSenderAuthenticated(headers: Map<string, string>): boolean {
-  const pass = (value: string | undefined) => value?.trim().toLowerCase() === "pass";
+  const pass = (value: string | undefined) => Boolean(value) && value!.split("\n").every((v) => v.trim().toLowerCase() === "pass");
   return pass(headers.get("x-mailgun-dkim-check-result")) || pass(headers.get("x-mailgun-spf"));
 }
 

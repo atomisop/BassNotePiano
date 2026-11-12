@@ -17,7 +17,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_EMAIL_REJECTED", label: "A forwarded bank email failed its sender check and was ignored", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_EMAIL_UNREADABLE", label: "A bank email that looks like a payment could not be read", group: "Payments", defaultOn: true, ownerOnly: false },
-  { kind: "PAYMENT_REVERSED", label: "Venmo may have taken a payment back", group: "Payments", defaultOn: true, ownerOnly: false },
+  { kind: "PAYMENT_REVERSED", label: "A payment may have been taken back", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", group: "Payments", defaultOn: false, ownerOnly: false },
   { kind: "RECEIPT_COPY", label: "A copy of every payment receipt, by email", group: "Payments", defaultOn: true, ownerOnly: true },
   { kind: "PLAN_CANCEL_FEEDBACK", label: "Student canceled their plan", group: "Payments", defaultOn: true, ownerOnly: false },

@@ -263,7 +263,7 @@ export default async function BillingPlansPage(
                       ? {
                           id: payable.id,
                           amountCents: payable.amountCents,
-                          title: `Installment ${payable.installmentNumber ?? activePlan.installmentsPaid + 1} of ${activePlan.termMonths}`,
+                          title: `Bill ${payable.installmentNumber ?? activePlan.installmentsPaid + 1} of ${activePlan.termMonths}`,
                           eyebrow: planLabel,
                         }
                       : null

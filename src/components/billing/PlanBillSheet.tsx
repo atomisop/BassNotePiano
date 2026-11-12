@@ -58,7 +58,7 @@ export function PlanBillSheet({
               : waitingForFirstPayment
               ? " Your plan starts when the first payment arrives."
               : nextInstallmentDueDate
-                ? ` Your next bill opens on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
+                ? ` Your next bill opens on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}.`
                 : ""}
           </p>
         </div>

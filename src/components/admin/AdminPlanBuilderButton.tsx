@@ -200,7 +200,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
     <>
       <button type="button" onClick={() => void openBox()} aria-haspopup="dialog" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 px-2.5" })}>
         <Wrench aria-hidden className="mr-1.5 h-3.5 w-3.5" />
-        Plan builder
+        Rebuild plan from a date
       </button>
       <Dialog
         open={open}

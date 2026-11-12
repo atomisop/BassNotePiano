@@ -83,6 +83,8 @@ export async function adjustUserCredits(
   userId: string,
   amount: number,
   reasonNote: string,
+  /** respectHeld: a hand-made deduction may not eat credits that booked classes are holding (the admin credit screen sets it). */
+  options: { respectHeld?: boolean } = {},
 ): Promise<{ balance: number }> {
   if (!Number.isInteger(amount) || amount === 0) {
     throw new CreditAdjustmentError("Amount must be a non-zero whole number.");
@@ -93,8 +95,18 @@ export async function adjustUserCredits(
   }
 
   const { balance } = await prisma.$transaction(async (tx) => {
+    // Lock the row first: a concurrent attendance charge, payment grant or expiry changes the same balance, and an absolute write
+    // computed from an earlier read would overwrite it.
+    await tx.$executeRaw`SELECT 1 FROM "User" WHERE id = ${userId} FOR UPDATE`;
     const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } });
     const newBalance = user.classCredits + amount;
+    // Credits held by classes still booked are spoken for (marking the class later takes them), so a deduction may not eat into them.
+    const held = amount < 0 && options.respectHeld ? ((await tx.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }))._sum.creditsSpent ?? 0) : 0;
+    if (held > 0 && newBalance >= 0 && newBalance < held) {
+      throw new CreditAdjustmentError(
+        `That would take credits that booked classes are holding (balance ${creditsLabelFromStored(user.classCredits)}, ${creditsLabelFromStored(held)} held by booked classes). Cancel or move a class first.`,
+      );
+    }
     if (newBalance < 0) {
       throw new CreditAdjustmentError(
         `That would take the balance below 0 (currently ${creditsLabelFromStored(user.classCredits)}, change is ${amount > 0 ? "+" : "-"}${creditsLabelFromStored(Math.abs(amount))}).`,

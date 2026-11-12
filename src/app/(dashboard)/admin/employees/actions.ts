@@ -26,6 +26,7 @@ export async function revokeEmployeeAction(targetUserId: string): Promise<{ ok: 
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can revoke admin access." };
   try {
     await revokeEmployee(targetUserId, admin.id);
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.role", targetType: "User", targetId: targetUserId, detail: "Admin access removed" });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not revoke access." };
   }

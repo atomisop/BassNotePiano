@@ -167,6 +167,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
       {/* Left: search + select + adjustment form */}
       <div>
+        <p className="mb-2 px-1 text-small text-slate-500">Pick a student to add or take away class credits. One credit is one 45 minute class. Every change is logged below.</p>
         <input
           type="search"
           value={query}
@@ -278,7 +279,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   onChange={(e) => setReason(e.target.value)}
                   rows={2}
                   disabled={confirming}
-                  placeholder="e.g. Paid via Venmo instead of Zelle"
+                  placeholder="e.g. Paid in person instead of Zelle"
                   className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
@@ -343,7 +344,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                           {formatSigned(storedToCredits(row.amount))}
                         </span>
                       </div>
-                      <Meta className="mt-0.5" items={[new Date(row.createdAt).toLocaleString(), `by ${row.adjustedBy.name ?? row.adjustedBy.email}`]} />
+                      <Meta className="mt-0.5" items={[new Date(row.createdAt).toLocaleString(undefined, { timeZone: "America/New_York" }), `by ${row.adjustedBy.name ?? row.adjustedBy.email}`]} />
                     </li>
                   ))}
                 </ul>
@@ -371,7 +372,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                     </span>
                   </div>
                   <p className="mt-0.5 text-small text-slate-400">{row.reasonNote}</p>
-                  <Meta className="mt-0.5" items={[new Date(row.createdAtMs).toLocaleString(), `by ${row.adjustedByName ?? row.adjustedByEmail}`]} />
+                  <Meta className="mt-0.5" items={[new Date(row.createdAtMs).toLocaleString(undefined, { timeZone: "America/New_York" }), `by ${row.adjustedByName ?? row.adjustedByEmail}`]} />
                 </li>
               ))}
             </ul>

@@ -83,13 +83,13 @@ describe("the bill banner's status", () => {
     expect((await getMeStatus(parent.id)).billDue?.href).toBe("/parent");
   });
 
-  it("a group plan member sees their own bill", async () => {
+  it("a group plan's bill shows to the payer, never to a member who pays nothing", async () => {
     const payer = await account("payer");
     const member = await account("member");
     const group = await prisma.familyPlanGroup.create({ data: { kind: "FAMILY", payerId: payer.id } });
     const p = await plan(member.id, group.id);
     await bill(member.id, p.id);
-    expect((await getMeStatus(member.id)).billDue?.href).toBe("/billing/plans");
-    expect((await getMeStatus(payer.id)).billDue).toBeNull();
+    expect((await getMeStatus(payer.id)).billDue?.href).toBe("/billing/plans");
+    expect((await getMeStatus(member.id)).billDue).toBeNull();
   });
 });

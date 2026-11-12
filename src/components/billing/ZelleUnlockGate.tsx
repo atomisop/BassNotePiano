@@ -25,6 +25,8 @@ export interface ZelleUnlockGateProps {
   onSubmitPayment: (payload: ZelleReferenceSubmission) => Promise<void>;
   /** On a band's sheet: the "we are checking it" notice is drawn small, with no box of its own. Looks only. */
   compact?: boolean;
+  /** Open the pay sheet as soon as the page loads. Off on pages with other things to read first (Parent mode). */
+  startOpen?: boolean;
 }
 
 export function ZelleUnlockGate({
@@ -38,9 +40,10 @@ export function ZelleUnlockGate({
   paymentId,
   onSubmitPayment,
   compact = false,
+  startOpen = true,
 }: ZelleUnlockGateProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(status === "AWAITING_TRANSFER" || status === "REJECTED");
+  const [isOpen, setIsOpen] = useState(startOpen && (status === "AWAITING_TRANSFER" || status === "REJECTED"));
 
   const checkStatus = useCallback(() => getPaymentStatusAction(paymentId), [paymentId]);
 

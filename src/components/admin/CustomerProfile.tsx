@@ -66,7 +66,7 @@ function formatUsd(cents: number) {
 }
 
 function formatDate(d: Date | string) {
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
 function formatDateTime(d: Date | string) {
@@ -93,8 +93,9 @@ function SectionCard({ id, title, action, children }: { id?: string; title: stri
 /** "Nov 3", with the year only when it is not this year: a date in a row speaks for itself. */
 function shortDate(d: Date | string) {
   const date = new Date(d);
-  const sameYear = date.getFullYear() === new Date().getFullYear();
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  const yearOf = (x: Date) => x.toLocaleDateString("en-US", { year: "numeric", timeZone: "America/New_York" });
+  const sameYear = yearOf(date) === yearOf(new Date());
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }), timeZone: "America/New_York" });
 }
 
 /** A payment's purpose in plain words: "Payment plan installment". */
@@ -561,9 +562,9 @@ export function CustomerProfile({
         {planMenu}
         <button type="button" onClick={() => chooseTab("money")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
           <CreditCard aria-hidden className="h-4 w-4" />
-          Payments
+          Money
         </button>
-        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} of my changes`} className="col-span-2 px-1 pt-1 sm:ml-auto sm:p-0" />
+        <NotifyToggle on={notify} onChange={setNotify} label={`Notify ${(user.name ?? "student").split(" ")[0]} when I change something`} className="col-span-2 px-1 pt-1 sm:ml-auto sm:p-0" />
       </div>
 
       {/* The index: jumps to a section and opens it. It stays under the top while the page scrolls. */}
@@ -901,7 +902,7 @@ export function CustomerProfile({
                   type="text"
                   value={creditReason}
                   onChange={(e) => setCreditReason(e.target.value)}
-                  placeholder="e.g. Paid via Venmo instead of Zelle"
+                  placeholder="e.g. Paid in person instead of Zelle"
                   disabled={creditConfirming}
                   className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />

@@ -9,7 +9,7 @@ export const CANNED_REPLIES: { label: string; text: string }[] = [
   },
   {
     label: "How payment works",
-    text: "Pick a plan under Lessons, then Payment plan. You will get a payment code to put in the note when you send the Zelle, Venmo or bank payment. Once the payment arrives it is matched automatically and your classes are booked. If it has not shown up after a few hours, reply here with the date and amount and I will check.",
+    text: "Pick a plan under Lessons, then Payment plan. You will get a payment code to put in the note when you send the Zelle payment. Once the payment arrives it is matched automatically and your classes are booked. If it has not shown up after a few hours, reply here with the date and amount and I will check.",
   },
   {
     label: "Cancel or change a class",

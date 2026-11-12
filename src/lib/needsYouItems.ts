@@ -136,7 +136,7 @@ export async function getNeedsYouItems(kind: NeedsYouKind, opts: { isOwner: bool
       }));
     }
     case "scales": {
-      const progress = await getAdminProgressOverview("");
+      const progress = await getAdminProgressOverview("", { all: true });
       return progress
         .filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY")
         .slice(0, take)

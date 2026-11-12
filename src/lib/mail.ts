@@ -80,7 +80,7 @@ export async function sendAdminMessage(
 
   const recipient = await prisma.user.findUnique({
     where: { id: recipientId },
-    select: { id: true, email: true, name: true, notifyEmailSocial: true },
+    select: { id: true, email: true, name: true, notifyEmailSocial: true, bannedAt: true },
   });
   if (!recipient) throw new MailError("That person doesn't exist.");
 
@@ -99,7 +99,9 @@ export async function sendAdminMessage(
 
   let email: SendAdminMessageResult["email"] = "off";
   if (options.sendEmail) {
-    if (!recipient.notifyEmailSocial) {
+    if (recipient.bannedAt) {
+      email = "off"; // a banned account is sent nothing
+    } else if (!recipient.notifyEmailSocial) {
       email = "opted-out";
     } else {
       try {

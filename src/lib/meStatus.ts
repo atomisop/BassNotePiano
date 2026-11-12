@@ -43,19 +43,20 @@ async function getBillDue(userId: string): Promise<MeStatus["billDue"]> {
         status: "ACTIVE",
         OR: [
           { userId, familyGroupId: null },
-          { userId, familyGroup: { kind: "FAMILY" } },
+          // A group plan's bills are paid by the group's payer only: a member who pays nothing never sees the bar.
+          { familyGroup: { kind: "FAMILY", payerId: userId } },
           { familyGroup: { kind: "PARENT", payerId: userId } },
         ],
       },
     },
     orderBy: { createdAt: "asc" },
-    select: { amountCents: true, paymentPlan: { select: { userId: true, nextDueDate: true } } },
+    select: { amountCents: true, paymentPlan: { select: { userId: true, nextDueDate: true, familyGroup: { select: { kind: true } } } } },
   });
   if (!bill?.paymentPlan) return null;
   return {
     amountCents: bill.amountCents,
     dueDate: bill.paymentPlan.nextDueDate.toISOString(),
-    href: bill.paymentPlan.userId === userId ? "/billing/plans" : "/parent",
+    href: bill.paymentPlan.familyGroup?.kind === "PARENT" && bill.paymentPlan.userId !== userId ? "/parent" : "/billing/plans",
     lapseAfterDays: await getNumberSetting("payments.lapseAfterDays"),
   };
 }

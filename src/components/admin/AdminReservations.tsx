@@ -139,6 +139,7 @@ export function AdminReservations({
     <div className="grid items-start gap-6 lg:grid-cols-2">
       <form onSubmit={reserve} className="space-y-4 rounded-2xl bg-neu-base p-5 shadow-raised-low">
         <h2 className="text-title font-semibold text-slate-50">Keep a day for a customer</h2>
+        <p className="text-small text-slate-400">Students see these times as taken and cannot book them. Name, email and phone are needed. If a student already has a class in them, it is refused. For a day off, use Close a day instead.</p>
         <label className="block text-small text-slate-400">
           Day
           <input type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className={`${field} mt-1.5`} />

@@ -153,8 +153,8 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           Create account changes the fields and nothing else. */}
       <AuthHeading title="Create your account">
         {trialDays !== null
-          ? `Free ${trialDays}-day trial, once per person, starting when you confirm your email. We'll send a 6-digit code next.`
-          : "We'll email you a 6-digit code to confirm your address."}
+          ? `Free ${trialDays}-day trial, once per person, starting when you confirm your email. We'll send a 6-digit code next. Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character.`
+          : "We'll email you a 6-digit code to confirm your address. Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character."}
       </AuthHeading>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
         <p className="mt-3 text-small text-slate-300">A friend invited you. Start a 3 Month or 6 Month plan and you both get 10% off for 3 months.</p>

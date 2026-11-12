@@ -55,7 +55,7 @@ function classDay(iso: string, timeZone?: string) {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", timeZone });
 }
 function classTime(iso: string, timeZone?: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone, timeZoneName: "short" });
 }
 
 /**
@@ -245,7 +245,7 @@ export function ScheduleClient({
     setConfirmSkipId(bookingId);
   };
 
-  const weeklyLine = weeklyTime ? `Every ${DAY_LABELS[weeklyTime.dayOfWeek]} at ${formatTimeLabel(weeklyTime.startTime)}` : null;
+  const weeklyLine = weeklyTime ? `Every ${DAY_LABELS[weeklyTime.dayOfWeek]} at ${formatTimeLabel(weeklyTime.startTime)} ET` : null;
   const [next, ...later] = upcomingBookings;
   const nextState = next ? classState(next) : null;
   const laterFirst = later.slice(0, LATER_SHOWN);
@@ -431,7 +431,7 @@ export function ScheduleClient({
                 <p className="text-caption text-slate-500">Weekly time · the teacher moves a group plan&apos;s time</p>
               </div>
               <MessageSupportButton
-                problem={`I would like to move my group plan's weekly time (now ${DAY_LABELS[weeklyTime.dayOfWeek]}s at ${formatTimeLabel(weeklyTime.startTime)}).`}
+                problem={`I would like to move my group plan's weekly time (now ${DAY_LABELS[weeklyTime.dayOfWeek]}s at ${formatTimeLabel(weeklyTime.startTime)} ET).`}
                 label="Ask to move it"
                 className={buttonVariants({ variant: "ghost", size: "sm", className: "shrink-0" })}
               />

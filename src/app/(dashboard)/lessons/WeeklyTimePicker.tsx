@@ -1,5 +1,6 @@
 "use client";
 
+import { viewerLocale } from "@/lib/viewerClock";
 import { useMemo, useState } from "react";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
@@ -93,7 +94,7 @@ export function WeeklyTimePicker({
         onClose={() => setTimesOpen(false)}
         title={
           selectedDateKey
-            ? new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
+            ? new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(viewerLocale(), { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
             : "Pick a time"
         }
       >
@@ -126,7 +127,7 @@ export function WeeklyTimePicker({
         <div className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 shadow-pressed-low">
           <p className="text-small text-slate-300">
             Move your weekly class to every <span className="font-semibold text-slate-50">{DAY_LABELS[selected.dayOfWeek]}</span>,{" "}
-            <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)}</span>?
+            <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)} ET</span>?
           </p>
           <button
             type="button"

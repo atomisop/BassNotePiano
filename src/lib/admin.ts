@@ -162,7 +162,7 @@ export interface AdminUserRow {
   assistantMessageCount: number;
 }
 
-export async function searchUsers(query: string, opts: { complimentaryOnly?: boolean; onlyIds?: string[] } = {}): Promise<AdminUserRow[]> {
+export async function searchUsers(query: string, opts: { complimentaryOnly?: boolean; onlyIds?: string[]; /** Every match, not just the newest page (a filter that is applied after the list is read needs them all). */ all?: boolean } = {}): Promise<AdminUserRow[]> {
   const trimmed = query.trim();
   const users = await prisma.user.findMany({
     where: {
@@ -184,7 +184,7 @@ export async function searchUsers(query: string, opts: { complimentaryOnly?: boo
       progress: { include: { scaleGroup: true } },
       _count: { select: { assistantConversation: true } },
     },
-    take: 100,
+    take: opts.all ? undefined : 500,
   });
 
   return users.map((user) => ({
@@ -245,7 +245,7 @@ export interface AdminProgressRow {
  * say) and lock/unlock in the same glance, instead of opening each
  * student's full profile page just to check the roadmap.
  */
-export async function getAdminProgressOverview(query: string): Promise<AdminProgressRow[]> {
+export async function getAdminProgressOverview(query: string, opts: { all?: boolean } = {}): Promise<AdminProgressRow[]> {
   const trimmed = query.trim();
   const scaleGroups = await prisma.scaleGroup.findMany({ orderBy: { order: "asc" } });
 
@@ -273,7 +273,7 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
       knownDevices: { select: { lastSeenAt: true }, orderBy: { lastSeenAt: "desc" }, take: 1 },
       progress: true,
     },
-    take: 200,
+    take: opts.all ? undefined : 500,
   });
 
   const entitlements = await getCurriculumEntitlements(users.map((u) => u.id));

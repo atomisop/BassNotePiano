@@ -35,14 +35,14 @@ export async function approvePaymentAction(paymentId: string, notify = true) {
 }
 
 export async function checkPaymentAction(paymentId: string) {
-  await requireAdmin();
+  await requireOwnerAdmin(); // the owner's own review of auto-approved payments, and it counts toward trust
   await markPaymentChecked(paymentId);
   revalidatePath("/", "layout");
 }
 
 /** "Mark all as checked" on the Unchecked tab, after the admin has looked through them. */
 export async function checkAllPaymentsAction(): Promise<{ message: string }> {
-  await requireAdmin();
+  await requireOwnerAdmin();
   const count = await markAllPaymentsChecked();
   revalidatePath("/", "layout");
   return { message: count === 1 ? "1 payment marked as checked." : `${count} payments marked as checked.` };
@@ -115,7 +115,7 @@ export async function cancelBillAction(paymentId: string): Promise<{ ok: boolean
   }
 }
 
-/** Attaches a bank or Venmo email that matched nobody to an open payment for the same amount, and approves it. */
+/** Attaches a bank email that matched nobody to an open payment for the same amount, and approves it. */
 export async function matchReceiptAction(receiptId: string, paymentId: string, notify = true): Promise<{ ok: boolean; error: string | null }> {
   return withStudentNotice(notify, async () => {
     const admin = await requireOwnerAdmin();

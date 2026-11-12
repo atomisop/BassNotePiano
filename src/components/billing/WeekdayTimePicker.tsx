@@ -89,7 +89,7 @@ export function WeekdayTimePicker({
               className={cn(chip, "flex min-h-14 flex-col items-center justify-center px-1 py-2", chipState(active))}
             >
               <span className={cn("text-small font-semibold", active ? "text-signal-fg" : "text-slate-100")}>{DAY_SHORT[d]}</span>
-              <span className="text-small text-slate-500">{open > 0 ? open : "full"}</span>
+              <span className="text-small text-slate-500">{open > 0 ? `${open} open` : "full"}</span>
             </button>
           );
         })}

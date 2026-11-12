@@ -95,7 +95,8 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-50/8 pt-3">
         <div>
-          <p className="text-small font-medium text-slate-200">Send email</p>
+          <p className="text-small font-medium text-slate-200">Also send by email</p>
+          <p className="text-small text-slate-500">{sendEmail ? `Goes to all ${totalUsers} account${totalUsers === 1 ? "" : "s"} by email too.` : "Shown in the app only."}</p>
         </div>
         <EmailToggle
           checked={sendEmail}

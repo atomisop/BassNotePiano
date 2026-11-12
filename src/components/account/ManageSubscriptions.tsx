@@ -89,6 +89,11 @@ export interface ManageSubscriptionsProps {
 
 type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
 
+/** Switching to 3 Months is only a real alternative on a longer plan that has not already paid 3 bills (a switch below the bills paid is refused). */
+function offersDowngrade(plan: { term: string; installmentsPaid: number }): boolean {
+  return (plan.term === "TERM_6" || plan.term === "TERM_12") && plan.installmentsPaid < 3;
+}
+
 /**
  * The account-settings half of the pricing page: the same term ladder
  * /pricing shows (curriculum left out, by direct instruction, that's its
@@ -121,7 +126,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
   const [termError, setTermError] = useState<string | null>(null);
   const [cancelStage, setCancelStage] = useState<CancelStage>(
-    startOn === "cancel" && activePlan ? (activePlan.term === "TERM_6" || activePlan.term === "TERM_12" ? "downgrade-offer" : "reason") : "idle",
+    startOn === "cancel" && activePlan ? (offersDowngrade(activePlan) ? "downgrade-offer" : "reason") : "idle",
   );
   const [reason, setReason] = useState<PlanCancellationReason | null>(null);
   const [reasonNote, setReasonNote] = useState("");
@@ -153,7 +158,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
   function startCancelFlow() {
     setCancelError(null);
-    setCancelStage(activePlan?.term === "TERM_6" || activePlan?.term === "TERM_12" ? "downgrade-offer" : "reason");
+    setCancelStage(activePlan && offersDowngrade(activePlan) ? "downgrade-offer" : "reason");
   }
 
   function resetCancelFlow() {
@@ -227,7 +232,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
               </div>
               {(activePlan.pausedIndefinitely || activePlan.pausedUntil) && (
                 <StatusDot tone="warning" className="shrink-0 pt-0.5">
-                  {activePlan.pausedUntil ? `Paused to ${new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Paused"}
+                  {activePlan.pausedUntil ? `Paused to ${new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : "Paused"}
                 </StatusDot>
               )}
             </div>
@@ -238,7 +243,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                 <Fact label="To pay" value={NOTHING_TO_PAY} />
                 <Fact
                   label="Next 28 days start"
-                  value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                  value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "None"}
                   tone={progress.nextBillAt ? "default" : "muted"}
                 />
               </Facts>
@@ -258,7 +263,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
               <Fact label="Days paid" value={`${progress.daysCovered} of ${progress.daysTotal}`} />
               <Fact
                 label="Next bill"
-                value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "None"}
+                value={progress.nextBillAt ? progress.nextBillAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "None"}
                 tone={progress.nextBillAt ? "default" : "muted"}
               />
             </Facts>
@@ -269,7 +274,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
 
             {canSwitch && (
               <button type="button" onClick={() => setView("switch")} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
-                Switch plan
+                Change length
               </button>
             )}
           </div>
@@ -311,7 +316,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
       <Dialog
         open={confirmTerm !== null}
         onOpenChange={(open) => !open && pendingTerm === null && setConfirmTerm(null)}
-        title={switchPreview ? `Switch to ${switchPreview.label}?` : "Switch plan"}
+        title={switchPreview ? `Switch to ${switchPreview.label}?` : "Change length"}
         footer={
           <div className="flex flex-wrap gap-2">
             <button
@@ -366,7 +371,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
           {/* The one destructive action: quiet red words at the end, still behind its reason step and confirm. */}
           {cancelStage === "idle" && (
             <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 text-red-300 hover:text-red-200" })}>
-              Cancel subscription
+              Cancel plan
             </button>
           )}
 
@@ -397,7 +402,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
           {(cancelStage === "reason" || cancelStage === "canceling") && (
             <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
               <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
-              <p className="mt-1 text-small text-slate-400">This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.</p>
+              <p className="mt-1 text-small text-slate-400">This ends your plan and frees your reserved weekly time right away. You keep your lessons until the 28 days you already paid for run out. It can&apos;t be undone from here.</p>
               <div className="mt-3 space-y-1.5">
                 {CANCELLATION_REASONS.map((r) => (
                   <label key={r.value} className="flex cursor-pointer items-center gap-2 text-small text-slate-300">
@@ -432,7 +437,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel, startO
                   className={buttonVariants({ variant: "danger" })}
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
+                  {cancelStage === "canceling" ? "Canceling…" : "Cancel my plan"}
                 </button>
                 <button
                   type="button"

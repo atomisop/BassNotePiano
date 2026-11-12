@@ -65,7 +65,7 @@ export function AdminPausePlanButton({ planId, state, compact = false }: { planI
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
         <StatusDot tone="warning">
-          {state.until ? `Paused until ${new Date(state.until).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Paused indefinitely"}
+          {state.until ? `Paused until ${new Date(state.until).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}` : "Paused indefinitely"}
         </StatusDot>
         <button type="button" onClick={() => void run("resume")} aria-busy={busy === "resume"} className={button}>
           {busy === "resume" ? <MorphingSquare size={12} className="mr-1.5 shrink-0" /> : <Play aria-hidden className="mr-1.5 h-3.5 w-3.5" />}

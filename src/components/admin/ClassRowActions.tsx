@@ -279,7 +279,7 @@ export function ScaleReleaseDialog({
     scale.state === "NEEDS_CHECKLIST"
       ? "They have not finished the previous scale's lessons, practice and quiz yet."
       : scale.state === "WAITING_PACE" && scale.availableAt
-        ? `One new scale a week: this one opens by the usual rules on ${new Date(scale.availableAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
+        ? `One new scale a week: this one opens by the usual rules on ${new Date(scale.availableAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}.`
         : null;
   return (
     <Dialog
@@ -316,7 +316,7 @@ export function ScaleReleaseDialog({
 }
 
 const iconBtn =
-  "tap inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50/6 hover:text-slate-200";
+  "tap inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-slate-500 transition hover:bg-slate-50/6 hover:text-slate-200";
 
 /**
  * Reschedule and Cancel as two small round buttons, for lists that show many classes (Schedule > Attendance, the top bar's class panel,
@@ -362,11 +362,13 @@ export function ClassMoveCancelButtons({
   };
   return (
     <>
-      <button type="button" onClick={() => show("move")} aria-label={`Reschedule ${row.name}'s class`} title="Reschedule" className={iconBtn}>
+      <button type="button" onClick={() => show("move")} aria-label={`Move ${row.name}'s class to another time`} title="Reschedule" className={iconBtn}>
         <ArrowRightLeft aria-hidden className="h-4 w-4" />
+        <span className="text-caption">Move</span>
       </button>
       <button type="button" onClick={() => show("cancel")} aria-label={`Cancel ${row.name}'s class`} title="Cancel class" className={cn(iconBtn, "text-red-300 hover:text-red-200")}>
         <X aria-hidden className="h-4 w-4" />
+        <span className="text-caption">Cancel</span>
       </button>
       <RescheduleDialog row={row} open={open === "move"} onClose={() => show(null)} notify={notify} onDone={done} />
       <CancelDialog row={row} open={open === "cancel"} onClose={() => show(null)} notify={notify} onDone={done} />

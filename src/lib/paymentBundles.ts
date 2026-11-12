@@ -92,9 +92,11 @@ export async function approveBundlePayment(bundleId: string, reviewerId: string 
     }
     await approveZellePayment(m.id, reviewerId, { ...opts, skipReceipt: true });
   }
-  await prisma.zellePayment.update({
-    where: { id: bundleId },
+  // One winner: two overlapping approvals (an admin click and a bank email) must send the payer ONE receipt.
+  const won = await prisma.zellePayment.updateMany({
+    where: { id: bundleId, status: "PENDING_REVIEW" },
     data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId, autoApproved: opts?.auto === true },
   });
+  if (won.count !== 1) return;
   await sendPaymentReceipt(bundleId).catch((err) => reportError(err, `sendPaymentReceipt ${bundleId}`));
 }

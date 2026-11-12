@@ -169,6 +169,8 @@ export const runPaymentPlanInstallments = () =>
   });
 
   let opened = 0;
+  // A group's combined bill is shared by every member's plan: tell about it once per run, not once per member.
+  const groupBillsNotified = new Set<string>();
   for (const plan of duePlans) {
     const { payment, wasCreated } = await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle, now);
     // !wasCreated covers both "already open from an earlier run" and "not
@@ -179,6 +181,9 @@ export const runPaymentPlanInstallments = () =>
     if (!wasCreated || !payment) continue;
     // A group's bill: the payer is told (and the rest of a family group at the same moment), never a member with a pay button.
     if (payment.purpose === "FAMILY_PLAN_INSTALLMENT" || (await isGroupMemberNotPayer(plan))) {
+      const billKey = payment.bundleId ?? payment.id;
+      if (groupBillsNotified.has(billKey)) { opened++; continue; }
+      groupBillsNotified.add(billKey);
       await notifyGroupBill(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
     } else {
       await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
@@ -190,7 +195,8 @@ export const runPaymentPlanInstallments = () =>
     where: {
       purpose: "PAYMENT_PLAN_INSTALLMENT",
       status: "AWAITING_TRANSFER",
-      paymentPlan: { status: "ACTIVE", nextDueDate: { lt: now } },
+      // A first bill that has not been paid yet is not "overdue" (its own lapse rule handles it); only renewal bills are.
+      paymentPlan: { status: "ACTIVE", nextDueDate: { lt: now }, installmentsPaid: { gt: 0 } },
     },
     include: { paymentPlan: true },
   });

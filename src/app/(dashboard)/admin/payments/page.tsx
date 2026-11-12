@@ -32,6 +32,18 @@ const FILTERS: { label: string; value: PaymentFilterValue; icon: React.ReactNode
   { label: "All", value: "ALL", icon: <List /> },
 ];
 
+// One plain sentence per status, shown under the count so a new admin never has to guess what a pill means.
+const STATUS_HELP: Record<PaymentFilterValue, string> = {
+  PENDING_REVIEW: "The student says they paid and no bank email matched it yet. Approve it once you see the money, or reject it.",
+  UNCHECKED: "Approved by the system from a bank email. Glance at them, then mark them checked.",
+  VERIFIED: "Money received and approved.",
+  REJECTED: "Payments that were turned down.",
+  REFUNDED: "Money given back. Open one to undo the refund.",
+  AWAITING_TRANSFER: "A bill is open but the student has not said they paid yet. Nothing for you to do.",
+  EXPIRED: "Bills that were closed without being paid.",
+  ALL: "Every payment, whatever its status.",
+};
+
 export const metadata = { title: "Admin: Payments" };
 
 const formatUsd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -129,6 +141,8 @@ export default async function AdminPaymentsPage(
         )}
       </FigureLead>
 
+      <p className="mt-2 max-w-[70ch] px-1 text-small text-slate-500">{STATUS_HELP[activeFilter]}</p>
+
       {activeFilter === "UNCHECKED" && total > 0 && (
         <div className="mt-4">
           <BulkConfirmButton
@@ -193,7 +207,7 @@ function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" |
         label="Payments section"
         iconOnly
         items={[
-          { label: "Payments", selectLabel: "Zelle payments", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
+          { label: "To review", selectLabel: "Payments to review", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
           { label: "Emails", selectLabel: "Unmatched emails", icon: <Mail />, badge: unmatched, href: "/admin/payments?tab=emails", active: active === "emails" },
           { label: "Credits", selectLabel: "Class credits", icon: <Ticket />, href: "/admin/payments?tab=credits", active: active === "credits" },
           // The owner's money check lives here too (2026-11-10): what does not add up, with a fix for each.
@@ -204,7 +218,7 @@ function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" |
   );
 }
 
-/** Bank and Venmo emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
+/** Bank emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
 async function EmailsTab() {
   const [rows, health, session] = await Promise.all([listUnmatchedReceipts(), getPaymentPipelineHealth(), getServerAuthSession()]);
   const isOwner = isOwnerEmail(session?.user?.email);

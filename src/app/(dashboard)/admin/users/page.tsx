@@ -46,8 +46,8 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const followUpIds = followUpFilter ? (await getFollowUpPeople(followUpFilter)).map((p) => p.id) : undefined;
   const everyone = !needsApproval && !notPracticing && !complimentary && !followUpFilter && !contactsOnly && !staff;
   const [users, progress, noAccount] = await Promise.all([
-    contactsOnly || staff ? Promise.resolve([]) : searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds }),
-    contactsOnly || staff ? Promise.resolve([]) : getAdminProgressOverview(query),
+    contactsOnly || staff ? Promise.resolve([]) : searchUsers(query, { complimentaryOnly: complimentary, onlyIds: followUpIds, all: needsApproval || notPracticing }),
+    contactsOnly || staff ? Promise.resolve([]) : getAdminProgressOverview(query, { all: needsApproval || notPracticing }),
     // Under Everyone they follow the accounts; under their own pill they are the whole list.
     everyone ? listDirectory(query, "ALL").then((all) => all.filter((p) => p.kind !== "ACCOUNT")) : contactsOnly ? listDirectory(query, classForm ? "APPLICATION" : "ADDED") : Promise.resolve([]),
   ]);
@@ -89,7 +89,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
           iconOnly
           items={[
             { label: "Everyone", icon: <Users />, href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: everyone },
-            { label: "Approve", selectLabel: "Needs approval", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
+            { label: "Next scale", selectLabel: "Ready for the next scale", icon: <CheckCheck />, href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", icon: <Moon />, href: `/admin/users?filter=idle${q}`, active: notPracticing },
             ...ACCOUNT_FOLLOW_UP_FILTERS.map((f) => ({ label: FOLLOW_UP_TABS[f].label, icon: FOLLOW_UP_TABS[f].icon, href: `/admin/users?filter=${f}${q}`, active: followUpFilter === f })),
             { label: "Complimentary", icon: <Star />, href: `/admin/users?filter=comped${q}`, active: complimentary },

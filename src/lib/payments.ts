@@ -154,7 +154,7 @@ export async function createFifthClassPayment(userId: string, zelleHandle: strin
 
 /**
  * One extra class paid for directly: the student picks a specific open time and
- * pays a flat $55 for it by Zelle or Venmo. The row carries that exact time
+ * pays a flat $55 for it by Zelle. The row carries that exact time
  * (extraSession* columns) and the 2 credits it is worth; approving the payment
  * grants those credits and books the time with them in the same step (see
  * approveZellePayment), so credits are only ever the mechanism underneath, never
@@ -366,7 +366,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
 export interface ZelleReferenceSubmission {
   senderName: string;
   note?: string;
-  method?: "ZELLE" | "VENMO";
+  method?: "ZELLE";
 }
 
 /**
@@ -432,7 +432,7 @@ export async function submitZellePaymentReference(
       referenceCode: null,
       // A screenshot pre-check line (see receipt-actions.ts) stays on the payment, ahead of whatever the payer types.
       note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n").slice(0, 500) || null,
-      method: input.method === "VENMO" ? "VENMO" : "ZELLE",
+      method: "ZELLE", // Zelle is the only way to pay now
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
       rejectionReason: null,
@@ -966,7 +966,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
     await bookReservedWindowForPlan(payment.paymentPlanId);
     // A friend's invitation pays off once the invited person's first payment on a 3 or 6 month plan is in.
-    if (payment.installmentNumber === 1) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
+    // Never for a $0 first bill (a full scholarship): nothing was paid, so there is nothing for a friend's invitation to reward.
+    if (payment.installmentNumber === 1 && payment.amountCents > 0) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
 
     // A first payment going through is the moment someone becomes a subscriber: tell the admins who and when.
     if (payment.installmentNumber === 1) {
@@ -1055,8 +1056,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified, and never counted "of 6".
           coveredBillNotice(creditsNote).body
         : plan
-          ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
-          : `Your payment plan installment was verified. ${creditsNote}.`;
+          ? `Bill ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
+          : `Your plan bill was verified. ${creditsNote}.`;
     // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
     fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
     if (fifthClass) notificationBody += ` ${fifthClass.text}`;
@@ -1203,7 +1204,9 @@ export async function applyPlanInstallment(
       data: {
         installmentsPaid,
         status: isComplete ? "COMPLETED" : "ACTIVE",
-        nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+        // A finished plan keeps the START of its last paid cycle (paid access runs 28 days from it). A 1 Month plan's first bill is also its
+        // last, so its stored date is still the day the plan was made: the cycle really started at cycleStart (approval, or the first class).
+        nextDueDate: isComplete ? (plan.installmentsPaid === 0 && cycleStart ? cycleStart : plan.nextDueDate) : cycleEnd,
         ...(renewed ? { termMonths: plan.termMonths + SCHOLARSHIP_RENEWAL_CYCLES } : {}),
       },
     });
@@ -1236,7 +1239,7 @@ function formatUsdCents(cents: number): string {
 
 /**
  * Marks a verified payment as refunded. The money itself goes back outside the
- * app (Zelle or Venmo); this keeps the books and the student's account in step:
+ * app (Zelle); this keeps the books and the student's account in step:
  * it leaves revenue, and can also take back the credits it gave and end the
  * plan it paid for.
  */
@@ -1337,9 +1340,18 @@ export async function refundZellePayment(
   }
   if (opts.cancelPlan && payment.paymentPlanId) {
     const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
-    await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
-      warnings.push(`The plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
-    });
+    const finished = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId }, select: { status: true } });
+    if (finished?.status === "COMPLETED") {
+      // A finished plan (a 1 Month plan after its one bill) cannot be "canceled" the usual way, but a refund still ends it, and with it the access.
+      await prisma.$transaction([
+        prisma.paymentPlan.update({ where: { id: payment.paymentPlanId }, data: { status: "CANCELED", canceledAt: new Date(), canceledById: admin.id, cancellationNote: `Refund: ${note}` } }),
+        prisma.classBooking.updateMany({ where: { reservedByPlanId: payment.paymentPlanId, status: "SCHEDULED", scheduledAt: { gt: new Date() } }, data: { status: "CANCELED", refunded: true, canceledReason: "Payment refunded" } }),
+      ]);
+    } else {
+      await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
+        warnings.push(`The plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
+      });
+    }
   }
 
   await createNotification({
@@ -1393,9 +1405,20 @@ export async function undoRefundZellePayment(
     }
     if (opts.reactivatePlan) {
       for (const planId of planIds) {
-        const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, cancellationNote: true } });
+        const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, cancellationNote: true, userId: true } });
         if (plan?.status === "CANCELED" && plan.cancellationNote?.startsWith("Refund:")) {
-          await prisma.paymentPlan.update({ where: { id: planId }, data: { status: "ACTIVE", canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
+          // Never a second running plan for one person, and never for a banned account: leave it ended and say so.
+          const [other, holder] = await Promise.all([
+            prisma.paymentPlan.findFirst({ where: { userId: plan.userId, status: "ACTIVE", id: { not: planId } }, select: { id: true } }),
+            prisma.user.findUnique({ where: { id: plan.userId }, select: { bannedAt: true } }),
+          ]);
+          if (other || holder?.bannedAt) {
+            warnings.push(other ? "The plan was not restored: this person already has another running plan. Use Restart canceled plan on their page if you still want it back." : "The plan was not restored: the account is banned.");
+            continue;
+          }
+          const counts = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, select: { installmentsPaid: true, termMonths: true } });
+          const restoredStatus = counts.installmentsPaid >= counts.termMonths ? "COMPLETED" : "ACTIVE"; // a finished plan comes back finished
+          await prisma.paymentPlan.update({ where: { id: planId }, data: { status: restoredStatus, canceledAt: null, canceledById: null, cancellationNote: null, cancellationReason: null, cancellationReasonNote: null } });
           warnings.push("A plan ended by the refund is running again. Classes canceled with it were not brought back.");
         }
       }
@@ -1432,10 +1455,13 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
   }
 
-  await prisma.zellePayment.update({
-    where: { id: paymentId },
+  // Guarded by status: a bank email or an auto-approval may have verified this payment since it was read, and that must not be
+  // flipped to REJECTED after its credits were granted.
+  const rejected = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, status: "PENDING_REVIEW" },
     data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: reviewerId, rejectionReason: reason },
   });
+  if (rejected.count !== 1) throw new Error(`Payment ${paymentId} is no longer pending review.`);
 
   // A group or parent plan's bill is sent in by whoever pays it (a member, a child, cannot), so the payer is the one told, and sent to
   // where they pay it: the Parent page or Billing > Plans. Everyone else's bill goes back to them, with its pay sheet open.
