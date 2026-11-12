@@ -36,12 +36,15 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
     // A plan with a payment still awaiting transfer has paid nothing yet.
     db.paymentPlan.findMany({
       where: { userId: { in: userIds }, installmentsPaid: { gte: 1 } },
-      select: { userId: true, nextDueDate: true, status: true },
+      select: { userId: true, nextDueDate: true, status: true, cancellationNote: true },
     }),
   ]);
 
   const paidUntilByUser = new Map<string, Date>();
   for (const plan of plans) {
+    // A plan the owner ended with a refund gives no access: the money went back, so the paid period is not paid any more.
+    // (Undoing the refund restores the plan, and with it the access.)
+    if (plan.status === "CANCELED" && plan.cancellationNote?.startsWith("Refund:")) continue;
     // An in-flight plan's nextDueDate has already been advanced to the end of
     // the cycle just paid. A COMPLETED plan's final installment deliberately
     // doesn't advance it (nothing further is due), so it still points at the

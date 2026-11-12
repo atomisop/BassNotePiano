@@ -1,5 +1,6 @@
 "use client";
 
+import { viewerLocale } from "@/lib/viewerClock";
 import { useMemo, useState } from "react";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
@@ -94,7 +95,7 @@ export function WeeklyTimePicker({
         onClose={() => setTimesOpen(false)}
         title={
           selectedDateKey
-            ? new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
+            ? new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(viewerLocale(), { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
             : "Pick a time"
         }
       >

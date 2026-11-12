@@ -491,6 +491,19 @@ export async function getPlanCancellationFeedback(): Promise<PlanCancellationFee
 }
 
 /**
+ * A plan canceled while it is paused: the pause had pushed the next bill (and with it the paid access and the credits' expiry) out by its
+ * whole span, up to ten years for an indefinite pause. Ending the plan cuts the pause short first, so access ends where the PAID time
+ * really ends and not at the far date. Same arithmetic as resuming (adminResumePlan), run inside the cancel's transaction.
+ */
+async function unwindPauseOnCancel(tx: Prisma.TransactionClient, plan: { id: string; pausedAt: Date | null; pauseUntil: Date | null; nextDueDate: Date }, now: Date): Promise<void> {
+  if (!isPausedNow(plan, now) || !plan.pauseUntil) return;
+  const delta = now.getTime() - plan.pauseUntil.getTime(); // negative: the unused rest of the pause
+  await tx.paymentPlan.update({ where: { id: plan.id }, data: { pauseUntil: now, nextDueDate: new Date(plan.nextDueDate.getTime() + delta) } });
+  const grants = await tx.creditGrant.findMany({ where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } }, select: { id: true, expiresAt: true } });
+  for (const g of grants) await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + delta) } });
+}
+
+/**
  * Admin cancellation, note required, canceledById is the admin who acted.
  * A student can also cancel their own plan now (cancelPaymentPlanBySelf
  * below), this one is specifically for an admin doing it on a student's
@@ -518,6 +531,7 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
       throw new PaymentPlanError(`This plan isn't active (status: ${current.status}).`);
     }
 
+    await unwindPauseOnCancel(tx, current, new Date());
     await tx.paymentPlan.update({
       where: { id: planId },
       data: { status: "CANCELED", canceledAt: new Date(), canceledById: adminId, cancellationNote: trimmedNote },
@@ -565,6 +579,12 @@ async function assertNoOpenInstallment(planId: string): Promise<void> {
   // unpaid bill: close it so canceling or changing plans never waits on
   // someone to expire it. Only one they already submitted (money may be on
   // its way) still blocks, and the email match usually clears that on its own.
+  // A bill held inside a group's combined bill that the payer already sent is being reviewed too: closing it now would make the combined
+  // bill's parts stop adding up to what was paid.
+  const heldInReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, bundle: { status: "PENDING_REVIEW" } }, select: { id: true } });
+  if (heldInReview) {
+    throw new PaymentPlanError("The group's last payment is still being confirmed. Try again in a few minutes, or message support if it takes longer.");
+  }
   await prisma.zellePayment.updateMany({
     where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
     data: { status: "EXPIRED" },
@@ -828,6 +848,7 @@ export async function cancelPaymentPlanBySelf(
   await assertNoOpenInstallment(plan.id);
 
   await prisma.$transaction(async (tx) => {
+    await unwindPauseOnCancel(tx, plan, new Date());
     await tx.paymentPlan.update({
       where: { id: plan.id },
       data: {

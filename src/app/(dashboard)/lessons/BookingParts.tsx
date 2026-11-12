@@ -1,5 +1,6 @@
 "use client";
 
+import { viewerLocale, viewerZone } from "@/lib/viewerClock";
 import { Collapse } from "@/components/ui/Collapse";
 import { useState } from "react";
 import { formatEndTime } from "@/lib/classScheduleLabels";
@@ -74,7 +75,7 @@ export const STATUS_STYLE: Record<BookingRow["status"], string> = {
 
 /** Weekday + date only, the time is shown separately as its own column. */
 export function formatOccurrenceDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(viewerLocale(), { weekday: "long", month: "short", day: "numeric", timeZone: viewerZone() });
 }
 
 /** Length of a booking that spent `credits`: a class is CLASS_MINUTES. */
@@ -92,7 +93,7 @@ export const creditsLabel = (n: number) => creditsLabelFromStored(n);
 export const weekStartMs = (occurrenceDateMs: number) => weekRangeForOccurrence(new Date(occurrenceDateMs)).start.getTime();
 
 export function formatOccurrenceTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(viewerLocale(), { hour: "numeric", minute: "2-digit", timeZone: viewerZone() });
 }
 
 /**
@@ -121,12 +122,12 @@ export function groupOccurrencesByWeek(rows: OccurrenceRow[]): { key: string; la
 }
 
 export function monthKey(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  // The month in the same clock the labels use, so the grouping never differs between the server's render and the browser's.
+  return new Date(iso).toLocaleDateString("en-CA", { year: "numeric", month: "2-digit", timeZone: viewerZone() }).slice(0, 7);
 }
 
 export function monthLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return new Date(iso).toLocaleDateString(viewerLocale(), { month: "long", year: "numeric", timeZone: viewerZone() });
 }
 
 /** Groups already-desc-sorted bookings into consecutive per-month buckets, preserving order. */
@@ -193,9 +194,9 @@ export function BookingCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`text-body font-semibold tabular-nums ${scheduled ? "text-slate-50" : "text-slate-300"}`}>
-            {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+            {start.toLocaleDateString(viewerLocale(), { weekday: "short", month: "short", day: "numeric", timeZone: viewerZone() })}
             <span aria-hidden className="text-slate-500"> · </span>
-            {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+            {start.toLocaleTimeString(viewerLocale(), { hour: "numeric", minute: "2-digit", timeZone: viewerZone() })}
           </p>
           <Meta
             className="mt-0.5"
@@ -211,7 +212,7 @@ export function BookingCard({
           />
           {changeEligible && (
             <p className="mt-0.5 text-caption text-slate-500">
-              Free to change until {freeUntil.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+              Free to change until {freeUntil.toLocaleString(viewerLocale(), { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: viewerZone() })}
             </p>
           )}
           {insideWindow && (

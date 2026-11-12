@@ -487,7 +487,7 @@ export async function ingestPaymentEmail(
     body: string;
   },
   /** forceCheck: whatever this email settles stays in the owner's "unchecked" list (its sender was only softly verified). */
-  options: { forceCheck?: boolean } = {},
+  options: { forceCheck?: boolean; /** The sender was only softly verified (headers anyone could write): only a BNP code in the note settles it, never a name or an amount. */ codeOnly?: boolean } = {},
 ): Promise<IngestOutcome> {
   if (!isAllowedSender(input.from)) return "ignored";
   // Money taken back by Venmo (a reversed or cancelled payment) is not a new payment; the admins are told instead.
@@ -542,7 +542,7 @@ export async function ingestPaymentEmail(
     if (alone) picked = { payment: alone.payment, via: "amount", duplicate: alone.duplicate };
   }
   const match = picked?.payment ?? null;
-  if (picked && (await getBoolSetting("payments.emailAutoApprove"))) {
+  if (picked && !(options.codeOnly && picked.via !== "code") && (await getBoolSetting("payments.emailAutoApprove"))) {
     // The weaker ways in leave the payment in the owner's unchecked list to be confirmed.
     const needsCheck = Boolean(options.forceCheck) || Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
     if (await approveFromReceipt(picked.payment.id, receipt, { needsCheck, via: picked.via })) return "approved";

@@ -9,7 +9,9 @@ import { undoAttendance } from "@/lib/classScheduleAdmin";
 import { runAttendanceAutoCharge } from "@/lib/attendanceAutoCharge";
 import { getOrCreateOpenInstallmentPayment, recordPlanPaymentReceived } from "@/lib/paymentPlans";
 import { assertParentOf } from "@/lib/parentLinks";
-import { cancelPaymentPlanBySelf } from "@/lib/paymentPlans";
+import { cancelPaymentPlanBySelf, adminPausePlan } from "@/lib/paymentPlans";
+import { refundZellePayment } from "@/lib/payments";
+import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { getMeStatus } from "@/lib/meStatus";
 import { syncGroupBundle } from "@/lib/paymentBundles";
 import { applyMoneyFix } from "@/lib/moneyCheck";
@@ -243,5 +245,36 @@ describe("third round of review fixes", () => {
     await prisma.zellePayment.create({ data: { userId: member.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 2, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "AWAITING_TRANSFER" } });
     expect((await getMeStatus(member.id)).billDue).toBeNull();
     expect((await getMeStatus(payer.id)).billDue?.href).toBe("/billing/plans");
+  });
+});
+
+describe("owner decisions, decided", () => {
+  const planData = (userId: string, extra: Record<string, unknown> = {}) => ({
+    userId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_3" as const, installmentAmountCents: 16499, creditsPerInstallment: 8, termMonths: 3,
+    installmentsPaid: 1, nextDueDate: new Date(Date.now() + 25 * 86_400_000), reservedScheduleId: sched.id, reservedChunkIndex: 0, ...extra,
+  });
+
+  it("canceling a plan that is paused indefinitely ends access with the paid time, not ten years later", async () => {
+    const s = await person("Pz");
+    const admin = await person("PzA");
+    const plan = await prisma.paymentPlan.create({ data: planData(s.id) });
+    await adminPausePlan(plan.id, admin.id, null);
+    const paused = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
+    expect(paused.nextDueDate.getTime()).toBeGreaterThan(Date.now() + 9 * 365 * 86_400_000);
+    const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
+    await cancelPaymentPlan(plan.id, admin.id, "student asked");
+    const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
+    expect(after.status).toBe("CANCELED");
+    expect(after.nextDueDate.getTime()).toBeLessThan(Date.now() + 40 * 86_400_000);
+  });
+
+  it("a refund that ends the plan ends the access too, and undoing it brings both back", async () => {
+    const s = await person("Rf");
+    const admin = await person("RfA");
+    const plan = await prisma.paymentPlan.create({ data: planData(s.id) });
+    const pay = await prisma.zellePayment.create({ data: { userId: s.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "VERIFIED" } });
+    expect((await getCurriculumEntitlement(s.id)).kind).toBe("PAID");
+    await refundZellePayment(pay.id, { id: admin.id, email: null }, { note: "asked for it", removeCredits: false, cancelPlan: true });
+    expect((await getCurriculumEntitlement(s.id)).kind).not.toBe("PAID");
   });
 });

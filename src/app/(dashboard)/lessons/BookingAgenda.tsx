@@ -1,5 +1,6 @@
 "use client";
 
+import { viewerLocale, viewerZone } from "@/lib/viewerClock";
 import { useMemo, useState } from "react";
 import { Check } from "@/components/ui/appIcons";
 import { dayKey } from "./BookingCalendar";
@@ -25,10 +26,10 @@ export interface AgendaRow {
 }
 
 const MONTH_SHORT = (year: number, monthIndex: number) =>
-  new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString(undefined, { month: "short", timeZone: "UTC" });
+  new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString(viewerLocale(), { month: "short", timeZone: "UTC" });
 
 function timeLabel(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(viewerLocale(), { hour: "numeric", minute: "2-digit", timeZone: viewerZone() });
 }
 
 export function BookingAgenda({
@@ -118,7 +119,7 @@ export function BookingAgenda({
                   {new Date(ms).getUTCDate()}
                 </span>
                 <span className="text-caption uppercase tracking-wide text-slate-500">
-                  {new Date(ms).toLocaleDateString(undefined, { weekday: "short", timeZone: "UTC" })}
+                  {new Date(ms).toLocaleDateString(viewerLocale(), { weekday: "short", timeZone: "UTC" })}
                 </span>
               </span>
               {list.length === 0 ? (
