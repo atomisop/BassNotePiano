@@ -598,10 +598,10 @@ export function SignedInDevicesCard() {
                     <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${d.active ? "bg-emerald-400" : "bg-slate-600"}`} />
                     {d.active ? "Active now" : "Not active"}
                   </span>
-                  {!d.isThisDevice && (
+                  {(!d.isThisDevice || d.otherSessions > 0) && (
                     <button type="button" onClick={() => signOutOne(d.id)} disabled={busyId !== null} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                       {busyId === d.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                      Sign out
+                      {d.isThisDevice ? "Sign out my other sessions here" : "Sign out"}
                     </button>
                   )}
                 </div>
@@ -612,7 +612,7 @@ export function SignedInDevicesCard() {
       )}
       {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       {devices && devices.some((d) => !d.isThisDevice) && (
-        <p className="mt-3 text-small text-slate-400">Devices are told apart by browser and system only. If you do not recognize one, use Sign out of all other devices, which ends every other session for certain.</p>
+        <p className="mt-3 text-small text-slate-400">If you do not recognize a device, sign it out here, or use Sign out of all other devices to end every other session at once.</p>
       )}
       {devices && devices.some((d) => !d.isThisDevice) && (
         <button type="button" onClick={signOutAll} disabled={busyId !== null} className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 mt-3 text-red-300 hover:text-red-200" })}>

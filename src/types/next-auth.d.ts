@@ -17,6 +17,8 @@ declare module "next-auth/jwt" {
     onboarded: boolean;
     /** The User.sessionVersion this token was issued/refreshed against, see the jwt callback's "sign out other devices" comment. Optional: tokens issued before this field existed won't have it yet. */
     sessionVersion?: number;
+    /** This one session's id, made at sign-in; a session the person signs out from the devices list is refused by id. Absent on tokens issued before it existed. */
+    sid?: string;
   }
 }
 
@@ -31,6 +33,7 @@ declare module "next-auth" {
       unlockedScaleSlugs: string[];
       completedScaleSlugs: string[];
       onboarded: boolean;
+      sid?: string;
     } & DefaultSession["user"];
   }
 
@@ -39,5 +42,7 @@ declare module "next-auth" {
     hasCurriculumAccess: boolean;
     /** Set by authorize at sign-in so the token is right even if the entitlements query is slow. */
     onboarded?: boolean;
+    /** Made by authorize for this sign-in; copied onto the token. */
+    sid?: string;
   }
 }

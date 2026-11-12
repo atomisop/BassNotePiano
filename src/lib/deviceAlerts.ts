@@ -76,18 +76,18 @@ export function describeDevice(userAgent: string | null | undefined): { label: s
   return { label: `${browser} on ${os}`, key: `${browser}|${os}` };
 }
 
-export async function recordSignInDevice(user: { id: string; email: string; name: string | null }, userAgent: string | null | undefined, place: DevicePlace = { city: null, region: null, country: null }): Promise<void> {
+export async function recordSignInDevice(user: { id: string; email: string; name: string | null }, userAgent: string | null | undefined, place: DevicePlace = { city: null, region: null, country: null }, sid?: string): Promise<void> {
   try {
     const { label, key } = describeDevice(userAgent);
     const deviceHash = createHash("sha256").update(`${user.id}|${key}`).digest("hex");
     const known = await prisma.knownDevice.findUnique({ where: { userId_deviceHash: { userId: user.id, deviceHash } } });
     if (known) {
-      await prisma.knownDevice.update({ where: { id: known.id }, data: { lastSeenAt: new Date(), signedInAt: new Date(), signedOutAt: null, ...place } });
+      await prisma.knownDevice.update({ where: { id: known.id }, data: { lastSeenAt: new Date(), signedInAt: new Date(), signedOutAt: null, ...(sid ? { sessionIds: withSession(known.sessionIds, sid) } : {}), ...place } });
       return;
     }
     const others = await prisma.knownDevice.count({ where: { userId: user.id } });
     try {
-      await prisma.knownDevice.create({ data: { userId: user.id, deviceHash, label, ...place } });
+      await prisma.knownDevice.create({ data: { userId: user.id, deviceHash, label, ...(sid ? { sessionIds: [sid] } : {}), ...place } });
     } catch {
       return; // two sign-ins at once from the same new device: the other one sends the email
     }
@@ -97,6 +97,11 @@ export async function recordSignInDevice(user: { id: string; email: string; name
   } catch (err) {
     console.error("New device alert failed (non-blocking):", err);
   }
+}
+
+/** The newest 20 session ids of a device, with this one added (and moved to the end if it was already there). */
+export function withSession(existing: string[], sid: string): string[] {
+  return [...existing.filter((x) => x !== sid), sid].slice(-20);
 }
 
 export function hashFor(userId: string, userAgent: string | null | undefined): string {
@@ -114,19 +119,21 @@ export async function currentDeviceId(userId: string, userAgent: string | null |
  * Quiet and cheap: it writes at most once every 2 minutes per device, and records a device the first time a session that
  * predates this feature is seen (without emailing anyone).
  */
-export async function touchDevice(userId: string, userAgent: string | null | undefined, place: DevicePlace): Promise<void> {
+export async function touchDevice(userId: string, userAgent: string | null | undefined, place: DevicePlace, sid?: string): Promise<void> {
   try {
     const deviceHash = hashFor(userId, userAgent);
     const now = new Date();
     const hasPlace = Boolean(place.city || place.region || place.country);
-    const res = await prisma.knownDevice.updateMany({
-      where: { userId, deviceHash, lastSeenAt: { lt: new Date(now.getTime() - 2 * 60_000) } },
-      data: { lastSeenAt: now, ...(hasPlace ? place : {}) },
-    });
-    if (res.count > 0) return;
-    const exists = await prisma.knownDevice.findUnique({ where: { userId_deviceHash: { userId, deviceHash } }, select: { id: true } });
-    if (exists) return;
-    await prisma.knownDevice.create({ data: { userId, deviceHash, label: describeDevice(userAgent).label, ...place } }).catch(() => undefined);
+    const exists = await prisma.knownDevice.findUnique({ where: { userId_deviceHash: { userId, deviceHash } }, select: { id: true, sessionIds: true, lastSeenAt: true } });
+    // A session id seen on this device for the first time is remembered, so signing the device out revokes it (even a copied cookie
+    // replayed under another browser label ends up on that label's row and is revoked by id all the same).
+    const newSession = Boolean(sid && exists && !exists.sessionIds.includes(sid));
+    if (exists && !newSession && now.getTime() - exists.lastSeenAt.getTime() < 2 * 60_000) return;
+    if (exists) {
+      await prisma.knownDevice.update({ where: { id: exists.id }, data: { lastSeenAt: now, ...(hasPlace ? place : {}), ...(sid ? { sessionIds: withSession(exists.sessionIds, sid) } : {}) } });
+      return;
+    }
+    await prisma.knownDevice.create({ data: { userId, deviceHash, label: describeDevice(userAgent).label, ...(sid ? { sessionIds: [sid] } : {}), ...place } }).catch(() => undefined);
   } catch (err) {
     console.error("Device check-in failed (non-blocking):", err);
   }

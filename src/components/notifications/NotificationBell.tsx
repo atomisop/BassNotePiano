@@ -96,6 +96,7 @@ const CATEGORY_ICONS = {
   // to match every other category icon in this restyle.
   feedback: MessageSquare,
   messages: Mail,
+  alerts: Bell,
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY_ICONS;
@@ -148,6 +149,11 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   ADMIN_MESSAGE: { key: "messages", label: "Messages" },
   PAYMENT: { key: "billing", label: "Payments" },
   BILLING: { key: "billing", label: "Billing" },
+  ADMIN_ALERT: { key: "alerts", label: "Studio alerts" },
+  PAYMENT_SUBMITTED: { key: "billing", label: "Payments to review" },
+  BADGE_EARNED: { key: "account", label: "Badges" },
+  CLASS_REMINDER: { key: "reminders", label: "Class reminders" },
+  RESERVED_SLOT_CHANGED: { key: "bookings", label: "Bookings" },
 };
 
 function categoryFor(type: string): { key: CategoryKey; label: string } {
@@ -205,7 +211,9 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
     for (const n of items) {
       const category = categoryFor(n.type);
       const current = clusters[clusters.length - 1];
-      if (current?.categoryKey === category.key) {
+      // A request waiting for Accept or Decline always stands alone, so its buttons are never hidden inside a stack.
+      const waiting = n.answer?.state === "PENDING" || current?.items.some((i) => i.answer?.state === "PENDING");
+      if (current?.categoryKey === category.key && !waiting) {
         current.items.push(n);
       } else {
         clusters.push({ key: n.id, categoryKey: category.key, categoryLabel: category.label, items: [n] });
@@ -577,7 +585,8 @@ export function NotificationBell() {
   }
 
   async function handleNotificationClick(notification: NotificationRow) {
-    setOpen(false);
+    // An item with no page to open stays here: closing the panel on a tap that goes nowhere looks like a glitch.
+    if (notification.href || notificationHref(notification.type)) setOpen(false);
     if (notification.read) return;
     setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
     setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -654,7 +663,7 @@ export function NotificationBell() {
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    aria-label="Back"
+                    aria-label="Close inbox"
                     className="tap flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
@@ -704,6 +713,9 @@ export function NotificationBell() {
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
                       <p className="text-small font-medium text-slate-400">{tab === "MAIL" ? "No mail yet." : "No notifications yet."}</p>
+                      <p className="max-w-[16rem] text-small text-slate-500">
+                        {tab === "MAIL" ? "Messages from your teacher show up here." : "Bills, classes, friend requests and reminders show up here as they happen."}
+                      </p>
                       {tab === "NOTIFICATIONS" && (
                         <Link
                           href="/account?tab=notifications"

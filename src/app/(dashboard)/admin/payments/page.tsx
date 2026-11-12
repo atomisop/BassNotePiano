@@ -207,7 +207,7 @@ function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" |
         label="Payments section"
         iconOnly
         items={[
-          { label: "Payments", selectLabel: "Zelle payments", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
+          { label: "To review", selectLabel: "Payments to review", icon: <CreditCard />, href: "/admin/payments", active: active === "payments" },
           { label: "Emails", selectLabel: "Unmatched emails", icon: <Mail />, badge: unmatched, href: "/admin/payments?tab=emails", active: active === "emails" },
           { label: "Credits", selectLabel: "Class credits", icon: <Ticket />, href: "/admin/payments?tab=credits", active: active === "credits" },
           // The owner's money check lives here too (2026-11-10): what does not add up, with a fix for each.
