@@ -44,7 +44,7 @@ export async function updateAccountDetails(adminId: string, userId: string, inpu
 
   if (name !== (user.name ?? "")) {
     if (name.length > 80) throw new AccountToolError("That name is too long.");
-    if (!hasFirstAndLastName(name)) throw new AccountToolError("Enter a first and last name, the way it appears on their bank or Venmo account.");
+    if (!hasFirstAndLastName(name)) throw new AccountToolError("Enter a first and last name, the way it appears on their bank account.");
     data.name = name;
     changed.push("name");
   }

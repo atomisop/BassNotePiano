@@ -903,7 +903,7 @@ export function CustomerProfile({
                   type="text"
                   value={creditReason}
                   onChange={(e) => setCreditReason(e.target.value)}
-                  placeholder="e.g. Paid via Venmo instead of Zelle"
+                  placeholder="e.g. Paid in person instead of Zelle"
                   disabled={creditConfirming}
                   className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />

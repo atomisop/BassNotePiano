@@ -279,7 +279,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   onChange={(e) => setReason(e.target.value)}
                   rows={2}
                   disabled={confirming}
-                  placeholder="e.g. Paid via Venmo instead of Zelle"
+                  placeholder="e.g. Paid in person instead of Zelle"
                   className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>

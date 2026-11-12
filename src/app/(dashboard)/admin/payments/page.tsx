@@ -218,7 +218,7 @@ function TopTabs({ active, unmatched, owner }: { active: "payments" | "emails" |
   );
 }
 
-/** Bank and Venmo emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
+/** Bank emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
 async function EmailsTab() {
   const [rows, health, session] = await Promise.all([listUnmatchedReceipts(), getPaymentPipelineHealth(), getServerAuthSession()]);
   const isOwner = isOwnerEmail(session?.user?.email);

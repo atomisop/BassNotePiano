@@ -154,7 +154,7 @@ export async function createFifthClassPayment(userId: string, zelleHandle: strin
 
 /**
  * One extra class paid for directly: the student picks a specific open time and
- * pays a flat $55 for it by Zelle or Venmo. The row carries that exact time
+ * pays a flat $55 for it by Zelle. The row carries that exact time
  * (extraSession* columns) and the 2 credits it is worth; approving the payment
  * grants those credits and books the time with them in the same step (see
  * approveZellePayment), so credits are only ever the mechanism underneath, never
@@ -366,7 +366,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
 export interface ZelleReferenceSubmission {
   senderName: string;
   note?: string;
-  method?: "ZELLE" | "VENMO";
+  method?: "ZELLE";
 }
 
 /**
@@ -432,7 +432,7 @@ export async function submitZellePaymentReference(
       referenceCode: null,
       // A screenshot pre-check line (see receipt-actions.ts) stays on the payment, ahead of whatever the payer types.
       note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n").slice(0, 500) || null,
-      method: input.method === "VENMO" ? "VENMO" : "ZELLE",
+      method: "ZELLE", // Zelle is the only way to pay now
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
       rejectionReason: null,
@@ -1233,7 +1233,7 @@ function formatUsdCents(cents: number): string {
 
 /**
  * Marks a verified payment as refunded. The money itself goes back outside the
- * app (Zelle or Venmo); this keeps the books and the student's account in step:
+ * app (Zelle); this keeps the books and the student's account in step:
  * it leaves revenue, and can also take back the credits it gave and end the
  * plan it paid for.
  */
