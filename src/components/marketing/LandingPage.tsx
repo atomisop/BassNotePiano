@@ -5,7 +5,7 @@ import { InstrumentPicker } from "@/components/marketing/InstrumentPicker";
 import { SocialProof } from "@/components/marketing/SocialProof";
 import { Solution } from "@/components/marketing/Solution";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
-import { HomeDemo } from "@/components/marketing/HomeDemo";
+import { SeeItWork } from "@/components/marketing/SeeItWork";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -133,7 +133,7 @@ export function LandingPage({ extraClassCents }: { extraClassCents?: number }) {
         <Statement />
         <InstrumentPicker />
         <Solution />
-        <HomeDemo />
+        <SeeItWork />
         <HowItWorks />
         <SocialProof />
         <FAQ extraClassCents={extraClassCents} />
