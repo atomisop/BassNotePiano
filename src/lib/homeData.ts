@@ -56,7 +56,7 @@ export interface HomeData {
   badgeCount: number;
   /** Every badge the student has earned, for the Badges card. */
   earnedBadgeCodes: BadgeCode[];
-  /** Credits on the account, in 45 minute classes. */
+  /** Credits free to book with, in 45 minute classes (credits held by booked classes are left out). */
   credits: number;
 }
 
@@ -70,7 +70,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   await claimParentInvites(userId, user.email).catch((err) => console.error("Claiming parent requests failed (non-blocking):", err));
   await claimFriendEmailAsks(userId, user.email).catch((err) => console.error("Claiming book-together asks failed (non-blocking):", err));
 
-  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
+  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, heldCredits, weekRows, badges, unlocks, friendRows, linkedChildren, toMe] = await Promise.all([
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
     prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
@@ -82,6 +82,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       select: { scheduledAt: true, creditsSpent: true, discordChannelId: true, inPerson: true },
     }),
     getCurriculumEntitlement(userId),
+    // Credits that booked classes already hold are not free to book with, so Home shows the same number as the top bar badge.
+    prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
     prisma.fingerPracticeDay.findMany({ where: { userId, day: { gte: weekStartKey(today), lte: today } }, select: { day: true, seconds: true } }),
     prisma.userBadge.findMany({ where: { userId, earnedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }, select: { code: true, earnedAt: true } }),
     prisma.scaleProgress.findMany({
@@ -183,7 +185,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     gettingStarted: showChecklist ? checklist : [],
     badgeCount: earnedBadges.length,
     earnedBadgeCodes: earnedBadges.map((b) => b.code),
-    credits: storedToCredits(profile?.classCredits ?? 0),
+    credits: storedToCredits(Math.max(0, (profile?.classCredits ?? 0) - (heldCredits._sum.creditsSpent ?? 0))),
   };
 }
 

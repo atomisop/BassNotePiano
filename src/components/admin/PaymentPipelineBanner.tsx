@@ -25,7 +25,7 @@ export function PaymentPipelineBanner({ health }: { health: PaymentPipelineHealt
   }
   return (
     <p className="mt-6 text-small text-slate-500">
-      {health.hoursSinceEmail === null ? "No bank email yet" : `Last bank email ${describeAge(health.hoursSinceEmail)}`}
+      {health.hoursSinceEmail === null ? "No bank email has arrived yet. Payments match to bills by themselves once one does" : `Last bank email ${describeAge(health.hoursSinceEmail)}`}
     </p>
   );
 }

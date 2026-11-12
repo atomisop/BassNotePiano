@@ -32,6 +32,18 @@ const FILTERS: { label: string; value: PaymentFilterValue; icon: React.ReactNode
   { label: "All", value: "ALL", icon: <List /> },
 ];
 
+// One plain sentence per status, shown under the count so a new admin never has to guess what a pill means.
+const STATUS_HELP: Record<PaymentFilterValue, string> = {
+  PENDING_REVIEW: "The student says they paid and no bank email matched it yet. Approve it once you see the money, or reject it.",
+  UNCHECKED: "Approved by the system from a bank email. Glance at them, then mark them checked.",
+  VERIFIED: "Money received and approved.",
+  REJECTED: "Payments that were turned down.",
+  REFUNDED: "Money given back. Open one to undo the refund.",
+  AWAITING_TRANSFER: "A bill is open but the student has not said they paid yet. Nothing for you to do.",
+  EXPIRED: "Bills that were closed without being paid.",
+  ALL: "Every payment, whatever its status.",
+};
+
 export const metadata = { title: "Admin: Payments" };
 
 const formatUsd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -128,6 +140,8 @@ export default async function AdminPaymentsPage(
           </a>
         )}
       </FigureLead>
+
+      <p className="mt-2 max-w-[70ch] px-1 text-small text-slate-500">{STATUS_HELP[activeFilter]}</p>
 
       {activeFilter === "UNCHECKED" && total > 0 && (
         <div className="mt-4">

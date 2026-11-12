@@ -50,6 +50,7 @@ export function NotifyToggle({ on, onChange, label = "Notify student", className
       <Switch id={id} checked={on} onCheckedChange={onChange} />
       <label htmlFor={id} className="cursor-pointer text-small text-slate-300">
         {label}
+        <span className="text-slate-500">{on ? " · they will be told" : " · done quietly"}</span>
       </label>
     </div>
   );

@@ -177,7 +177,7 @@ export default async function HomePage() {
                 icon: <Ticket />,
                 value: formatCredits(data.credits),
                 unit: data.credits === 1 ? "class" : "classes",
-                hint: nextClass ? `Next ${untilLabel(nextClass.scheduledAt)}` : "None booked",
+                hint: nextClass ? `Next class ${untilLabel(nextClass.scheduledAt)}` : "None booked",
                 alert: data.credits === 0,
               },
             ]}

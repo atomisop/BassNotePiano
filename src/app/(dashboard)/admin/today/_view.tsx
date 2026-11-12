@@ -126,7 +126,7 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
                             s.inPerson ? "In person" : null,
                             s.nextScale?.state === "READY" ? <span className="font-medium text-slate-300">Ready for {s.nextScale.code}</span> : null,
                             s.planLabel ? `${s.planLabel} plan` : "No plan",
-                            s.scale ? `Scale ${s.scale}` : null,
+                            s.scale,
                             s.practicedDaysLast7 !== null ? `Practiced ${s.practicedDaysLast7}/7 days` : null,
                             `${s.credits} left`,
                             s.status === "COMPLETED" ? "Class done" : null,

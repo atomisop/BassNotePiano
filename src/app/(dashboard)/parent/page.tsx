@@ -53,6 +53,7 @@ export default async function ParentPage() {
           >
             <div key="pay" className="pb-1 pt-3">
               <ZelleUnlockGate
+                startOpen={false}
                 status={firstBill.status}
                 rejectionReason={firstBill.rejectionReason}
                 scaleCode={`${firstBill.childName}: ${firstBill.label}`}
@@ -94,6 +95,7 @@ export default async function ParentPage() {
                   <Meta items={[bill.label, bill.planName]} />
                 </div>
                 <ZelleUnlockGate
+                startOpen={false}
                   status={bill.status}
                   rejectionReason={bill.rejectionReason}
                   scaleCode={`${bill.childName}: ${bill.label}`}

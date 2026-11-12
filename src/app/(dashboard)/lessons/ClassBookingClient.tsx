@@ -673,7 +673,7 @@ export function ClassBookingClient({
                 aria-label={`${formatCredits(storedToCredits(credits))} credits to spend`}
               >
                 <Ticket aria-hidden className="h-4 w-4 text-signal-fg" strokeWidth={1.75} />
-                {formatCredits(storedToCredits(credits))}
+                {formatCredits(storedToCredits(credits))} {storedToCredits(credits) === 1 ? "credit" : "credits"}
               </p>
             </div>
 

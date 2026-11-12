@@ -17,6 +17,7 @@ export default async function AdminSettingsPage() {
     return (
       <div>
         <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings<Hint className="ml-1.5">Only the owner can change the app&apos;s settings.</Hint></h1>
+        <p className="mt-3 max-w-[60ch] text-body text-slate-400">The studio&apos;s settings (prices, booking rules, reminders, Discord) can only be changed by the owner. If something needs changing, message the owner from Inbox.</p>
       </div>
     );
   }

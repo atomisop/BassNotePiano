@@ -137,6 +137,7 @@ export function DiscordMembersList({
                   </span>
                   {asking === row.id ? (
                     <span className="flex shrink-0 flex-wrap items-center gap-2">
+                      <span className="basis-full text-small text-slate-400">Their Discord link is removed. They must connect again to join a class. {tellStudent ? "They will be told." : "They will not be told."}</span>
                       <button type="button" onClick={() => setAsking(null)} disabled={busy === row.id} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                         Not yet
                       </button>
@@ -167,7 +168,7 @@ export function DiscordMembersList({
                       className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                     >
                       {notifying === row.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                      {notifying === row.id ? "Sending…" : "Notify"}
+                      {notifying === row.id ? "Sending…" : "Ask to connect"}
                     </button>
                   )}
                 </>

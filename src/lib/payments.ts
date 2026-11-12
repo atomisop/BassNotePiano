@@ -1050,8 +1050,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         ? // A $0 bill (a 100% scholarship) was never paid, so it is never called a payment that was verified, and never counted "of 6".
           coveredBillNotice(creditsNote).body
         : plan
-          ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
-          : `Your payment plan installment was verified. ${creditsNote}.`;
+          ? `Bill ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
+          : `Your plan bill was verified. ${creditsNote}.`;
     // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
     fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
     if (fifthClass) notificationBody += ` ${fifthClass.text}`;
