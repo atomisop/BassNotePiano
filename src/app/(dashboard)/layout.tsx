@@ -105,7 +105,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px here by sitting in flow. This padding reserves that same
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
-      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
+      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col md:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} alertCards={isAdmin ? sidebarCards : []} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* An open renewal bill, until it is sent: cannot be closed (BillBar.tsx). */}
@@ -120,7 +120,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain app-scroll-under-bar px-4 pb-32 md:px-6 md:pb-32 lg:px-8 lg:pb-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain app-scroll-under-bar px-4 pb-32 md:px-6 md:pb-8 lg:px-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
       <SwipeBack />
       <AutoRefresh />
@@ -129,7 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <ScrollAssist />
       </Suspense>
       <DeckStack />
-      <div className="lg:hidden">
+      <div className="md:hidden">
         <AppDock isAdmin={isAdmin} />
       </div>
       <AppSidebar cards={sidebarCards} isAdmin={isAdmin} adminBadges={adminBadges} />

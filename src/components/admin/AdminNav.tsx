@@ -44,14 +44,14 @@ function useCurrentHub(): AdminHub {
 }
 
 /**
- * Tablets (md up to lg): the six choices as a list on the left. From lg the app's own sidebar lists them under "Admin", so this one
+ * Retired (kept hidden): the six choices as a list on the left, for tablets. From md the app's own sidebar lists them under "Admin", so this one
  * steps aside and there is one menu, not two. Each one opens its first page; the section's other pages are the tabs drawn under
  * the menu on every admin page (`AdminSectionTabs`), so nothing pops out when the pointer rests on a row.
  */
 export function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   const current = useCurrentHub();
   return (
-    <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-1 md:sticky md:top-0 md:flex md:self-start lg:hidden">
+    <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-1">
       {ADMIN_HUBS.map((hub) => {
         const active = hub.id === current.id;
         const Icon = HUB_ICON[hub.id];

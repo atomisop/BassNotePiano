@@ -1,11 +1,13 @@
+import { PageArrive } from "@/components/layout/PageArrive";
+
 /**
  * Re-mounts on every navigation within the dashboard. It sits INSIDE (dashboard)/layout.tsx, so the sidebar, top bar, mobile tab bar
  * and any open modals persist and are untouched.
  *
- * It adds no animation of its own. A tab tap already shows the next screen's skeleton at once and crossfades to the real page
- * (NavPendingGate, a view transition); an arrival animation on top of that replayed from transparent and flashed the empty
- * background between the skeleton and the page, and nudged the skeleton down 6px as it did.
+ * A tab tap already shows the next screen's skeleton at once and crossfades to the real page (NavPendingGate, a view transition).
+ * The arrival (PageArrive) adds a soft blur-to-sharp settle on top of that; it never starts from fully transparent, because an
+ * arrival that did flashed the empty background between the skeleton and the page.
  */
 export default function DashboardTemplate({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>;
+  return <PageArrive>{children}</PageArrive>;
 }
