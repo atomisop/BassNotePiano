@@ -201,7 +201,8 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
                     aria-current={active ? "page" : undefined}
                     className={`sb-item group/sb press-soft relative flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
-                        ? "text-signal-ink"
+                        ? // Until the pill has been measured (the server's first paint) the open page carries its own orange fill, so its dark label is never alone on the dark ground.
+                          `text-signal-ink ${sel ? "" : "bg-signal"}`
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >

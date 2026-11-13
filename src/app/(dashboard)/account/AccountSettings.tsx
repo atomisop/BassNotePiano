@@ -211,7 +211,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 type="button"
                 onClick={() => onSelect(tab.id)}
                 aria-current={activeTab === tab.id ? "page" : undefined}
-                className={activeTab === tab.id ? NAV_ROW_ACTIVE : NAV_ROW}
+                className={activeTab === tab.id ? `${NAV_ROW_ACTIVE} ${rect ? "" : "bg-signal"}` : NAV_ROW}
               >
                 <TabIcon icon={tab.icon} />
                 {tab.label}
