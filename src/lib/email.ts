@@ -5,6 +5,7 @@ import { tagAppLinks } from "@/lib/recipientTag";
 import { reservationEmailBody } from "@/lib/reservationEmail";
 import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import { isEmailBlocked } from "@/lib/emailBlock";
 import type { EmailCategory } from "@/lib/emailPreferences";
 import { unsubscribeLinks } from "@/lib/unsubscribe";
 import { recordEmail } from "@/lib/emailLog";
@@ -59,6 +60,8 @@ interface SendEmailParams {
   text: string;
   /** Overrides the sender. Messages from a person use a reply-able address, see sendPersonalEmail. */
   from?: string;
+  /** Verification codes only: sent even to a blocked recipient (see emailBlock.ts). */
+  allowBlocked?: boolean;
 }
 
 /**
@@ -361,7 +364,7 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
     { footerNote: "If you didn't request this, you can safely ignore this email. Your account is still secure.", preheader: `Your code is ${code}. It expires in 10 minutes.` },
   );
   const text = `${copy.intro}\n\nYour code: ${code}\n\nThis code expires in 10 minutes.`;
-  await sendEmail({ to, subject: copy.subject, html, text });
+  await sendEmail({ to, subject: copy.subject, html, text, allowBlocked: true });
 }
 
 function escapeHtml(text: string): string {
@@ -810,6 +813,7 @@ export async function sendSupportEmailReply(input: {
   references: string[];
 }): Promise<void> {
   const { to, subject, text, messageId, inReplyTo, references } = input;
+  if (isEmailBlocked(to)) return;
   const client = getResendClient();
   if (!client) {
     if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is not set.");
