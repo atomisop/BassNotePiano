@@ -7,7 +7,7 @@ import { TOGGLE_SIDEBAR_EVENT } from "@/lib/shortcuts";
 const KEY = "bnp-sidebar-collapsed";
 
 /**
- * Expands the desktop sidebar or shrinks it to a rail of icons (lg and up). The choice is kept in
+ * Expands the sidebar or shrinks it to a rail of icons (tablets and computers, md and up). The choice is kept in
  * localStorage and applied as `data-sidebar` on <html>, which globals.css
  * reads, so the sidebar and the page padding follow without any shared state.
  */
@@ -15,11 +15,13 @@ export function SidebarToggle() {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    let saved = false;
+    // No saved choice yet: a tablet (under 1024px) starts as a rail so the page keeps its room; a computer starts open.
+    let saved = window.innerWidth < 1024;
     try {
-      saved = localStorage.getItem(KEY) === "1";
+      const stored = localStorage.getItem(KEY);
+      if (stored !== null) saved = stored === "1";
     } catch {
-      // Storage blocked: start open.
+      // Storage blocked: use the width's default.
     }
     setCollapsed(saved);
     document.documentElement.dataset.sidebar = saved ? "collapsed" : "open";
@@ -54,10 +56,14 @@ export function SidebarToggle() {
       onClick={toggle}
       aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       aria-pressed={collapsed}
-      title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (B)`}
-      className="sidebar-toggle tap press hidden h-9 w-9 items-center justify-center rounded-full bg-neu-base text-slate-400 shadow-raised-low hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
+      // The sidebar shows this as a small orange label beside the button (AppSidebar's tooltip), with the shortcut key.
+      data-tip={collapsed ? "Expand" : "Collapse"}
+      data-tip-key="B"
+      data-tip-always=""
+      className="sidebar-toggle tap press flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-50/12 bg-slate-50/5 text-slate-400 transition-colors hover:bg-slate-50/10 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+      {/* The panel icon turns over as the sidebar closes, so the button shows which way it will go next. */}
+      <PanelLeft className={`h-[18px] w-[18px] transition-transform duration-300 ease-[var(--ease-ios)] ${collapsed ? "-scale-x-100" : ""}`} strokeWidth={1.75} aria-hidden />
     </button>
   );
 }

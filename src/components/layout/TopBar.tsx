@@ -12,7 +12,6 @@ import type { SidebarCard } from "@/lib/sidebarCards";
 import { CreditsBadge } from "./CreditsBadge";
 import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
-import { SidebarToggle } from "./SidebarToggle";
 import { BarTitle } from "./BarTitle";
 
 /**
@@ -54,18 +53,17 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
     <>
     {/* The floating card behind the phone top bar (and, in the admin, behind the section bar and tabs too). */}
     <div aria-hidden data-topglass="" className="top-card" />
-    <header data-topbar="" className="pad-safe-x pointer-events-auto fixed inset-x-0 top-0 z-[45] px-5 pt-[calc(var(--card-top)+0.375rem)] pb-4 md:pointer-events-none md:px-3 md:pt-[max(0.375rem,env(safe-area-inset-top))] md:pb-0">
+    <header data-topbar="" className="topbar-shell pad-safe-x pointer-events-auto fixed inset-x-0 top-0 z-[45] px-5 pt-[calc(var(--card-top)+0.375rem)] pb-4 md:pointer-events-none md:px-3 md:pt-[max(0.375rem,env(safe-area-inset-top))] md:pb-0">
       {/* Phones: the top is one flat, edge to edge strip in the page's own colour (no island, border or shadow), so the logo, buttons and
           page title read as part of the page and the whole strip moves together when you pull to refresh. From md up there is no bar at
           all: the logo and each button float on their own over the page, which scrolls under them. */}
       <div data-glass="" className="pointer-events-auto relative flex min-h-12 w-full flex-wrap items-center justify-between gap-x-2 px-4 md:h-12 md:flex-nowrap md:rounded-full min-[360px]:gap-x-3 min-[360px]:px-4 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
-        {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
+        {/* The logo is shown on phones only; from md up the sidebar's own header (logo and fold button) takes its place. */}
         <div className="md:hidden">
           <BrandMark />
         </div>
-        <SidebarToggle />
         <Breadcrumb />
       </div>
       <div className="relative z-10 flex items-center gap-1.5 min-[360px]:gap-2 md:gap-3">
@@ -79,7 +77,7 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         </span>
         <CreditsBadge />
         {/* Ask AI lives at the foot of the sidebar on a computer; search and the light/dark switch take its place here. */}
-        <span className="contents lg:hidden">
+        <span className="contents md:hidden">
           <AskAiButton />
         </span>
         <TopBarTools />
@@ -100,16 +98,16 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5">
         <div className="hidden md:contents">
-        {/* Friends is in a student's dock. An admin's dock has Admin in its place, so Friends stays here for them on tablets (from lg the
+        {/* Friends is in a student's dock. An admin's dock has Admin in its place, so Friends stays here for them on tablets (from md the
             sidebar has it; on phones the profile menu does). No live classes button: Lessons is already in the dock and the sidebar. */}
         {isAdmin && (
-          <span className="contents lg:hidden">
+          <span className="contents md:hidden">
             <FriendsTopLink />
           </span>
         )}
-        {/* From lg the sidebar lists the admin sections, so the shortcut is only for tablets. */}
+        {/* From md the sidebar lists the admin sections, so the shortcut is only for phones. */}
         {isAdmin && (
-          <span className="contents lg:hidden">
+          <span className="contents md:hidden">
             <AdminTopLink />
           </span>
         )}

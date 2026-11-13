@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Map, Music2, Trophy, CalendarCheck, Users, Settings, Globe, ArrowUpRight, ShieldCheck, type AppIcon } from "@/components/ui/appIcons";
@@ -9,13 +10,15 @@ import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
 import { Kbd } from "@/components/ui/Kbd";
 import { goKeysFor } from "@/lib/shortcuts";
-import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminNavBadges } from "@/lib/adminNav";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminNavBadges, type AdminPage } from "@/lib/adminNav";
 import { HUB_ICON } from "@/components/admin/AdminNav";
 import { atomHiddenOn, openAtom } from "@/lib/atomTrigger";
-import { GlassLens } from "@/components/ui/GlassLens";
+import { SlidingPill, useActiveRect } from "@/components/ui/SlidingPill";
+import { SidebarToggle } from "@/components/layout/SidebarToggle";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { useLinkedChildren } from "@/components/parent/useLinkedChildren";
 
-type Item = { href: string; label: string; icon: AppIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number };
+type Item = { href: string; label: string; icon: AppIcon; dataTour?: string; match?: string[]; external?: boolean; isActive?: (pathname: string) => boolean; count?: number; flyout?: { title: string; pages: AdminPage[] } };
 
 // Same destinations as the phone dock, plus Practice and Profile, which have
 // room here. Grouped so a long list stays scannable.
@@ -75,13 +78,13 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
             icon: HUB_ICON[hub.id],
             isActive: () => adminHub === hub.id,
             count: hubWaiting(hub, adminBadges),
+            flyout: hub.pages.length > 1 ? { title: hub.label, pages: hub.pages } : undefined,
           })),
         },
       ]
     : base;
   useEffect(() => setMounted(true), []);
 
-  // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
   const navRef = useRef<HTMLElement>(null);
   // Atom's chat opens just above this button and points at it.
   const askRef = useRef<HTMLDivElement>(null);
@@ -89,53 +92,78 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
     const r = askRef.current?.getBoundingClientRect();
     openAtom(r ? { left: r.left, top: r.top, width: r.width } : undefined);
   };
-  const [sel, setSel] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  // The selector: one solid orange pill that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
+  const sel = useActiveRect(navRef, [pathname, mounted, kids.length]);
+
+  // Hover labels (the rail shows icons only) and the pop-out list of an admin section's pages. Both are drawn in a portal on <body>, so
+  // the sidebar's own clipping and view-transition layer can never cut them off.
+  const [tip, setTip] = useState<{ label: string; hint?: string; top: number; left: number } | null>(null);
+  const [fly, setFly] = useState<{ title: string; pages: AdminPage[]; top: number; left: number } | null>(null);
+  const flyClose = useRef<number | undefined>(undefined);
+  const itemsByKey = useRef<Record<string, Item>>({});
+  const cancelClose = () => window.clearTimeout(flyClose.current);
+  const scheduleClose = () => {
+    cancelClose();
+    flyClose.current = window.setTimeout(() => setFly(null), 140);
+  };
+  const onPoint = (e: React.MouseEvent | React.FocusEvent) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-tip],[data-flyout]");
+    if (!el) {
+      setTip(null);
+      scheduleClose();
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    const collapsed = document.documentElement.dataset.sidebar === "collapsed";
+    const flyKey = el.dataset.flyout;
+    if (flyKey) {
+      const item = itemsByKey.current[flyKey];
+      if (item?.flyout) {
+        cancelClose();
+        setTip(null);
+        const height = 44 + item.flyout.pages.length * 36;
+        setFly({ title: item.flyout.title, pages: item.flyout.pages, top: Math.max(8, Math.min(r.top, window.innerHeight - height - 12)), left: r.right + 10 });
+        return;
+      }
+    }
+    scheduleClose();
+    if (el.dataset.tip && (collapsed || el.dataset.tipAlways !== undefined)) {
+      setTip({ label: el.dataset.tip, hint: el.dataset.tipKey, top: r.top + r.height / 2, left: r.right + 10 });
+    } else {
+      setTip(null);
+    }
+  };
+  const onLeave = () => {
+    setTip(null);
+    scheduleClose();
+  };
+  useEffect(() => () => window.clearTimeout(flyClose.current), []);
+  // A click or a page change puts the pop-outs away.
   useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const el = nav.querySelector<HTMLElement>('a[aria-current="page"]');
-      // Measured against the nav itself (offsetTop is relative to whichever ancestor is positioned, which is not always the nav).
-      if (!el) return setSel(null);
-      const n = nav.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
-      setSel({ top: r.top - n.top + nav.scrollTop, left: r.left - n.left + nav.scrollLeft, width: el.offsetWidth, height: el.offsetHeight });
-    };
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
-    };
-    measure();
-    const ro = new ResizeObserver(schedule);
-    ro.observe(nav);
-    nav.querySelectorAll("a").forEach((a) => ro.observe(a));
-    // The width of the open or closing sidebar changes over a third of a second: keep up with it.
-    const timer = window.setInterval(schedule, 40);
-    const stop = window.setTimeout(() => window.clearInterval(timer), 500);
-    return () => {
-      ro.disconnect();
-      window.clearInterval(timer);
-      window.clearTimeout(stop);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [pathname, mounted, kids.length]);
+    setTip(null);
+    setFly(null);
+  }, [pathname]);
 
   return (
+    <>
     <nav
       ref={navRef}
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 pt-[4.25rem] hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2 lg:flex"
+      onMouseOver={onPoint}
+      onMouseLeave={onLeave}
+      onFocus={onPoint}
+      onBlur={onLeave}
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-3 md:flex"
     >
-      {sel && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute z-0 rounded-xl"
-          style={{ top: sel.top, left: sel.left, width: sel.width, height: sel.height, transition: "top 460ms cubic-bezier(0.22,1.1,0.36,1), left 380ms var(--ease-ios), width 380ms var(--ease-ios), height 300ms var(--ease-ios)" }}
-        >
-          <GlassLens radius={12} bezel={11} strength={10} />
-        </span>
-      )}
+      {/* The sidebar's own header: the logo and the button that folds the sidebar into a rail (the rail stacks them). */}
+      <div className="sb-header sticky top-0 z-20 -mx-3 -mt-3 flex items-center justify-between gap-2 bg-ground px-3 pb-2 pt-3">
+        <Link href="/dashboard" aria-label="Bass Note Piano, home" className="sb-brand tap flex min-w-0 items-center gap-2 rounded-xl px-0.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <BrandLogo height={22} className="text-slate-50" />
+          <span className="sb-label truncate text-caption font-bold tracking-tight text-slate-50">Bass Note Piano</span>
+        </Link>
+        <SidebarToggle />
+      </div>
+      <SlidingPill rect={sel} />
       {groups.map((group) => (
         <div key={group.title} className="sb-group relative z-10">
           <p className="sb-group-title px-2.5 pb-1.5 text-small font-medium text-slate-500">{group.title}</p>
@@ -146,6 +174,7 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
                 : pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.match?.some((m) => pathname.startsWith(m)) ?? false);
               const badge = item.count ?? 0;
               const Icon = item.icon;
+              if (item.flyout) itemsByKey.current[item.href] = item;
               return (
                 <li key={item.href}>
                   {item.external ? (
@@ -153,7 +182,7 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={item.label}
+                      data-tip={item.label}
                       className="sb-item press-soft flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
@@ -167,15 +196,16 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
                     prefetch
                     data-tour={item.dataTour}
                     data-prerender=""
-                    title={item.label}
+                    data-tip={item.label}
+                    data-flyout={item.flyout ? item.href : undefined}
                     aria-current={active ? "page" : undefined}
                     className={`sb-item group/sb press-soft relative flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
-                        ? "text-slate-50"
+                        ? "text-signal-ink"
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                     <span className="sb-label truncate">{item.label}</span>
                     {goKeysFor(item.href) && badge === 0 && (
                       // The label wrapper carries `sb-label` (the rail's own opacity rule); the hint inside shows only on hover or focus.
@@ -184,7 +214,7 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
                       </span>
                     )}
                     {badge > 0 && (
-                      <span className="sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
+                      <span className={`sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-small font-bold ${active ? "bg-[rgb(var(--signal-ink))] text-slate-50" : "bg-signal text-slate-950"}`}>
                         {badge > 9 ? "9+" : badge}
                       </span>
                     )}
@@ -213,5 +243,27 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
         )}
       </div>
     </nav>
+    {mounted && tip && createPortal(
+      <div role="tooltip" className="sb-tip" style={{ top: tip.top, left: tip.left }}>
+        {tip.label}
+        {tip.hint && <kbd>{tip.hint}</kbd>}
+      </div>,
+      document.body,
+    )}
+    {mounted && fly && createPortal(
+      <div role="menu" aria-label={fly.title} className="sb-flyout glass-menu" style={{ top: fly.top, left: fly.left }} onMouseEnter={cancelClose} onMouseLeave={scheduleClose}>
+        <p className="px-3 pb-1 pt-1.5 text-small font-semibold text-slate-500">{fly.title}</p>
+        {fly.pages.map((page) => {
+          const here = pathname === page.href.split("?")[0] && locateAdminPage(pathname)?.page.href === page.href;
+          return (
+            <Link key={page.href} href={page.href} prefetch role="menuitem" aria-current={here ? "page" : undefined} className={`flex h-9 items-center rounded-lg px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${here ? "bg-signal/16 text-signal-fg" : "text-slate-300 hover:bg-slate-50/8 hover:text-slate-50"}`}>
+              {page.label}
+            </Link>
+          );
+        })}
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }

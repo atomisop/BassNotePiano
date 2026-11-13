@@ -14,6 +14,7 @@ import { PausePlanCard } from "@/components/account/PausePlanCard";
 import type { AssistantMessage } from "@/lib/assistant";
 import { changePaymentPlanTermAction, cancelPaymentPlanBySelfAction, pausePaymentPlanAction, type NotificationPreferencesInput } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
+import { SlidingPill, useActiveRect } from "@/components/ui/SlidingPill";
 import { startNavigation } from "@/lib/navigationState";
 import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { unlinkDiscordAction } from "../lessons/discordActions";
@@ -128,8 +129,9 @@ function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { ico
 // it reads as part of the same list.
 // Every row in the desktop settings menu (tabs, Shop, About, Sign out) is the same shape; only the current one is filled.
 const NAV_ROW =
-  "tap flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
-const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
+  "tap relative z-10 flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
+// The open section is drawn over the sliding orange pill (SlidingPill), so the row itself only changes its text colour.
+const NAV_ROW_ACTIVE = "tap relative z-10 flex items-center gap-2.5 rounded-control px-3 py-2.5 text-left text-small font-medium text-signal-ink";
 
 function ShopLink({ back }: { back: string }) {
   return (
@@ -194,8 +196,11 @@ function CategoryHeading({ category, isFirst }: { category: Category; isFirst: b
 // off on its own). "Sign out" stays below everything, uncategorized, it's
 // an action, not a setting.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
+  const navRef = useRef<HTMLElement>(null);
+  const rect = useActiveRect(navRef, [activeTab]);
   return (
-    <nav className={`sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start p-2 lg:flex ${SETTINGS_CARD}`}>
+    <nav ref={navRef} className={`sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start p-2 lg:flex ${SETTINGS_CARD}`}>
+      <SlidingPill rect={rect} radius={12} />
       {groupedTabs().map((group, i) => (
         <div key={group.category}>
           <CategoryHeading category={group.category} isFirst={i === 0} />
