@@ -3493,3 +3493,55 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
    Unlayered on purpose: it must beat the utility layer. */
 :is(.bg-signal, .bg-amber-400):is(.text-slate-950, .text-white, .text-black) { color: rgb(var(--signal-ink)); }
 .text-amber-400 { color: rgb(var(--signal-fg)); }
+
+/* Glitch text (hero "STUDIO"): two clipped copies of the word slide a few pixels apart in short bursts, with a quiet pause between. */
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.glitch-text::before {
+  color: var(--signal);
+  clip-path: inset(0 0 55% 0);
+}
+.glitch-text::after {
+  color: #5ee7ff;
+  clip-path: inset(55% 0 0 0);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glitch-text {
+    animation: glitch-skew 4.2s steps(1, end) infinite;
+  }
+  .glitch-text::before {
+    animation: glitch-top 4.2s steps(1, end) infinite;
+  }
+  .glitch-text::after {
+    animation: glitch-bottom 4.2s steps(1, end) infinite;
+  }
+}
+@keyframes glitch-top {
+  0%, 84%, 100% { opacity: 0; transform: translate(0); }
+  85% { opacity: 1; transform: translate(-0.04em, -0.02em); clip-path: inset(10% 0 55% 0); }
+  88% { opacity: 1; transform: translate(0.05em, 0.01em); clip-path: inset(0 0 70% 0); }
+  91% { opacity: 1; transform: translate(-0.03em, 0); clip-path: inset(30% 0 35% 0); }
+  94% { opacity: 0; transform: translate(0); }
+}
+@keyframes glitch-bottom {
+  0%, 85%, 100% { opacity: 0; transform: translate(0); }
+  86% { opacity: 1; transform: translate(0.05em, 0.02em); clip-path: inset(60% 0 5% 0); }
+  89% { opacity: 1; transform: translate(-0.05em, 0); clip-path: inset(45% 0 20% 0); }
+  92% { opacity: 1; transform: translate(0.03em, -0.01em); clip-path: inset(70% 0 0 0); }
+  95% { opacity: 0; transform: translate(0); }
+}
+@keyframes glitch-skew {
+  0%, 85%, 95%, 100% { transform: none; }
+  87% { transform: skewX(-6deg); }
+  90% { transform: skewX(4deg); }
+}
