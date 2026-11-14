@@ -399,3 +399,29 @@ describe("tell me when drums or vocal open", () => {
     expect(await prisma.contact.count({ where: { email: own.email } })).toBe(0);
   });
 });
+
+describe("a one-word name is completed in onboarding (Sign in with Google can give only one)", () => {
+  const input = (username: string, fullName?: string) => ({ username, fullName, primaryInstrument: "BASS" as const, skillLevel: null, genres: [], learningGoal: null });
+
+  it("refuses to finish without a first and last name, then saves the full name once it is given", async () => {
+    const me = await prisma.user.create({ data: { email: email("oneword"), name: "Amara", passwordHash: null, username: null } });
+    sessionUserId = me.id;
+    const noName = await saveOnboardingAction(input(`ow${short}`));
+    expect(noName).toMatchObject({ ok: false });
+    expect(await saveOnboardingAction(input(`ow${short}`, "Amara"))).toMatchObject({ ok: false });
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: me.id } })).onboardedAt).toBeNull();
+
+    expect(await saveOnboardingAction(input(`ow${short}`, "  Amara   Bekele "))).toEqual({ ok: true });
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: me.id } });
+    expect(row.name).toBe("Amara Bekele");
+    expect(row.onboardedAt).not.toBeNull();
+  });
+
+  it("never rewrites a name that already has a first and last name, whatever the browser sends", async () => {
+    const me = await prisma.user.create({ data: { email: email("twowords"), name: "Sam Jones", passwordHash: null, username: null } });
+    sessionUserId = me.id;
+    expect(await saveOnboardingAction(input(`tw${short}`, "Somebody Else"))).toEqual({ ok: true });
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: me.id } })).name).toBe("Sam Jones");
+  });
+});
+

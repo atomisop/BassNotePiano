@@ -8,6 +8,7 @@ import type { LearningGoal, PrimaryInstrument, SkillLevel } from "@prisma/client
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { hasFirstAndLastName } from "@/lib/studentName";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { saveOnboardingAction, checkUsernameAvailableAction, suggestUsernamesAction } from "./actions";
 import { GuardedButton } from "@/components/ui/GuardedButton";
@@ -109,13 +110,16 @@ function CheckOption({ label, checked, onToggle }: { label: string; checked: boo
   );
 }
 
-export function OnboardingWizard({ initialInstrument = null }: { initialInstrument?: PrimaryInstrument | null }) {
+export function OnboardingWizard({ initialInstrument = null, askFullName = false, initialName = "" }: { initialInstrument?: PrimaryInstrument | null; askFullName?: boolean; initialName?: string }) {
   const router = useRouter();
   const { update } = useSession();
   const uid = useId();
 
   const [step, setStep] = useState(0);
   const [username, setUsernameValue] = useState("");
+  // Only when the account has one word for a name (Sign in with Google): the first and last name, as it appears on their bank account.
+  const [fullName, setFullName] = useState(initialName);
+  const fullNameValid = !askFullName || hasFirstAndLastName(fullName);
   const [instrument, setInstrument] = useState<PrimaryInstrument | null>(initialInstrument);
   // Instruments we do not teach yet that the student wants to hear about (they cannot be picked as THE instrument).
   const [waitlist, setWaitlist] = useState<PrimaryInstrument[]>([]);
@@ -173,7 +177,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
   const usernameValid = username.trim().length >= 3;
   // Someone who only wants an instrument we do not teach yet can still go on: they are saved as "Other" and put on the list.
   const hasInstrumentChoice = instrument !== null || waitlist.length > 0;
-  const canAdvance = step === 0 ? usernameValid && hasInstrumentChoice : true;
+  const canAdvance = step === 0 ? usernameValid && fullNameValid && hasInstrumentChoice : true;
 
   function chooseInstrument(value: PrimaryInstrument) {
     touchedInstrument.current = true;
@@ -187,12 +191,12 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
   async function save() {
     if (!hasInstrumentChoice) return;
     setSubmitting(true);
-    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres: [], learningGoal: goal, waitlist });
+    const result = await saveOnboardingAction({ username, fullName: askFullName ? fullName : undefined, primaryInstrument: instrument, skillLevel, genres: [], learningGoal: goal, waitlist });
     if (!result.ok) {
       setError(result.error);
       // A username problem found only now (taken a moment ago) is fixed on the first step, where the field is: take them there with
       // the reason and fresh suggestions, instead of leaving the message on a screen with nothing to type in.
-      if (/username|taken|available|characters/i.test(result.error)) {
+      if (/username|taken|available|characters|first and last name/i.test(result.error)) {
         setStep(0);
         checkUsernameAvailableAction(username)
           .then((again) => setSuggestions(again.suggestions ?? []))
@@ -266,6 +270,27 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-5">
           {step === 0 && (
             <>
+              {askFullName && (
+                <div>
+                  <label htmlFor={`${uid}-fullname`} className="mb-1.5 block text-small font-medium text-slate-400">
+                    First and last name
+                  </label>
+                  <div className="glass-surface-subtle focus-within:border-slate-50/60">
+                    <input
+                      id={`${uid}-fullname`}
+                      type="text"
+                      autoFocus
+                      autoComplete="name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      aria-invalid={error && /first and last name/i.test(error) ? true : undefined}
+                      placeholder="First and last name"
+                      className="w-full bg-transparent px-4 py-3 text-body text-slate-100 outline-none"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-small text-slate-400">The way it appears on your bank account, so we can match your payments to you.</p>
+                </div>
+              )}
               <div>
                 <label htmlFor={`${uid}-username`} className="mb-1.5 block text-small font-medium text-slate-400">
                   Username
@@ -278,7 +303,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
                     id={`${uid}-username`}
                     ref={usernameRef}
                     type="text"
-                    autoFocus
+                    autoFocus={!askFullName}
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}
@@ -384,7 +409,7 @@ export function OnboardingWizard({ initialInstrument = null }: { initialInstrume
           </button>
         )}
         <GuardedButton
-          reason={busy ? null : step === 0 && !usernameValid ? "Username needs 3 or more characters" : step === 0 && !hasInstrumentChoice ? "Pick your instrument" : null}
+          reason={busy ? null : step === 0 && !fullNameValid ? "Enter your first and last name" : step === 0 && !usernameValid ? "Username needs 3 or more characters" : step === 0 && !hasInstrumentChoice ? "Pick your instrument" : null}
           onClick={() => {
             if (!busy && canAdvance) void handleNext();
           }}

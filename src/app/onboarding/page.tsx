@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { safeCallbackPath } from "@/lib/safeRedirect";
+import { hasFirstAndLastName } from "@/lib/studentName";
 import { OnboardingWizard } from "./OnboardingWizard";
 
 export const metadata = { title: "Welcome" };
@@ -17,11 +18,13 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   if (session.user.onboarded) redirect(nextPath ?? "/dashboard");
 
   // Confirming a phone number is part of creating an account, so it comes before the profile wizard.
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { phoneRequired: true, phoneVerifiedAt: true } });
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { phoneRequired: true, phoneVerifiedAt: true, name: true } });
   if (user?.phoneRequired && !user.phoneVerifiedAt && (await phoneVerifyMode())) {
     const back = nextPath ? `/onboarding?next=${encodeURIComponent(nextPath)}` : "/onboarding";
     redirect(`/verify-phone?callbackUrl=${encodeURIComponent(back)}`);
   }
 
-  return <OnboardingWizard initialInstrument={parseInstrumentIntent(instrument)} />;
+  // Sign in with Google can give a single word for a name; payments are matched by the full name, so the first step asks for the rest.
+  const askName = !hasFirstAndLastName(user?.name);
+  return <OnboardingWizard initialInstrument={parseInstrumentIntent(instrument)} askFullName={askName} initialName={askName ? (user?.name ?? "") : ""} />;
 }

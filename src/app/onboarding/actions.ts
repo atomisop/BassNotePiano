@@ -6,10 +6,13 @@ import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { normalizeUsername, numberedVariants, usernameCandidates, usernameProblem } from "@/lib/usernameRules";
 import { recordInstrumentInterest } from "@/lib/instrumentInterest";
+import { FULL_NAME_MESSAGE, MAX_PERSON_NAME_LENGTH, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { reportError } from "@/lib/reportError";
 
 export interface OnboardingInput {
   username: string;
+  /** Asked only of an account whose name is not yet a first and a last name (Sign in with Google can give just one word). Ignored for one that has both. */
+  fullName?: string;
   /** Null only when the student ticked "tell me when it opens" for an instrument we do not teach yet and chose none; saved as Other. */
   primaryInstrument: PrimaryInstrument | null;
   /** Everything after the instrument is optional: a student can finish now and fill it in later. */
@@ -53,6 +56,16 @@ export async function saveOnboardingAction(input: OnboardingInput) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return { ok: false as const, error: "Not signed in." };
 
+  // An account needs a first and a last name (payments are matched by the sender's full name). Google may have given one word, so it is asked here;
+  // an account that already has both keeps its name, whatever the browser sends.
+  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
+  let newName: string | undefined;
+  if (!hasFirstAndLastName(me?.name)) {
+    const typed = cleanPersonName(input.fullName ?? "");
+    if (!hasFirstAndLastName(typed) || typed.length > MAX_PERSON_NAME_LENGTH) return { ok: false as const, error: FULL_NAME_MESSAGE };
+    newName = typed;
+  }
+
   try {
     await setUsername(session.user.id, input.username);
   } catch (err) {
@@ -62,6 +75,7 @@ export async function saveOnboardingAction(input: OnboardingInput) {
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      ...(newName ? { name: newName } : {}),
       primaryInstrument: input.primaryInstrument ?? "OTHER",
       skillLevel: input.skillLevel ?? undefined,
       genres: input.genres,
