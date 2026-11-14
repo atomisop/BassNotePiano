@@ -1,0 +1,32 @@
+[
+  {
+    "name": "starts off",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "click turns the attribute on",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "backdrop-filter is gone from glass surfaces",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "attribute set before first paint after reload",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "switch still reads on after reload",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "keyboard (Space) turns it off",
+    "ok": true,
+    "detail": ""
+  }
+]
