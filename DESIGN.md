@@ -4,6 +4,10 @@ The rules every screen follows. Tokens live in `src/app/globals.css` (the `@them
 "Design system" section) and `src/app/themes.css` (the per-theme ramps). Components read tokens,
 never a raw hex, px size or font name.
 
+> **Glass (2026-11-14, owner decision):** every card and every button is liquid glass, copied exactly from the 21st.dev
+> "Liquid Glass Login" component. See Rule 1 in `docs/glass-revamp/DESIGN-SYSTEM.md`. This replaces the older
+> "content goes solid" rule.
+
 ```text
 Feeling:  a calm, flat, warm practice studio: cream linen, espresso and one burnt orange. Content first, chrome quiet.
 Type:     Baloo 2 for page titles only. Inside the app everything else is the system font (SF Pro on Apple devices),
@@ -16,9 +20,9 @@ Colour:   three colours, 60 / 30 / 10: Cream Linen, Espresso Bean, Burnt Orange.
           States: success (emerald), warning (amber-300), danger (a crimson red, clearly apart from the orange).
 Shape:    soft. 8 small controls and chips · 12 buttons' boxes, fields and rows · 16 cards · 24 sheets.
           Buttons and filter chips are full pills. No other radius.
-Depth:    cards are a solid fill with no border or shadow. Buttons are raised (the `liquid` fill with a soft shadow, decided
-          2026-11-05 in the revamp): they lift on hover, and press IN and dip to 0.97 while held. Things that float over the
-          page (menus, dialogs, sheets, the dock and the top bar) get the one floating shadow.
+Depth:    every card and button is liquid glass (Rule 1 in docs/glass-revamp/DESIGN-SYSTEM.md, 2026-11-14): a light tint over
+          the page, bent at the rim, a bright top edge and a soft drop shadow. Buttons brighten on hover and dip to 0.98 while
+          held. Things that float (menus, dialogs, sheets, the top bar) are the same glass, a little more opaque.
 ```
 
 ## Type
@@ -52,8 +56,8 @@ The light theme (id `paper`) is **Linen**; the dark theme (id `ink`, the default
 | Role | Class | Linen (light) | Espresso (dark) |
 |---|---|---|---|
 | Page | `bg-ground`, `bg-slate-950` | `#EFE8DC` | `#241C18` |
-| Card | `bg-neu-base` (via `Card`) | `#FAF6EE` | `#2F2520` |
-| Card inside a card, hover | `bg-neu-lift` | `#FFFCF7` | `#3B2F2A` |
+| Card | `Card` / `glass-surface` (liquid glass, see Rule 1) | light tint over the page | white tint 0.10 over the page |
+| Row or field inside a card | `glass-surface-subtle` (quieter glass) | quieter tint | white tint 0.06 |
 | Text | `text-slate-50` | `#241C18` | `#FAF6EE` |
 | Secondary text | `text-slate-300` / `text-slate-400` | `#3B2F2A` / `#483B34` | `#CFC5B6` / `#BAAE9F` |
 | Labels and meta | `text-slate-500` (never below it for text) | `#56473F` | `#AA9E8F` |
@@ -152,7 +156,7 @@ one tap away.
 4. **Do it again**: where a person repeats something (book the same time, pay the same bill, message the same person), offer the repeat
    as one tap near the top, built from what they last did.
 5. **Filter inside the search**: a list with categories gets one search field with a scope chip or icon pills, not a second row of tabs.
-6. **Quiet cards under it**: `rounded-card bg-neu-base shadow-raised-low`, no outlines; rows with hairlines for lists (`Hierarchy` 8).
+6. **Quiet cards under it**: `Card` (liquid glass, Rule 1), no outlines; rows with hairlines for lists (`Hierarchy` 8).
 7. Both themes, 390px and 320px wide, nothing under the dock (`pb-32`), menus never clipped by a rounded parent.
 
 ## Spacing

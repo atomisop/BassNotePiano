@@ -529,6 +529,21 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   standing, explicit brand rule from `PRODUCT.md`, this repo's own
   history includes a dedicated cleanup commit for stray ones).
 
+## Liquid glass everywhere (added 2026-11-14)
+
+Every card and every button uses the one glass material from the 21st.dev "Liquid Glass Login" component (source in
+`reference/liquid-glass-login.tsx`; rules in `docs/glass-revamp/DESIGN-SYSTEM.md` Rule 1). New cards use `Card` or a
+`glass-surface*` class; new buttons use the shared `<Button>`. Never hand-style a card or button with its own background,
+border or shadow, and never add a second glass library. Kept solid on purpose: the `danger` button, the piano keyboard
+and fretboard, the stageshow kit. The dock keeps its own look. The Solid surfaces setting, reduced transparency, forced
+colors and reduced motion must always turn glass into solid surfaces.
+
+## Log in is a page (added 2026-11-14)
+
+There is no slide-over Log in panel. Every "Log in" link goes to `/login?callbackUrl=<current path>`. `/login` and
+`/register` share the full-screen photo `public/auth/login-bg.jpg` under the glass card. Other auth pages keep the
+plain background.
+
 ## Design system (added 2026-10-29, `DESIGN.md`)
 
 **Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
