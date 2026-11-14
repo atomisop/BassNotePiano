@@ -3652,3 +3652,19 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   87% { transform: skewX(-6deg); }
   90% { transform: skewX(4deg); }
 }
+
+/* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the scroll area itself, which does not scroll its own
+   background, so the picture stays put while the cards move over it. A dark wash keeps the cream text readable and the cards stay solid on top. */
+[data-mode="dark"] #app-scroll:has([data-home-backdrop]) {
+  background:
+    linear-gradient(rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.84)),
+    url("/home-studio.webp") center / cover no-repeat;
+}
+/* The pinned greeting normally fills its strip with the solid ground; on Home that would hide the photo behind it, so the fill goes (the soft card
+   that fades in while it is pinned stays). */
+[data-mode="dark"] #app-scroll:has([data-home-backdrop]) .deck-header {
+  border-image: none;
+}
+[data-mode="dark"] #app-scroll:has([data-home-backdrop]) .deck-header::before {
+  background: transparent;
+}
