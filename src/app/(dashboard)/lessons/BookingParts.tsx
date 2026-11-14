@@ -271,7 +271,7 @@ export function BookingCard({
       )}
 
       {cancelEligible && confirmingCancel && (
-        <div className="mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
+        <div className="lgx-row mt-3 rounded-xl px-4 py-3">
           <p className="text-small text-slate-300">
             {b.reserved ? "Skip this class? It stays on your account." : "Cancel this class? No credits are used."} The teacher is told right away.
           </p>
@@ -329,7 +329,7 @@ export function MonthGroup({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="overflow-hidden rounded-card bg-neu-base shadow-raised-low">
+    <div className="overflow-hidden lgx-card rounded-card">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

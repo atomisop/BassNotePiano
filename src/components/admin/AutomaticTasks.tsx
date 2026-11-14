@@ -150,9 +150,10 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                       aria-busy={running === job.name}
                       aria-label={running === job.name ? `Running ${job.name}` : `Run ${job.name} now`}
                       title="Run this task now"
+                      data-glass-tone={bad ? "primary" : undefined}
                       // Flat and quiet on a healthy row, like Pause; tinted and named "Run now" only on a stopped task, the one to act on.
-                      className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium transition disabled:opacity-50 ${
-                        bad ? "bg-signal/16 text-signal-fg" : "text-slate-500 hover:bg-slate-50/6 hover:text-slate-100"
+                      className={`lgx-btn tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium transition disabled:opacity-50 ${
+                        bad ? "" : "text-slate-500 hover:text-slate-100"
                       }`}
                     >
                       {running === job.name ? <MorphingSquare size={12} /> : <RotateCw aria-hidden className="h-3.5 w-3.5" />}
@@ -166,9 +167,10 @@ export function AutomaticTasks({ jobs, checkedAt, canPause }: { jobs: TaskRow[];
                       disabled={busy === job.name || checking}
                       aria-label={isPaused ? `Resume ${job.name}` : sure === job.name ? `Tap again to pause ${job.name}` : `Pause ${job.name}`}
                       title={isPaused ? "Resume this task" : sure === job.name ? "Tap again to pause" : "Pause this task"}
+                      data-glass-tone={isPaused ? "primary" : sure === job.name ? "danger" : undefined}
                       // Flat and quiet on a healthy row (the task's state is the thing to read); tinted only when paused or asking "Sure?".
-                      className={`tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium transition disabled:opacity-50 ${
-                        isPaused ? "bg-signal/16 text-signal-fg" : sure === job.name ? "bg-red-500/90 text-white" : "text-slate-500 hover:bg-slate-50/6 hover:text-slate-100"
+                      className={`lgx-btn tap inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-small font-medium transition disabled:opacity-50 ${
+                        isPaused || sure === job.name ? "" : "text-slate-500 hover:text-slate-100"
                       }`}
                     >
                       {isPaused ? <Play aria-hidden className="h-3.5 w-3.5" /> : <Pause aria-hidden className="h-3.5 w-3.5" />}

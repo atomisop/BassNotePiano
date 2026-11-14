@@ -42,7 +42,7 @@ export function Shelf({ title, aside, children, className, label }: { title?: st
     el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
-  const arrow = "hidden h-8 w-8 items-center justify-center rounded-full bg-slate-50/6 text-slate-300 ring-1 ring-inset ring-slate-50/10 transition hover:bg-slate-50/10 hover:text-slate-50 disabled:opacity-30 [@media(hover:hover)]:inline-flex";
+  const arrow = "lgx-btn hidden h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:text-slate-50 disabled:opacity-30 [@media(hover:hover)]:inline-flex";
 
   return (
     <section aria-label={label ?? title} className={cn("min-w-0", className)}>

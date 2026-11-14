@@ -27,12 +27,12 @@ export const GLASS_SELECTOR = [
   ".lgx-btn",
   `button[class*="shadow-raised-low"]${SOLID_FILL}`,
   `a[class*="shadow-raised-low"]${SOLID_FILL}`,
-  `button[class*="bg-neu-base"]${SOLID_FILL}`,
-  `a[class*="bg-neu-base"]${SOLID_FILL}`,
+  `button[class~="bg-neu-base"]${SOLID_FILL}`,
+  `a[class~="bg-neu-base"]${SOLID_FILL}`,
 ].join(", ");
 
 const CARD_SELECTOR = [".glass-surface", ".glass-surface-elevated", ".glass-surface-modal", ".glass-menu", ".lgx-card", '[class*="shadow-raised-mid"]', '[class*="shadow-raised-high"]'].join(", ");
-const FIELD_SELECTOR = [".glass-surface-subtle", ".glass-pill", ".lgx-row", ".lgx-input", '[class*="bg-neu-base"]', '[class*="bg-neu-lift"]', '[class*="shadow-pressed-"]'].join(", ");
+const FIELD_SELECTOR = [".glass-surface-subtle", ".glass-pill", ".lgx-row", ".lgx-input", '[class~="bg-neu-base"]', '[class~="bg-neu-lift"]', '[class*="shadow-pressed-"]'].join(", ");
 
 const SKIP = "[data-glass], [data-glass] *, [data-no-lens], [data-glass-lens], [data-glass-solid], .color-tile, .hit-slop";
 const MAX_FILTERS = 160;

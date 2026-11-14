@@ -6,7 +6,7 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(ok ? "PASS" : "FAIL", name, detail); };
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 async function open(features) {
   const c = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });
   const p = await c.newPage();

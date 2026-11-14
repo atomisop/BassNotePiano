@@ -70,7 +70,7 @@ export function BulkBar({
             <button type="button" onClick={() => setAsking(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Not yet
             </button>
-            <button type="button" onClick={() => void go(asking)} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            <button type="button" onClick={() => void go(asking)} className={buttonVariants({ variant: "primary", size: "sm" })}>
               {asking.confirmLabel ?? "Yes"}
             </button>
           </>

@@ -1,5 +1,5 @@
 import { chromium } from "@playwright/test";
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 for (const solid of [false, true]) {
   const c = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });
   const p = await c.newPage();

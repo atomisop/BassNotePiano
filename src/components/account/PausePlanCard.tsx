@@ -94,7 +94,7 @@ export function PausePlanCard({
             Pause for {weeks} week{weeks === 1 ? "" : "s"}, starting now? Classes in that time are canceled and come back on their own afterwards.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" disabled={busy} onClick={confirm} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            <button type="button" disabled={busy} onClick={confirm} className={buttonVariants({ variant: "primary", size: "sm" })}>
               {busy ? "Pausing..." : "Yes, pause"}
             </button>
             <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not now</button>

@@ -248,9 +248,10 @@ export default async function AdminOverviewPage() {
                   <Link
                     href={todayHref(d.dayKey, todayKey)}
                     aria-label={`${d.weekday} ${d.day}: ${d.students} ${d.students === 1 ? "class" : "classes"}`}
+                    data-glass-tone={i === 0 ? "primary" : undefined}
                     className={cn(
                       "press flex flex-col items-center gap-1 rounded-control py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      i === 0 ? "bg-signal/16" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid",
+                      i === 0 ? "lgx-btn" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid",
                     )}
                   >
                     <span className={cn("text-caption font-medium", i === 0 ? "text-signal-fg" : "text-slate-500")}>{d.weekday}</span>

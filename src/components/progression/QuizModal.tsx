@@ -235,10 +235,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                             key={choice}
                             type="button"
                             onClick={() => selectChoice(i)}
-                            className={`w-full rounded-xl border px-4 py-3 text-left text-body font-medium transition ${
-                              selected
-                                ? "border-slate-50 bg-slate-50/10 text-slate-50"
-                                : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
+                            data-glass-tone={selected ? "primary" : undefined}
+                            className={`lgx-btn w-full rounded-xl px-4 py-3 text-left text-body font-medium transition ${
+                              selected ? "text-slate-50" : "text-slate-300"
                             }`}
                           >
                             {choice}

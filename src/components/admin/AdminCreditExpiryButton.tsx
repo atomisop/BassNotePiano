@@ -66,7 +66,7 @@ export function AdminCreditExpiryButton({ userId }: { userId: string }) {
               const date = dates[g.id] ?? "";
               const changed = date !== (g.expiresAt ? ymd(g.expiresAt) : "");
               return (
-                <li key={g.id} className="rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
+                <li key={g.id} className="lgx-row rounded-control p-3">
                   <p className="text-body font-semibold tabular-nums text-slate-50">{creditsLabelFromStored(g.remaining)} left</p>
                   <p className="mt-0.5 text-small text-slate-500">
                     {SOURCE[g.source] ?? "Credits"} · {g.expiresAt ? `expires ${pretty(g.expiresAt)}` : "never expires"}

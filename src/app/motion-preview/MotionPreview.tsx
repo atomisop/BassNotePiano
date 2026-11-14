@@ -14,7 +14,7 @@ import { rubberBand } from "@/lib/useRubberBand";
 
 function Block({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-card bg-neu-base p-4 md:p-5">
+    <section className="lgx-card rounded-card p-4 md:p-5">
       <p className="text-caption uppercase tracking-caps text-slate-400">Rule {n}</p>
       <h2 className="mb-3 text-title text-slate-50">{title}</h2>
       {children}
@@ -63,7 +63,7 @@ export function MotionPreview() {
           <Button size="sm" variant="secondary" onClick={() => setRows((r) => r + 1)}>Replay</Button>
           <StaggerList key={rows} className="mt-3 grid gap-2">
             {["Scale 1", "Scale 2", "Scale 3", "Scale 4", "Scale 5"].map((t) => (
-              <div key={t} className="rounded-control bg-neu-lift px-4 py-3 text-small">{t}</div>
+              <div key={t} className="lgx-row rounded-control px-4 py-3 text-small">{t}</div>
             ))}
           </StaggerList>
         </Block>
@@ -84,7 +84,7 @@ export function MotionPreview() {
         </Block>
         <Block n="20" title="Same layoutId: the tab indicator travels">
           <SharedLayoutGroup>
-            <div className="flex gap-1 rounded-full bg-neu-lift p-1">
+            <div className="lgx-row flex gap-1 rounded-full p-1">
               {["Overview", "Money", "Classes"].map((t, i) => (
                 <button key={t} onClick={() => setTab(i)} className="relative rounded-full px-4 py-2 text-small">
                   {tab === i && <SharedLayout id="tab-pill" className="absolute inset-0 rounded-full bg-signal" />}
@@ -97,7 +97,7 @@ export function MotionPreview() {
         <Block n="7, 9" title="Arc: a chip flies to the other side on a curve">
           <div className="flex justify-between">
             <button
-              className="rounded-full bg-neu-lift px-4 py-2 text-small"
+              className="lgx-btn rounded-full px-4 py-2 text-small"
               style={{ order: side ? 2 : 0 }}
               onClick={(e) => {
                 const el = e.currentTarget;
@@ -112,7 +112,7 @@ export function MotionPreview() {
         </Block>
         <Block n="14, 19" title="Rubber band: drag the bar past its limit, no tween while held">
           <div
-            className="touch-none select-none rounded-control bg-neu-lift px-4 py-3 text-small"
+            className="lgx-row touch-none select-none rounded-control px-4 py-3 text-small"
             style={{ transform: `translateX(${drag}px)`, transition: drag === 0 ? "transform 240ms var(--ease-ios)" : "none" }}
             onPointerDown={(e) => {
               const startX = e.clientX;

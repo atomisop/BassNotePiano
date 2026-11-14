@@ -20,7 +20,7 @@ export default function FriendsLoading() {
           ))}
         </div>
 
-        <div className="rounded-card bg-neu-base shadow-raised-low mt-6 p-5 sm:p-6">
+        <div className="lgx-card rounded-card mt-6 p-5 sm:p-6">
           <Skeleton className="h-4 w-24" />
           <div className="mt-5 space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (

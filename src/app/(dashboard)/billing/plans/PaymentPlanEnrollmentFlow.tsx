@@ -207,7 +207,7 @@ function SwitchToFamilyPanel({
               Add another person
             </button>
           )}
-          <div className="rounded-control bg-neu-base p-3 text-small text-slate-300 shadow-pressed-low">
+          <div className="lgx-row rounded-control p-3 text-small text-slate-300">
             <div className="flex justify-between"><span>Each person, every 28 days</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
             <div className="mt-1 flex justify-between font-semibold text-slate-50"><span>First payment, {people} people together</span><span>{formatUsd(price.perStudentMonthlyCents * people)}</span></div>
           </div>
@@ -446,7 +446,7 @@ export function PaymentPlanEnrollmentFlow({
         {/* The plan card above (MyPlanSummary) already names the plan and its next bill, so this card only appears while there is
             news: the plan was just started here, or it is still waiting for its first payment. The pay button is its one primary. */}
         {!onBand && (planState.label || !initialPlan) && (
-          <div className="mb-4 rounded-card bg-neu-base p-5 shadow-raised-mid">
+          <div className="lgx-card mb-4 rounded-card p-5">
             <CardHead
               as="p"
               eyebrow={planLabel}
@@ -490,7 +490,7 @@ export function PaymentPlanEnrollmentFlow({
           <section aria-label="Other members' 28-day bills" className={`space-y-3 ${onBand ? "mb-6" : "mt-6"}`}>
             <p className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Other members&apos; 28-day bills</p>
             {familyBills.map((bill) => (
-              <div key={bill.payment.id} className="rounded-card bg-neu-base p-4 shadow-raised-low">
+              <div key={bill.payment.id} className="lgx-card rounded-card p-4">
                 <div className="mb-3 flex items-baseline justify-between gap-3">
                   <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.memberName}</p>
                   <p className="shrink-0 text-small text-slate-500">Bill {bill.payment.installmentNumber ?? "?"}</p>
@@ -512,7 +512,7 @@ export function PaymentPlanEnrollmentFlow({
         )}
         {/* Plan changes are quiet rows at the end, one hairline apart, never competing with the bill. */}
         {(showSwitch || !onBand) && (
-          <div className={`divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low ${onBand ? "" : "mt-8"}`}>
+          <div className={`divide-y divide-slate-50/8 lgx-card rounded-card ${onBand ? "" : "mt-8"}`}>
             {showSwitch && <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />}
             {!onBand && (
               <Link href="/billing/plans?who=parent" className="tap group flex items-center justify-between gap-3 px-4 py-3 text-small font-medium text-slate-200 hover:text-slate-50">

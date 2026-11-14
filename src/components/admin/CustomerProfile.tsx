@@ -528,7 +528,7 @@ export function CustomerProfile({
 
       {/* The jobs done most from this page, one tap away whichever tab is open: no hunting through tabs. */}
       <div
-        className="grid grid-cols-2 gap-2 max-sm:[&>.relative>button]:w-full max-sm:[&>.relative>button]:border max-sm:[&>.relative>button]:border-slate-50/12 max-sm:[&>.relative]:w-full max-sm:[&>button]:w-full max-sm:[&>button]:border max-sm:[&>button]:border-slate-50/12 sm:flex sm:flex-wrap sm:items-center"
+        className="grid grid-cols-2 gap-2 max-sm:[&>.relative>button]:w-full max-sm:[&>.relative]:w-full max-sm:[&>button]:w-full sm:flex sm:flex-wrap sm:items-center"
         role="group"
         aria-label="Quick actions"
       >
@@ -918,7 +918,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-control bg-slate-50/5 px-3 py-2.5 text-small text-slate-300 ring-1 ring-inset ring-slate-50/10">
+              <div className="lgx-row mt-3 flex flex-wrap items-center justify-end gap-2 rounded-control px-3 py-2.5 text-small text-slate-300">
                 <p className="mr-auto min-w-0">
                   {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                   <span className="font-semibold text-slate-50">

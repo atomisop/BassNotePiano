@@ -77,9 +77,9 @@ export function MarketingNav() {
   // On the home page the hero carries its own solid "Get started", so while that hero is on screen the bar's copy is a plain
   // word: one loud button per screen. Past the hero (and on every other page) it is the solid button again.
   const [pastHero, setPastHero] = useState(false);
-  const ctaClass = pathname === "/" && !pastHero
-    ? "text-slate-200 hover:text-slate-50"
-    : "bg-amber-400 text-black shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low";
+  const ctaSolid = !(pathname === "/" && !pastHero);
+  const ctaClass = ctaSolid ? "lgx-btn" : "text-slate-200 hover:text-slate-50";
+  const ctaTone = ctaSolid ? "primary" : undefined;
   const [menuOpen, setMenuOpen] = useState(false);
   // `image` isn't on the session (see the avatar route's own comment), so
   // this is the client-side equivalent of TopBar's server-side DB fetch:
@@ -254,6 +254,7 @@ export function MarketingNav() {
             {!isLoggedIn && !loadingSession && (
               <Link
                 href={primary.href}
+                data-glass-tone={ctaTone}
                 className={`tap inline-flex h-10 items-center justify-center rounded-full px-5 text-small font-semibold transition ${ctaClass}`}
               >
                 {primary.label}
@@ -292,6 +293,7 @@ export function MarketingNav() {
                   )}
                   <Link
                     href={primary.href}
+                    data-glass-tone={ctaTone}
                     className={`tap hidden h-9 items-center rounded-full px-4 text-small font-semibold transition min-[360px]:flex ${ctaClass}`}
                   >
                     {primary.label}
@@ -418,7 +420,8 @@ export function MarketingNav() {
               <Link
                 href={primary.href}
                 onClick={() => setMenuOpen(false)}
-                className="btn btn-primary mt-10 w-full"
+                data-glass-tone="primary"
+                className="btn lgx-btn mt-10 w-full"
               >
                 {primary.label}
               </Link>
