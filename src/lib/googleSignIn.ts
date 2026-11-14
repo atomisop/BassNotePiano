@@ -1,3 +1,4 @@
+import { fetchGoogleAvatarDataUri } from "@/lib/googleAvatar";
 import { prisma } from "@/lib/prisma";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
@@ -20,13 +21,13 @@ import type { GoogleRefusal } from "@/lib/googleSignInMessages";
  * The result is turned into a session by the NextAuth `signIn` callback in auth.ts.
  */
 
-export type GoogleProfile = { sub: string; email: string; emailVerified: boolean; name: string | null };
+export type GoogleProfile = { sub: string; email: string; emailVerified: boolean; name: string | null; picture?: string | null };
 
 export type GoogleOutcome =
   | { ok: true; isNew: boolean; user: { id: string; email: string; name: string | null; role: "STUDENT" | "ADMIN"; hasCurriculumAccess: boolean; onboarded: boolean } }
   | { ok: false; reason: GoogleRefusal };
 
-const userSelect = { id: true, email: true, name: true, role: true, hasCurriculumAccess: true, onboardedAt: true, bannedAt: true, paymentLockedAt: true, emailVerified: true, passwordHash: true } as const;
+const userSelect = { id: true, email: true, name: true, role: true, hasCurriculumAccess: true, onboardedAt: true, bannedAt: true, paymentLockedAt: true, emailVerified: true, passwordHash: true, image: true } as const;
 
 export async function resolveGoogleUser(profile: GoogleProfile): Promise<GoogleOutcome> {
   try {
@@ -51,6 +52,11 @@ export async function resolveGoogleUser(profile: GoogleProfile): Promise<GoogleO
         // Never confirmed by anyone: Google confirms it now, and the password it was registered with (known to whoever typed it first) is removed.
         await prisma.user.update({ where: { id: u.id }, data: { emailVerified: new Date(), passwordHash: null, sessionVersion: { increment: 1 } } });
       }
+      // Their Google picture, only when the account has none of its own (an uploaded photo is never replaced). Best effort: no picture is fine.
+      if (!u.image) {
+        const image = await fetchGoogleAvatarDataUri(profile.picture);
+        if (image) await prisma.user.updateMany({ where: { id: u.id, image: null }, data: { image } }).catch(() => undefined);
+      }
       if (!linked) {
         await prisma.account.create({ data: { userId: u.id, type: "oauth", provider: "google", providerAccountId: profile.sub } }).catch(() => undefined);
       }
@@ -68,6 +74,7 @@ export async function resolveGoogleUser(profile: GoogleProfile): Promise<GoogleO
         email,
         emailCanonical: canonicalEmail(email),
         emailVerified: new Date(),
+        image: await fetchGoogleAvatarDataUri(profile.picture),
         accounts: { create: { type: "oauth", provider: "google", providerAccountId: profile.sub } },
       },
       select: { id: true, email: true, name: true, role: true, hasCurriculumAccess: true, onboardedAt: true },
