@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Phone } from "@/components/ui/appIcons";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 import { useResendCooldown } from "@/hooks/useResendCooldown";
 import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, savePhoneAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
 import { announceChange } from "@/lib/liveEvents";
@@ -22,7 +23,7 @@ export interface PhoneState {
 }
 
 const input = "w-full rounded-lg bg-neu-base px-3 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500";
-const primary = "tap inline-flex items-center gap-2 rounded-full bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
+const primary = buttonVariants({ variant: "primary", className: "disabled:cursor-not-allowed disabled:opacity-50" });
 const plainBtn = "tap rounded-full bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
 
 /** Add, confirm, change or remove the account's phone number. The number only counts once its text code is entered. */

@@ -143,7 +143,8 @@ export function SlotCalendarPicker({
                         onPick(s);
                         onOwnTime("");
                       }}
-                      className={`tap rounded-lg px-3 py-1.5 text-small font-semibold tabular-nums transition ${active ? "bg-signal text-slate-950" : tint}`}
+                      data-glass-tone={active ? "primary" : undefined}
+                      className={`tap rounded-lg px-3 py-1.5 text-small font-semibold tabular-nums transition ${active ? "lgx-btn" : tint}`}
                     >
                       {timeOf(s.scheduledAt)}
                       {s.reservedForThem ? " · Reserved for them" : s.heldFor ? ` · Held for ${s.heldFor.split(" ")[0]}` : ""}

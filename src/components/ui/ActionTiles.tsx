@@ -31,7 +31,7 @@ export function ActionTiles({ title, items, className }: { title: string; items:
             <Link
               href={item.href}
               className={cn(
-                "tap press group relative flex h-full flex-col gap-3 rounded-card bg-neu-base p-4 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "lgx-btn tap press group relative flex h-full flex-col gap-3 rounded-card p-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 lone && "max-sm:flex-row max-sm:items-center",
               )}
             >

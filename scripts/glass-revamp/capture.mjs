@@ -15,7 +15,7 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 const sizes = [[1440, 900], [390, 844], [320, 700]];
 const out = join("docs/glass-revamp/evidence", task, phase);
 mkdirSync(out, { recursive: true });
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 let bad = false;
 for (const [w, h] of sizes) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: theme, reducedMotion: "reduce" });

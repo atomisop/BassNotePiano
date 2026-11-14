@@ -166,13 +166,13 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
 
       <div className="mt-4 border-t border-slate-50/8 pt-3">
         {asking ? (
-          <div className="rounded-control bg-slate-50/5 px-4 py-3 ring-1 ring-inset ring-slate-50/10">
+          <div className="lgx-row rounded-control px-4 py-3">
             <p className="text-small text-slate-300">
               Save {changed.length} change{changed.length === 1 ? "" : "s"}? New plans and plan changes use these prices straight away, the pricing page and Atom show them, and nobody already on a plan is affected.
             </p>
             <div className="mt-2 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
-              <button type="button" onClick={() => void save()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+              <button type="button" onClick={() => void save()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm" })}>
                 {busy && <MorphingSquare size={12} />}
                 {busy ? "Saving…" : "Yes, save"}
               </button>
@@ -180,7 +180,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
           </div>
         ) : (
           <div className="flex justify-end">
-            <button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            <button type="button" disabled={changed.length === 0 || !!parsed.problem} onClick={() => { setMessage(null); setAsking(true); }} className={buttonVariants({ variant: "primary", size: "sm" })}>
               Save prices
             </button>
           </div>
@@ -246,7 +246,7 @@ function DiscountRow({ row, onSet, onClear }: { row: PricingDiscountRow; onSet: 
           <input id={`dp-${row.userId}`} type="number" inputMode="numeric" min={1} max={MAX_PERSONAL_DISCOUNT_PERCENT} value={value} onChange={(e) => setValue(e.target.value)} className={`${inputClass} w-20 font-semibold tabular-nums`} />
           <span className="text-small text-slate-400">% off</span>
           {dirty && (
-            <button type="button" disabled={busy} onClick={() => void run(() => onSet(row.userId, percent, row.note ?? ""))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+            <button type="button" disabled={busy} onClick={() => void run(() => onSet(row.userId, percent, row.note ?? ""))} className={buttonVariants({ variant: "primary", size: "sm" })}>
               {busy && <MorphingSquare size={12} />}
               Save {percent}%
             </button>
@@ -340,7 +340,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
       {!picked && query.trim().length >= 2 && results.length === 0 && <p className="mt-2 text-small text-slate-500">Nobody found. Admins and banned accounts are left out.</p>}
 
       {picked && (
-        <div className="mt-3 rounded-control bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
+        <div className="lgx-row mt-3 rounded-control p-4">
           {picked.plan?.family && <Callout tone="warning" className="mb-3">This account is on a group plan, which keeps the group rate. A discount here applies only if they later start a solo plan.</Callout>}
           <div className="flex flex-wrap items-end gap-3">
             <div>
@@ -366,7 +366,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                 </p>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>Not yet</button>
-                  <button type="button" onClick={() => void add()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                  <button type="button" onClick={() => void add()} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm" })}>
                     {busy && <MorphingSquare size={12} />}
                     {busy ? "Saving…" : "Yes, give it"}
                   </button>
@@ -375,7 +375,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
             ) : (
               <div className="flex flex-wrap justify-end gap-2">
                 <button type="button" onClick={() => { setPicked(null); setQuery(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
-                <button type="button" disabled={!valid} onClick={() => setAsking(true)} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                <button type="button" disabled={!valid} onClick={() => setAsking(true)} className={buttonVariants({ variant: "primary", size: "sm" })}>
                   {picked.discountPercent > 0 ? "Change discount" : "Give discount"}
                 </button>
               </div>

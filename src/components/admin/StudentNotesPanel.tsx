@@ -63,7 +63,7 @@ export function StudentNotesPanel() {
 
   // People are rows in one box (name bright, the facts quiet, a chevron), not a stack of equal raised buttons.
   const rowClass = "tap group flex w-full items-center gap-2 px-3 py-2.5 text-left transition hover:bg-slate-50/5";
-  const listClass = "divide-y divide-slate-50/6 overflow-hidden rounded-control bg-slate-50/4 ring-1 ring-inset ring-slate-50/8";
+  const listClass = "lgx-row divide-y divide-slate-50/6 overflow-hidden rounded-control";
   const eyebrow = "px-1 text-caption font-medium uppercase tracking-caps text-slate-500";
   const chevron = <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />;
 

@@ -2,6 +2,7 @@ import { BrandLockup } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PageHitBeacon } from "@/components/marketing/PageHitBeacon";
+import { AuthBackdrop } from "@/components/auth/AuthBackdrop";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,9 +44,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // screen, the Create account form most of all, could not be scrolled to
     // the bottom. Now the form scrolls inside its own box, with the content
     // still centered whenever it fits.
+    // /login and /register share the studio photo under the glass card (AuthBackdrop); every other auth page keeps the plain ground.
     <div data-surface="app" className="kb-fit fixed inset-0 overflow-y-auto overscroll-contain">
       <PageHitBeacon />
-      <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
+      <AuthBackdrop />
+      <div className="relative z-[1] flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
           else on-page to signal a way out: the brand lockup below is a
           real link, but a logo alone doesn't read as "click this to leave"
@@ -55,7 +58,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <nav aria-label="Back to homepage">
       <Link
         href="/"
-        className="tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
+        className="auth-back-link tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
       >
         <ArrowLeftIcon size={16} />
         {/* "to homepage" hidden below `sm`, this link is `absolute`, so it
@@ -87,7 +90,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               here, so it's the first thing to give way on the shortest
               phone screens where the reset-password card's own three
               fields leave the least room to spare. */}
-          <p className="mt-1 hidden text-small text-slate-400 sm:block">Ethiopian scale theory, practiced.</p>
+          <p className="auth-tagline mt-1 hidden text-small text-slate-400 sm:block">Ethiopian scale theory, practiced.</p>
         </Link>
       </header>
       <main className="relative flex w-full justify-center">{children}</main>

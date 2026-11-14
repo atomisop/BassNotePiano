@@ -52,7 +52,7 @@ export function BulkConfirmButton({
           <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Not yet
           </button>
-          <button type="button" onClick={run} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+          <button type="button" onClick={run} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm" })}>
             {busy && <MorphingSquare size={12} />}
             {busy ? "Working…" : confirmLabel}
           </button>

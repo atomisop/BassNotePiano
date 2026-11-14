@@ -173,7 +173,7 @@ export function ScrollAssist() {
   }
 
   const buttonClass =
-    "tap flex h-11 w-11 items-center justify-center rounded-full bg-neu-base text-slate-100 shadow-raised-mid transition active:shadow-pressed-low";
+    "lgx-btn tap flex h-11 w-11 items-center justify-center rounded-full text-slate-100 transition";
   return (
     <>
       {show && (

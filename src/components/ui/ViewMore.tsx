@@ -35,7 +35,7 @@ export function ViewMore<T>({
             <button
               type="button"
               onClick={() => setShown((n) => n + step)}
-              className="tap inline-flex items-center gap-1 rounded-full bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+              className="lgx-btn tap inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-small font-medium text-slate-300 transition"
             >
               View {Math.min(step, left)} more{left > step ? ` (${left} left)` : ""}
               <ChevronDown aria-hidden className="h-3.5 w-3.5" />

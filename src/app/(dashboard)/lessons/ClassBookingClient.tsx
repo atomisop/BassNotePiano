@@ -712,7 +712,7 @@ export function ClassBookingClient({
             )}
             {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
             {upcoming.length > 0 && (
-              <div className="hidden rounded-card bg-neu-base p-4 shadow-raised-low lg:block">
+              <div className="lgx-card hidden rounded-card p-4 lg:block">
                 <div className="flex items-center justify-between">
                   <p className="text-small font-semibold uppercase tracking-caps text-slate-400">Upcoming</p>
                   <button type="button" onClick={() => setTab("upcoming")} className="tap inline-flex items-center text-small font-medium text-slate-400 hover:text-slate-100">
@@ -825,8 +825,9 @@ export function ClassBookingClient({
                         onClick={onClick}
                         disabled={!onClick}
                         aria-pressed={onClick ? isSelected : undefined}
+                        data-glass-tone={onClick && isSelected ? "primary" : undefined}
                         className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed ${
-                          !onClick ? "bg-slate-50/3" : isSelected ? "bg-neu-base shadow-pressed-low ring-1 ring-signal/50" : "bg-neu-base shadow-raised-low hover:shadow-raised-mid"
+                          !onClick ? "bg-slate-50/3" : "lgx-btn"
                         } ${extra}`}
                       >
                         {children}
@@ -862,7 +863,7 @@ export function ClassBookingClient({
                     if (reschedulingBooking) {
                       const tooPricey = effectiveCredits < cost;
                       return (
-                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                        <div key={key} className="lgx-row flex items-center justify-between gap-3 rounded-xl px-4 py-3">
                           {time}
                           <button
                             type="button"
@@ -879,7 +880,7 @@ export function ClassBookingClient({
 
                     if (mode === "FAMILY") {
                       return (
-                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                        <div key={key} className="lgx-row flex items-center justify-between gap-3 rounded-xl px-4 py-3">
                           <span className="min-w-0">
                             <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
                             <span className="block text-small text-slate-500">
@@ -896,7 +897,7 @@ export function ClassBookingClient({
                     // A subscriber's week already has its class: more time is paid, not credits.
                     if (weeklyLimited && heldWeeks.has(weekStart)) {
                       return (
-                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                        <div key={key} className="lgx-row flex items-center justify-between gap-3 rounded-xl px-4 py-3">
                           {time}
                           <button type="button" onClick={() => startExtraPayment(row)} disabled={payBusyKey !== null} className={actionClass}>
                             {payBusyKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
@@ -1007,7 +1008,7 @@ export function ClassBookingClient({
             {myRequests.length > 0 && (
               <div className="mb-6">
                 <p className="mb-2 px-1 text-small font-semibold uppercase tracking-caps text-slate-400">Your requests</p>
-                <ul className="divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low sm:px-5">
+                <ul className="lgx-card divide-y divide-slate-50/8 rounded-card px-4 sm:px-5">
                   {myRequests.map((r) => (
                     <li key={r.id} className="flex items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
@@ -1035,7 +1036,7 @@ export function ClassBookingClient({
             {upcoming.length === 0 ? (
               <p className="text-small text-slate-500">Nothing booked</p>
             ) : (
-              <div className="divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low sm:px-5">
+              <div className="lgx-card divide-y divide-slate-50/8 rounded-card px-4 sm:px-5">
                 {upcoming.map((b) => (
                   <BookingCard
                     key={b.id}

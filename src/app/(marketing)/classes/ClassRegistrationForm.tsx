@@ -51,10 +51,9 @@ function Pill({
       onClick={onClick}
       disabled={comingSoon}
       aria-pressed={selected}
-      className={`tap flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-50/70 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
-        selected
-          ? "border-slate-50/60 bg-slate-50/10 text-slate-50"
-          : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
+      data-glass-tone={selected ? "primary" : undefined}
+      className={`lgx-btn tap flex items-center gap-1.5 rounded-full px-3 py-1.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-50/70 disabled:cursor-not-allowed disabled:opacity-50 ${
+        selected ? "text-slate-50" : "text-slate-400"
       } ${comingSoon ? "" : "cursor-pointer"}`}
     >
       {label}

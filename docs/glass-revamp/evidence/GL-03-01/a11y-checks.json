@@ -1,0 +1,42 @@
+[
+  {
+    "name": "normal look has glass surfaces with a backdrop",
+    "ok": true,
+    "detail": "{\"n\":2,\"bad\":1,\"layers\":34,\"badLayers\":33}"
+  },
+  {
+    "name": "prefers-reduced-transparency: no glass surface keeps a backdrop-filter",
+    "ok": true,
+    "detail": "{\"n\":2,\"bad\":0,\"layers\":34,\"badLayers\":0}"
+  },
+  {
+    "name": "forced-colors: no glass surface keeps a backdrop-filter",
+    "ok": true,
+    "detail": "{\"n\":2,\"bad\":0,\"layers\":34,\"badLayers\":0}"
+  },
+  {
+    "name": "Tab reaches at least 15 focusable controls",
+    "ok": true,
+    "detail": "25 stops"
+  },
+  {
+    "name": "every focused control is visible on screen",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "every focused control shows a focus ring",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Ctrl+K opens the command menu",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Escape closes it",
+    "ok": true,
+    "detail": ""
+  }
+]

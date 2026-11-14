@@ -13,7 +13,7 @@ export default function ChildLoading() {
         <Skeleton className="mt-6 h-11 w-full max-w-md rounded-full" />
         <div className="mt-6 space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between gap-4 rounded-card bg-neu-base p-4 shadow-raised-low">
+            <div key={i} className="lgx-card flex items-center justify-between gap-4 rounded-card p-4">
               <div className="min-w-0 flex-1">
                 <Skeleton className="h-4 w-1/2" />
                 <Skeleton className="mt-2 h-3.5 w-3/4" />

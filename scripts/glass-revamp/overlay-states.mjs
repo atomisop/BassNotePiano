@@ -6,7 +6,7 @@ import { join } from "node:path";
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const SURFACES = {
   "profile-menu": async (p) => { await p.getByRole("button", { name: /account|profile|menu/i }).first().click().catch(async () => p.locator("button:has-text('R')").last().click()); },
   notifications: async (p) => { await p.getByRole("button", { name: /notification/i }).first().click(); },

@@ -197,7 +197,7 @@ export function PaymentPlanTierGrid({
     // The featured plan is lit most (colour, glow and rising stars). The 3 Month plan carries its colour too, still, with no motion. A coloured
     // plan has the solid button; the 1 Month plan stays a plain card with a quiet button.
     const primaryCta = "tier-accent-bg text-black hover:brightness-110";
-    const quietCta = "bg-slate-50/8 text-slate-50 hover:bg-slate-50/12";
+    const quietCta = "lgx-btn text-slate-50";
     const ctaBase = "tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold transition disabled:cursor-not-allowed active:scale-[0.99]";
 
     return {
@@ -205,9 +205,10 @@ export function PaymentPlanTierGrid({
       node: (
           <div
             style={tierVars(look(option.value))}
-            className={`relative isolate flex flex-1 flex-col rounded-2xl border border-ink/10 bg-neu-base ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"} ${
-              colored ? "" : "transition hover:shadow-raised-high"
-            }`}
+            // The 3 and 6 Month cards carry their plan colour and stay solid (glass over the colour dropped the tag's contrast); the
+            // plain card is glass.
+            data-glass-solid={colored || undefined}
+            className={`${colored ? "border border-ink/10 bg-[rgb(var(--neu-base))]" : "lgx-card"} relative isolate flex flex-1 flex-col rounded-2xl ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"}`}
           >
             {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
             {colored &&
@@ -276,7 +277,7 @@ export function PaymentPlanTierGrid({
                     onClick={() => switchTo.onSwitch(option.value)}
                     className={
                       current
-                        ? "tap flex h-12 w-full items-center justify-center rounded-full bg-neu-base text-small font-semibold text-slate-400 shadow-pressed-low"
+                        ? "lgx-btn tap flex h-12 w-full items-center justify-center rounded-full text-small font-semibold text-slate-400"
                         : `${ctaBase} ${colored ? primaryCta : quietCta} disabled:opacity-60`
                     }
                   >
@@ -380,7 +381,7 @@ function Segmented({
   options: { value: string; label: string }[];
 }) {
   return (
-    <div role="group" aria-label={label} className="flex w-fit gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
+    <div role="group" aria-label={label} className="lgx-row flex w-fit gap-1.5 rounded-full p-1">
       {options.map((option) => (
         <button
           key={option.value}
@@ -389,7 +390,7 @@ function Segmented({
           onClick={() => onChange(option.value)}
           className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
-              ? "bg-neu-base text-signal-fg shadow-raised-low"
+              ? "lgx-btn text-signal-fg"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >

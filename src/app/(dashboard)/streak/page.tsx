@@ -19,7 +19,7 @@ export const metadata = { title: "Your streak" };
 const WEEKS_PHONE = 12;
 const WEEKS_WIDE = 26;
 /** A quiet card under the band (DESIGN.md, "Band, sheet and tiles" 6); each one is a card of the deck. */
-const QUIET_CARD = "deck-card relative rounded-card bg-neu-base shadow-raised-low";
+const QUIET_CARD = "deck-card relative lgx-card rounded-card";
 const CARD_LABEL = "text-caption font-medium uppercase tracking-caps text-slate-500";
 const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 

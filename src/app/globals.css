@@ -156,7 +156,7 @@
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
   --radius-control: 0.75rem;
-  --radius-card: 1rem;
+  --radius-card: 2rem;
   --radius-sheet: 1.5rem;
 
   /* The marketing pages' cream text: Cream Linen (one colour; it was typed as a hex 17 times). */
@@ -285,85 +285,44 @@
 }
 
 @utility glass-surface {
-  /* ============================================================
-     Material system
-     Every value here comes from the active theme (see themes.css),
-     so a card is a flat white panel under Editorial Paper and a
-     frosted translucent pane under Editorial Ink without any
-     component knowing the difference.
-     ============================================================ */
-
-  /* The default surface. */
-  background: var(--surface-bg);
-  border: 1px solid var(--surface-border);
+  /* The 21st.dev card (Rule 1, docs/glass-revamp/DESIGN-SYSTEM.md). The glass itself is a ::before layer behind the content, drawn by
+     the "Liquid glass everywhere" block near the end of this file, so the element is never a backdrop root of its own. */
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: var(--surface-radius);
-  box-shadow: var(--surface-shadow);
-  -webkit-backdrop-filter: blur(var(--surface-blur));
-  backdrop-filter: blur(var(--surface-blur));
+  box-shadow: var(--lgx-card-shadow);
 }
 
 @utility glass-surface-subtle {
-  /* Level 1 of the material system, quieter than `.glass-surface`, for
-     things that shouldn't compete with real content: nav pills, secondary
-     chips, minor inline surfaces. Every theme defines `--subtle-*`, either
-     explicitly (paper/ink/glass) or via the ramp-relative fallback on
-     `:root` (every daisyUI theme), so this never renders unstyled. No
-     shadow, a shadow reads as "raised", and Level 1 is deliberately the
-     opposite of that. */
-  background: var(--subtle-bg);
-  border: 1px solid var(--subtle-border);
-  border-radius: var(--surface-radius);
-  box-shadow: var(--subtle-shadow, none);
-  -webkit-backdrop-filter: blur(var(--subtle-blur));
-  backdrop-filter: blur(var(--subtle-blur));
+  /* The same recipe, quieter: rows, list items and fields inside a card (the source's field glass, tint 0.06). */
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  box-shadow: var(--lgx-field-shadow);
 }
 
 @utility glass-surface-elevated {
-  /* Reserved for the ONE primary element per screen. Distinguished by an
-     accent hairline and a deeper lift, not a different material, using it
-     twice on a screen stops it meaning "the important one". */
-  background: var(--elev-bg);
-  border: 1px solid var(--elev-border);
+  /* Floating glass (menus, popovers, the one primary panel): the card recipe with the tint raised so text over page text stays readable. */
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: var(--surface-radius);
-  box-shadow: var(--elev-shadow);
-  /* -webkit- prefix required for Safari/iOS to blur at all: without it,
-     Safari silently drops the whole declaration and this renders as a
-     plain translucent panel with no frosting, reported live as the
-     ProfileMenu dropdown ("the profile icon") opening "a transparent
-     window". Same fix applied to every other glass-surface-* utility below
-     that uses backdrop-filter, since they all had the identical gap. */
-  -webkit-backdrop-filter: blur(var(--elev-blur));
-  backdrop-filter: blur(var(--elev-blur));
+  box-shadow: var(--lgx-card-shadow);
 }
 
 @utility glass-surface-modal {
-  /* A true modal dialog, floating on a scrim over arbitrary, sometimes
-     text-dense page content (a pricing page, a curriculum overview),
-     needs to fully obscure whatever's behind it to stay legible.
-     `.glass-surface-elevated`'s translucency is tuned for an in-page "one
-     important card" sitting over its own section's plain background;
-     reused for an actual modal, real page copy read straight through the
-     blur (confirmed live on the Zelle payment modal). Same accent
-     hairline/lift/radius as `.glass-surface-elevated`, just the fully
-     opaque surface color every theme already defines for exactly this,
-     no blur needed once nothing shows through to blur. */
-  background: rgb(var(--c-surface-solid));
-  border: 1px solid var(--elev-border);
+  /* A modal over arbitrary page text: the card recipe on the floating (mostly opaque) tint. */
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: var(--surface-radius);
-  box-shadow: var(--elev-shadow);
+  box-shadow: var(--lgx-card-shadow);
 }
 
-/* Shaded matte glass for menus that open over page text (the profile menu): mostly solid so the words under it never read
-   through (a blur alone fails inside a header that already blurs, which is where this menu sits on the public pages), a soft
-   frost where the browser can still apply one, and a faint light along the top. */
+/* Menus that open over page text: the floating tint. */
 @utility glass-menu {
-  background-color: rgb(var(--c-surface-solid) / 0.93);
-  background-image: linear-gradient(180deg, rgb(255 250 242 / 0.06), transparent 40%);
-  border: 1px solid var(--elev-border);
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: var(--surface-radius);
-  box-shadow: var(--elev-shadow);
-  -webkit-backdrop-filter: blur(28px) saturate(1.4);
-  backdrop-filter: blur(28px) saturate(1.4);
+  box-shadow: var(--lgx-card-shadow);
 }
 
 /* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
@@ -373,13 +332,11 @@
 }
 
 @utility glass-pill {
-  /* Chips, nav pills, filter tags, badges. */
+  /* Chips, nav pills, filter tags, badges: the field glass as a pill. */
   @apply rounded-full;
-  background: var(--surface-bg);
-  border: 1px solid var(--surface-border);
-  box-shadow: var(--surface-shadow);
-  -webkit-backdrop-filter: blur(var(--surface-blur));
-  backdrop-filter: blur(var(--surface-blur));
+  background-color: transparent;
+  border: 1px solid transparent;
+  box-shadow: var(--lgx-field-shadow);
 }
 
 /* Engraved dividers for neumorphic panels: a dark line with a light line right
@@ -640,11 +597,11 @@
 }
 
 @utility cta-sheen {
-  /* One-shot sheen across the primary CTA. Inert under reduced motion. */
+  /* One-shot sheen across the primary CTA. Inert under reduced motion. On ::before: the glass layer of a button is its ::after. */
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  &::after {
+  &::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -658,10 +615,10 @@
     pointer-events: none;
   }
   @media (prefers-reduced-motion: no-preference) {
-    &::after {
+    &::before {
       transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    &:hover::after {
+    &:hover::before {
       transform: translateX(120%);
     }
   }
@@ -1210,7 +1167,7 @@
     --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);
     --surface-blur: 0px;
-    --surface-radius: 1rem;
+    --surface-radius: 2rem;
     /* Level-1 "wells" (inputs, chips, minor inline surfaces) are pressed in. */
     --subtle-bg: rgb(var(--neu-base));
     --subtle-border: var(--neu-edge);
@@ -2165,68 +2122,13 @@ input[type="radio"],
 }
 
 @utility liquid {
-  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
-  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
-  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 250 242 / 0.1),
-    inset 0 -6px 10px -8px var(--lg-glow),
-    0 5px 14px -8px var(--lg-drop);
-}
-.liquid:active {
-  box-shadow:
-    inset 0 1px 0 rgb(255 250 242 / 0.2),
-    inset 0 0 0 1px rgb(255 250 242 / 0.08),
-    inset 0 3px 8px rgb(0 0 0 / 0.28);
+  /* A glass button (21st.dev Liquid Glass Login): drawn by the "Liquid glass everywhere" block near the end of this file. */
+  background-color: transparent;
 }
 
-/* The main action: orange glass, the same light on its edge. */
+/* The main action: the same glass, tinted with the signal colour. */
 @utility liquid-signal {
-  background:
-    linear-gradient(180deg, rgb(255 250 242 / 0.42), rgb(255 250 242 / 0) 55%),
-    rgb(var(--cta-bg, var(--primary)));
-  box-shadow:
-    inset 0 1px 0 rgb(255 250 242 / 0.65),
-    inset 0 0 0 1px rgb(255 250 242 / 0.18),
-    inset 0 -7px 12px -8px rgb(255 250 242 / 0.4),
-    0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.7);
-}
-
-/* Every small pressable that is not built from the shared Button gets the same glass (the ones that carry the old raised look). A
-   control with its own solid fill keeps it (GlassButtons.tsx skips the same ones). */
-button[class*="shadow-raised-low"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="rounded-full"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-8"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]),
-a[class*="shadow-raised-low"][class*="h-9"]:not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([class*="liquid"]) {
-  background: linear-gradient(180deg, var(--lg-body-top), var(--lg-body-bottom));
-  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
-  backdrop-filter: blur(10px) saturate(1.7) brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 var(--lg-edge),
-    inset 0 0 0 1px rgb(255 250 242 / 0.1),
-    inset 0 -6px 10px -8px var(--lg-glow),
-    0 5px 14px -8px var(--lg-drop);
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .liquid,
-  button[class*="shadow-raised-low"],
-  a[class*="shadow-raised-low"] {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: rgb(var(--neu-base));
-  }
-}
-
-/* A main action that cannot be used yet goes neutral instead of a faded orange (half-transparent orange on the dark page read as a
-   muddy brown "something is wrong" colour). Doubled class to win over the lens rules further down. */
-.liquid-signal.liquid-signal:is(:disabled, [aria-disabled="true"]),
-button.bg-signal:disabled {
-  background: rgb(var(--c-s-700)) !important;
-  color: rgb(var(--c-s-200)) !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
+  background-color: transparent;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2425,72 +2327,6 @@ html[data-kb-motion="off"] .cmd-window {
   --lg-sheet-tint: rgb(250 246 238 / 0.8);
 }
 
-/* ---------------------------------------------------------------------------
-   The real lens on every glass button (GlassButtons.tsx picks them and sets --lg-filter, shared by size). The button itself becomes
-   clear (no painted gradient or sheen) and carries no backdrop or filter of its own, because either would wall its glass off from the
-   page; the lens is its ::after, under its label, refracting what is behind it. Hover and press brighten the glass through the lens.
-   --------------------------------------------------------------------------- */
-.lg-glass {
-  isolation: isolate;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  filter: none !important;
-  --lg-bright: 1;
-}
-:where(.lg-glass:not(.absolute):not(.fixed):not(.sticky)) {
-  position: relative;
-}
-/* A faint body so a clear button still reads as a button on a plain page (the lens refracts it along with what is behind). */
-.lg-glass:not(.liquid-signal) {
-  background: var(--lg-fill) !important;
-  /* The same 3D lift as the cards (light top left, shade bottom right, a rim along the top), on top of the bending lens. */
-  box-shadow: inset 0 0 0 1px var(--lg-hairline), var(--glass-edge3d, inset 0 1px 0 var(--lg-hairline)), -2px -2px 5px var(--glass-hi, transparent),
-    3px 3px 8px var(--glass-lo, transparent) !important;
-}
-:root {
-  --lg-fill: rgb(255 250 242 / 0.07);
-}
-[data-mode="light"] {
-  --lg-fill: rgb(255 250 242 / 0.6);
-}
-/* Solid on the dark theme: at 80% the espresso page showed through and darkened the orange, which left its espresso label at
-   3.8:1 (measured in the browser). Solid Burnt Orange keeps the label at 5.0:1. The light theme keeps the lighter 80% fill. */
-.lg-glass.liquid-signal {
-  background: rgb(var(--cta-bg, var(--primary))) !important;
-  box-shadow: 0 6px 16px -8px rgb(var(--cta-bg, var(--primary)) / 0.6) !important;
-}
-[data-mode="light"] .lg-glass.liquid-signal {
-  background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
-}
-@media (hover: hover) {
-  .lg-glass:hover {
-    --lg-bright: 1.1;
-  }
-}
-.lg-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: none;
-  transform: none;
-  opacity: 1;
-  transition: none;
-  -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
-  backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
-  clip-path: inset(0 round var(--lg-r, 9999px));
-}
-
-/* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
-:root {
-  --lg-hairline: rgb(255 250 242 / 0.14);
-}
-[data-mode="light"] {
-  --lg-hairline: rgb(0 0 0 / 0.1);
-}
-
 /* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
    still begins below the bar, by padding inside the scroll area. A notice banner, when there is one, takes the bar's room instead. */
 .app-scroll-under-bar {
@@ -2623,20 +2459,6 @@ body:has([data-surface="app"]) {
   --subtle-shadow: var(--neu-pressed-low);
   --elev-shadow: var(--neu-raised-high);
 }
-/* No glow under the main (orange or white) buttons in light mode either. */
-[data-mode="light"] .liquid-signal,
-[data-mode="light"] .lg-glass.liquid-signal {
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06) !important;
-}
-[data-mode="light"] .liquid {
-  box-shadow: inset 0 0 0 1px var(--card-line, rgb(0 0 0 / 0.07));
-}
-/* The glass sheen on raised cards and panels: a soft light across the face, top left to the middle. Not on anything with its own
-   picture or solid color fill (the roadmap card, orange buttons), and not on the glass buttons that carry a real lens. */
-[data-surface="app"] :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], .glass-surface, .glass-surface-elevated):not(.lg-glass):not([data-glass]):not(.color-tile):not([class*="bg-signal"]):not([class*="bg-gradient"]):not([class*="bg-["]):not([class*="bg-red"]):not([class*="bg-amber"]) {
-  background-image: var(--glass-sheen);
-}
-
 /* Home's colored cards (ColorCard): the card's own color, a soft light across the top left, and the same look in both themes. Inside,
    the gray text ramp turns white, the accent turns white (buttons become white pills with dark ink, rings and ticks go white) and
    wells and rows become a faint white tint, so everything reads on the color. */
@@ -3417,27 +3239,629 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Admin: quiet buttons (owner, 2026-11-07). On an admin screen only the one or two main actions are filled; every other button is plain gray
-   text with no pane, no shadow and no lens. A filled red (danger) or amber control keeps its colour. The two kept orange buttons are chosen by
-   AdminQuietButtons, which marks the rest `data-quiet`.
-   --------------------------------------------------------------------------- */
-[data-admin-page] :is(button, a):is(.liquid, .lg-glass, .shadow-raised-low, .shadow-raised-mid):not(.liquid-signal):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-signal"]):not([role="tab"]):not([role="switch"]):not([aria-current]):not([aria-pressed="true"]):not([aria-selected="true"]):not([aria-expanded="true"]):not([data-keep-chrome]),
-[data-admin-page] :is(button, a)[data-quiet] {
-  background: transparent !important;
-  box-shadow: none !important;
+
+/* ===========================================================================================================================
+   Liquid glass everywhere (owner decision, 2026-11-14). Every card, row, floating panel, field and button is the ONE glass of the
+   21st.dev "Liquid Glass Login" component (reference/liquid-glass-login.tsx; Rule 1 in docs/glass-revamp/DESIGN-SYSTEM.md).
+
+   How it is built, as in the source: the glass is a LAYER behind the content (a ::before on cards, rows and floating panels, a
+   ::after on buttons), never the element itself, because an element with a backdrop-filter is a backdrop root and glass nested in
+   it would only see its tint. The layer carries the tint and the backdrop-filter; the host carries the shadow and the rim light.
+   GlassButtons.tsx (the engine) builds each size's displacement map and sets --lg-filter and data-lg-ready on the host; until then,
+   off screen and past the cap the glass uses the source's "loading" backdrop. html[data-lg-mode="simple"] (Safari, Firefox; set
+   by THEME_BOOT_SCRIPT) gets the source's frosted look. Solid surfaces, reduced transparency and forced colors make it solid
+   (the block after this one). Colours come from the theme: dark is the source's values, light raises the tint so cards read.
+   =========================================================================================================================== */
+:root {
+  --lgx-tint-card: rgb(255 255 255 / 0.1);
+  --lgx-tint-field: rgb(255 255 255 / 0.06);
+  /* Floating panels open over page text, so they are nearly opaque (readability beats looks, Rule 1); the 10% white is the source tint. */
+  --lgx-tint-floating: color-mix(in srgb, rgb(255 255 255) 10%, rgb(var(--c-surface-solid) / 0.95));
+  --lgx-card-shadow: 0 30px 80px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 -1px 0 rgb(255 255 255 / 0.15);
+  --lgx-field-ring: rgb(255 255 255 / 0.12);
+  --lgx-field-ring-hover: rgb(255 255 255 / 0.2);
+  --lgx-field-ring-focus: rgb(255 255 255 / 0.6);
+  --lgx-field-bg: rgb(0 0 0 / 0.15);
+  --lgx-field-bg-focus: rgb(0 0 0 / 0.2);
+  --lgx-field-shadow: inset 0 0 0 1px var(--lgx-field-ring);
+  --lgx-btn-tint: rgb(255 255 255 / 0.07);
+  --lgx-btn-primary: rgb(var(--cta-bg, var(--signal)) / 0.34);
+  --lgx-btn-danger: rgb(220 38 38 / 0.34);
+  --lgx-btn-shadow: 0 8px 24px rgb(0 0 0 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.55);
+  --lgx-hover: rgb(255 255 255 / 0.1);
+  --lgx-press: rgb(255 255 255 / 0.15);
+  --lgx-label-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+  --lgx-title-shadow: 0 2px 12px rgb(0 0 0 / 0.4);
+  --lgx-focus: rgb(255 255 255 / 0.85);
+  --lgx-bd-loading: blur(10px) saturate(1.6) brightness(1.04);
+  --lgx-bd-refract: blur(0.5px) saturate(1.85) brightness(1.02);
+  --lgx-bd-simple: blur(16px) saturate(1.8) brightness(1.05);
+  --lgx-simple-face: linear-gradient(180deg, rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.1));
+  --lgx-simple-ring: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+/* Light theme: white glass on the gray page. The source's 0.10 tint is invisible on a light page, so the tint is raised (the brief's
+   "raise the tint just enough") and the shadows are the same shapes, lighter. */
+[data-mode="light"] {
+  --lgx-tint-card: rgb(255 255 255 / 0.62);
+  --lgx-tint-field: rgb(255 255 255 / 0.5);
+  --lgx-card-shadow: 0 30px 80px rgb(0 0 0 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(0 0 0 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.05);
+  --lgx-field-ring: rgb(0 0 0 / 0.1);
+  --lgx-field-ring-hover: rgb(0 0 0 / 0.18);
+  --lgx-field-ring-focus: rgb(var(--c-s-50) / 0.55);
+  --lgx-field-bg: rgb(255 255 255 / 0.55);
+  --lgx-field-bg-focus: rgb(255 255 255 / 0.75);
+  --lgx-btn-tint: rgb(255 255 255 / 0.6);
+  --lgx-btn-danger: rgb(220 38 38 / 0.2);
+  --lgx-btn-shadow: 0 8px 24px rgb(0 0 0 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.9), 0 0 0 1px rgb(0 0 0 / 0.06);
+  --lgx-hover: rgb(0 0 0 / 0.04);
+  --lgx-press: rgb(0 0 0 / 0.07);
+  --lgx-label-shadow: none;
+  --lgx-title-shadow: none;
+  --lgx-focus: rgb(var(--c-s-50) / 0.7);
+  --lgx-simple-face: linear-gradient(180deg, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.55));
+  --lgx-simple-ring: inset 0 0 0 1px rgb(255 255 255 / 0.8);
+}
+/* The old material's tokens now mean the glass: a card's "raised" shadow is the card shadow, a pressed well is the field ring, and the
+   solid fill behind bg-neu-base / bg-neu-lift is gone (the glass layer draws the body). */
+:root,
+[data-surface="app"],
+body:has([data-surface="app"]),
+[data-surface="marketing"],
+body:has([data-surface="marketing"]),
+[data-mode="light"] [data-surface="app"],
+[data-mode="light"] body:has([data-surface="app"]) {
+  --neu-alpha: 0;
+  --neu-raised-low: var(--lgx-btn-shadow);
+  --neu-raised-mid: var(--lgx-card-shadow);
+  --neu-raised-high: var(--lgx-card-shadow);
+  --neu-float: var(--lgx-card-shadow);
+  --neu-pressed-low: var(--lgx-field-shadow);
+  --neu-pressed-mid: var(--lgx-field-shadow);
+  --neu-pressed-high: var(--lgx-field-shadow);
+  --plane-mid-shadow: var(--lgx-card-shadow);
+  --plane-front-shadow: var(--lgx-card-shadow);
+  --surface-shadow: var(--lgx-card-shadow);
+  --elev-shadow: var(--lgx-card-shadow);
+  --subtle-shadow: var(--lgx-field-shadow);
+}
+
+/* Hosts. Position and isolation live in the base layer so a component's own `absolute`, `fixed` or `sticky` always wins; isolation keeps
+   the layer (z-index -1) behind the content and in front of whatever is behind the host. */
+@layer base {
+  :where(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))), :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))) {
+    position: relative;
+    isolation: isolate;
+  }
+}
+:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))) {
+  --lgx-bd: var(--lgx-bd-loading);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Which tint each kind of host carries. :where() keeps these at zero specificity so the order below decides (a row, then a card, then
+   floating panels and anything inside a dialog, then the stacked deck). */
+:where(:is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))) {
+  --lgx-layer: var(--lgx-tint-field);
+}
+:where(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a)) {
+  --lgx-layer: var(--lgx-tint-card);
+}
+:where(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a)),
+:where([role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [role="tooltip"]):where(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a)) {
+  --lgx-layer: var(--lgx-tint-floating);
+}
+/* Stacked cards (the phone card deck) draw over each other: they take the floating tint so the card behind never reads through. The
+   deck's drop-shadow filter would make each card a backdrop root (the glass would see nothing), so the card shadow stands in for it. */
+.deck-card {
+  filter: none !important;
+}
+:where(.deck-card, .deck-card > *):where(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a)) {
+  --lgx-layer: var(--lgx-tint-floating);
+}
+:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu)))::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--lgx-layer);
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+}
+/* A menu inside a card opens over the next card: the card it lives in rises while the menu is open. */
+:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))):has(> * [aria-expanded="true"], [aria-expanded="true"] + .menu-panel, .menu-panel) {
+  z-index: 30;
+}
+
+/* Buttons: the source's GlassButton. */
+:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)) {
+  --lgx-bd: var(--lgx-bd-loading);
+  --lgx-btn-color: var(--lgx-btn-tint);
+  --lgx-over: transparent;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent;
+  /* Any ring the element asks for (a selected state, a focus ring) is kept in front of the glass shadow. */
+  box-shadow: var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--lgx-btn-shadow);
+  text-shadow: var(--lgx-label-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  filter: none;
+  transition-property: scale, box-shadow, color, opacity;
+}
+:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(var(--lgx-over), var(--lgx-over)), var(--lgx-btn-color);
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+  transition: background-color 150ms var(--ease-ios, ease);
+}
+/* hit-slop already uses ::after for its bigger touch area: those buttons draw the tint on themselves (same look, no live bend). */
+:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)).hit-slop {
+  background: linear-gradient(var(--lgx-over), var(--lgx-over)), var(--lgx-btn-color) !important;
+}
+:is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]) {
+  --lgx-btn-color: var(--lgx-btn-primary);
+  color: rgb(var(--c-s-50));
+  font-weight: 600;
+}
+:is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)))[data-glass-tone="danger"] {
+  --lgx-btn-color: var(--lgx-btn-danger);
+  color: rgb(var(--c-s-50));
+}
+/* A main action that cannot be used yet goes neutral glass instead of a faded orange. */
+:is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]):is(:disabled, [aria-disabled="true"]) {
+  --lgx-btn-color: var(--lgx-btn-tint);
+  color: rgb(var(--c-s-400));
+  opacity: 1;
+}
+@media (hover: hover) {
+  :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)):hover:not(:disabled):not([aria-disabled="true"]) {
+    --lgx-over: var(--lgx-hover);
+  }
+}
+:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)):active:not(:disabled):not([aria-disabled="true"]) {
+  --lgx-over: var(--lgx-press);
+  scale: 0.98;
+}
+:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)):focus-visible {
+  outline: 2px solid var(--lgx-focus);
+  outline-offset: 2px;
+}
+/* Home's coloured cards keep a white main button with dark ink (white glass on the card's colour). */
+.color-tile :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]) {
+  --lgx-btn-color: rgb(255 255 255 / 0.9);
+  color: rgb(36 28 24);
+  text-shadow: none;
+}
+
+/* Fields: the source's input on its field glass (tint 0.06 under bg-black/15, an inset ring that brightens on hover and focus). */
+:is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]) {
+  --lgx-bd: var(--lgx-bd-loading);
+  background: linear-gradient(var(--lgx-field-bg), var(--lgx-field-bg)), var(--lgx-tint-field) !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--lgx-field-ring) !important;
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+  transition: box-shadow 150ms, background 150ms;
+}
+:is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]):hover:not(:focus) {
+  box-shadow: inset 0 0 0 1px var(--lgx-field-ring-hover) !important;
+}
+:is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]):focus {
+  outline: none;
+  background: linear-gradient(var(--lgx-field-bg-focus), var(--lgx-field-bg-focus)), var(--lgx-tint-field) !important;
+  box-shadow: inset 0 0 0 2px var(--lgx-field-ring-focus) !important;
+}
+
+/* Live refraction, once the engine has built this size's map. The clip keeps the bent backdrop inside the rounded shape. */
+:is(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))), :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)), :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]))[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-refract);
+}
+:is(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))))[data-lg-ready]::before,
+:is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)))[data-lg-ready]::after {
+  clip-path: inset(0 round var(--lg-r, 0px));
+}
+
+/* Floating panels sit over page text: the bend keeps a real blur, so the words behind a menu, sheet or banner are haze, not a ghost. */
+:is(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a))[data-lg-ready],
+:where([role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [role="tooltip"]):is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a))[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) blur(8px) saturate(1.85) brightness(1.02) !important;
+}
+
+/* Safari and Firefox: the source's frosted look (stronger blur, a white gradient face, a bright inset ring). */
+html[data-lg-mode="simple"] :is(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))), :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)), :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"])) {
+  --lgx-bd: var(--lgx-bd-simple);
+}
+html[data-lg-mode="simple"] :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu)))::before {
+  background-image: var(--lgx-simple-face);
+  box-shadow: var(--lgx-simple-ring);
+}
+html[data-lg-mode="simple"] :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a))::before {
+  background-color: transparent;
+}
+html[data-lg-mode="simple"] [data-glass-lens] > .lgx-lens-body {
+  background-image: var(--lgx-simple-face);
+  box-shadow: var(--lgx-simple-ring);
+}
+
+/* The colour split blurs small text: no dispersion on anything under 16px is done by the engine (aberration 0 for short controls). */
+
+/* Glass in Solid surfaces, reduced transparency and forced colors: opaque surfaces, no backdrop, no bend. */
+html[data-solid-surfaces="on"] :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu)))::before {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
-  color: rgb(var(--c-s-400));
+  clip-path: none;
+  background: rgb(var(--c-surface-solid)) !important;
+  box-shadow: inset 0 0 0 1px rgb(var(--c-s-50) / 0.1);
 }
-[data-admin-page] :is(button, a):is(.liquid, .lg-glass, .shadow-raised-low, .shadow-raised-mid):not(.liquid-signal):not([role="tab"]):not([role="switch"]):not([aria-current]):not([aria-pressed="true"]):not([aria-selected="true"]):not([aria-expanded="true"]):not([data-keep-chrome])::after,
-[data-admin-page] :is(button, a)[data-quiet]::after {
-  display: none;
+html[data-solid-surfaces="on"] :is(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))), :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))) {
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
-[data-admin-page] :is(button, a):is(.liquid, .lg-glass, .shadow-raised-low, .shadow-raised-mid):not(.liquid-signal):not([role="tab"]):not([role="switch"]):not([aria-current]):not([aria-pressed="true"]):not([aria-selected="true"]):not([aria-expanded="true"]):not([data-keep-chrome]):hover,
-[data-admin-page] :is(button, a)[data-quiet]:hover {
-  color: rgb(var(--c-s-50));
-  background: rgb(var(--c-s-50) / 0.06) !important;
+html[data-solid-surfaces="on"] :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  clip-path: none;
+  background: color-mix(in srgb, rgb(var(--c-s-50)) 10%, rgb(var(--c-surface-solid))) !important;
+}
+html[data-solid-surfaces="on"] :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled)::after {
+  background: rgb(var(--cta-bg, var(--signal))) !important;
+}
+html[data-solid-surfaces="on"] :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled) {
+  color: rgb(var(--cta-ink, var(--signal-ink)));
+}
+html[data-solid-surfaces="on"] :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: rgb(var(--c-surface-solid)) !important;
+}
+@media (prefers-reduced-transparency: reduce) {
+  :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu)))::before {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    clip-path: none;
+    background: rgb(var(--c-surface-solid)) !important;
+  }
+  :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    clip-path: none;
+    background: color-mix(in srgb, rgb(var(--c-s-50)) 10%, rgb(var(--c-surface-solid))) !important;
+  }
+  :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled)::after {
+    background: rgb(var(--cta-bg, var(--signal))) !important;
+  }
+  :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled) {
+    color: rgb(var(--cta-ink, var(--signal-ink)));
+    text-shadow: none;
+  }
+  :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgb(var(--c-surface-solid)) !important;
+  }
+}
+@media (forced-colors: active) {
+  :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu)))::before,
+  :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted))::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: Canvas !important;
+  }
+  :is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile:not(.lgx-tinted)):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))) {
+    border: 1px solid CanvasText;
+  }
+  :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)) {
+    border: 1px solid ButtonText;
+  }
+  :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"]) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile:not(.lgx-tinted)):active:not(:disabled) {
+    scale: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------------
+   The app's frame is liquid glass too (owner, 2026-11-14: "the dock, all cards in Home and the sidebar, the top bar, the greeting, the
+   Overview, all liquid glass"). Each draws the glass on a spare layer behind its own contents, as the cards do, and the engine
+   (GlassButtons.tsx) gives each its bend: the dock as a big glass button, the sidebar, the phone top bar and the pinned greeting as cards.
+   --------------------------------------------------------------------------------------------------------------------------- */
+:root {
+  /* The frame floats over moving page content, so it keeps a real blur under the bend and a little more body than a card. */
+  --lgx-tint-frame: color-mix(in srgb, rgb(255 255 255) 10%, rgb(var(--c-surface-solid) / 0.45));
+  --lgx-bd-frame: blur(14px) saturate(1.85) brightness(1.02);
+}
+[data-mode="light"] {
+  --lgx-tint-frame: rgb(255 255 255 / 0.62);
+}
+
+/* The dock: the Instagram shape, rim and capsule are kept; its body is now the glass (white tint over the bent page, the button shadow). */
+.ig-dock {
+  --lgx-bd: var(--lgx-bd-frame);
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--lgx-btn-shadow) !important;
+}
+.ig-dock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--lgx-tint-frame);
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+}
+.ig-dock[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-frame);
+}
+.ig-dock[data-lg-ready]::after {
+  clip-path: inset(0 round var(--lg-r, 29px));
+}
+
+/* The phone top bar (one card holding the bar's buttons): glass on its ::after, the ground strip above it stays on its ::before. */
+.top-card {
+  --lgx-bd: var(--lgx-bd-frame);
+  isolation: isolate;
+  background: transparent !important;
+  box-shadow: var(--lgx-card-shadow);
+  border-radius: 24px;
+}
+.top-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--lgx-tint-frame);
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+}
+.top-card[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-frame);
+}
+.top-card[data-lg-ready]::after {
+  clip-path: inset(0 round var(--lg-r, 24px));
+}
+/* The strip under the status bar is glass too, so nothing reads sharply above the bar. */
+.top-card::before {
+  background: rgb(var(--ground) / 0.55) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+/* The sidebar: a glass rail (its own blur and fill are gone; the glass layer is its ::before, like a card). */
+.app-sidebar {
+  --lgx-bd: var(--lgx-bd-frame);
+  --lgx-layer: var(--lgx-tint-frame);
+  isolation: isolate;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--lgx-card-shadow);
+}
+.app-sidebar::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: inherit;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--lgx-layer);
+  -webkit-backdrop-filter: var(--lgx-bd);
+  backdrop-filter: var(--lgx-bd);
+  border-right: 1px solid rgb(255 255 255 / 0.12);
+}
+.app-sidebar[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-frame);
+}
+[data-mode="light"] .app-sidebar::before {
+  border-right-color: rgb(0 0 0 / 0.06);
+}
+/* Its pinned header and the Home-only frost no longer paint over the glass. */
+.app-sidebar .sb-header {
+  background: transparent !important;
+}
+
+/* The pinned greeting (deck-header): the soft card that fades in while it is pinned is glass, and nothing solid sits behind it, so what
+   scrolls under the heading is bent and blurred rather than covered. */
+.deck-header {
+  --lgx-bd: var(--lgx-bd-frame);
+  border-image: none !important;
+}
+/* The strip above the pinned heading, under the floating top bar, is frosted glass too, so what scrolls past there is haze, not text. */
+.deck-header::before {
+  background: rgb(var(--ground) / 0.5) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+html[data-solid-surfaces="on"] .deck-header::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(var(--ground)) !important;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .deck-header::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(var(--ground)) !important;
+  }
+}
+.deck-header::after {
+  inset-inline: -0.75rem !important;
+  border-radius: 24px !important;
+  border: 0 !important;
+  background: var(--lgx-tint-frame) !important;
+  box-shadow: var(--lgx-card-shadow) !important;
+  -webkit-backdrop-filter: var(--lgx-bd) !important;
+  backdrop-filter: var(--lgx-bd) !important;
+}
+.deck-header[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-frame);
+}
+.deck-header[data-lg-ready]::after {
+  clip-path: inset(0 round var(--lg-r, 24px));
+}
+
+/* Cards that are links or buttons (Home's rows and tiles, the Overview's tiles): the card look, not the lighter button look. */
+:is(a, button):is([class*="rounded-card"], [class*="rounded-sheet"], .lgx-card):not([data-glass-solid]):not([class*="bg-signal"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-white"]) {
+  --lgx-btn-color: var(--lgx-tint-card);
+  box-shadow: var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--lgx-card-shadow);
+  text-shadow: none;
+}
+:is(a, button).lgx-card {
+  position: relative;
+  isolation: isolate;
+}
+:is(a, button).lgx-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--lgx-tint-card);
+  -webkit-backdrop-filter: var(--lgx-bd, var(--lgx-bd-loading));
+  backdrop-filter: var(--lgx-bd, var(--lgx-bd-loading));
+}
+
+/* Over Home's studio photo the source's clear glass put small text straight onto guitars and shelves: there the cards keep the bend but
+   get a darker body and a little blur, so their words pass contrast (Rule 1: readability beats looks). */
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
+  --lgx-tint-card: color-mix(in srgb, rgb(255 255 255) 8%, rgb(var(--c-surface-solid) / 0.55));
+  --lgx-tint-field: color-mix(in srgb, rgb(255 255 255) 6%, rgb(var(--c-surface-solid) / 0.45));
+  --lgx-bd-refract: blur(6px) saturate(1.6) brightness(1.02);
+  --lgx-bd-loading: blur(12px) saturate(1.5) brightness(1.02);
+}
+
+/* The current item in a row of glass cards (Home's "You're here" scale): warm glass with an orange edge. */
+:is(a, button).lgx-current {
+  --lgx-btn-color: color-mix(in srgb, rgb(var(--signal)) 16%, var(--lgx-tint-card));
+  outline: 2px solid rgb(var(--signal) / 0.55);
+  outline-offset: -2px;
+}
+:is(a, button).lgx-current:focus-visible {
+  outline: 2px solid var(--lgx-focus);
+  outline-offset: 2px;
+}
+
+/* Coloured glass (the Home and Overview heroes): the colour is a see-through layer over the glass, so the page still shows through. */
+.lgx-tinted {
+  background: transparent !important;
+}
+.lgx-tint-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.62;
+}
+[data-mode="light"] .lgx-tint-layer {
+  opacity: 0.86;
+}
+
+/* Solid surfaces, reduced transparency, forced colors: the frame goes solid like every other glass. */
+html[data-solid-surfaces="on"] :is(.ig-dock, .top-card, .deck-header)::after,
+html[data-solid-surfaces="on"] .app-sidebar::before,
+html[data-solid-surfaces="on"] :is(a, button).lgx-card::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  clip-path: none !important;
+  background: rgb(var(--c-surface-solid)) !important;
+}
+html[data-solid-surfaces="on"] .top-card::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(var(--ground)) !important;
+}
+html[data-solid-surfaces="on"] .lgx-tint-layer {
+  opacity: 1;
+}
+@media (prefers-reduced-transparency: reduce) {
+  :is(.ig-dock, .top-card, .deck-header)::after,
+  .app-sidebar::before,
+  :is(a, button).lgx-card::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    clip-path: none !important;
+    background: rgb(var(--c-surface-solid)) !important;
+  }
+  .top-card::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(var(--ground)) !important;
+  }
+  .lgx-tint-layer {
+    opacity: 1;
+  }
+}
+@media (forced-colors: active) {
+  :is(.ig-dock, .top-card, .deck-header)::after,
+  .app-sidebar::before,
+  :is(a, button).lgx-card::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: Canvas !important;
+  }
+}
+html[data-lg-mode="simple"] :is(.ig-dock, .top-card, .deck-header)::after,
+html[data-lg-mode="simple"] .app-sidebar::before {
+  background-image: var(--lgx-simple-face);
+}
+
+/* The auth card (AuthGlassCard): the source's card shadow on its glass layer, and the source's header type. */
+.lgx-auth-card-glass {
+  box-shadow: var(--lgx-card-shadow);
+}
+.lgx-auth-title {
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-shadow: var(--lgx-title-shadow);
+}
+.lgx-auth-subtitle {
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: rgb(var(--c-s-50) / 0.65);
+}
+/* On the photo (/login, /register) the words outside the card are white enough to read over it. */
+body:has([data-auth-photo]) :is(.auth-back-link, .auth-tagline) {
+  color: rgb(255 255 255 / 0.82);
+}
+body:has([data-auth-photo]) .auth-back-link:hover {
+  color: rgb(255 255 255);
+}
+/* The source's sizes inside the auth card: the main action 52px, the other buttons 48px, the fields 48px. */
+[data-auth-card] button[type="submit"]:is([data-glass-role="button"], .liquid-signal) {
+  height: 3.25rem;
+  font-size: var(--text-body);
+}
+[data-auth-card] :is(button, a).liquid:not(.liquid-signal):not([type="submit"]) {
+  height: 3rem;
+}
+[data-auth-card] .lgx-input {
+  height: 3rem;
+  border-radius: 1rem;
+}
+body:has([data-auth-photo]) [data-auth-card] label {
+  color: rgb(255 255 255 / 0.8);
 }
 
 /* ===================================================================
@@ -3653,25 +4077,22 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   90% { transform: skewX(4deg); }
 }
 
-/* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the app shell itself, behind the sidebar, the top
-   bar and the scroll area, so it stays put while the cards move over it. A dark wash keeps the cream text readable. The sidebar, the pinned
-   greeting and the cards on top are see-through frosted glass (a faint tint and a blur), so the photo shows through all of them. */
+/* Home's studio photo: painted on the app shell itself, behind the sidebar, the top bar and the scroll area, so it stays put while the cards
+   move over it. Dark theme: the dark studio (home-studio.webp) under a dark wash for the cream text, on Home. The light theme shows its own
+   photo on every page (block at the end of this file). The sidebar, the pinned greeting and the cards are the liquid glass. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   background:
     linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.7)),
     url("/home-studio.webp") center / cover no-repeat;
 }
+/* Light theme: see the "Light theme: the studio photo and clear glass" block at the end of this file. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   --home-glass: rgb(20 17 15 / 0.5);
   --home-glass-edge: rgb(255 250 242 / 0.12);
 }
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll .bg-neu-base,
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll [class*="bg-slate-50/"] {
-  background-color: var(--home-glass);
-  -webkit-backdrop-filter: blur(26px) saturate(1.35);
-  backdrop-filter: blur(26px) saturate(1.35);
-  box-shadow: inset 0 1px 0 var(--home-glass-edge), 0 8px 28px rgb(0 0 0 / 0.28);
-}
+/* The cards on Home are the app's one liquid glass (the "Liquid glass everywhere" block): their glass layer bends this photo. The older
+   Home-only frosted fill that sat on the card elements themselves is gone: a blur on the card made it a backdrop root, so the buttons and
+   rows inside it could not see the photo. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar {
   background: rgb(0 0 0 / 0.22);
   -webkit-backdrop-filter: blur(22px) saturate(1.3);
@@ -3693,4 +4114,71 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   background: var(--home-glass);
   -webkit-backdrop-filter: blur(26px) saturate(1.35);
   backdrop-filter: blur(26px) saturate(1.35);
+}
+
+/* ===========================================================================================================================
+   Light theme: the studio photo and clear glass (owner, 2026-11-14: "remove the cloudy white over the background picture; the background is
+   already light. Keep the buttons white and glassy. The cards, all of them, must be light bending glass").
+   - Every signed-in page shows the bright studio photo (home-studio-light.webp) with its own colours: no white wash over it, only a 1.5px
+     softening of its finest detail.
+   - Cards, rows, the sidebar, the phone top bar, the pinned greeting and the dock are light-bending glass with a thin white (0.22) and a
+     12px blur under the bend, so the photo keeps its colour and the words on the glass stay readable. The strips above the top bar and the
+     greeting are clear.
+   - Buttons stay white glass (white 0.6). Menus, sheets, dialogs and text fields stay nearly opaque, because their words sit over page text.
+   - Every word gets a soft white glow, so it still reads over the darker parts of the photo (the amp, the monitor) without a wash.
+   =========================================================================================================================== */
+[data-mode="light"] [data-surface="app"] {
+  background: rgb(var(--ground));
+}
+/* The photo itself, on a layer behind everything in the shell. Its colours are untouched (no white over it); only its finest detail is
+   softened a hair (1.5px), the way a phone softens its wallpaper behind apps, so small words never sit on sharp guitar strings and lettering. */
+[data-mode="light"] [data-surface="app"]::before {
+  content: "";
+  position: fixed;
+  inset: -16px;
+  z-index: -1;
+  pointer-events: none;
+  background: url("/home-studio-light.webp") center / cover no-repeat;
+  filter: blur(1.5px);
+}
+[data-mode="light"] {
+  /* The glass keeps the photo's colour (a thin white, no haze) and blurs what is right under the words, so a black monitor or amp behind a
+     card never sits sharp under its text. The bend still runs along every rim. */
+  --lgx-tint-card: rgb(255 255 255 / 0.28);
+  --lgx-tint-field: rgb(255 255 255 / 0.18);
+  --lgx-tint-frame: rgb(255 255 255 / 0.28);
+  --lgx-bd-refract: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-bd-frame: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-bd-loading: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-card-shadow: 0 30px 80px rgb(0 0 0 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(255 255 255 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.5);
+  --lgx-simple-face: linear-gradient(180deg, rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.1));
+  --lgx-simple-ring: inset 0 0 0 1px rgb(255 255 255 / 0.6);
+}
+[data-mode="light"] :is(.top-card, .deck-header)::before {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Every word on the light theme (on glass or straight on the photo) carries a soft white glow, so it reads over the darker parts of the
+   picture without a wash over the whole photo. Text on an orange or coloured fill keeps no glow. */
+[data-mode="light"] [data-surface="app"] {
+  text-shadow: 0 0 2px rgb(255 255 255 / 0.95), 0 0 6px rgb(255 255 255 / 0.7);
+}
+[data-mode="light"] [data-surface="app"] :is(.color-tile, [class*="bg-signal"], [class*="bg-red-"], [class*="tier-accent-bg"], input, textarea, select, .glass-menu, .glass-surface-modal, [role="dialog"], [role="menu"]) {
+  text-shadow: none;
+}
+/* Solid surfaces, reduced transparency and forced colors: the light page goes back to its plain gray (the glass is solid there anyway). */
+html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"] {
+  text-shadow: none;
+}
+html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"]::before {
+  display: none;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  [data-mode="light"] [data-surface="app"]::before {
+    display: none;
+  }
+  [data-mode="light"] [data-surface="app"] {
+    text-shadow: none;
+  }
 }

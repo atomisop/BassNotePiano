@@ -16,7 +16,7 @@ function ThemeSwatch({ swatch }: { swatch: [string, string, string] }) {
   const [ground, surface, text] = swatch;
   return (
     <div
-      className="flex h-12 w-full items-center gap-1.5 rounded-md px-2 bg-neu-base shadow-raised-low"
+      className="flex h-12 w-full items-center gap-1.5 rounded-md px-2"
       style={{ background: ground }}
       aria-hidden
     >
@@ -56,7 +56,8 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
           type="button"
           onClick={() => setTheme("system")}
           aria-pressed={theme === "system"}
-          className={`tap rounded-full px-3.5 py-2 text-small font-medium shadow-raised-low ${theme === "system" ? "bg-signal text-slate-950" : "bg-neu-base text-slate-200"}`}
+          data-glass-tone={theme === "system" ? "primary" : undefined}
+          className={`lgx-btn tap rounded-full px-3.5 py-2 text-small font-medium ${theme === "system" ? "" : "text-slate-200"}`}
         >
           Match my device
         </button>
@@ -78,11 +79,8 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 type="button"
                 onClick={() => setTheme(opt.id)}
                 aria-pressed={selected}
-                className={`w-full rounded-lg border p-2.5 text-left transition ${
-                  selected
-                    ? "border-amber-400/70 bg-neu-base shadow-pressed-low"
-                    : "border-transparent hover:border-slate-50/40 bg-neu-base shadow-raised-low"
-                }`}
+                data-glass-tone={selected ? "primary" : undefined}
+                className="lgx-btn w-full rounded-lg p-2.5 text-left transition"
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-small font-medium text-slate-100">{opt.label}</span>

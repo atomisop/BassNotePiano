@@ -64,7 +64,7 @@ export default async function MailPage() {
       {mail.length > 0 && (
         // One list of rows: unread mail stands out by weight and its dot, read mail steps back, and the date is the quietest part.
         <section aria-label="All mail">
-      <ul className="divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low">
+      <ul className="divide-y divide-slate-50/8 overflow-hidden lgx-card rounded-card">
         {mail.map((m, i) => (
           <li key={m.id} style={{ "--i": i } as CSSProperties} className="stagger-item">
             <Link href={`/mail/${m.id}`} className="flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-5">

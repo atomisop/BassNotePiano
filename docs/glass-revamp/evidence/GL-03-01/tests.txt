@@ -1,0 +1,36 @@
+# Checks for GL-03-01 (2026-11-14T18:47:01Z), branch liquid-glass-everywhere
+
+## npx tsc --noEmit
+exit status: 0
+
+## npx next lint --dir src (errors only)
+exit status: 0
+
+## npm test
+ Test Files  137 passed (137)
+      Tests  867 passed (867)
+exit status: 0
+
+## npm run build
+Production build of this commit succeeded locally (Next.js 15, all routes compiled).
+exit status: 0
+
+## a11y-checks.mjs
+PASS normal look has glass surfaces with a backdrop {"n":2,"bad":1,"layers":34,"badLayers":33}
+PASS prefers-reduced-transparency: no glass surface keeps a backdrop-filter {"n":2,"bad":0,"layers":34,"badLayers":0}
+PASS forced-colors: no glass surface keeps a backdrop-filter {"n":2,"bad":0,"layers":34,"badLayers":0}
+PASS Tab reaches at least 15 focusable controls 25 stops
+PASS every focused control is visible on screen 
+PASS every focused control shows a focus ring 
+PASS Ctrl+K opens the command menu 
+PASS Escape closes it 
+exit status: 0
+
+## solid-check.mjs
+PASS starts off 
+PASS click turns the attribute on 
+PASS backdrop-filter is gone from glass surfaces 
+PASS attribute set before first paint after reload 
+PASS switch still reads on after reload 
+PASS keyboard (Space) turns it off 
+exit status: 0

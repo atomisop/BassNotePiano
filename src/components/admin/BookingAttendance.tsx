@@ -24,7 +24,7 @@ export interface BookingAttendanceProps {
 
 const icon = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 /** Flat and muted: the switches and the way back (Online / In person, edit, undo, done), so Present and No-show stay the obvious tap. */
-const quiet = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium text-slate-400 transition hover:bg-slate-50/6 hover:text-slate-100 disabled:opacity-50";
+const quiet = "lgx-btn tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium text-slate-400 transition hover:text-slate-100 disabled:opacity-50";
 
 /**
  * Everything you do about one class's attendance, in one compact line: Online / In person, Present, No-show, and (once marked) edit or undo.
@@ -128,7 +128,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
               <button type="button" onClick={() => setConfirmUndo(false)} disabled={busy} className={quiet}>
                 Keep
               </button>
-              <button type="button" onClick={undo} disabled={busy} className={`${icon} bg-slate-50 text-slate-950`}>
+              <button type="button" onClick={undo} disabled={busy} data-glass-tone="primary" className={`${icon} lgx-btn`}>
                 {busy && <MorphingSquare size={11} />}
                 Undo and refund
               </button>

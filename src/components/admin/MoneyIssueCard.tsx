@@ -35,7 +35,7 @@ export function MoneyIssueCard({ issue, onFix }: { issue: MoneyIssue; onFix: (ke
       <CardHead as="p" eyebrow={issue.person} title={issue.title} />
       <p className="mt-2 text-small text-slate-400">{issue.detail}</p>
       {open ? (
-        <div className="mt-4 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
+        <div className="lgx-row mt-4 rounded-control p-3">
           <p className="text-small text-slate-300">{open.hint}</p>
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={() => setConfirming(null)} disabled={busy} className={buttonVariants({ variant: "secondary", className: "flex-1" })}>Not now</button>

@@ -18,7 +18,7 @@ export default function AccountLoading() {
           {GROUPS.map((rows, g) => (
             <div key={g}>
               <Skeleton className="mb-2 h-3 w-20" />
-              <div className="rounded-card bg-neu-base shadow-raised-low divide-y divide-slate-50/8">
+              <div className="lgx-card rounded-card divide-y divide-slate-50/8">
                 {Array.from({ length: rows }).map((_, i) => (
                   <div key={i} className="flex h-16 items-center gap-3 px-4">
                     <Skeleton className="h-10 w-10 shrink-0 rounded-control" />
@@ -31,7 +31,7 @@ export default function AccountLoading() {
         </div>
 
         <div className="mt-6 hidden gap-8 lg:flex">
-          <div className="rounded-card bg-neu-base shadow-raised-low h-[512px] w-56 shrink-0 space-y-3 p-4">
+          <div className="lgx-card rounded-card h-[512px] w-56 shrink-0 space-y-3 p-4">
             {Array.from({ length: 9 }).map((_, i) => (
               <Skeleton key={i} className={i % 3 === 0 ? "h-3 w-20" : "h-9 w-full rounded-control"} />
             ))}
@@ -43,7 +43,7 @@ export default function AccountLoading() {
               ))}
             </div>
             <Skeleton className="mt-8 h-4 w-16" />
-            <div className="rounded-card bg-neu-base shadow-raised-low mt-3 p-6">
+            <div className="lgx-card rounded-card mt-3 p-6">
               <Skeleton className="h-5 w-36" />
               <div className="mt-5 space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -53,7 +53,7 @@ export default function AccountLoading() {
               <Skeleton className="mt-5 h-10 w-52" />
             </div>
             <Skeleton className="mt-8 h-4 w-20" />
-            <div className="rounded-card bg-neu-base shadow-raised-low mt-3 h-36 p-6">
+            <div className="lgx-card rounded-card mt-3 h-36 p-6">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-4 h-4 w-3/4" />
             </div>

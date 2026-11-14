@@ -55,7 +55,7 @@ function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { hr
       {body}
     </Link>
   ) : (
-    <div className={cls}>{body}</div>
+    <div className="lgx-card block overflow-hidden rounded-card">{body}</div>
   );
 }
 
@@ -405,7 +405,7 @@ export function SidebarSpotlight({
               ) : null}
             </>
           );
-          const cls = "tap press-soft relative flex h-10 w-10 items-center justify-center rounded-full bg-neu-base shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+          const cls = "lgx-btn tap press-soft relative flex h-10 w-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
           return s.rail.href.startsWith("/api/") ? (
             <a key={s.id} href={s.rail.href} title={s.rail.label} aria-label={s.rail.label} className={cls}>
               {body}

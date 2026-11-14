@@ -529,6 +529,30 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   standing, explicit brand rule from `PRODUCT.md`, this repo's own
   history includes a dedicated cleanup commit for stray ones).
 
+## Liquid glass everywhere (added 2026-11-14)
+
+Every card and every button uses the one glass material from the 21st.dev "Liquid Glass Login" component (source in
+`reference/liquid-glass-login.tsx`; rules in `docs/glass-revamp/DESIGN-SYSTEM.md` Rule 1). New cards use `Card` or a
+`glass-surface*` class; new buttons use the shared `<Button>`. Never hand-style a card or button with its own background,
+border or shadow, and never add a second glass library. Kept solid on purpose: the `danger` button, the piano keyboard
+and fretboard, the stageshow kit. The app's frame is the same glass (owner, 2026-11-14): the dock (its Instagram shape, rim and
+capsule kept, its body glass), the sidebar, the phone top bar, the pinned greeting, and the Home and Overview heroes (coloured
+glass: the colour is a see-through `lgx-tint-layer` over the glass). The Solid surfaces setting, reduced transparency, forced
+colors and reduced motion must always turn glass into solid surfaces.
+
+**Light theme background (owner, 2026-11-14):** every signed-in page in the light theme shows the bright studio photo
+(`public/home-studio-light.webp`, the white room with the BASSNOTE sign) on the shell's `::before`, with NO white wash over it
+(the owner asked for the cloudy white to go), only a 1.5px softening of its finest detail. Light glass is a thin white (0.28) with a
+blur under the bend so words stay readable; buttons stay white glass; every word carries a soft white glow
+(`[data-mode="light"] [data-surface="app"]` in globals.css). Menus, dialogs and fields stay nearly opaque. Solid surfaces, reduced
+transparency and forced colors hide the photo and the glow. The dark theme keeps its dark studio photo on Home only.
+
+## Log in is a page (added 2026-11-14)
+
+There is no slide-over Log in panel. Every "Log in" link goes to `/login?callbackUrl=<current path>`. `/login` and
+`/register` share the full-screen photo `public/auth/login-bg.jpg` under the glass card. Other auth pages keep the
+plain background.
+
 ## Design system (added 2026-10-29, `DESIGN.md`)
 
 **Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
@@ -749,7 +773,7 @@ The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
 grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
 its `::before` in globals.css; a smoky espresso tint with cream icons on Ink, milky cream with espresso icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
-current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
+current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. **Since 2026-11-14 its body is the app's liquid glass** (the owner asked for the dock to be liquid glass: `.ig-dock::after` carries the glass and the engine bends it; the shape, rim, capsule and icons are unchanged). Scrolling
 down shrinks the whole pill in both directions (a scale anchored at its bottom). The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted cream pill with espresso icons on Paper and a smoky espresso glass pill with cream icons on Ink; never hard-code dock colors.

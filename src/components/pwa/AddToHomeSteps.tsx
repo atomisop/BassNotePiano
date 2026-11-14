@@ -50,7 +50,7 @@ export function AddToHomeSteps({ onInstalled }: { onInstalled?: () => void }) {
   const steps = HOME_SCREEN_STEPS[platform];
   return (
     <div>
-      <div role="tablist" aria-label="Your phone" className="inline-flex rounded-full bg-neu-base p-1 shadow-pressed-low">
+      <div role="tablist" aria-label="Your phone" className="lgx-row inline-flex rounded-full p-1">
         {(["ios", "android"] as const).map((p) => (
           <button
             key={p}
@@ -58,7 +58,7 @@ export function AddToHomeSteps({ onInstalled }: { onInstalled?: () => void }) {
             role="tab"
             aria-selected={platform === p}
             onClick={() => setPlatform(p)}
-            className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${platform === p ? "bg-white/[0.14] text-slate-50" : "text-slate-400 hover:text-slate-200"}`}
+            className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${platform === p ? "lgx-btn text-slate-50" : "text-slate-400 hover:text-slate-200"}`}
           >
             {p === "ios" ? "iPhone / iPad" : "Android"}
           </button>
@@ -66,7 +66,7 @@ export function AddToHomeSteps({ onInstalled }: { onInstalled?: () => void }) {
       </div>
 
       {platform === "android" && canInstall && (
-        <button type="button" onClick={install} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 text-black" })}>
+        <button type="button" onClick={install} className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4" })}>
           <Download className="mr-2 h-4 w-4" aria-hidden /> Install now
         </button>
       )}

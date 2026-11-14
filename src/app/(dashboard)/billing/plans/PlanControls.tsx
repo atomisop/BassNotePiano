@@ -70,7 +70,7 @@ export function PlanControls({
     <section aria-label="Change your plan">
       <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Change your plan</h2>
       {/* Quiet rows under the tiles: each opens in place. Cancel is the rare, final one, so it is last and the quietest. */}
-      <div className="mt-3 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
+      <div className="mt-3 divide-y divide-slate-50/8 lgx-card rounded-card">
       {canPause && (
         <div>
           {pauseBlocked && !paused ? (

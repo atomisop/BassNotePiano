@@ -1,17 +1,29 @@
 # Glass design system (migration target)
 
-Extends `DESIGN.md`; where they disagree on glass, `DESIGN.md` wins until the owner approves a change. Reuses the existing engine
+Extends `DESIGN.md`. Rule 1 below is the owner's decision of 2026-11-14 and wins over any older glass wording. Reuses the existing engine
 (`GlassLens`, `GlassButtons`, `liquidGlassMaps`, the `glass-*` utilities in `globals.css`). No new glass library.
 
-## Rule 1: glass is for things that float
+## Rule 1: everything you can see or tap is liquid glass (owner decision, 2026-11-14)
+
+The whole app uses ONE glass material: the "Liquid Glass Login" component by aakashmehra on 21st.dev
+(source kept in `reference/liquid-glass-login.tsx`). Its exact values live in the shared glass utilities in
+`globals.css` and in `GlassLens` / `GlassButtons` / `liquidGlassMaps`. Never style a card or button by hand.
 
 | Layer | Examples | Surface |
 |---|---|---|
-| Floating chrome | top bar, sidebar rail, dock, command menu, popovers, sheets, toasts, tooltips | glass (lens where the browser can, blur and rim elsewhere) |
-| Content | cards, rows, forms, tables, the lesson keyboard, the admin lists | solid, using theme tokens |
-| Solid fills | orange primary buttons, red destructive buttons, white buttons | never lensed (`SOLID_FILL` in `GlassButtons.tsx`) |
+| Cards | every card, tile, panel, empty state, skeleton | `glass-surface` (the 21st.dev card exactly) |
+| Rows inside a card | list rows, table rows, inputs | `glass-surface-subtle` (same recipe, quieter) |
+| Floating | top bar, sidebar, menus, sheets, dialogs, popovers, toasts, tooltips | `glass-surface-elevated`, `glass-surface-modal`, `glass-menu` (same recipe, a little more opaque so text stays readable) |
+| Buttons | every variant of the shared `<Button>` | 21st.dev glass button. Primary is glass tinted with the signal color, destructive is glass tinted red |
+| Kept solid on purpose | the `danger` button (the last can't-undo step), the piano keyboard and fretboard, the stageshow kit | solid |
 
-The owner-approved Instagram-style dock keeps its look unless the owner says otherwise (see `CLAUDE.md`).
+The app's frame is the same glass (owner, 2026-11-14): the dock keeps its Instagram shape, rim and capsule but its body is the
+glass; the sidebar, the phone top bar and the pinned greeting are glass with a little more blur (they float over moving content);
+the Home and Overview heroes are coloured glass (their colour is a see-through layer over the glass).
+
+Glass takes its colors from the theme (`--c-s-*`, `signal`). It never brings in the 21st.dev colors.
+Readability beats looks: if text on glass fails WCAG AA on the worst background behind it, raise that surface's tint just
+enough, never drop the text contrast.
 
 ## Rule 2: every glass surface has a solid twin
 
@@ -20,6 +32,8 @@ The owner-approved Instagram-style dock keeps its look unless the owner says oth
   `GlassLens` / `GlassButtons` do no work.
 - **System preferences** switch the same twin on without a setting: `prefers-reduced-transparency: reduce` (already in `globals.css`) and `forced-colors: active`.
 - A glass surface must pass contrast in BOTH looks. Text on glass is checked against the worst plausible backdrop (orange hero, white paper, black ink), not the average.
+- Safari and Firefox cannot run the refraction filter. They get the same tint, rim, highlight and shadow with a plain blur, so
+  the look matches as closely as the browser allows.
 
 ## Tokens (existing, kept)
 

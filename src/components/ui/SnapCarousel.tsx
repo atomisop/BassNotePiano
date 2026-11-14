@@ -199,7 +199,7 @@ export function SnapCarousel({
   // The neighbours stay clearly visible at the edges (about half strength at the very edge, full by the card), so it is obvious there is more to swipe to.
   const fade = `linear-gradient(to right, rgba(0,0,0,0.5) 0, black ${peek}px, black calc(100% - ${peek}px), rgba(0,0,0,0.5) 100%)`;
   const control =
-    "tap flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-slate-100 shadow-raised-low transition active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "lgx-btn tap flex h-9 w-9 items-center justify-center rounded-full text-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
     <div className={cn("w-full", className)}>
