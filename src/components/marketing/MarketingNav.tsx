@@ -14,6 +14,7 @@ import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { setFullscreenNavOpen } from "@/lib/overlayNav";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { EASE_IOS } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
 import { useSessionHint } from "@/components/marketing/SessionHint";
@@ -444,6 +445,8 @@ export function MarketingNav() {
           flips to the profile button on its own). */}
       <SlideOverPanel open={loginOpen} onClose={() => setLoginOpen(false)} title="Log in">
         <p className="mb-5 text-small text-slate-500">Pick up your roadmap right where you left it.</p>
+        {/* Google comes back to this same page; a brand-new Google account is taken through onboarding first. Nothing shows until the keys are set. */}
+        <GoogleSignInButton callbackUrl={pathname || "/"} />
         <LoginForm embedded callbackUrl={pathname || "/"} onSuccess={() => setLoginOpen(false)} onNavigateAway={() => setLoginOpen(false)} />
       </SlideOverPanel>
     </>
