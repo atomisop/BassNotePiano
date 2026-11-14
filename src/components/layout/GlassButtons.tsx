@@ -34,11 +34,18 @@ export const GLASS_SELECTOR = [
 const CARD_SELECTOR = [".glass-surface", ".glass-surface-elevated", ".glass-surface-modal", ".glass-menu", ".lgx-card", '[class*="shadow-raised-mid"]', '[class*="shadow-raised-high"]'].join(", ");
 const FIELD_SELECTOR = [".glass-surface-subtle", ".glass-pill", ".lgx-row", ".lgx-input", '[class~="bg-neu-base"]', '[class~="bg-neu-lift"]', '[class*="shadow-pressed-"]'].join(", ");
 
-const SKIP = "[data-glass], [data-glass] *, [data-no-lens], [data-glass-lens], [data-glass-solid], .color-tile, .hit-slop";
+// The app's frame (owner, 2026-11-14): the dock bends like a big glass button; the sidebar, the phone top bar and the pinned greeting like cards.
+const FRAME_SELECTOR = ".ig-dock, .top-card, .app-sidebar, .deck-header";
+// Cards that are links or buttons (Home's rows and tiles, the Overview's tiles) bend like cards.
+const LINK_CARD_SELECTOR = ':is(a, button):is([class*="rounded-card"], [class*="rounded-sheet"], .lgx-card)';
+
+const SKIP = "[data-glass], [data-glass] *, [data-no-lens], [data-glass-lens], [data-glass-solid], .color-tile:not(.lgx-tinted), .hit-slop";
 const MAX_FILTERS = 160;
 const MAX_MAP_PIXELS = 900_000;
 
 function kindOf(node: HTMLElement): GlassKind | null {
+  if (node.matches(".ig-dock")) return "button";
+  if (node.matches(FRAME_SELECTOR) || node.matches(LINK_CARD_SELECTOR)) return "card";
   const tag = node.tagName;
   if (tag === "BUTTON" || tag === "A" || node.matches('[data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn')) {
     if (!node.matches(GLASS_SELECTOR)) return null;
@@ -121,10 +128,13 @@ export function GlassButtons() {
       const kind = kindOf(node);
       if (!kind) return;
       const step = kind === "card" || kind === "field" ? 8 : 4;
-      const w = Math.round(node.offsetWidth / step) * step;
-      const h = kind === "card" || kind === "field" ? Math.round(node.offsetHeight / step) * step : Math.round(node.offsetHeight);
+      // The pinned greeting's glass card reaches 12px past each side of the heading and sits 4px inside its top and bottom.
+      const greeting = node.classList.contains("deck-header");
+      const w = Math.round((node.offsetWidth + (greeting ? 24 : 0)) / step) * step;
+      const rawH = node.offsetHeight - (greeting ? 8 : 0);
+      const h = kind === "card" || kind === "field" ? Math.round(rawH / step) * step : Math.round(rawH);
       if (w < 16 || h < 16 || w * h > MAX_MAP_PIXELS) return;
-      const radius = parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0;
+      const radius = greeting ? 24 : parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0;
       const r = Math.min(Math.round(radius), Math.floor(Math.min(w, h) / 2));
       const key = `${kind}-${w}x${h}r${r}`;
       const id = made.get(key);
@@ -157,7 +167,7 @@ export function GlassButtons() {
       { rootMargin: "200px" },
     );
 
-    const ALL = `${GLASS_SELECTOR}, ${CARD_SELECTOR}, ${FIELD_SELECTOR}`;
+    const ALL = `${GLASS_SELECTOR}, ${CARD_SELECTOR}, ${FIELD_SELECTOR}, ${FRAME_SELECTOR}, ${LINK_CARD_SELECTOR}`;
     const seen = new WeakSet<HTMLElement>();
     const scan = () => {
       document.querySelectorAll<HTMLElement>(ALL).forEach((node) => {

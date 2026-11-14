@@ -17,7 +17,9 @@ The whole app uses ONE glass material: the "Liquid Glass Login" component by aak
 | Buttons | every variant of the shared `<Button>` | 21st.dev glass button. Primary is glass tinted with the signal color, destructive is glass tinted red |
 | Kept solid on purpose | the `danger` button (the last can't-undo step), the piano keyboard and fretboard, the stageshow kit | solid |
 
-The dock (`AppDock`, `.ig-dock`) keeps its owner-approved Instagram look. It is already glass; do not restyle it.
+The app's frame is the same glass (owner, 2026-11-14): the dock keeps its Instagram shape, rim and capsule but its body is the
+glass; the sidebar, the phone top bar and the pinned greeting are glass with a little more blur (they float over moving content);
+the Home and Overview heroes are coloured glass (their colour is a see-through layer over the glass).
 
 Glass takes its colors from the theme (`--c-s-*`, `signal`). It never brings in the 21st.dev colors.
 Readability beats looks: if text on glass fails WCAG AA on the worst background behind it, raise that surface's tint just

@@ -94,6 +94,11 @@ Each is a decision the brief left open; the reason is the one written next to it
     looks: the first two animate in ways the glass layer would stop, the rest are on the brief's keep list.
 20. **Coloured callouts that mean something** (amber warnings, red errors, green success, the orange "reschedule" banner) keep their tints.
 
+21. **The frame (owner follow-up, 2026-11-14).** The dock, sidebar, phone top bar and pinned greeting are glass with the source's
+    bend plus a 14px blur and a 45% surface tint under the source's white, because page content scrolls under them; the dock keeps
+    its Instagram shape and capsule. Cards that are links (Home's rows and tiles, the Overview's tiles) get the card glass, not the
+    lighter button glass. The heroes are coloured glass: their colour is a layer at 62% (86% on the light theme, for white text).
+
 ## Couldn't match exactly
 
 - **Safari and Firefox** cannot run the refraction filter; they get the source's frosted look (as the source itself does).

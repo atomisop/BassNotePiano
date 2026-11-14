@@ -535,7 +535,9 @@ Every card and every button uses the one glass material from the 21st.dev "Liqui
 `reference/liquid-glass-login.tsx`; rules in `docs/glass-revamp/DESIGN-SYSTEM.md` Rule 1). New cards use `Card` or a
 `glass-surface*` class; new buttons use the shared `<Button>`. Never hand-style a card or button with its own background,
 border or shadow, and never add a second glass library. Kept solid on purpose: the `danger` button, the piano keyboard
-and fretboard, the stageshow kit. The dock keeps its own look. The Solid surfaces setting, reduced transparency, forced
+and fretboard, the stageshow kit. The app's frame is the same glass (owner, 2026-11-14): the dock (its Instagram shape, rim and
+capsule kept, its body glass), the sidebar, the phone top bar, the pinned greeting, and the Home and Overview heroes (coloured
+glass: the colour is a see-through `lgx-tint-layer` over the glass). The Solid surfaces setting, reduced transparency, forced
 colors and reduced motion must always turn glass into solid surfaces.
 
 ## Log in is a page (added 2026-11-14)
@@ -764,7 +766,7 @@ The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. **It is an exact copy of Instagram's floating tab bar (rebuilt 2026-10-31 from the owner's screenshots, after the GlassLens version drew as a square
 grey bar):** a 58pt pill 22pt from the screen edges, a dark smoky tint over a heavy CSS frost with a glass rim brightest along the top (`.ig-dock` and
 its `::before` in globals.css; a smoky espresso tint with cream icons on Ink, milky cream with espresso icons on Paper), five slots 10pt in from the ends, an 82 by 50pt light capsule behind the
-current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. Scrolling
+current tab that slides, bold 26px coolicons (`coolicons.ts`, copied exactly from coolicons by Kryston Schwarze, CC BY 4.0, through `@iconify-json/ci`; chosen by the owner 2026-10-31, never redrawn by hand; filled on the current tab where the drawing is a closed shape, a bolder line for the map and calendar), and a small red unread dot at the icon's lower right. No GlassLens. **Since 2026-11-14 its body is the app's liquid glass** (the owner asked for the dock to be liquid glass: `.ig-dock::after` carries the glass and the engine bends it; the shape, rim, capsule and icons are unchanged). Scrolling
 down shrinks the whole pill in both directions (a scale anchored at its bottom). The owner's dock has Admin (a shield) in Messages' place. Keep this look unless the owner asks.
 
 down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs. Its colors come from the theme ramp (`--c-s-*`), so it is a frosted cream pill with espresso icons on Paper and a smoky espresso glass pill with cream icons on Ink; never hard-code dock colors.

@@ -26,7 +26,9 @@ export function HomeHero({
 }) {
   const a = artworkColors(artwork);
   return (
-    <section className="color-tile relative overflow-hidden rounded-sheet text-white" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 48%, ${a.to} 100%)` }}>
+    // Coloured liquid glass (2026-11-14): the card is the app's glass, and the roadmap's colours are a see-through layer over it.
+    <section className="color-tile lgx-tinted lgx-card relative overflow-hidden rounded-sheet text-white shadow-raised-mid">
+      <span aria-hidden className="lgx-tint-layer" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 48%, ${a.to} 100%)` }} />
       <RoadmapKeys />
       <div className="relative flex min-h-[17rem] flex-col p-6 md:min-h-[22rem] md:p-8">
         <p className="text-small font-medium text-white/80">{eyebrow}</p>
