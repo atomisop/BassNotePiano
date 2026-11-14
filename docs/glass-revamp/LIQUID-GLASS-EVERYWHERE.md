@@ -99,6 +99,11 @@ Each is a decision the brief left open; the reason is the one written next to it
     its Instagram shape and capsule. Cards that are links (Home's rows and tiles, the Overview's tiles) get the card glass, not the
     lighter button glass. The heroes are coloured glass: their colour is a layer at 62% (86% on the light theme, for white text).
 
+22. **Light theme photo (owner, 2026-11-14).** The white studio photo is the light theme's background on every signed-in page, with no
+    white wash (the owner asked for the cloudy white to go). Fully clear glass (0.10, 0.5px) left words sitting on the black monitor and
+    speakers, so the light glass is a thin white (0.28) with a 12px blur under the bend and brightness 1.18, every word has a tight white
+    glow, and the photo itself is softened by 1.5px. Solid surfaces, reduced transparency and forced colors show the plain gray page.
+
 ## Couldn't match exactly
 
 - **Safari and Firefox** cannot run the refraction filter; they get the source's frosted look (as the source itself does).

@@ -39,7 +39,6 @@ export function HomeHero({
         {progress && (
           <Link
             href="/roadmap"
-            aria-label={`Open your roadmap, ${progress.name}. ${progress.percent}% done.`}
             className="group mt-auto block pt-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
             <span className="flex items-center justify-between gap-3 text-small text-white/75">
@@ -49,6 +48,8 @@ export function HomeHero({
               </span>
               <span className="shrink-0 tabular-nums">{progress.percent}%</span>
             </span>
+            {/* The link's name is the words on screen (WCAG 2.5.3); this tells a screen reader where it goes. */}
+            <span className="sr-only">, open your roadmap</span>
             <span className="mt-2 block h-1 overflow-hidden rounded-full bg-white/20">
               <span className="block h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${progress.percent}%` }} />
             </span>

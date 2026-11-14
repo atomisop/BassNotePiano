@@ -540,6 +540,13 @@ capsule kept, its body glass), the sidebar, the phone top bar, the pinned greeti
 glass: the colour is a see-through `lgx-tint-layer` over the glass). The Solid surfaces setting, reduced transparency, forced
 colors and reduced motion must always turn glass into solid surfaces.
 
+**Light theme background (owner, 2026-11-14):** every signed-in page in the light theme shows the bright studio photo
+(`public/home-studio-light.webp`, the white room with the BASSNOTE sign) on the shell's `::before`, with NO white wash over it
+(the owner asked for the cloudy white to go), only a 1.5px softening of its finest detail. Light glass is a thin white (0.28) with a
+blur under the bend so words stay readable; buttons stay white glass; every word carries a soft white glow
+(`[data-mode="light"] [data-surface="app"]` in globals.css). Menus, dialogs and fields stay nearly opaque. Solid surfaces, reduced
+transparency and forced colors hide the photo and the glow. The dark theme keeps its dark studio photo on Home only.
+
 ## Log in is a page (added 2026-11-14)
 
 There is no slide-over Log in panel. Every "Log in" link goes to `/login?callbackUrl=<current path>`. `/login` and

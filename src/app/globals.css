@@ -3382,7 +3382,8 @@ body:has([data-surface="marketing"]),
   background-color: transparent !important;
   background-image: none !important;
   border-color: transparent;
-  box-shadow: var(--lgx-btn-shadow);
+  /* Any ring the element asks for (a selected state, a focus ring) is kept in front of the glass shadow. */
+  box-shadow: var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--lgx-btn-shadow);
   text-shadow: var(--lgx-label-shadow);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -3721,7 +3722,7 @@ html[data-solid-surfaces="on"] .deck-header::before {
 /* Cards that are links or buttons (Home's rows and tiles, the Overview's tiles): the card look, not the lighter button look. */
 :is(a, button):is([class*="rounded-card"], [class*="rounded-sheet"], .lgx-card):not([data-glass-solid]):not([class*="bg-signal"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-white"]) {
   --lgx-btn-color: var(--lgx-tint-card);
-  box-shadow: var(--lgx-card-shadow);
+  box-shadow: var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--lgx-card-shadow);
   text-shadow: none;
 }
 :is(a, button).lgx-card {
@@ -3747,6 +3748,17 @@ html[data-solid-surfaces="on"] .deck-header::before {
   --lgx-tint-field: color-mix(in srgb, rgb(255 255 255) 6%, rgb(var(--c-surface-solid) / 0.45));
   --lgx-bd-refract: blur(6px) saturate(1.6) brightness(1.02);
   --lgx-bd-loading: blur(12px) saturate(1.5) brightness(1.02);
+}
+
+/* The current item in a row of glass cards (Home's "You're here" scale): warm glass with an orange edge. */
+:is(a, button).lgx-current {
+  --lgx-btn-color: color-mix(in srgb, rgb(var(--signal)) 16%, var(--lgx-tint-card));
+  outline: 2px solid rgb(var(--signal) / 0.55);
+  outline-offset: -2px;
+}
+:is(a, button).lgx-current:focus-visible {
+  outline: 2px solid var(--lgx-focus);
+  outline-offset: 2px;
 }
 
 /* Coloured glass (the Home and Overview heroes): the colour is a see-through layer over the glass, so the page still shows through. */
@@ -4065,14 +4077,15 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   90% { transform: skewX(4deg); }
 }
 
-/* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the app shell itself, behind the sidebar, the top
-   bar and the scroll area, so it stays put while the cards move over it. A dark wash keeps the cream text readable. The sidebar and the pinned
-   greeting are frosted, and the cards are the liquid glass, so the photo shows through all of them. */
+/* Home's studio photo: painted on the app shell itself, behind the sidebar, the top bar and the scroll area, so it stays put while the cards
+   move over it. Dark theme: the dark studio (home-studio.webp) under a dark wash for the cream text, on Home. The light theme shows its own
+   photo on every page (block at the end of this file). The sidebar, the pinned greeting and the cards are the liquid glass. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   background:
     linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.7)),
     url("/home-studio.webp") center / cover no-repeat;
 }
+/* Light theme: see the "Light theme: the studio photo and clear glass" block at the end of this file. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   --home-glass: rgb(20 17 15 / 0.5);
   --home-glass-edge: rgb(255 250 242 / 0.12);
@@ -4101,4 +4114,71 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   background: var(--home-glass);
   -webkit-backdrop-filter: blur(26px) saturate(1.35);
   backdrop-filter: blur(26px) saturate(1.35);
+}
+
+/* ===========================================================================================================================
+   Light theme: the studio photo and clear glass (owner, 2026-11-14: "remove the cloudy white over the background picture; the background is
+   already light. Keep the buttons white and glassy. The cards, all of them, must be light bending glass").
+   - Every signed-in page shows the bright studio photo (home-studio-light.webp) with its own colours: no white wash over it, only a 1.5px
+     softening of its finest detail.
+   - Cards, rows, the sidebar, the phone top bar, the pinned greeting and the dock are light-bending glass with a thin white (0.22) and a
+     12px blur under the bend, so the photo keeps its colour and the words on the glass stay readable. The strips above the top bar and the
+     greeting are clear.
+   - Buttons stay white glass (white 0.6). Menus, sheets, dialogs and text fields stay nearly opaque, because their words sit over page text.
+   - Every word gets a soft white glow, so it still reads over the darker parts of the photo (the amp, the monitor) without a wash.
+   =========================================================================================================================== */
+[data-mode="light"] [data-surface="app"] {
+  background: rgb(var(--ground));
+}
+/* The photo itself, on a layer behind everything in the shell. Its colours are untouched (no white over it); only its finest detail is
+   softened a hair (1.5px), the way a phone softens its wallpaper behind apps, so small words never sit on sharp guitar strings and lettering. */
+[data-mode="light"] [data-surface="app"]::before {
+  content: "";
+  position: fixed;
+  inset: -16px;
+  z-index: -1;
+  pointer-events: none;
+  background: url("/home-studio-light.webp") center / cover no-repeat;
+  filter: blur(1.5px);
+}
+[data-mode="light"] {
+  /* The glass keeps the photo's colour (a thin white, no haze) and blurs what is right under the words, so a black monitor or amp behind a
+     card never sits sharp under its text. The bend still runs along every rim. */
+  --lgx-tint-card: rgb(255 255 255 / 0.28);
+  --lgx-tint-field: rgb(255 255 255 / 0.18);
+  --lgx-tint-frame: rgb(255 255 255 / 0.28);
+  --lgx-bd-refract: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-bd-frame: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-bd-loading: blur(12px) saturate(1.7) brightness(1.18);
+  --lgx-card-shadow: 0 30px 80px rgb(0 0 0 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(255 255 255 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.5);
+  --lgx-simple-face: linear-gradient(180deg, rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.1));
+  --lgx-simple-ring: inset 0 0 0 1px rgb(255 255 255 / 0.6);
+}
+[data-mode="light"] :is(.top-card, .deck-header)::before {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Every word on the light theme (on glass or straight on the photo) carries a soft white glow, so it reads over the darker parts of the
+   picture without a wash over the whole photo. Text on an orange or coloured fill keeps no glow. */
+[data-mode="light"] [data-surface="app"] {
+  text-shadow: 0 0 2px rgb(255 255 255 / 0.95), 0 0 6px rgb(255 255 255 / 0.7);
+}
+[data-mode="light"] [data-surface="app"] :is(.color-tile, [class*="bg-signal"], [class*="bg-red-"], [class*="tier-accent-bg"], input, textarea, select, .glass-menu, .glass-surface-modal, [role="dialog"], [role="menu"]) {
+  text-shadow: none;
+}
+/* Solid surfaces, reduced transparency and forced colors: the light page goes back to its plain gray (the glass is solid there anyway). */
+html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"] {
+  text-shadow: none;
+}
+html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"]::before {
+  display: none;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  [data-mode="light"] [data-surface="app"]::before {
+    display: none;
+  }
+  [data-mode="light"] [data-surface="app"] {
+    text-shadow: none;
+  }
 }
