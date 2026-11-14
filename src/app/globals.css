@@ -3255,7 +3255,8 @@ html[data-kb-motion="off"] .tab-in { animation: none !important; }
 :root {
   --lgx-tint-card: rgb(255 255 255 / 0.1);
   --lgx-tint-field: rgb(255 255 255 / 0.06);
-  --lgx-tint-floating: color-mix(in srgb, rgb(255 255 255) 10%, rgb(var(--c-surface-solid) / 0.84));
+  /* Floating panels open over page text, so they are nearly opaque (readability beats looks, Rule 1); the 10% white is the source tint. */
+  --lgx-tint-floating: color-mix(in srgb, rgb(255 255 255) 10%, rgb(var(--c-surface-solid) / 0.95));
   --lgx-card-shadow: 0 30px 80px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 -1px 0 rgb(255 255 255 / 0.15);
   --lgx-field-ring: rgb(255 255 255 / 0.12);
   --lgx-field-ring-hover: rgb(255 255 255 / 0.2);
@@ -3467,6 +3468,12 @@ body:has([data-surface="marketing"]),
   clip-path: inset(0 round var(--lg-r, 0px));
 }
 
+/* Floating panels sit over page text: the bend keeps a real blur, so the words behind a menu, sheet or banner are haze, not a ghost. */
+:is(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a))[data-lg-ready],
+:where([role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [role="tooltip"]):is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a))[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) blur(8px) saturate(1.85) brightness(1.02) !important;
+}
+
 /* Safari and Firefox: the source's frosted look (stronger blur, a white gradient face, a bright inset ring). */
 html[data-lg-mode="simple"] :is(:is(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"]):not(input):not(textarea):not(select):not(.color-tile):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-elevated, .glass-surface-modal, .glass-menu):not(input):not(textarea):not(select):not(.color-tile):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a), :is(.glass-surface-subtle, .glass-pill, .lgx-row, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-base"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class~="bg-neu-lift"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-pressed-"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-low"]):not(input):not(textarea):not(select):not(.color-tile):not([data-glass-solid]):not([data-glass-lens]):not(button):not(a):not(:is(.glass-surface, .lgx-card, :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-mid"], :is(div,section,article,aside,li,form,details,summary,header,footer,nav,fieldset,figure,dl,ul,ol,main,label,dialog,table,th,td,span,p)[class*="shadow-raised-high"])):not(:is(.glass-surface-elevated, .glass-surface-modal, .glass-menu))), :is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile), :is(.lgx-input, input[class~="bg-neu-base"], textarea[class~="bg-neu-base"], select[class~="bg-neu-base"], input[class*="glass-surface"], textarea[class*="glass-surface"], select[class*="glass-surface"], input[class*="shadow-pressed-"], textarea[class*="shadow-pressed-"], select[class*="shadow-pressed-"])) {
   --lgx-bd: var(--lgx-bd-simple);
@@ -3501,7 +3508,7 @@ html[data-solid-surfaces="on"] :is([data-glass-role="button"], .liquid, .liquid-
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   clip-path: none;
-  background: rgb(var(--c-s-50) / 0.1) !important;
+  background: color-mix(in srgb, rgb(var(--c-s-50)) 10%, rgb(var(--c-surface-solid))) !important;
 }
 html[data-solid-surfaces="on"] :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile)):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled)::after {
   background: rgb(var(--cta-bg, var(--signal))) !important;
@@ -3525,7 +3532,7 @@ html[data-solid-surfaces="on"] :is(.lgx-input, input[class~="bg-neu-base"], text
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     clip-path: none;
-    background: rgb(var(--c-s-50) / 0.1) !important;
+    background: color-mix(in srgb, rgb(var(--c-s-50)) 10%, rgb(var(--c-surface-solid))) !important;
   }
   :is(:is([data-glass-role="button"], .liquid, .liquid-signal, .neu-btn, .lgx-btn, button[class*="shadow-raised-low"], a[class*="shadow-raised-low"], button[class~="bg-neu-base"], a[class~="bg-neu-base"], button[class~="bg-neu-lift"], a[class~="bg-neu-lift"], button[class*="glass-surface"], a[class*="glass-surface"]):not([class*="bg-signal"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-white"]):not([data-glass-solid]):not(.color-tile)):is(.liquid-signal, [data-glass-tone="primary"]):not(:disabled)::after {
     background: rgb(var(--cta-bg, var(--signal))) !important;
@@ -3817,8 +3824,8 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
 }
 
 /* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the app shell itself, behind the sidebar, the top
-   bar and the scroll area, so it stays put while the cards move over it. A dark wash keeps the cream text readable. The sidebar, the pinned
-   greeting and the cards on top are see-through frosted glass (a faint tint and a blur), so the photo shows through all of them. */
+   bar and the scroll area, so it stays put while the cards move over it. A dark wash keeps the cream text readable. The sidebar and the pinned
+   greeting are frosted, and the cards are the liquid glass, so the photo shows through all of them. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   background:
     linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.7)),
@@ -3828,13 +3835,9 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   --home-glass: rgb(20 17 15 / 0.5);
   --home-glass-edge: rgb(255 250 242 / 0.12);
 }
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll .bg-neu-base,
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll [class*="bg-slate-50/"] {
-  background-color: var(--home-glass);
-  -webkit-backdrop-filter: blur(26px) saturate(1.35);
-  backdrop-filter: blur(26px) saturate(1.35);
-  box-shadow: inset 0 1px 0 var(--home-glass-edge), 0 8px 28px rgb(0 0 0 / 0.28);
-}
+/* The cards on Home are the app's one liquid glass (the "Liquid glass everywhere" block): their glass layer bends this photo. The older
+   Home-only frosted fill that sat on the card elements themselves is gone: a blur on the card made it a backdrop root, so the buttons and
+   rows inside it could not see the photo. */
 [data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar {
   background: rgb(0 0 0 / 0.22);
   -webkit-backdrop-filter: blur(22px) saturate(1.3);

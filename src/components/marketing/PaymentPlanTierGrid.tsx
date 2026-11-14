@@ -205,7 +205,10 @@ export function PaymentPlanTierGrid({
       node: (
           <div
             style={tierVars(look(option.value))}
-            className={`lgx-card relative isolate flex flex-1 flex-col rounded-2xl ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"}`}
+            // The 3 and 6 Month cards carry their plan colour and stay solid (glass over the colour dropped the tag's contrast); the
+            // plain card is glass.
+            data-glass-solid={colored || undefined}
+            className={`${colored ? "border border-ink/10 bg-[rgb(var(--neu-base))]" : "lgx-card"} relative isolate flex flex-1 flex-col rounded-2xl ${narrow ? "gap-4 p-4" : "gap-6 p-7 sm:p-8"}`}
           >
             {/* Both colour sets are painted once and the flip fades between them (opacity only), so nothing repaints while it glides. */}
             {colored &&

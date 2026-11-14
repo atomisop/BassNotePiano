@@ -36,7 +36,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
       variants={listContainer}
       initial="hidden"
       animate="visible"
-      className="divide-y divide-ink/[0.08] overflow-hidden rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] shadow-plane-mid"
+      className="lgx-card divide-y divide-ink/[0.08] overflow-hidden rounded-card"
     >
       {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;

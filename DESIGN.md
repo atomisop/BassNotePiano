@@ -18,7 +18,7 @@ Colour:   three colours, 60 / 30 / 10: Cream Linen, Espresso Bean, Burnt Orange.
           step lighter (#2F2520). Light (Linen): ground #EFE8DC, cards #FAF6EE. An 11-step warm ramp (slate-50 … slate-950).
           One accent, Burnt Orange #E8641E (signal), meaning "your next step" or "tap this": at most 3 per screen.
           States: success (emerald), warning (amber-300), danger (a crimson red, clearly apart from the orange).
-Shape:    soft. 8 small controls and chips · 12 buttons' boxes, fields and rows · 16 cards · 24 sheets.
+Shape:    soft. 8 small controls and chips · 12 buttons' boxes, fields and rows · 32 cards (the glass card) · 24 sheets.
           Buttons and filter chips are full pills. No other radius.
 Depth:    every card and button is liquid glass (Rule 1 in docs/glass-revamp/DESIGN-SYSTEM.md, 2026-11-14): a light tint over
           the page, bent at the rim, a bright top edge and a soft drop shadow. Buttons brighten on hover and dip to 0.98 while
