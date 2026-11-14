@@ -62,6 +62,13 @@ export function PrivacyContent() {
           (the sender name, the amount and the note you typed); we read those only to match them to your payment.
         </p>
         <p>
+          If you sign in with Google, Google tells us your email address (and that it is verified), your name, your
+          Google account number and your profile picture. We use the email to find or make your account, the name for a
+          new account, and the picture as your photo if you have not uploaded one (we keep our own copy at a small size
+          and do not link to Google afterwards). We ask for nothing else, never see your Google password, and keep no
+          access to your Google account.
+        </p>
+        <p>
           What Atom (our AI assistant) collects: the chat window itself always opens fresh, whether
           or not you&apos;re signed in. But if you are signed in, what you asked Atom is still saved to
           your account behind the scenes (readable anytime under Settings → Privacy &amp; Data) for

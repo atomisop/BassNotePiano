@@ -107,4 +107,34 @@ describe("sign in with Google", () => {
     expect((await resolveGoogleUser(g(existing))).ok).toBe(true);
     await resetSetting("signup.open");
   });
+
+  it("copies Google's picture into the new account, and never replaces a photo the account already has", async () => {
+    const png = Buffer.from("89504e470d0a1a0a", "hex");
+    const fetchMock = vi.fn(async (_url: string) => new Response(png, { status: 200, headers: { "content-type": "image/png" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const email = mail();
+      const profile = { ...g(email), picture: "https://lh3.googleusercontent.com/a/ABC=s96-c" };
+      await resolveGoogleUser(profile);
+      const row = await prisma.user.findFirstOrThrow({ where: { email } });
+      expect(row.image).toBe(`data:image/png;base64,${png.toString("base64")}`);
+      expect(String(fetchMock.mock.calls[0][0])).toBe("https://lh3.googleusercontent.com/a/ABC=s128-c");
+
+      // An account with its own uploaded photo keeps it.
+      const ownEmail = mail();
+      const own = await makeUser(tag, "Photo", { email: ownEmail, emailVerified: new Date() });
+      ids.push(own.id);
+      await prisma.user.update({ where: { id: own.id }, data: { image: "data:image/png;base64,AAAA" } });
+      await resolveGoogleUser({ ...g(ownEmail), picture: "https://lh3.googleusercontent.com/a/XYZ=s96-c" });
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: own.id } })).image).toBe("data:image/png;base64,AAAA");
+
+      // A picture from anywhere else is never fetched, and sign-in still works.
+      fetchMock.mockClear();
+      const other = mail();
+      expect(await resolveGoogleUser({ ...g(other), picture: "https://evil.example.com/p.png" })).toMatchObject({ ok: true });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

@@ -54,6 +54,8 @@ export default async function HomePage() {
   // The greeting stays put while the page scrolls under it (every page's heading does), so it sits above both columns.
   const greeting = (
     <div data-deck-header className="deck-header -mt-4 pt-8 md:pt-10 lg:pb-6">
+      {/* Marks this screen so globals.css can paint the studio photo behind the whole scroll area (dark theme only). */}
+      <span hidden data-home-backdrop />
       <TodayGreeting name={data.name} />
     </div>
   );

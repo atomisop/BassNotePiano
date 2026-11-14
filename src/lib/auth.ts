@@ -267,9 +267,9 @@ export const authOptions: NextAuthOptions = {
     // token from, so the rest of the app sees a session exactly like one made by the email-code path. Credentials sign-ins pass straight through.
     async signIn({ user, account, profile }) {
       if (account?.provider !== "google") return true;
-      const g = profile as { sub?: string; email?: string; email_verified?: boolean; name?: string } | undefined;
+      const g = profile as { sub?: string; email?: string; email_verified?: boolean; name?: string; picture?: string } | undefined;
       if (!g?.sub || !g.email) return "/login?error=google_failed";
-      const outcome = await resolveGoogleUser({ sub: g.sub, email: g.email, emailVerified: g.email_verified === true, name: g.name ?? null });
+      const outcome = await resolveGoogleUser({ sub: g.sub, email: g.email, emailVerified: g.email_verified === true, name: g.name ?? null, picture: g.picture ?? null });
       if (!outcome.ok) return `/login?error=google_${outcome.reason}`;
       const sid = randomUUID();
       Object.assign(user, {
