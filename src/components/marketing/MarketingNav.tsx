@@ -12,9 +12,6 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { setFullscreenNavOpen } from "@/lib/overlayNav";
-import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { EASE_IOS } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
 import { useSessionHint } from "@/components/marketing/SessionHint";
@@ -84,16 +81,6 @@ export function MarketingNav() {
     ? "text-slate-200 hover:text-slate-50"
     : "bg-amber-400 text-black shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low";
   const [menuOpen, setMenuOpen] = useState(false);
-  // "Log in" opens a panel over the page instead of navigating to /login, so a
-  // visitor sees the form straight away and stays where they were. The links
-  // keep their /login href, so middle-click, open-in-new-tab and no-JS still work.
-  const [loginOpen, setLoginOpen] = useState(false);
-  function openLogin(e: React.MouseEvent) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    e.preventDefault();
-    setMenuOpen(false);
-    setLoginOpen(true);
-  }
   // `image` isn't on the session (see the avatar route's own comment), so
   // this is the client-side equivalent of TopBar's server-side DB fetch:
   // one small authenticated GET, only once actually signed in, cached in
@@ -157,7 +144,9 @@ export function MarketingNav() {
   // Logged in: no separate "Account" pill any more, ProfileMenu's own
   // Settings item goes to the same /account, so it'd be a second link
   // pointing at the same place. Logged out: unchanged, "Log in".
-  const secondary = isLoggedIn ? null : { label: "Log in", href: "/login" };
+  // "Log in" is the real /login page (there is no slide-over panel), and it brings the visitor back to the page they were on.
+  const loginTarget = pathname && pathname !== "/" && pathname !== "/login" ? `/login?${new URLSearchParams({ callbackUrl: pathname })}` : "/login";
+  const secondary = isLoggedIn ? null : { label: "Log in", href: loginTarget };
 
   return (
     <>
@@ -223,7 +212,6 @@ export function MarketingNav() {
             {secondary && !loadingSession && (
               <Link
                 href={secondary.href}
-                onClick={openLogin}
                 className="tap flex h-9 items-center rounded-full px-4 text-small font-medium text-slate-300 transition-colors duration-200 hover:text-slate-50"
               >
                 {secondary.label}
@@ -297,7 +285,6 @@ export function MarketingNav() {
                   {secondary && (
                     <Link
                       href={secondary.href}
-                      onClick={openLogin}
                       className="tap flex h-9 items-center rounded-full px-3 text-small font-medium text-slate-200 transition-colors hover:text-slate-50"
                     >
                       {secondary.label}
@@ -377,7 +364,7 @@ export function MarketingNav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={link.href === "/login" ? openLogin : () => setMenuOpen(false)}
+                    onClick={() => setMenuOpen(false)}
                     aria-current={isActive ? "page" : undefined}
                     className={`display-3 border-b border-slate-50/8 py-6 ${
                       isActive ? "text-slate-50" : ""
@@ -440,15 +427,6 @@ export function MarketingNav() {
         )}
       </AnimatePresence>
 
-      {/* Log in panel: the same slide-over used for Edit profile and
-          notifications. Stays on the current page after login (the header
-          flips to the profile button on its own). */}
-      <SlideOverPanel open={loginOpen} onClose={() => setLoginOpen(false)} title="Log in">
-        <p className="mb-5 text-small text-slate-500">Pick up your roadmap right where you left it.</p>
-        {/* Google comes back to this same page; a brand-new Google account is taken through onboarding first. Nothing shows until the keys are set. */}
-        <GoogleSignInButton callbackUrl={pathname || "/"} />
-        <LoginForm embedded callbackUrl={pathname || "/"} onSuccess={() => setLoginOpen(false)} onNavigateAway={() => setLoginOpen(false)} />
-      </SlideOverPanel>
     </>
   );
 }
