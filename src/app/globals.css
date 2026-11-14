@@ -3653,18 +3653,44 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
   90% { transform: skewX(4deg); }
 }
 
-/* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the scroll area itself, which does not scroll its own
-   background, so the picture stays put while the cards move over it. A dark wash keeps the cream text readable and the cards stay solid on top. */
-[data-mode="dark"] #app-scroll:has([data-home-backdrop]) {
+/* Home's studio photo (dark theme only, the light theme keeps its plain gray): painted on the app shell itself, behind the sidebar, the top
+   bar and the scroll area, so it stays put while the cards move over it. A dark wash keeps the cream text readable. The sidebar, the pinned
+   greeting and the cards on top are see-through frosted glass (a faint tint and a blur), so the photo shows through all of them. */
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
   background:
-    linear-gradient(rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.84)),
+    linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.7)),
     url("/home-studio.webp") center / cover no-repeat;
 }
-/* The pinned greeting normally fills its strip with the solid ground; on Home that would hide the photo behind it, so the fill goes (the soft card
-   that fades in while it is pinned stays). */
-[data-mode="dark"] #app-scroll:has([data-home-backdrop]) .deck-header {
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
+  --home-glass: rgb(20 17 15 / 0.5);
+  --home-glass-edge: rgb(255 250 242 / 0.12);
+}
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll .bg-neu-base,
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) #app-scroll [class*="bg-slate-50/"] {
+  background-color: var(--home-glass);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  backdrop-filter: blur(26px) saturate(1.35);
+  box-shadow: inset 0 1px 0 var(--home-glass-edge), 0 8px 28px rgb(0 0 0 / 0.28);
+}
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar {
+  background: rgb(0 0 0 / 0.22);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  backdrop-filter: blur(22px) saturate(1.3);
+  border-right: 1px solid var(--home-glass-edge);
+}
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar .sb-header {
+  background: transparent;
+}
+/* The pinned greeting normally fills its strip with the solid ground, which would hide the photo; on Home that fill goes (the soft card that
+   fades in while it is pinned stays, as glass). */
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header {
   border-image: none;
 }
-[data-mode="dark"] #app-scroll:has([data-home-backdrop]) .deck-header::before {
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header::before {
   background: transparent;
+}
+[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header::after {
+  background: var(--home-glass);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  backdrop-filter: blur(26px) saturate(1.35);
 }
