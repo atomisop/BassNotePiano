@@ -6,7 +6,7 @@ import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { canonicalEmail } from "@/lib/canonicalEmail";
-import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
+import { childAccountBlock, hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
 import { leaveSessionProof } from "@/lib/sessionProofCookie";
 import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
@@ -62,13 +62,19 @@ export async function updateNameAction(newName: string) {
 // out afterwards so a change you didn't make is noticed.
 // ---------------------------------------------------------------------------
 
+// An account that signs in with Google has no password yet: Forgot password (emailed code) is how it gets one.
+const NO_PASSWORD_MESSAGE = "You sign in with Google, so there is no password to change yet. Use Forgot password on the sign-in screen to add one.";
+
 async function checkPasswordChange(currentPassword: string, newPassword: string) {
   const passwordError = passwordRequirementError(newPassword);
   if (passwordError) {
     return { ok: false as const, error: passwordError };
   }
   const { id } = await requireSession();
+  const childBlocked = await childAccountBlock(id);
+  if (childBlocked) return childBlocked;
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
+  if (user && !user.passwordHash) return { ok: false as const, error: NO_PASSWORD_MESSAGE };
   if (!user?.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
   }
@@ -99,6 +105,8 @@ export async function requestPasswordChangeCodeAction(currentPassword: string, n
 
 async function checkEmailChange(currentPassword: string, newEmailInput: string) {
   const { id } = await requireSession();
+  const childBlocked = await childAccountBlock(id);
+  if (childBlocked) return childBlocked;
   const newEmail = newEmailInput.trim().toLowerCase();
   if (!looksLikeEmail(newEmail)) return { ok: false as const, error: "Enter a valid email address." };
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
@@ -106,6 +114,7 @@ async function checkEmailChange(currentPassword: string, newEmailInput: string) 
   if (isOwnerEmail(user.email)) {
     return { ok: false as const, error: "This is the studio owner address, which is set on the server, so it can't be changed here." };
   }
+  if (!user.passwordHash) return { ok: false as const, error: NO_PASSWORD_MESSAGE };
   if (!user.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
   }
@@ -440,13 +449,16 @@ export async function updateUsernameAction(newUsername: string) {
 const DELETE_ACCOUNT_CODE_PURPOSE = "DELETE_ACCOUNT" as const;
 
 async function verifyCurrentPassword(userId: string, currentPassword: string) {
+  // Only used to confirm deleting the account, which a child account cannot do (its parent manages it).
+  const childBlocked = await childAccountBlock(userId);
+  if (childBlocked) return childBlocked;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } });
   if (!user) return { ok: false as const, error: "Something went wrong. Try signing in again." };
   if (!user.passwordHash) {
     // An account with no password (nothing in this app issues one today,
     // but the column is nullable) has no credential to check against,
     // fail closed rather than silently skipping the check.
-    return { ok: false as const, error: "This account has no password set. Message the studio to have your account removed." };
+    return { ok: false as const, error: "You sign in with Google and have no password. Add one first with Forgot password on the sign-in screen, then delete your account here." };
   }
   if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };

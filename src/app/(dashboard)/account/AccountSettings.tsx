@@ -382,6 +382,9 @@ function DiscordAccountCard({ username }: { username: string | null }) {
 // scattered across tabs: who you are, how we reach you, how you sign in, what is connected, what we keep, and
 // the one irreversible action last.
 function AccountSection({ account, history, twoStep }: { account: AccountOverview; history: AssistantMessage[]; twoStep: AccountSettingsProps["twoStep"] }) {
+  // A child account (linked to a parent) is managed by its parent: its email, password and deletion are the parent's to handle.
+  const isChild = account.leaderboardLinkedChild;
+  const parentManages = <p className="text-small text-slate-400">Your parent manages this. Ask them if something needs to change.</p>;
   return (
     <div className="space-y-8">
       <AccountGroup id="profile" title="Profile">
@@ -403,14 +406,21 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 
       <AccountGroup id="contact" title="Contact">
         <SectionCard title="Email address">
-          <EmailChange currentEmail={account.email} verified={account.emailVerified} renderBadge={(ok) => <Badge ok={ok}>{ok ? "Verified" : "Not verified"}</Badge>} />
+          {isChild ? (
+            <>
+              <p className="break-words text-body text-slate-100">{account.email}</p>
+              <div className="mt-2">{parentManages}</div>
+            </>
+          ) : (
+            <EmailChange currentEmail={account.email} verified={account.emailVerified} renderBadge={(ok) => <Badge ok={ok}>{ok ? "Verified" : "Not verified"}</Badge>} />
+          )}
         </SectionCard>
         <PhoneCard state={account.phone} />
       </AccountGroup>
 
       {/* Sign-in only: the password, two-step (admins), and where you are signed in, which holds "sign out other devices" last. */}
       <AccountGroup id="security" title="Sign-in & security">
-        <PasswordSection />
+        {isChild ? <SectionCard title="Password">{parentManages}</SectionCard> : <PasswordSection />}
         {twoStep && <AdminTwoStepCard enabled={twoStep.enabled} backupLeft={twoStep.backupLeft} />}
         <SignedInDevicesCard />
       </AccountGroup>
@@ -447,7 +457,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
       </AccountGroup>
 
       <AccountGroup id="danger" title="Delete account" danger>
-        <DangerZoneSection />
+        {isChild ? <SectionCard title="Delete account">{parentManages}</SectionCard> : <DangerZoneSection />}
       </AccountGroup>
     </div>
   );

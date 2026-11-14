@@ -4,7 +4,7 @@ import { canonicalEmail } from "@/lib/canonicalEmail";
 import { OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
 import { cancelPaymentPlanBySelf, createParentPlans, PaymentPlanError } from "@/lib/paymentPlans";
 import { approveZellePayment, submitZellePaymentReference } from "@/lib/payments";
-import { endParentLink, respondToParentLink, sendParentLink } from "@/lib/parentLinks";
+import { assertParentOf, endParentLink, respondToParentLink, sendParentLink } from "@/lib/parentLinks";
 import { cancelParentLinkByEmail } from "@/lib/parentLinks";
 import { resetRateLimitBackend } from "@/lib/rateLimit";
 import { newTag, prisma } from "./helpers";
@@ -67,11 +67,20 @@ describe("abusing the link request", () => {
     expect(sent).toBeLessThanOrEqual(3);
   });
 
-  it("a child who ends a link is not asked again straight away", async () => {
+  it("a child who turns a waiting request down is not asked again straight away", async () => {
     resetRateLimitBackend();
-    const { parent, child } = await linked("end");
+    const parent = await account("endp", "Parent Tester");
+    const child = await account("endc", "Kiddo Tester");
+    await sendParentLink(parent.id, child.email);
     await endParentLink(child.id, parent.id);
     expect(await sendParentLink(parent.id, child.email)).toBe("DECLINED");
+  });
+
+  it("a child cannot end a link that is already accepted", async () => {
+    resetRateLimitBackend();
+    const { parent, child } = await linked("noend");
+    await expect(endParentLink(child.id, parent.id)).rejects.toThrow(/Only your parent/);
+    await expect(assertParentOf(parent.id, child.id)).resolves.toBeUndefined();
   });
 });
 

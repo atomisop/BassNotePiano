@@ -17,7 +17,7 @@ export const metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-start justify-center px-6 py-20">
+    <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-start justify-center px-6 py-20">
       <p className="eyebrow">404</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-2 leading-tight text-slate-50">
         That page isn&apos;t here.

@@ -126,6 +126,7 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   PARENT_LINK_REQUEST: { key: "account", label: "Account" },
   PARENT_LINK_ACCEPTED: { key: "account", label: "Account" },
   PARENT_CLASS_ASK: { key: "bookings", label: "Bookings" },
+  FRIEND_PARENT_REVIEW: { key: "friends", label: "Friends" },
   GROUP_INVITE: { key: "billing", label: "Group plan" },
   LESSON_BOOKING_CONFIRMED: { key: "bookings", label: "Bookings" },
   ATTENDANCE_RECORDED: { key: "bookings", label: "Bookings" },

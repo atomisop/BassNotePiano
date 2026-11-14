@@ -1,5 +1,6 @@
 "use server";
 
+import { FriendReviewError, removeChildFriend, respondToFriendReview } from "@/lib/friendParentReview";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -37,7 +38,7 @@ async function requireUser() {
 
 type Fail = { ok: false; error: string };
 const messageOf = (err: unknown, fallback = "Something went wrong. Try again."): string =>
-  err instanceof ParentLinkError || err instanceof ClassBookingError || err instanceof PaymentPlanError || err instanceof RateLimitError ? err.message : fallback;
+  err instanceof ParentLinkError || err instanceof FriendReviewError || err instanceof ClassBookingError || err instanceof PaymentPlanError || err instanceof RateLimitError ? err.message : fallback;
 
 // ---------------------------------------------------------------------------
 // Linking (settings and the plan form)
@@ -78,9 +79,13 @@ export async function respondToParentLinkAction(linkId: string, accept: boolean)
 }
 
 /** Either side ends the link; `otherId` is the other account. */
-export async function endParentLinkAction(otherId: string): Promise<{ ok: true }> {
+export async function endParentLinkAction(otherId: string): Promise<{ ok: true } | Fail> {
   const user = await requireUser();
-  await endParentLink(user.id, otherId);
+  try {
+    await endParentLink(user.id, otherId);
+  } catch (err) {
+    return { ok: false, error: messageOf(err) };
+  }
   revalidatePath("/", "layout");
   return { ok: true };
 }
@@ -240,6 +245,33 @@ export async function parentEndChildPlanAction(childId: string): Promise<{ ok: t
   try {
     const { parent, parentName } = await actingFor(childId);
     await cancelPaymentPlanBySelf(childId, "OTHER", `Ended by ${parentName}, who pays for the plan`, { byParentId: parent.id });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: messageOf(err) };
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// A child's friends belong to their parent: a friendship with a child waits for the parent (friendParentReview.ts).
+// ---------------------------------------------------------------------------
+
+export async function parentRespondToFriendAction(childId: string, requestId: string, approve: boolean): Promise<{ ok: true } | Fail> {
+  try {
+    const { parent } = await actingFor(childId);
+    await respondToFriendReview(parent.id, childId, requestId, approve);
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: messageOf(err) };
+  }
+}
+
+export async function parentRemoveFriendAction(childId: string, requestId: string): Promise<{ ok: true } | Fail> {
+  try {
+    const { parent } = await actingFor(childId);
+    await removeChildFriend(parent.id, childId, requestId);
     revalidatePath("/", "layout");
     return { ok: true };
   } catch (err) {

@@ -516,6 +516,7 @@ enum NotificationType {
   FRIEND_NUDGE // to a student, when a friend taps "Nudge to practice" on their profile (fixed wording, banner plus bell)
   BOOKING_REQUEST_RECEIVED // to the student, when the request they sent is waiting for the teacher to confirm
   BOOKING_REQUEST_DECLINED // to the student, when a requested time was not given to them
+  FRIEND_PARENT_REVIEW // to a parent, when a friendship with their child waits for their approval (opens that child's page)
   PARENT_CLASS_ASK // to a parent, when their linked child asks them to move or skip one class (opens that class's move picker)
   GROUP_INVITE // to an account invited to a group plan, answered with Accept or Decline right in the bell
 }
@@ -619,6 +620,7 @@ enum FriendRequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+  PARENT_REVIEW // both said yes, but a child is on one side: it becomes a friendship only when that child's parent approves
 }
 
 // A friendship isn't a separate model, "are these two users friends" is
@@ -626,18 +628,35 @@ enum FriendRequestStatus {
 // Keeps the historical request itself (who asked whom, when) as the single
 // record rather than duplicating it into a second table on acceptance.
 model FriendRequest {
-  id          String              @id @default(cuid())
-  senderId    String
-  sender      User                @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String
-  receiver    User                @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  status      FriendRequestStatus @default(PENDING)
-  createdAt   DateTime            @default(now())
-  respondedAt DateTime?
+  id              String                 @id @default(cuid())
+  senderId        String
+  sender          User                   @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId      String
+  receiver        User                   @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status          FriendRequestStatus    @default(PENDING)
+  createdAt       DateTime               @default(now())
+  respondedAt     DateTime?
+  parentApprovals FriendParentApproval[]
 
   @@unique([senderId, receiverId])
   @@index([receiverId, status])
   @@index([senderId, status])
+}
+
+// One row per child on a friendship that waits for a parent (status PARENT_REVIEW). Approved by one linked parent of that child; the friendship
+// starts once every row is approved, and any parent declining ends the request.
+model FriendParentApproval {
+  id         String        @id @default(cuid())
+  requestId  String
+  request    FriendRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  childId    String
+  child      User          @relation("FriendApprovalChild", fields: [childId], references: [id], onDelete: Cascade)
+  parentId   String?
+  approvedAt DateTime?
+  createdAt  DateTime      @default(now())
+
+  @@unique([requestId, childId])
+  @@index([childId, approvedAt])
 }
 
 // One-directional, A blocking B doesn't block B from A's perspective in
@@ -851,11 +870,12 @@ model User {
   // at sign-in, so a mismatch here is what actually invalidates it, the
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
-  sessionVersion    Int                @default(1)
+  sessionVersion    Int                    @default(1)
   // Ids of single sessions the person signed out from the devices list (newest 200). A session whose id is here is refused, whatever the device label.
-  revokedSessionIds String[]           @default([])
+  revokedSessionIds String[]               @default([])
+  friendApprovals   FriendParentApproval[] @relation("FriendApprovalChild")
   // Bumped by "make a new calendar link" in Settings; the personal calendar feed link is signed with it, so the old link stops working.
-  calendarVersion   Int                @default(0)
+  calendarVersion   Int                    @default(0)
   // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
   totpSecretEnc     String?
   totpEnabledAt     DateTime?
@@ -865,9 +885,9 @@ model User {
   pushSubscriptions PushSubscription[]
   slotWaitlist      SlotWaitlist[]
   // Referral program: the code this person shares, and the referral rows they made / came in through.
-  referralCode      String?            @unique
-  referralsMade     Referral[]         @relation("ReferrerRel")
-  referralReceived  Referral?          @relation("ReferredRel")
+  referralCode      String?                @unique
+  referralsMade     Referral[]             @relation("ReferrerRel")
+  referralReceived  Referral?              @relation("ReferredRel")
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
@@ -1002,13 +1022,13 @@ model User {
   lessonProgress  LessonProgress[]
   scaleNotes      ScaleNote[]
 
-  verificationCodes  VerificationCode[]
-  loginEvents        LoginEvent[]
-  badges             UserBadge[]
-  fingerPracticeDays FingerPracticeDay[]
+  verificationCodes     VerificationCode[]
+  loginEvents           LoginEvent[]
+  badges                UserBadge[]
+  fingerPracticeDays    FingerPracticeDay[]
   pianoPracticeAttempts PianoPracticeAttempt[]
-  mailMessages       MailMessage[]       @relation("MailRecipient")
-  emailLogs          EmailLog[]
+  mailMessages          MailMessage[]          @relation("MailRecipient")
+  emailLogs             EmailLog[]
 
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")

@@ -58,7 +58,7 @@ export function AdminAlertsButton({ cards }: { cards: SidebarCard[] }) {
         role="dialog"
         aria-label="Alerts"
         hidden={!open}
-        className="absolute right-0 top-full z-50 mt-2 max-h-[min(70vh,34rem)] w-80 overflow-y-auto rounded-card bg-neu-base p-2.5 shadow-raised-high ring-1 ring-slate-50/8"
+        className="absolute right-0 top-full z-50 mt-2 max-h-[min(70dvh,34rem)] w-80 overflow-y-auto rounded-card bg-neu-base p-2.5 shadow-raised-high ring-1 ring-slate-50/8"
       >
         <p className="px-1 pb-2 text-small font-semibold text-slate-200">Alerts</p>
         <SidebarSpotlight initial={cards} isAdmin mode="list" onAttention={onAttention} />

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { WordsPullUp } from "@/components/ui/words-pull-up";
+import { GlitchText } from "@/components/ui/glitch-text";
 import Link from "next/link";
 import { PillCTA } from "@/components/ui/pill-cta";
 import { ChevronRight } from "@/components/ui/appIcons";
@@ -100,7 +101,8 @@ export function Hero() {
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-16 text-center md:pb-24">
           <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-display text-cream">
-            <WordsPullUp text="Bass Note Piano" className="justify-center" />
+            <WordsPullUp text="BNP" className="justify-center" />{" "}
+            <GlitchText>STUDIO</GlitchText>
           </h1>
           {/* What this is, in the first line people read under the name; the details after it are quieter and smaller. */}
           <motion.p

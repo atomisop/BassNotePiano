@@ -19,7 +19,7 @@ const SCENES = [
 
 export function SeeItWork() {
   return (
-    <section aria-labelledby="see-it-work" className="relative mx-auto max-w-5xl px-6 pb-28">
+    <section aria-labelledby="see-it-work" className="relative mx-auto max-w-5xl px-6 py-20 md:py-28">
       <h2 id="see-it-work" className="text-center font-serif text-headline text-slate-50">
         See it work
       </h2>

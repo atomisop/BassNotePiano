@@ -12,6 +12,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { getChildView, listParentBills } from "@/lib/parentChildren";
 import { submitPlanInstallmentPaymentAction } from "../../billing/plans/actions";
 import { isParentOf } from "@/lib/parentLinks";
+import { ChildFriends } from "@/components/parent/ChildFriends";
+import { listChildFriends, listReviewsForChild } from "@/lib/friendParentReview";
 
 export const metadata = { title: "Parent mode" };
 
@@ -25,7 +27,7 @@ export default async function ParentChildPage({ params, searchParams }: { params
   // Anyone who is not this child's linked parent sees nothing, not even that the account exists.
   if (!(await isParentOf(session.user.id, childId))) notFound();
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
-  const [view, allBills] = await Promise.all([getChildView(session.user.id, childId), listParentBills(session.user.id, zelleHandle)]);
+  const [view, allBills, friendReviews, childFriends] = await Promise.all([getChildView(session.user.id, childId), listParentBills(session.user.id, zelleHandle), listReviewsForChild(session.user.id, childId), listChildFriends(session.user.id, childId)]);
   // Everything for this child in one place: what is due for them shows here, so the parent never has to go to Billing.
   const bills = allBills.filter((b) => b.childIds.includes(childId));
   // Just names, for the "Switch child" picker (the page it opens checks access itself).
@@ -57,7 +59,8 @@ export default async function ParentChildPage({ params, searchParams }: { params
         }
         // Right under the band: what is due for this child, each with its one Pay button.
         afterHero={
-          bills.length > 0 ? (
+          <>
+          {bills.length > 0 ? (
             <section key="bills" className="space-y-3" aria-label="To pay">
               <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">To pay</h2>
               {bills.map((bill) => (
@@ -81,7 +84,9 @@ export default async function ParentChildPage({ params, searchParams }: { params
                 </div>
               ))}
             </section>
-          ) : null
+          ) : null}
+          <ChildFriends key="friends" childId={childId} childName={view.name} reviews={friendReviews} friends={childFriends} />
+          </>
         }
       />
     </WideLayout>

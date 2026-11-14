@@ -84,7 +84,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
 
   return (
     <div className="overflow-hidden rounded-2xl bg-slate-900">
-      <div ref={containerRef} className="flex max-h-[70vh] justify-center overflow-auto bg-slate-950 p-4">
+      <div ref={containerRef} className="flex max-h-[70dvh] justify-center overflow-auto bg-slate-950 p-4">
         <Document
           file={src}
           onLoadSuccess={handleLoadSuccess}

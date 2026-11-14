@@ -6,6 +6,8 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import { resolveGoogleUser } from "@/lib/googleSignIn";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { verifyCode } from "@/lib/verification";
@@ -176,6 +178,11 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   providers: [
+    // Sign in with Google: only offered when the owner has set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (see docs/GOOGLE-SIGNIN.md). Every rule about who
+    // may come in this way lives in googleSignIn.ts and the `signIn` callback below; admins and child accounts are always refused.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [GoogleProvider({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, authorization: { params: { prompt: "select_account" } } })]
+      : []),
     // Deliberately password-less: this only ever checks a LOGIN_2FA code,
     // never a password directly. Password verification happens entirely in
     // the loginStepOneAction Server Action (src/app/(auth)/login/actions.ts),
@@ -183,7 +190,8 @@ export const authOptions: NextAuthOptions = {
     // emailed) and hands it straight back to the client, which immediately
     // calls signIn with it. Splitting it this way means this is the *only*
     // path that ever establishes a session, so this can't be bypassed by
-    // calling signIn() directly with just a password. The code itself is
+    // calling signIn() directly with just a password. (Sign in with Google is a second way in, for everyone except admins and child
+    // accounts: see the signIn callback below.) The code itself is
     // invisible to the user (see loginStepOneAction), this indirection
     // exists purely to keep a single credential-checking entry point, not to
     // actually require a second factor at login anymore.
@@ -255,6 +263,33 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // Google only: turns what Google says into one of OUR accounts (or a refusal), and puts our own user on the object NextAuth builds the
+    // token from, so the rest of the app sees a session exactly like one made by the email-code path. Credentials sign-ins pass straight through.
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== "google") return true;
+      const g = profile as { sub?: string; email?: string; email_verified?: boolean; name?: string } | undefined;
+      if (!g?.sub || !g.email) return "/login?error=google_failed";
+      const outcome = await resolveGoogleUser({ sub: g.sub, email: g.email, emailVerified: g.email_verified === true, name: g.name ?? null });
+      if (!outcome.ok) return `/login?error=google_${outcome.reason}`;
+      const sid = randomUUID();
+      Object.assign(user, {
+        id: outcome.user.id,
+        email: outcome.user.email,
+        name: outcome.user.name,
+        role: outcome.user.role,
+        hasCurriculumAccess: outcome.user.hasCurriculumAccess,
+        onboarded: outcome.user.onboarded,
+        sid,
+      });
+      // The same new-device record and email as a password sign-in. The browser is read from the request the callback arrives on.
+      try {
+        const h = await headers();
+        await recordSignInDevice({ id: outcome.user.id, email: outcome.user.email, name: outcome.user.name }, h.get("user-agent"), placeFromHeaders(h), sid);
+      } catch (err) {
+        console.error("Google sign-in device record failed (non-blocking):", err);
+      }
+      return true;
+    },
     // Runs on sign-in and on every subsequent session touch (useSession()
     // polling, getServerSession(), or an explicit client update() call after
     // a payment gets verified / a quiz gets passed). Edge middleware only
