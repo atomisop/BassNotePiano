@@ -26,6 +26,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { FULL_NAME_MESSAGE, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, pausePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
+import { forgetInstrumentInterest } from "@/lib/instrumentInterest";
 
 
 /** Every action here operates on the signed-in user only, never on an email passed by the client. */
@@ -524,6 +525,8 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // since there's no other admin here to reassign that content to.
     await removeDiscordPresence(id);
     await prisma.user.delete({ where: { id } });
+    // The "tell me when drums or vocal open" entry made at sign-up is this person's data too (name, email, phone) and does not cascade.
+    if (target?.email) await forgetInstrumentInterest(target.email).catch((err) => console.error("Waitlist entry cleanup failed (non-blocking):", err));
 
     if (upcomingClasses > 0) {
       await notifyAdmins("ACCOUNT_DELETED", {

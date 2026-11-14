@@ -3,19 +3,19 @@ import { reportError } from "@/lib/reportError";
 import { attachReferral } from "@/lib/referrals";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
-import { startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
+import { newSignupClaim, pendingSignupPayload } from "@/lib/pendingSignup";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
 import { assessPhone } from "@/lib/phoneValidity";
 import { isPhoneConflict, isPhoneTaken, PHONE_TAKEN, phoneVerifyMode } from "@/lib/phoneVerification";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { FULL_NAME_MESSAGE, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
+import { FULL_NAME_MESSAGE, MAX_PERSON_NAME_LENGTH, cleanPersonName, hasFirstAndLastName } from "@/lib/studentName";
 import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,6 +23,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Sign-up costs a bcrypt hash, a row, and an outbound email per call, so it
 // is capped per IP before any of that runs.
 const SIGNUP_LIMIT = { windowMinutes: 60, max: 10, message: "Too many sign-up attempts from this network. Try again in an hour." };
+
+/** Said when this address has already been sent several codes in a row: the newest one is still good, so point at it. */
+const TOO_MANY_CODES_MESSAGE =
+  "We've already sent this address several codes. The newest one still works for a few minutes: check your inbox and the Promotions, Updates and Spam folders, or try again in about 15 minutes.";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
@@ -57,6 +61,7 @@ export async function POST(req: NextRequest) {
   if ((await getBoolSetting("signup.requireFullName")) && !hasFirstAndLastName(name)) {
     return NextResponse.json({ error: FULL_NAME_MESSAGE }, { status: 400 });
   }
+  if (name.length > MAX_PERSON_NAME_LENGTH) return NextResponse.json({ error: "That name is too long." }, { status: 400 });
   if (!name || !EMAIL_PATTERN.test(email)) {
     return NextResponse.json({ error: "Enter a name and a valid email." }, { status: 400 });
   }
@@ -93,6 +98,8 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  // Handed to THIS browser only; the code's payload holds just its hash (see pendingSignup.ts).
+  const signup = newSignupClaim();
 
   try {
     const user = await prisma.user.create({
@@ -106,15 +113,18 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, email: true },
     });
-    // Every new account starts with the free trial (decided 2026-11-09, when class applications were removed). Still one per
-    // person: startTrialForEmail refuses an inbox that ever had one, and does nothing while the owner has trials switched off.
-    // Best-effort, never blocks sign-up.
-    await startTrialForEmail(user.email).catch((err) => reportError(err, "Starting the free trial failed"));
+    // The free trial does NOT start here. It starts when the email is confirmed (verifyEmailAction), so the clock never runs
+    // while someone is still waiting for their code, and an inbox is only spent on an address that really belongs to them.
     // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
     if (body?.ref) await attachReferral(user.id, body.ref);
     // The account exists either way. If the email could not be sent the screen says so and offers "Resend", instead of
     // moving on to "enter your code" as if one were on its way.
-    const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    const sent = await createAndSendCode({
+      email: user.email,
+      userId: user.id,
+      purpose: "EMAIL_VERIFY",
+      payload: pendingSignupPayload({ name, passwordHash, claimHash: signup.claimHash }),
+    });
     // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
     // After the code goes out and never blocking: a failed alert must not leave
     // the account created but the person stuck without a code.
@@ -125,17 +135,33 @@ export async function POST(req: NextRequest) {
       emailCategory: "social",
       cta: { label: "View account", path: `/admin/users/${user.id}` },
     }).catch((err) => reportError(err, "New account alert failed"));
-    return NextResponse.json({ ...user, emailSent: sent.ok }, { status: 201 });
+    return NextResponse.json({ ...user, emailSent: sent.ok, claim: signup.claim }, { status: 201 });
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // An account nobody has confirmed yet is never taken over by a second sign-up: that would let a stranger who knows the address
-      // set the password (the real owner confirming the emailed code would then confirm the stranger's password). The inbox owner gets a
-      // fresh code and signs in with the password already on the account, or uses "Forgot password" (which proves the inbox too).
+      // An account nobody has ever confirmed belongs to no one yet, so the person who really owns the inbox may register again and end
+      // up with the password they chose. But typing someone else's address must never put a stranger's password on an account its
+      // owner then confirms. So NOTHING on the account changes here: the new name and password wait inside the emailed code, and are
+      // applied only when that code is entered by this same browser (the `claim` below, see pendingSignup.ts). If a stranger asks
+      // for the code, the owner can still confirm the account, but the account keeps the password it already had.
       const existing = await prisma.user.findFirst({ where: { email, emailVerified: null }, select: { id: true, email: true } });
       if (existing) {
-        await createAndSendCode({ email: existing.email, userId: existing.id, purpose: "EMAIL_VERIFY" }).catch(() => undefined);
-        return NextResponse.json({ error: "An account with that email is waiting to be confirmed. We sent that inbox a new code. Use the password you chose first, or Forgot password." }, { status: 409 });
+        // The new code is asked for FIRST and nothing else is written: when too many were already sent it throws, and the account is
+        // left exactly as it was. This throw is raised inside this catch block, so the RateLimitError branch below never sees it:
+        // it is answered here or it becomes a bare 500.
+        let resent: { ok: boolean };
+        try {
+          resent = await createAndSendCode({
+            email: existing.email,
+            userId: existing.id,
+            purpose: "EMAIL_VERIFY",
+            payload: pendingSignupPayload({ name, passwordHash, claimHash: signup.claimHash }),
+          });
+        } catch (codeErr) {
+          if (codeErr instanceof RateLimitError) return NextResponse.json({ error: TOO_MANY_CODES_MESSAGE }, { status: 429 });
+          throw codeErr;
+        }
+        return NextResponse.json({ id: existing.id, email: existing.email, emailSent: resent.ok, claim: signup.claim }, { status: 201 });
       }
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }

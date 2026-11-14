@@ -8,7 +8,6 @@ import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Meta } from "@/components/ui/CardKit";
 import { Dialog } from "@/components/ui/Dialog";
-import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { SlotCalendarPicker, type BookedTime } from "@/components/admin/SlotCalendarPicker";
 import { toast } from "@/components/ui/Toaster";
@@ -374,7 +373,6 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           <h2 className={`${groupTitle} text-amber-300`}>
             Needs a call
             <span className={countPill}>{needs.length}</span>
-            <Hint label="About needs a call">These classes already happened and still need Present or No-show. Oldest first. Booked on the wrong day? Reschedule it with the arrows, then mark it.</Hint>
           </h2>
           <div className="divide-y divide-slate-50/6">
             <ViewMore items={needs} initial={4}>{(b) => row(b, false)}</ViewMore>

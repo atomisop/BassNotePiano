@@ -11,7 +11,6 @@ import {
   revokeScholarshipAction,
   updateScholarshipAction,
 } from "@/app/(dashboard)/admin/scholarships/actions";
-import { Hint } from "@/components/ui/Hint";
 import { Meta } from "@/components/ui/CardKit";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { InlineConfirm } from "@/components/admin/InlineConfirm";
@@ -138,7 +137,8 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
   return (
     <div className="space-y-6">
       <form onSubmit={create} className="glass-surface space-y-4 p-4 md:p-6">
-        <h2 className="text-title font-semibold text-slate-50">New scholarship code<Hint className="ml-1.5">For a student who already has an account. The code takes a percent off that account&rsquo;s price on the 6 Month plan only (no other plan length), can be used once, and only works while they are signed in with that email. It stays until you end it.</Hint></h2>
+        <h2 className="text-title font-semibold text-slate-50">New scholarship code</h2>
+        <p className="mt-1 text-small text-slate-400">For a student who already has an account. It takes a percent off the 6 Month plan only, works once, and only while they are signed in with that email.</p>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-small text-slate-300" htmlFor="sch-email">Student email</label>

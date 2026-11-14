@@ -1,6 +1,7 @@
 // The rules behind the plan screen, in plain functions so they are tested without a browser: how many people, what it costs
 // right now (counting every row the person has added, filled in or not), and what is still missing before they can start.
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
+import { groupShares } from "@/lib/groupShares";
 import {
   MAX_FAMILY_MEMBERS,
   MIN_FAMILY_MEMBERS,
@@ -9,10 +10,21 @@ import {
   discountedPlanPriceCents,
   discountPercentForTerm,
   PLAN_CADENCE_CREDITS_PER_WEEK,
+  SCHOLARSHIP_TERM,
   type PricingConfig,
 } from "@/lib/classCreditPricing";
 
 export type Audience = "SOLO" | "FAMILY";
+
+/**
+ * Whether "Have a scholarship code?" is offered on the plan screen. A scholarship prices ONE plan length, the 6 Month plan
+ * (`SCHOLARSHIP_TERM`), so the link appears only while that length is the chosen one and is gone for every other length. It is also
+ * gone when the screen cannot claim one, for a plan that is not for one person (a group or parent plan prices every member at the
+ * group rate, see checkoutTotals), and once a scholarship is already claimed.
+ */
+export function showScholarshipClaim(input: { canClaim: boolean; audience: Audience; term: string; scholarshipPercent: number }): boolean {
+  return input.canClaim && input.audience === "SOLO" && input.term === SCHOLARSHIP_TERM && input.scholarshipPercent === 0;
+}
 
 /** The pricing page links here with ?who=family or ?who=solo. Anything else is a solo plan. */
 export function parseAudience(value: string | null | undefined): Audience {
@@ -43,8 +55,10 @@ export interface CheckoutTotals {
   people: number;
   /** How many payments the plan is (1, 3 or 6). */
   payments: number;
-  /** One person's price for one 28-day payment. */
+  /** One person's price for one 28-day payment (the group rate on a group plan, before anyone's own scholarship). */
   perPaymentCents: number;
+  /** What each counted person pays for one 28-day payment, after their own scholarship: the rows in order, then the payer. One entry for a solo plan. */
+  sharesCents: number[];
   /** The first payment: everyone's first 28 days together (just yours for a solo plan). */
   firstPaymentCents: number;
   /** One person's price over the whole term. */
@@ -67,8 +81,13 @@ export function checkoutTotals(input: {
   scholarshipPercent?: number;
   /** Parent mode: the rows are children, the parent counts as a person only when they learn too, and one person pays the solo price. */
   parent?: { includeSelf: boolean };
+  /**
+   * Group and parent plans only: each counted person's OWN scholarship percent, one entry per person (the rows in order, then the
+   * payer or parent). A person without one is 0, and a missing entry is 0. It takes that person's share down on the 6 Month plan only.
+   */
+  memberScholarships?: number[];
 }): CheckoutTotals {
-  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0, scholarshipPercent = 0, parent } = input;
+  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0, scholarshipPercent = 0, parent, memberScholarships = [] } = input;
   const discountPercent = discountPercentForTerm({ percent: personalDiscountPercent, scholarshipPercent }, term);
   const list = calculatePaymentPlanRate(cadence, term, pricing);
   const monthly = calculatePaymentPlanRate(cadence, "MONTHLY", pricing);
@@ -88,13 +107,20 @@ export function checkoutTotals(input: {
         : discountPercent > 0
           ? discountedPlanPriceCents(list.installmentAmountCents, discountPercent)
           : list.installmentAmountCents;
+  // A group's price is the group rate for everyone, less each person's own scholarship (6 Month plan only).
+  const sharesCents =
+    audience === "FAMILY"
+      ? groupShares(perPaymentCents, term, Array.from({ length: people }, (_, i) => memberScholarships[i] ?? 0)).shares
+      : [perPaymentCents];
+  const firstPaymentCents = sharesCents.reduce((sum, s) => sum + s, 0);
   return {
     people,
     payments: list.termMonths,
     perPaymentCents,
-    firstPaymentCents: perPaymentCents * people,
+    sharesCents,
+    firstPaymentCents,
     perPersonTermCents: perPaymentCents * list.termMonths,
-    allPeopleTermCents: perPaymentCents * list.termMonths * people,
+    allPeopleTermCents: sharesCents.reduce((sum, s) => sum + s * list.termMonths, 0),
     listPerPaymentCents: monthly.installmentAmountCents,
     classesPerPayment: list.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence],
   };

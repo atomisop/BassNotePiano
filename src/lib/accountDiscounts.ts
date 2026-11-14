@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { discountedPlanPriceCents, discountPercentForTerm, MAX_PERSONAL_DISCOUNT_PERCENT, type PersonalDiscount } from "@/lib/classCreditPricing";
+import { groupShareCents } from "@/lib/groupShares";
 import { noticePlanUpdated } from "@/lib/studentNotices";
 import { logAudit } from "@/lib/audit";
 
@@ -53,7 +54,7 @@ export async function applyToRunningPlan(
   userId: string,
 ): Promise<PlanPriceChange | null> {
   const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", familyGroupId: null }, orderBy: { createdAt: "desc" } });
-  if (!plan) return null;
+  if (!plan) return applyToRunningGroupPlan(tx, userId);
   const percent = discountPercentForTerm(await getPersonalDiscount(userId, tx), plan.term);
   const list = plan.listAmountCents ?? plan.installmentAmountCents;
   const next = percent > 0 ? discountedPlanPriceCents(list, percent) : list;
@@ -66,6 +67,25 @@ export async function applyToRunningPlan(
     data: { amountCents: next },
   });
   return { planId: plan.id, fromCents: plan.installmentAmountCents, toCents: next, openBillChanged: open.count > 0 };
+}
+
+/**
+ * The same for a person on a RUNNING group or parent plan, whose share is the group price less THEIR own scholarship (groupShares.ts):
+ * claimed or revoked once the group is running, it changes their share from their NEXT bill. Nothing already open is rewritten (a bill
+ * the payer may be about to pay, or one held inside the combined bill, stays as it was). Only the scholarship counts here: a group keeps
+ * the group rate, so the owner's general personal discount does not. A group that has not started is left alone (its first payment
+ * was asked for at the price shown).
+ */
+async function applyToRunningGroupPlan(tx: Pick<typeof prisma, "paymentPlan" | "accountDiscount" | "scholarshipCode">, userId: string): Promise<PlanPriceChange | null> {
+  const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE", familyGroupId: { not: null }, installmentsPaid: { gt: 0 } }, orderBy: { createdAt: "desc" } });
+  if (!plan) return null;
+  const { scholarshipPercent } = await getPersonalDiscount(userId, tx);
+  const base = plan.listAmountCents ?? plan.installmentAmountCents;
+  const next = groupShareCents(base, plan.term, scholarshipPercent);
+  const nextList = next < base ? base : null;
+  if (next === plan.installmentAmountCents && nextList === plan.listAmountCents) return null;
+  await tx.paymentPlan.update({ where: { id: plan.id }, data: { installmentAmountCents: next, listAmountCents: nextList } });
+  return { planId: plan.id, fromCents: plan.installmentAmountCents, toCents: next, openBillChanged: false };
 }
 
 const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });

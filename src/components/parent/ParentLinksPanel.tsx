@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Link2Off, Mail, Send, X } from "@/components/ui/appIcons";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
-import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
@@ -107,8 +106,8 @@ export function ParentLinksPanel() {
       <div>
         <div className="flex items-center gap-1 text-small font-medium text-slate-300">
           Add your child&apos;s account
-          <Hint>Type the email their account uses (or will use: with no account yet they get an invitation to make one). They get a request and have to accept. Then you can see their progress, change their class times and pay for their plan, and you can still learn yourself.</Hint>
         </div>
+        <p className="mt-1 text-small text-slate-400">Type the email their account uses. With no account yet they get an invitation to make one. They get a request and have to accept.</p>
         <div className="mt-2 flex gap-2">
           <input type="email" inputMode="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their account email" aria-label="Child's account email" className={field} />
           <button
@@ -175,7 +174,7 @@ export function ParentLinksPanel() {
 
           {state.requests.length > 0 && (
             <div>
-              <p className="text-small font-medium text-slate-300"><Hint>Asking to link to your account</Hint></p>
+              <p className="text-small font-medium text-slate-300">Asking to link to your account</p>
               <ul className="mt-2 space-y-2">
                 {state.requests.map((r) => (
                   <li key={r.linkId} className="flex items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-3">
@@ -197,7 +196,7 @@ export function ParentLinksPanel() {
 
           {state.parents.length > 0 && (
             <div>
-              <p className="text-small font-medium text-slate-300"><Hint>Parent accounts linked to you</Hint></p>
+              <p className="text-small font-medium text-slate-300">Parent accounts linked to you</p>
               <ul className="mt-2 divide-y divide-slate-50/10">
                 {state.parents.map((p) => (
                   <li key={p.parentId} className="flex items-center justify-between gap-3 py-2.5">

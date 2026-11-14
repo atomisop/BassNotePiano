@@ -19,7 +19,7 @@ import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, requestLoginCodeAction } from "@/app/(auth)/login/actions";
 import { startNavigation } from "@/lib/navigationState";
 import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
-import { Hint } from "@/components/ui/Hint";
+import { saveSignupClaim } from "@/lib/signupDraft";
 
 /**
  * The email-and-password login form, shared by the /login page and the Log in
@@ -153,6 +153,8 @@ export function LoginForm({
     }
 
     if (result.needsEmailVerification) {
+      // The right password was typed here, so this browser keeps it through the confirmation (see pendingSignup.ts).
+      saveSignupClaim(result.claim, email);
       const params = new URLSearchParams({ email, callbackUrl });
       onNavigateAway?.();
       router.push(`/verify-email?${params}`);
@@ -365,7 +367,7 @@ export function LoginForm({
                 setError(null);
               }}
             />
-            <p className="mt-1 text-small text-slate-500"><Hint>Open your authenticator app. Lost your phone? Type one of your backup codes instead.</Hint></p>
+            <p className="mt-1 text-small text-slate-500">Open your authenticator app. Lost your phone? Type one of your backup codes instead.</p>
           </div>
         )}
 

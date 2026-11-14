@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Plus, Wrench, X } from "@/components/ui/appIcons";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { ViewMore } from "@/components/ui/ViewMore";
 import { toast } from "@/components/ui/Toaster";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
@@ -232,9 +231,6 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
               <>
                 <p className="flex items-center gap-1 text-small text-slate-400">
                   Line the plan up with the class you taught
-                  <Hint label="What this does">
-                    Pick the day you already taught. That class is charged (one credit) and counts as class 1 of the 28 days. The billing cycle starts on the date you choose below (the taught day by default), the next bill lands 28 days after it, and the other weekly classes are booked from there. Nothing changes until you press Apply.
-                  </Hint>
                 </p>
                 <label className="block">
                   <span className="mb-1 block text-small font-medium text-slate-200">Class already taught on</span>
@@ -243,7 +239,6 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                 <label className="block">
                   <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                     Billing cycle starts on
-                    <Hint label="About the billing cycle">The next bill lands exactly 28 days after this date. It is the taught day unless you pick an earlier one (within the same 28 days).</Hint>
                   </span>
                   <input type="date" value={cycleStart || taughtOne} min={taughtOne ? new Date(new Date(`${taughtOne}T12:00:00Z`).getTime() - 27 * 86_400_000).toISOString().slice(0, 10) : undefined} max={taughtOne || todayEt()} disabled={!taughtOne} onChange={(e) => setCycleStart(e.target.value)} className={`${field} w-full disabled:opacity-50`} />
                 </label>
@@ -271,9 +266,6 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
               <>
                 <div className="flex items-center gap-1 text-small text-slate-400">
                   Start from the real first day
-                  <Hint label="What the plan builder does">
-                    Pick when the first 28-day cycle began (a past day is fine), the weekly time, how many bills are paid and which classes were already taught. The timeline below is exactly what will happen. Nothing changes until you press Apply.
-                  </Hint>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="block">
@@ -318,7 +310,6 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                 <div>
                   <span className="mb-1 flex items-center gap-1 text-small font-medium text-slate-200">
                     Classes already taught
-                    <Hint label="About taught classes">Each one is marked present, counts as one of the cycle&apos;s 4 classes, and (if ticked below) spends a class credit.</Hint>
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     {taught.map((d) => (

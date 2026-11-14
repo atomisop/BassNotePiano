@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import { Hint } from "@/components/ui/Hint";
 import { ChevronRight } from "@/components/ui/appIcons";
 
 /**
@@ -76,9 +75,9 @@ export function SectionCard({
       {/* In a group the title is one row's name among several, so it is body size; a card by itself keeps the title size. */}
       <h2 className={`flex items-center gap-1 font-semibold text-slate-50 ${inGroup ? "text-body" : "text-title"}`}>
         {title}
-        {hint && <Hint>{hint}</Hint>}
       </h2>
       {value && <p className="mt-0.5 text-small text-slate-400">{value}</p>}
+      {hint && <p className="mt-0.5 text-small text-slate-500">{hint}</p>}
       <div className="mt-4">{children}</div>
     </div>
   );

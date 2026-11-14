@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Hint } from "@/components/ui/Hint";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,7 +31,6 @@ export function FingerPracticeGate({
         </Link>
         <p className="mt-3 flex items-center gap-1 text-small text-slate-500">
           Screen on while you practice
-          <Hint>The timer only counts while this app is open and in view.</Hint>
         </p>
       </Card>
     </div>

@@ -5,25 +5,12 @@ import { assertRateLimit, consumeRateLimit, RateLimitError } from "@/lib/rateLim
 import { answerHref } from "@/lib/bellAnswers";
 import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { sendRegisterInvite } from "@/lib/registerInvite";
+import { USERNAME_UNAVAILABLE_MESSAGE, isReservedUsername, isValidUsername, normalizeUsername } from "@/lib/usernameRules";
 
 export class SocialError extends Error {}
 
-const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
-
-export function normalizeUsername(raw: string): string {
-  return raw.trim().toLowerCase().replace(/^@/, "");
-}
-
-/** Names that would let a student pass for the studio, the teacher or the assistant in friend lists, messages and the leaderboard. */
-const RESERVED_USERNAME_PARTS = ["admin", "owner", "teacher", "support", "staff", "moderator", "official", "bassnote", "bnp", "atom", "system", "root"];
-
-export function isReservedUsername(username: string): boolean {
-  return RESERVED_USERNAME_PARTS.some((part) => username.includes(part));
-}
-
-export function isValidUsername(username: string): boolean {
-  return USERNAME_PATTERN.test(username);
-}
+// The username rules have no database in them, so they live in usernameRules.ts (the setup wizard and its suggestions use them too).
+export { normalizeUsername, isReservedUsername, isValidUsername };
 
 export async function setUsername(userId: string, rawUsername: string) {
   const username = normalizeUsername(rawUsername);
@@ -31,7 +18,7 @@ export async function setUsername(userId: string, rawUsername: string) {
     throw new SocialError("Usernames are 3-20 characters: lowercase letters, numbers, and underscores only.");
   }
 
-  if (isReservedUsername(username)) throw new SocialError("That username isn't available.");
+  if (isReservedUsername(username)) throw new SocialError(USERNAME_UNAVAILABLE_MESSAGE);
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing && existing.id !== userId) {

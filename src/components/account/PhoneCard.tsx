@@ -1,7 +1,6 @@
 "use client";
 
 import { useWebOtp } from "@/lib/useWebOtp";
-import { Hint } from "@/components/ui/Hint";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone } from "@/components/ui/appIcons";
@@ -127,8 +126,8 @@ export function PhoneCard({ state }: { state: PhoneState }) {
     <div ref={ref} data-phone-card className="p-5 md:p-6">
       <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
         Phone number
-        <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
       </h2>
+      <p className="mt-0.5 text-small text-slate-400">{PHONE_HELP} Used to match your payments and reach you. Never shared.</p>
 
       <div className="mt-4 space-y-3">
           {done && <p role="status" className="text-small text-signal-fg">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}

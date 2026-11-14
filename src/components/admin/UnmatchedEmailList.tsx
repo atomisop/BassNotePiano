@@ -10,7 +10,6 @@ import { AdminEmptyState as EmptyState } from "@/components/admin/AdminEmptyStat
 import { Mail, Search } from "@/components/ui/appIcons";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
-import { Hint } from "@/components/ui/Hint";
 import { CardFoot, Meta } from "@/components/ui/CardKit";
 
 export interface UnmatchedEmailRow {
@@ -139,10 +138,8 @@ export function UnmatchedEmailList({
             <p className="mt-4 text-small text-slate-500">No open payment for {usd(row.amountCents)} yet.{findable ? " If they paid before their bill opened, find the student." : ""}</p>
           ) : (
             <div className="mt-4">
-              <p className="flex items-center gap-1.5 text-caption font-medium uppercase tracking-caps text-slate-500">
-                Open payments for {usd(row.amountCents)}
-                <Hint>Attaching also remembers &ldquo;{row.senderName}&rdquo; as a name this student pays under, so their next payment clears by itself.</Hint>
-              </p>
+              <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Open payments for {usd(row.amountCents)}</p>
+              <p className="mt-1 text-small text-slate-400">Attaching also remembers &ldquo;{row.senderName}&rdquo; as a name this student pays under, so their next payment clears by itself.</p>
               {/* Each open payment is a row: the student first, the facts in one quiet line, the action on the right. The best match is the
                   one orange button on the card. */}
               <ul className="mt-2 divide-y divide-slate-50/6 overflow-hidden rounded-control bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">

@@ -19,7 +19,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
 import { ViewMore } from "@/components/ui/ViewMore";
-import { Hint } from "@/components/ui/Hint";
 import { AdminEditPaymentButton } from "@/components/admin/AdminEditPaymentButton";
 import { adminPaymentsHref, type PaymentFilterValue } from "@/lib/adminPaymentLinks";
 import { newIdempotencyKey } from "@/lib/idempotencyClient";
@@ -647,7 +646,6 @@ export function PaymentQueue({
                     <input type="checkbox" checked={refundClasses} onChange={(e) => setRefundClasses(e.target.checked)} className="h-4 w-4 accent-slate-50" />
                     {groupBill ? "Also cancel everyone's upcoming classes on it" : `Also cancel their ${upcomingCount} upcoming class${upcomingCount === 1 ? "" : "es"}`}
                   </label>
-                  <Hint>Canceled first, so the credits those classes held come back too.</Hint>
                 </div>
               )}
               {refundError && <p className="text-small text-red-400">{refundError}</p>}

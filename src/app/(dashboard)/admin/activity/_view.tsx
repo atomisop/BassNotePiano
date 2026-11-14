@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { accountAuditWhere } from "@/lib/accountAudit";
 import { AUDIT_KIND_LABEL, AUDIT_PAGE_SIZE, auditKind, auditLabel } from "@/lib/auditView";
 import { buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 import { ChevronRight } from "@/components/ui/appIcons";
 
 
@@ -25,7 +24,8 @@ export async function ActivityView(props: { searchParams: Promise<{ q?: string; 
   if (!isOwnerEmail(session?.user.email)) {
     return (
       <div>
-        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity<Hint className="ml-1.5">Only the owner can see the activity log.</Hint></h1>
+        <h1 data-page-title="" className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Activity</h1>
+        <p className="mt-3 text-small text-slate-400">Only the owner can see the activity log.</p>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export async function ActivityView(props: { searchParams: Promise<{ q?: string; 
 
   return (
     <div>
-      <h1 className="sr-only">Activity<Hint className="ml-1.5">Everything done in the admin that changes money, access, prices or settings: who did it, what and when.</Hint></h1>
+      <h1 className="sr-only">Activity</h1>
 
       <form method="get" action="/admin/security" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Filter the activity log">
         <input type="hidden" name="section" value="activity" />

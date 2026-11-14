@@ -5,7 +5,6 @@ import { bulkReminderQuestion } from "@/lib/followUpRules";
 import { RemindButton } from "@/components/admin/RemindButton";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { sendAllFollowUpRemindersAction } from "@/app/(dashboard)/admin/followup-actions";
-import { Hint } from "@/components/ui/Hint";
 import { ChevronRight } from "@/components/ui/appIcons";
 
 /** Rows shown per reason before "Show N more" (DESIGN.md, Hierarchy rule 9: show a few, fold the rest). */
@@ -54,7 +53,6 @@ export function FollowUpList({ followUps, className }: { followUps: FollowUp[]; 
                   <Link href={f.href} className="rounded-sm text-small font-semibold uppercase tracking-caps text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     {f.title}
                   </Link>
-                  <Hint>{f.hint}</Hint>
                 </span>
                 <span className="min-w-7 rounded-full bg-slate-50/8 px-2 py-0.5 text-center text-small font-semibold tabular-nums text-slate-100">{f.total}</span>
               </div>

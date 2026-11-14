@@ -18,7 +18,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { JoinClassButton } from "@/components/lessons/JoinClassButton";
 import { announceChange } from "@/lib/liveEvents";
 import { toast } from "@/components/ui/Toaster";
-import { Hint } from "@/components/ui/Hint";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Callout, CardFoot, Meta } from "@/components/ui/CardKit";
 import { NextClassBand } from "@/components/lessons/NextClassBand";
@@ -217,7 +216,7 @@ export function ScheduleClient({
   function skipConfirm(booking: UpcomingBooking, busy: boolean) {
     return (
       <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
-        <p className="text-small text-slate-300"><Hint>Skip this class? It stays on your account.</Hint></p>
+        <p className="text-small text-slate-300">Skip this class? It stays on your account.</p>
         <div className="mt-2 flex gap-2">
           <button
             type="button"
@@ -441,7 +440,7 @@ export function ScheduleClient({
         ) : changingTime ? (
           <div ref={pickerRef} className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-small font-medium text-slate-300"><Hint>Pick a new weekly time</Hint></p>
+              <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
               <button
                 type="button"
                 onClick={() => setChangingTime(false)}

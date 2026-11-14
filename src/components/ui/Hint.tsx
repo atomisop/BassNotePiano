@@ -10,8 +10,11 @@ import { cn } from "@/lib/utils";
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
- * A tiny "i" that opens a small popup with one short line, when someone taps it (or hovers it on a computer). For the few things that really need a word of
- * explanation (a privacy warning, a one-time step), so the screen itself stays free of explainer text. Closes on a tap elsewhere, a scroll, a resize or Escape.
+ * A tiny "i" that opens a small popup with one short line, when someone taps it (or hovers it on a computer). Closes on a tap elsewhere, a scroll, a resize or Escape.
+ *
+ * NEVER for a screen's own message: an empty state, an error, a status, an instruction, a field's help, a page's description or a reason something is
+ * locked are content, and they are written on the screen. A sweep removed every such use (2026-11-12). It is for optional background that nobody
+ * would miss; today that is one thing, Atom's privacy notice. If the words matter, show them; if they do not, delete them.
  *
  * The popup is drawn on the screen itself (a portal with fixed position), not inside the page, and placed by `placeHint`: it opens on the
  * `side` and `align` asked for, then slides or flips so ALL of it stays on the screen, whatever sits around the "i" (a centered line, a card

@@ -18,6 +18,8 @@ import { prisma } from "@/lib/prisma";
 import { cancelFamilyInvite, FamilyInviteError, listInvitesFromPayer, parsePlanTerm, respondToFamilyInvite, sendFamilyInvite, type InviteState } from "@/lib/familyInvites";
 import { checkFamilyMember, type MemberCheck } from "@/lib/familyMemberCheck";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { claimScholarshipForMember, scholarshipPercentForAccepted } from "@/lib/groupScholarship";
+import { ScholarshipError } from "@/lib/scholarships";
 
 export interface EnrollPaymentPlanResult {
   ok: boolean;
@@ -46,6 +48,38 @@ export async function checkFamilyMemberAction(email: string): Promise<MemberChec
     throw error;
   }
   return checkFamilyMember(session.user.id, String(email).slice(0, 254));
+}
+
+/**
+ * A group's (or parent's) payer types a scholarship code on ONE person's row. Accepted only for someone who has already said yes to this
+ * payer, and only when the code was made for that person's own email (groupScholarship.ts). The code is then that person's, as if they had
+ * typed it, and they are told.
+ */
+export async function claimMemberScholarshipAction(email: string, code: string): Promise<{ ok: true; percent: number } | { ok: false; error: string }> {
+  const session = await getServerAuthSession();
+  if (!session?.user?.id) return { ok: false, error: "Sign in first." };
+  try {
+    const { percent } = await claimScholarshipForMember(session.user.id, String(email).slice(0, 254), code);
+    revalidatePath("/", "layout");
+    return { ok: true, percent };
+  } catch (err) {
+    if (err instanceof ScholarshipError || err instanceof RateLimitError) return { ok: false, error: err.message };
+    console.error("Member scholarship claim failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+/** The scholarship percent of someone who accepted this payer, so their share is right on the form. Null for anyone else. Limited. */
+export async function memberScholarshipAction(email: string): Promise<number | null> {
+  const session = await getServerAuthSession();
+  if (!session?.user?.id) return null;
+  try {
+    await consumeRateLimit(prisma, `member-scholarship:${session.user.id}`, { windowMinutes: 60, max: 60, message: "Too many checks." });
+  } catch (error) {
+    if (error instanceof RateLimitError) return null;
+    throw error;
+  }
+  return scholarshipPercentForAccepted(session.user.id, String(email).slice(0, 254));
 }
 
 export type FamilyInviteRow = { email: string; status: InviteState };

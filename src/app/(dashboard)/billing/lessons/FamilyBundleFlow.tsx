@@ -22,7 +22,6 @@ import {
   submitClassCreditsPaymentAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
-import { Hint } from "@/components/ui/Hint";
 
 interface PendingPayment {
   id: string;
@@ -217,7 +216,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400"><Hint>Term, applied to every recipient</Hint></p>
+        <p className="mb-2 text-small font-medium text-slate-400">Term, applied to every recipient</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
@@ -379,7 +378,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         {loading ? "Loading…" : `Continue to payment · ${formatUsd(total.totalCents)}`}
       </button>
       {!allRowsVerified && (
-        <p className="text-center text-small text-slate-500"><Hint>Every recipient needs a verified Bass Note Piano account before you can continue.</Hint></p>
+        <p className="text-center text-small text-slate-500">Every recipient needs a verified Bass Note Piano account before you can continue.</p>
       )}
     </div>
   );
