@@ -48,7 +48,7 @@ export function GoogleSignInButton({ callbackUrl, label = "Continue with Google"
       </button>
       <div className="flex items-center gap-3 text-caption text-slate-500">
         <span className="h-px flex-1 bg-slate-50/10" />
-        or with your email
+        or
         <span className="h-px flex-1 bg-slate-50/10" />
       </div>
     </div>
