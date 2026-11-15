@@ -29,8 +29,9 @@ next-env.d.ts
 # netlify
 /.netlify
 
-# local tool config (Claude Code), machine-specific, not app code
-/.claude
+# local tool config (Claude Code), machine-specific, not app code; project skills are shared, so they are kept
+/.claude/*
+!/.claude/skills/
 
 # other local agent/tooling state, same reasoning as /.claude above: these are
 # per-machine scratch directories, not application code
