@@ -69,7 +69,6 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Honeypot, see /api/auth/register. Real visitors never see or fill it.
@@ -103,10 +102,6 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
     }
     if (password !== confirmPassword) {
       setError("Passwords don't match.");
-      return;
-    }
-    if (!agreedToTerms) {
-      setError("Please agree to the Terms & refund policy to continue.");
       return;
     }
 
@@ -153,11 +148,8 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
     >
       <AuthGlassCard>
       {/* The same title as every other sign-in screen, so moving between Log in and Create account changes the fields and nothing else. */}
-      <AuthHeading title="Create your account">
-        {trialDays !== null
-          ? `Free ${trialDays}-day trial, once per person, starting when you confirm your email. We'll send a 6-digit code next. Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character.`
-          : "We'll email you a 6-digit code to confirm your address. Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character."}
-      </AuthHeading>
+      {/* Just the title (owner, 2026-11-15): the rules show up by the fields as they are typed (the password checklist, the name check). */}
+      <AuthHeading title="Create your account" />
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
         <p className="mt-3 text-small text-slate-300">A friend invited you. Start a 3 Month or 6 Month plan and you both get 10% off for 3 months.</p>
       )}
@@ -208,6 +200,9 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           <PasswordInput
             id="password"
             autoComplete="new-password"
+            // The password cannot be copied out, so the second box is really typed (owner, 2026-11-15).
+            onCopy={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
             required
             minLength={MIN_PASSWORD_LENGTH}
             aria-invalid={Boolean(error)}
@@ -227,7 +222,10 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           </Label>
           <PasswordInput
             id="confirmPassword"
-            autoComplete="new-password"
+            // Typed by hand: no pasting or dropping text in, and no autofill, so a typo in the first box is caught here.
+            autoComplete="off"
+            onPaste={(e) => e.preventDefault()}
+            onDrop={(e) => e.preventDefault()}
             required
             minLength={MIN_PASSWORD_LENGTH}
             aria-invalid={Boolean(error)}
@@ -246,28 +244,6 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           )}
         </div>
 
-        <label className="flex cursor-pointer items-start gap-2.5 text-small text-slate-400">
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={(e) => {
-              setAgreedToTerms(e.target.checked);
-              setError(null);
-            }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
-          />
-          <span>
-            I agree to the{" "}
-            <Link href="/terms" target="_blank" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
-              Terms &amp; refund policy
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" target="_blank" className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
-              Privacy policy
-            </Link>
-            .
-          </span>
-        </label>
 
         <TurnstileWidget action="signup" onToken={setTurnstileToken} onState={setCaptchaState} resetKey={captchaReset} />
 
@@ -280,12 +256,24 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
         <Button type="submit" loading={submitting} disabled={captchaState === "blocked"} className="cta-sheen w-full">
           {submitting ? "Creating account…" : "Create account"}
         </Button>
+        {/* One quiet line instead of a checkbox: creating the account is agreeing to the terms. */}
+        <p className="text-center text-caption text-slate-500">
+          By creating an account you agree to the{" "}
+          <Link href="/terms" target="_blank" className="underline decoration-slate-500 underline-offset-2 transition hover:text-slate-50">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank" className="underline decoration-slate-500 underline-offset-2 transition hover:text-slate-50">
+            Privacy policy
+          </Link>
+          .
+        </p>
       </motion.form>
 
       <p className="mt-6 text-center text-small text-slate-500">
-        Already have an account?{" "}
+        Have an account already?{" "}
         <Link href={loginHref(callbackUrl)} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
-          Log in
+          Sign in
         </Link>
       </p>
       </AuthGlassCard>
