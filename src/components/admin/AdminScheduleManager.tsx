@@ -403,12 +403,13 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
               <button
                 type="button"
                 onClick={() => openWindow(day)}
-                aria-label={`${DAY_LABELS[day]}: ${live} ${live === 1 ? "time" : "times"}${booked > 0 ? `, ${booked} booked` : ""}. Open`}
                 data-glass-tone={live > 0 ? "primary" : undefined}
                 className="lgx-btn tap flex w-full flex-col items-center gap-1.5 rounded-control py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className={cn("text-caption font-medium", live > 0 ? "text-signal-fg" : "text-slate-500")}>{DAY_LABELS[day].slice(0, 3)}</span>
                 <span className={cn("text-title font-semibold tabular-nums", live > 0 ? "text-slate-50" : "text-slate-600")}>{live}</span>
+                {/* The tile's name is its own words (WCAG 2.5.3) plus this, for screen readers. */}
+                <span className="sr-only">{`, ${DAY_LABELS[day]}, ${live === 1 ? "time" : "times"}${booked > 0 ? `, ${booked} booked` : ""}. Open`}</span>
                 <span aria-hidden className="flex h-1.5 items-center gap-0.5">
                   {live === 0 ? (
                     <span className="h-1 w-1 rounded-full bg-slate-50/15" />

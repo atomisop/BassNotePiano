@@ -30,9 +30,9 @@ function Count({ count, className = "" }: { count: number; className?: string })
   return (
     <span
       className={`rounded-full bg-signal/18 px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
-      aria-label={`${count} waiting`}
     >
       {count > 99 ? "99+" : count}
+      <span className="sr-only"> waiting</span>
     </span>
   );
 }
@@ -91,7 +91,6 @@ export function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        aria-label={`Admin menu, you are in ${current.label}${waiting > 0 ? `, ${waiting} waiting` : ""}`}
         className="tap press-soft flex h-11 w-full items-center gap-2.5 rounded-full bg-neu-base px-4 text-left text-small font-medium text-slate-100 shadow-raised-low ring-1 ring-inset ring-slate-50/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <CurrentIcon className="h-4 w-4 shrink-0 text-signal-fg" strokeWidth={2.1} aria-hidden />
@@ -101,6 +100,8 @@ export function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
           Menu
           <ChevronDown aria-hidden className="h-4 w-4" />
         </span>
+        {/* The bar's name is its own words (WCAG 2.5.3) plus this, for screen readers. */}
+        <span className="sr-only">: admin sections, you are in {current.label}</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen} title="Admin menu">

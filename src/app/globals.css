@@ -3743,7 +3743,7 @@ html[data-solid-surfaces="on"] .deck-header::before {
 
 /* Over Home's studio photo the source's clear glass put small text straight onto guitars and shelves: there the cards keep the bend but
    get a darker body and a little blur, so their words pass contrast (Rule 1: readability beats looks). */
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
+[data-mode="dark"] [data-surface="app"] {
   --lgx-tint-card: color-mix(in srgb, rgb(255 255 255) 8%, rgb(var(--c-surface-solid) / 0.55));
   --lgx-tint-field: color-mix(in srgb, rgb(255 255 255) 6%, rgb(var(--c-surface-solid) / 0.45));
   --lgx-bd-refract: blur(6px) saturate(1.6) brightness(1.02);
@@ -3770,10 +3770,10 @@ html[data-solid-surfaces="on"] .deck-header::before {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  opacity: 0.62;
+  opacity: 0.42;
 }
 [data-mode="light"] .lgx-tint-layer {
-  opacity: 0.86;
+  opacity: 0.5;
 }
 
 /* Solid surfaces, reduced transparency, forced colors: the frame goes solid like every other glass. */
@@ -4078,39 +4078,40 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
 }
 
 /* Home's studio photo: painted on the app shell itself, behind the sidebar, the top bar and the scroll area, so it stays put while the cards
-   move over it. Dark theme: the dark studio (home-studio.webp) under a dark wash for the cream text, on Home. The light theme shows its own
-   photo on every page (block at the end of this file). The sidebar, the pinned greeting and the cards are the liquid glass. */
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
+   move over it. Both themes show their photo on EVERY signed-in screen, permanently (owner, 2026-11-15): dark, the dark studio
+   (home-studio.webp) under a dark wash for the cream text; light, the white studio (block at the end of this file). The sidebar, the pinned
+   greeting and the cards are the liquid glass. Only forced colors (Windows high contrast) shows a plain page. */
+[data-mode="dark"] [data-surface="app"] {
   background:
     linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.7)),
     url("/home-studio.webp") center / cover no-repeat;
 }
 /* Light theme: see the "Light theme: the studio photo and clear glass" block at the end of this file. */
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) {
+[data-mode="dark"] [data-surface="app"] {
   --home-glass: rgb(20 17 15 / 0.5);
   --home-glass-edge: rgb(255 250 242 / 0.12);
 }
 /* The cards on Home are the app's one liquid glass (the "Liquid glass everywhere" block): their glass layer bends this photo. The older
    Home-only frosted fill that sat on the card elements themselves is gone: a blur on the card made it a backdrop root, so the buttons and
    rows inside it could not see the photo. */
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar {
+[data-mode="dark"] [data-surface="app"] .app-sidebar {
   background: rgb(0 0 0 / 0.22);
   -webkit-backdrop-filter: blur(22px) saturate(1.3);
   backdrop-filter: blur(22px) saturate(1.3);
   border-right: 1px solid var(--home-glass-edge);
 }
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .app-sidebar .sb-header {
+[data-mode="dark"] [data-surface="app"] .app-sidebar .sb-header {
   background: transparent;
 }
 /* The pinned greeting normally fills its strip with the solid ground, which would hide the photo; on Home that fill goes (the soft card that
    fades in while it is pinned stays, as glass). */
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header {
+[data-mode="dark"] [data-surface="app"] .deck-header {
   border-image: none;
 }
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header::before {
+[data-mode="dark"] [data-surface="app"] .deck-header::before {
   background: transparent;
 }
-[data-mode="dark"] [data-surface="app"]:has([data-home-backdrop]) .deck-header::after {
+[data-mode="dark"] [data-surface="app"] .deck-header::after {
   background: var(--home-glass);
   -webkit-backdrop-filter: blur(26px) saturate(1.35);
   backdrop-filter: blur(26px) saturate(1.35);
@@ -4119,7 +4120,7 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
 /* ===========================================================================================================================
    Light theme: the studio photo and clear glass (owner, 2026-11-14: "remove the cloudy white over the background picture; the background is
    already light. Keep the buttons white and glassy. The cards, all of them, must be light bending glass").
-   - Every signed-in page shows the bright studio photo (home-studio-light.webp) with its own colours: no white wash over it, only a 1.5px
+   - Every signed-in page shows, permanently, the bright studio photo (home-studio-light.webp) with its own colours: no white wash over it, only a 1.5px
      softening of its finest detail.
    - Cards, rows, the sidebar, the phone top bar, the pinned greeting and the dock are light-bending glass with a thin white (0.22) and a
      12px blur under the bend, so the photo keeps its colour and the words on the glass stay readable. The strips above the top bar and the
@@ -4167,18 +4168,94 @@ html[data-solid-surfaces="on"] [class*="backdrop-blur"]:not([class*="bg-scrim"])
 [data-mode="light"] [data-surface="app"] :is(.color-tile, [class*="bg-signal"], [class*="bg-red-"], [class*="tier-accent-bg"], input, textarea, select, .glass-menu, .glass-surface-modal, [role="dialog"], [role="menu"]) {
   text-shadow: none;
 }
-/* Solid surfaces, reduced transparency and forced colors: the light page goes back to its plain gray (the glass is solid there anyway). */
+/* The photo is permanent (owner, 2026-11-15): Solid surfaces and reduced transparency keep it behind their solid cards; only forced colors,
+   where the browser replaces every background, hides it. Solid surfaces drops the glow (its cards are solid). */
 html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"] {
   text-shadow: none;
 }
-html[data-solid-surfaces="on"][data-mode="light"] [data-surface="app"]::before {
-  display: none;
-}
-@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+@media (forced-colors: active) {
   [data-mode="light"] [data-surface="app"]::before {
     display: none;
   }
   [data-mode="light"] [data-surface="app"] {
     text-shadow: none;
   }
+}
+
+/* ===========================================================================================================================
+   The frame, refined (owner, 2026-11-15): "make the dock clear liquid glass, the greeting card frosted glass, the left sidebar frosted
+   glass that bends light too, and the big orange liquid glass that's see through. Everything readable; if not, frosted. It must always
+   bend light behind it, like the 21st.dev login card."
+   =========================================================================================================================== */
+/* The dock: CLEAR glass, the source card's values (a white 0.10 to 0.14 body, 0.5px under the bend, no frost). Its icons carry a soft
+   shadow (dark theme) or glow (light theme), so they read over whatever scrolls behind the clear glass. */
+:root {
+  --lgx-tint-dock: rgb(255 255 255 / 0.1);
+  --lgx-bd-dock: blur(0.5px) saturate(1.85) brightness(1.02);
+}
+[data-mode="light"] {
+  --lgx-tint-dock: rgb(255 255 255 / 0.14);
+}
+.ig-dock {
+  --lgx-bd: var(--lgx-bd-dock);
+}
+.ig-dock[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-dock);
+}
+.ig-dock::after {
+  background-color: var(--lgx-tint-dock);
+}
+.ig-dock-icon {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.75));
+}
+[data-mode="light"] .ig-dock-icon {
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.95)) drop-shadow(0 0 5px rgb(255 255 255 / 0.8));
+}
+.ig-dock-icon.is-on {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.55));
+}
+/* The pinned greeting and the sidebar: FROSTED glass that still bends at its rim (the frame values: a 14px blur under the bend). */
+.deck-header,
+.app-sidebar {
+  --lgx-bd: var(--lgx-bd-frost);
+}
+.deck-header[data-lg-ready],
+.app-sidebar[data-lg-ready] {
+  --lgx-bd: var(--lg-filter) var(--lgx-bd-frost);
+}
+:root {
+  --lgx-bd-frost: blur(16px) saturate(1.8) brightness(1.04);
+}
+[data-mode="light"] {
+  --lgx-bd-frost: blur(16px) saturate(1.7) brightness(1.12);
+}
+
+/* The big orange cards (Home's and the Overview's hero): see-through orange glass over the bent page. On the dark theme its words stay
+   white (white on see-through orange over black passes easily). On the light theme's bright photo white text on see-through orange cannot
+   pass contrast, so there the hero's words, bars and keys turn the theme's dark ink and its dark shade is dropped. */
+[data-mode="light"] .lgx-tinted {
+  --color-white: rgb(26 21 15);
+  --c-s-50: 26 21 15;
+  --c-s-100: 38 33 25;
+  --c-s-200: 53 48 42;
+  --c-s-300: 58 52 45;
+  --c-s-400: 68 61 53;
+  --c-s-500: 80 72 63;
+  --c-s-600: 94 86 76;
+  color: rgb(26 21 15);
+}
+[data-mode="light"] .lgx-tinted > [class*="from-black"] {
+  display: none;
+}
+[data-mode="light"] .lgx-tinted :is(p, span, h1, h2, h3, div, a:not(.liquid-signal):not(.liquid))[class*="text-white"] {
+  color: rgb(38 33 25) !important;
+}
+[data-mode="light"] .lgx-tinted :is(span, div)[class~="bg-white/20"] {
+  background-color: rgb(26 21 15 / 0.14) !important;
+}
+[data-mode="light"] .lgx-tinted :is(span, div)[class~="bg-white"] {
+  background-color: rgb(var(--signal)) !important;
+}
+[data-mode="light"] .lgx-tinted :is(a, button)[class*="outline-white"]:focus-visible {
+  outline-color: rgb(26 21 15) !important;
 }

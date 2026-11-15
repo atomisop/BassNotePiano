@@ -104,13 +104,19 @@ Each is a decision the brief left open; the reason is the one written next to it
     speakers, so the light glass is a thin white (0.28) with a 12px blur under the bend and brightness 1.18, every word has a tight white
     glow, and the photo itself is softened by 1.5px. Solid surfaces, reduced transparency and forced colors show the plain gray page.
 
+23. **Owner follow-up, 2026-11-15.** Both studio photos are the background of every signed-in screen, permanently (kept in Solid
+    surfaces and reduced transparency; only forced colors hides them). The dock is clear glass at the source's values with shadowed
+    icons; the greeting and sidebar are frosted glass that bends; the heroes are see-through orange (0.42 dark, 0.5 light) and on the
+    light theme their words turn dark ink, because white on see-through orange over the bright photo cannot pass contrast. The
+    engine's size cap went from 0.9M to 2.6M px so every panel on screen bends.
+
 ## Couldn't match exactly
 
 - **Safari and Firefox** cannot run the refraction filter; they get the source's frosted look (as the source itself does).
 - **Hover on refracting buttons** is the overlay on the glass layer, as in the source, but a button that uses `hit-slop` (its `::after`
   is the bigger touch area) draws its tint on itself, so it has the look without the live bend.
-- **Axe findings still open are all pre-existing** and in files this branch does not touch: `label-content-name-mismatch` on the Home hero,
-  the admin phone section bar and the schedule's weekday tiles, and two inside the stageshow kit on `/` and `/pricing`.
+- **Axe:** the Home hero, admin phone bar and schedule day tiles now name themselves by their visible words (fixed 2026-11-15); the two
+  findings left are inside the stageshow kit on `/` and `/pricing`, which stays as it is.
 - **Light theme plan tiles**: the "No commitment" and "3 payments" tags are faint on their own plan colour; that colour is unchanged by this
   work.
 

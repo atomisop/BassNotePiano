@@ -540,12 +540,19 @@ capsule kept, its body glass), the sidebar, the phone top bar, the pinned greeti
 glass: the colour is a see-through `lgx-tint-layer` over the glass). The Solid surfaces setting, reduced transparency, forced
 colors and reduced motion must always turn glass into solid surfaces.
 
+**Backgrounds are the studio photos, on every signed-in screen, permanently (owner, 2026-11-15).** Dark theme: the dark studio
+(`public/home-studio.webp`, under a dark wash) on `[data-surface="app"]`; light theme: the white studio below. They stay in Solid
+surfaces and reduced transparency (behind solid cards); only forced colors shows a plain page. The dock is CLEAR glass (the source's
+values, its icons shadowed for legibility), the pinned greeting and the sidebar are FROSTED glass that still bends, and the big orange
+heroes are see-through orange glass (`lgx-tint-layer` at 0.42 dark, 0.5 light; on the light theme their words turn dark ink). Every
+panel on screen bends (the engine's size cap is 2.6M px).
+
 **Light theme background (owner, 2026-11-14):** every signed-in page in the light theme shows the bright studio photo
 (`public/home-studio-light.webp`, the white room with the BASSNOTE sign) on the shell's `::before`, with NO white wash over it
 (the owner asked for the cloudy white to go), only a 1.5px softening of its finest detail. Light glass is a thin white (0.28) with a
 blur under the bend so words stay readable; buttons stay white glass; every word carries a soft white glow
-(`[data-mode="light"] [data-surface="app"]` in globals.css). Menus, dialogs and fields stay nearly opaque. Solid surfaces, reduced
-transparency and forced colors hide the photo and the glow. The dark theme keeps its dark studio photo on Home only.
+(`[data-mode="light"] [data-surface="app"]` in globals.css). Menus, dialogs and fields stay nearly opaque. Solid surfaces drops the glow;
+forced colors hides the photo and the glow.
 
 ## Log in is a page (added 2026-11-14)
 

@@ -41,7 +41,8 @@ const LINK_CARD_SELECTOR = ':is(a, button):is([class*="rounded-card"], [class*="
 
 const SKIP = "[data-glass], [data-glass] *, [data-no-lens], [data-glass-lens], [data-glass-solid], .color-tile:not(.lgx-tinted), .hit-slop";
 const MAX_FILTERS = 160;
-const MAX_MAP_PIXELS = 900_000;
+// Every panel on screen bends (owner, 2026-11-15: "it must always bend light"); only something larger than a big desktop screen keeps the blur alone.
+const MAX_MAP_PIXELS = 2_600_000;
 
 function kindOf(node: HTMLElement): GlassKind | null {
   if (node.matches(".ig-dock")) return "button";
