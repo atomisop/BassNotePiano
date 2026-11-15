@@ -3813,3 +3813,9 @@ html[data-solid-surfaces="on"] [data-auth-card] input:not([type="checkbox"]):not
     background: rgb(var(--c-surface-solid)) !important;
   }
 }
+
+/* The admin's Ask AI moves into the top bar when the sidebar has to scroll (AppSidebar sets html[data-atom-top]). Unlayered, so it wins
+   over the md:hidden utility on the same element. */
+html[data-atom-top] .topbar-atom {
+  display: contents;
+}
