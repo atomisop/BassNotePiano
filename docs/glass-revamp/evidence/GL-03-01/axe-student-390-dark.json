@@ -1,0 +1,158 @@
+[
+ {
+  "path": "/dashboard",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 4,
+    "sample": [
+     ".focus-visible\\:outline-offset-4 :: Fix any of the following:\n  Text inside the element is not included in the accessible name",
+     ".bg-signal\\/10 :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/lessons",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/practice",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/practice/piano",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/scales/major-scale",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/roadmap",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/streak",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/leaderboard",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/friends",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/mail",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/profile",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/account",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/about",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/billing/plans",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/billing/history",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/parent",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/onboarding",
+  "size": "390x844",
+  "role": "student",
+  "mode": "dark",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 4,
+    "sample": [
+     ".focus-visible\\:outline-offset-4 :: Fix any of the following:\n  Text inside the element is not included in the accessible name",
+     ".bg-signal\\/10 :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ }
+]

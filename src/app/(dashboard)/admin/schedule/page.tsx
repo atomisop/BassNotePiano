@@ -210,13 +210,13 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       {/* The calendar feed is a set-once tool, so it sits quietly under the times instead of above them. */}
       {calendarLink && (
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-50/8 pt-4">
-          <a href={calendarLink} className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12" })}>
+          <a href={calendarLink} className={buttonVariants({ variant: "ghost", size: "sm" })}>
             <CalendarPlus aria-hidden className="h-4 w-4" />
             Add my classes to my calendar
           </a>
           {viewerIsOwner && (
             <form action={rotateTeacherCalendarLinkAction}>
-              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12 text-slate-400" })}>
+              <button type="submit" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-slate-400" })}>
                 New calendar link
               </button>
             </form>

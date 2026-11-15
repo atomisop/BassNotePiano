@@ -6,53 +6,40 @@ import { cn } from "@/lib/utils"
 import { MorphingSquare } from "@/components/ui/morphing-square"
 
 /**
- * The one button for the whole app. Buttons live on the front plane of the
- * depth system (see globals.css), so every variant except `link` lifts on
- * hover and presses down on click: a color change alone was reported as
- * "almost impossible to tell if I need to click it or not".
+ * The one button for the whole app: the glass button of the 21st.dev "Liquid Glass Login" component (Rule 1 in
+ * docs/glass-revamp/DESIGN-SYSTEM.md). The look lives in globals.css ("Liquid glass everywhere"): a glass layer behind the label
+ * (white tint 0.07, or the signal colour at 0.34 for the main action, red at 0.34 for destructive), the button shadow with its bright
+ * top edge, a white overlay on hover (0.10) and press (0.15, with a dip to 0.98), a soft label shadow and a 2px focus ring.
  *
- * Color rule: `default` (alias `primary`) is the screen section's ONE main
- * action. It is signal green via --cta-bg, except on the public marketing
- * pages, which reset --cta-bg to the neutral --primary. `paper` is the
- * neutral solid button for places that must not push one choice (the cookie
- * banner). Everything else is ink and paper, never green.
+ * `default` (alias `primary`) is the screen section's ONE main action. `danger` stays SOLID red on purpose: it is the last,
+ * irreversible step of a destructive flow. `link` is an inline text link.
  */
-// Neumorphic press: raised at rest, the same shape pushes IN (pressed
-// shadow) and dips (scale, from the center, so layout never shifts) while
-// held, then springs back (see `press` in globals.css).
-const lift = "press active:shadow-pressed-low"
+const lift = "press"
 
-const primary = cn(
-  "liquid-signal relative bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold hover:brightness-110 active:brightness-95",
-  lift,
-)
+const primary = cn("liquid-signal relative font-semibold", lift)
 
 const buttonCva = cva(
-  "tap inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-small font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "tap inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-small font-medium ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60",
   {
     variants: {
       variant: {
         default: primary,
         primary,
-        paper: cn(
-          "relative bg-[rgb(var(--primary))] text-primary-foreground font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95",
-          lift,
-        ),
-        // Quiet, raised paper/ink button for every secondary action.
+        paper: cn("liquid relative text-slate-50 font-semibold", lift),
         secondary: cn("liquid text-slate-50", lift),
         outline: cn("liquid text-slate-100", lift),
-        ghost: cn("text-slate-300 hover:text-slate-50 hover:liquid", lift),
-        destructive: cn("liquid text-red-300", lift),
-        // Inline text link: tappable, so it carries the signal color.
-        // Solid red: only for the final, irreversible step of a destructive flow.
-        danger: cn("liquid-signal relative bg-red-600 text-white font-semibold [--cta-bg:220_38_38] hover:brightness-110 active:brightness-95", lift),
-        link: "text-signal-fg underline-offset-4 hover:underline",
-        glass: cn("liquid text-slate-50 hover:brightness-110", lift),
+        ghost: cn("liquid text-slate-200 hover:text-slate-50", lift),
+        destructive: cn("liquid text-slate-50", lift),
+        // Solid red: only for the final, irreversible step of a destructive flow (kept solid on purpose, Rule 1).
+        danger: cn("relative bg-red-600 text-white font-semibold hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", lift),
+        link: "text-signal-fg underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring",
+        glass: cn("liquid text-slate-50", lift),
       },
       size: {
         default: "h-9 px-4",
         sm: "h-8 px-3",
-        lg: "h-10 px-5",
+        // The source's main action is 52px tall.
+        lg: "h-13 px-6 text-body",
         icon: "h-9 w-9",
         iconSm: "h-8 w-8 px-0",
       },
@@ -72,17 +59,17 @@ const buttonCva = cva(
 const buttonVariants = (props?: Parameters<typeof buttonCva>[0]) => cn(buttonCva(props))
 
 /**
- * The variants that get a glass lens. This is the explicit version of what GlassButtons used to infer from the `liquid` class names:
- * the shared Button now says so itself with data-glass-role="button". `ghost` only turns glass on hover and `paper` and `link` are solid or
- * text, so they are left out. tests/glassButtonRoles.test.ts keeps this list in step with the classes above.
+ * The variants that are glass (every one but the solid `danger` and the text `link`). The Button says so with data-glass-role="button",
+ * which the glass engine and the CSS read. tests/glassButtonRoles.test.ts keeps this list in step with the classes above.
  */
 export const GLASS_BUTTON_VARIANTS: ReadonlyArray<NonNullable<VariantProps<typeof buttonVariants>["variant"]>> = [
   "default",
   "primary",
+  "paper",
   "secondary",
   "outline",
+  "ghost",
   "destructive",
-  "danger",
   "glass",
 ]
 
@@ -103,6 +90,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={asChild ? disabled : disabled || loading}
         aria-busy={loading || undefined}
         data-glass-role={GLASS_BUTTON_VARIANTS.includes(variant ?? "default") ? "button" : undefined}
+        data-glass-tone={variant === "destructive" ? "danger" : variant === "default" || variant === "primary" || variant == null ? "primary" : undefined}
         {...props}
       >
         {!asChild && loading ? (

@@ -1,0 +1,92 @@
+[
+ {
+  "path": "/login",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/register",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/forgot-password",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [
+   {
+    "id": "aria-toggle-field-name",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     ".ss-toggle :: Fix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n "
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/pricing",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     "span[data-target=\"term-2\"] :: Fix any of the following:\n  Element has insufficient color contrast of 4 (foreground color: #f4884a, background color: #5c3b29, font size: 9"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/classes",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/shop",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/privacy",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/terms",
+  "size": "390x844",
+  "role": "guest",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ }
+]

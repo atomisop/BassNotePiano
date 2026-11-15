@@ -90,7 +90,7 @@ export async function ActivityView(props: { searchParams: Promise<{ q?: string; 
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
-          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Search</button>
+          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm" })}>Search</button>
           {(q || kind || userId || days !== "30") && (
             <Link href="/admin/security?section=activity" className={buttonVariants({ variant: "secondary", size: "sm" })}>Clear filters</Link>
           )}

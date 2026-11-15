@@ -396,8 +396,11 @@ export function NewPlanForm({
                 type="button"
                 onClick={() => setTerm(option.value)}
                 aria-pressed={active}
+                // A plan tile carries its own plan colour (the tier layers below), like the pricing cards: kept solid so the glass
+                // never washes the colour out and its label keeps its contrast.
+                data-glass-solid
                 style={tierVars(who)}
-                className={`tap relative isolate overflow-hidden rounded-control border border-ink/10 bg-neu-base px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`tap relative isolate overflow-hidden rounded-control border border-ink/10 bg-[rgb(var(--neu-base))] px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   active ? "ring-2 ring-[var(--tier-accent)]" : "opacity-90 hover:opacity-100"
                 }`}
               >
@@ -429,7 +432,7 @@ export function NewPlanForm({
       <div className={cn("grid grid-cols-1 gap-6 md:items-start md:gap-8", isFamily && "md:grid-cols-2")}>
       <div className={cn("space-y-6", !isFamily && "hidden")}>
       {isFamily && (
-        <section aria-label="People on this plan" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
+        <section aria-label="People on this plan" className="lgx-card rounded-card p-4 md:p-5">
           {parent && !parent.only && (
             <div className="mb-4">
               {/* The same one-track switch as "Just me / Me and others": one highlight, so it is always clear which kind is on. */}
@@ -464,7 +467,7 @@ export function NewPlanForm({
                     key={email}
                     type="button"
                     onClick={() => setMemberRows((prev) => (prev.length === 1 && prev[0].trim() === "" ? [email] : [...prev, email]))}
-                    className="tap rounded-full bg-slate-50/6 px-3.5 py-1.5 text-small text-slate-300 transition hover:text-slate-50"
+                    className="lgx-btn tap rounded-full px-3.5 py-1.5 text-small text-slate-300 transition hover:text-slate-50"
                   >
                     + {email}
                   </button>
@@ -474,7 +477,7 @@ export function NewPlanForm({
           <ul className="mt-3 space-y-2">
             {isParent ? (
               <>
-              <li className="flex min-h-11 items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-1.5 text-small text-slate-300 shadow-pressed-low">
+              <li className="lgx-row flex min-h-11 items-center justify-between gap-3 rounded-control px-4 py-1.5 text-small text-slate-300">
                 <span className="font-medium text-slate-100">You pay</span>
                 <button
                   type="button"
@@ -501,7 +504,7 @@ export function NewPlanForm({
               </>
             ) : (
               <li>
-                <div className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
+                <div className="lgx-row flex h-11 items-center justify-between rounded-control px-4 text-small text-slate-300">
                   <span className="font-medium text-slate-100">You</span>
                   <span>pays for everyone</span>
                 </div>
@@ -597,7 +600,7 @@ export function NewPlanForm({
         {isParent && (
           <div className="mb-3 space-y-2" role="group" aria-label="Whose weekly time">
             {holders.length === 0 ? (
-              <p className="rounded-control bg-neu-base px-4 py-3 text-small text-slate-500 shadow-pressed-low">Add a child above, then pick a time for each person.</p>
+              <p className="lgx-row rounded-control px-4 py-3 text-small text-slate-500">Add a child above, then pick a time for each person.</p>
             ) : (
               holders.map((h) => {
                 const t = timeOf(h.key);
@@ -607,10 +610,11 @@ export function NewPlanForm({
                     key={h.key}
                     type="button"
                     aria-pressed={on}
+                    data-glass-tone={on ? "primary" : undefined}
                     onClick={() => setActiveHolder(h.key)}
                     className={cn(
-                      "tap flex w-full items-center justify-between gap-3 rounded-control px-4 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      on ? "bg-neu-lift text-slate-50 ring-1 ring-signal" : "bg-neu-base text-slate-300 hover:bg-neu-lift",
+                      "lgx-btn tap flex w-full items-center justify-between gap-3 rounded-control px-4 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      on ? "text-slate-50" : "text-slate-300",
                     )}
                   >
                     <span className="min-w-0 truncate font-medium">{h.label}</span>
@@ -624,11 +628,11 @@ export function NewPlanForm({
           </div>
         )}
         {isParent && holders.length === 0 ? null : slotsLoading ? (
-          <div className="flex items-center justify-center rounded-lg bg-neu-base py-6 shadow-raised-low">
+          <div className="lgx-row flex items-center justify-center rounded-lg py-6">
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 && wait.taken.length === 0 ? (
-          <p className="rounded-lg bg-neu-base px-3.5 py-3 text-small text-slate-500 shadow-raised-low">No open weekly times right now.</p>
+          <p className="lgx-row rounded-lg px-3.5 py-3 text-small text-slate-500">No open weekly times right now.</p>
         ) : (
           <>
             {isParent && current && <p className="mb-2 text-small text-slate-400">Time for <span className="font-medium text-slate-100">{current.label}</span></p>}
@@ -722,7 +726,7 @@ export function NewPlanForm({
           )}
         </dl>
 
-        <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
+        <label className="lgx-row mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl p-3.5 text-small text-slate-300">
           <input
             type="checkbox"
             checked={acknowledged}
@@ -792,7 +796,7 @@ function ScholarshipClaim({
     );
   }
   return (
-    <form onSubmit={claim} className="mt-3 w-full basis-full rounded-control bg-neu-base p-3 shadow-raised-low">
+    <form onSubmit={claim} className="lgx-row mt-3 w-full basis-full rounded-control p-3">
       <label htmlFor={inputId} className="text-small font-medium text-slate-200">
         Scholarship code <span className="font-normal text-slate-500">· 6 Month plan only</span>
       </label>

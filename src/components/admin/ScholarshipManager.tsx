@@ -179,7 +179,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
         </div>
         {error && <p role="alert" className="text-small text-red-400">{error}</p>}
         <div className="flex justify-end border-t border-slate-50/8 pt-4">
-          <button type="submit" disabled={pending || lookup.state === "missing"} className={buttonVariants({ variant: "primary", className: "text-black" })}>{pending ? "Making…" : "Make code"}</button>
+          <button type="submit" disabled={pending || lookup.state === "missing"} className={buttonVariants({ variant: "primary" })}>{pending ? "Making…" : "Make code"}</button>
         </div>
         {fresh && (
           <div className="rounded-xl bg-signal/16 p-4">
@@ -267,7 +267,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                   />
                 )}
                 {editing === r.id && r.status === "available" && (
-                  <div className="mt-3 grid gap-3 rounded-control bg-slate-50/5 p-4 ring-1 ring-inset ring-slate-50/10 md:grid-cols-3">
+                  <div className="lgx-row mt-3 grid gap-3 rounded-control p-4 md:grid-cols-3">
                     <label className="block text-small text-slate-300">Discount %
                       <input type="number" min={1} max={100} step={1} value={edit.percent} onChange={(e) => setEdit({ ...edit, percent: e.target.value })} className={`${field} mt-1`} />
                     </label>
@@ -279,7 +279,7 @@ export function ScholarshipManager({ rows }: { rows: ScholarshipRow[] }) {
                     </label>
                     <div className="flex justify-end gap-2 md:col-span-3">
                       <button type="button" onClick={() => setEditing(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
-                      <button type="button" disabled={pending} onClick={() => run(() => updateScholarshipAction(r.id, { percent: Number(edit.percent), note: edit.note, expiresOn: edit.expiresOn }), () => setEditing(null))} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Save</button>
+                      <button type="button" disabled={pending} onClick={() => run(() => updateScholarshipAction(r.id, { percent: Number(edit.percent), note: edit.note, expiresOn: edit.expiresOn }), () => setEditing(null))} className={buttonVariants({ variant: "primary", size: "sm" })}>Save</button>
                     </div>
                   </div>
                 )}

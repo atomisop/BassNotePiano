@@ -111,7 +111,7 @@ export async function SentView(props: { searchParams: Promise<{ q?: string; chan
           </select>
         </div>
         <div className="col-span-3 flex items-end gap-2 lg:col-span-1">
-          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "h-11 text-black" })}>Search</button>
+          <button type="submit" className={buttonVariants({ variant: "primary", size: "sm", className: "h-11" })}>Search</button>
           {filtered && <Link href={view === "messages" ? "/admin/support?section=messages&tab=sent&view=messages" : "/admin/support?section=messages&tab=sent"} className={buttonVariants({ variant: "secondary", size: "sm", className: "h-11" })}>Clear</Link>}
         </div>
       </form>

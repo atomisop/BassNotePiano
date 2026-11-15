@@ -147,7 +147,7 @@ export function SupportAccountPanel({ userId }: { userId: string }) {
         ) : (
           <ul className="mt-2 space-y-2">
             {data.payments.map((p) => (
-              <li key={p.id} className="rounded-control bg-slate-50/4 p-3">
+              <li key={p.id} className="lgx-row rounded-control p-3">
                 <Link href={`/admin/payments?id=${p.id}`} className="block hover:underline">
                   <span className="text-small font-medium text-slate-50">
                     {money(p.amountCents)} · {PURPOSE[p.purpose] ?? "Payment"}

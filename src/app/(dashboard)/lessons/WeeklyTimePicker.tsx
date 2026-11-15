@@ -110,9 +110,8 @@ export function WeeklyTimePicker({
                   setTimesOpen(false);
                 }}
                 aria-pressed={active}
-                className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-control px-3 py-3 text-center transition bg-neu-base ${
-                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                }`}
+                data-glass-tone={active ? "primary" : undefined}
+                className="lgx-btn tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-control px-3 py-3 text-center transition"
               >
                 <span className={`text-body font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
                 <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${CLASS_MINUTES} min`}</span>
@@ -124,7 +123,7 @@ export function WeeklyTimePicker({
       </SlideOverPanel>
 
       {selected && (
-        <div className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 shadow-pressed-low">
+        <div className="lgx-row mt-3 rounded-xl px-3.5 py-3">
           <p className="text-small text-slate-300">
             Move your weekly class to every <span className="font-semibold text-slate-50">{DAY_LABELS[selected.dayOfWeek]}</span>,{" "}
             <span className="font-semibold text-slate-50">{formatTimeRange(selected.startTime, CLASS_MINUTES)} ET</span>?

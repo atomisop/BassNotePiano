@@ -141,7 +141,7 @@ export function FileDropzone({
       )}
 
       {file && (
-        <div className="mt-3 rounded-lg p-3 bg-neu-base shadow-raised-low">
+        <div className="lgx-row mt-3 rounded-lg p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-small text-slate-100">{file.name}</p>

@@ -1,0 +1,92 @@
+[
+ {
+  "path": "/dashboard",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 5,
+    "sample": [
+     ".focus-visible\\:outline-offset-4 :: Fix any of the following:\n  Text inside the element is not included in the accessible name",
+     ".bg-signal\\/10 :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/lessons",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/practice",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/roadmap",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/friends",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/account",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/billing/plans",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/billing/history",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/parent",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/profile",
+  "size": "1440x900",
+  "role": "student",
+  "mode": "light",
+  "serious": [],
+  "overflow": false
+ }
+]

@@ -22,7 +22,7 @@ export default async function ReceiptPage(props: { params: Promise<{ paymentId: 
       <PageBack href="/billing/history" className="mb-4" />
 
       {/* The paper: the same on screen and on the printed page. */}
-      <article aria-labelledby="receipt-title" className="print-only-receipt rounded-card bg-neu-base p-6 sm:p-8">
+      <article aria-labelledby="receipt-title" className="lgx-card print-only-receipt rounded-card p-6 sm:p-8">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Image src="/logo-mark.png" alt="" width={40} height={40} className="rounded-xl" />
@@ -55,7 +55,7 @@ export default async function ReceiptPage(props: { params: Promise<{ paymentId: 
           </tbody>
         </table>
 
-        <dl className="mt-6 divide-y divide-(--neu-edge) rounded-control bg-neu-lift px-4 text-small">
+        <dl className="lgx-row mt-6 divide-y divide-(--neu-edge) rounded-control px-4 text-small">
           {receipt.rows.map((row) => (
             <div key={row.label} className="flex justify-between gap-4 py-2.5">
               <dt className="text-slate-400">{row.label}</dt>

@@ -215,7 +215,7 @@ export function ScheduleClient({
   // The two-step skip, shown under whichever class asked for it.
   function skipConfirm(booking: UpcomingBooking, busy: boolean) {
     return (
-      <div className="mt-3 rounded-xl bg-neu-base px-3 py-2.5 shadow-pressed-low">
+      <div className="lgx-row mt-3 rounded-xl px-3 py-2.5">
         <p className="text-small text-slate-300">Skip this class? It stays on your account.</p>
         <div className="mt-2 flex gap-2">
           <button
@@ -389,7 +389,7 @@ export function ScheduleClient({
       {afterHero}
 
       {/* The rest, as rows: a few shown, the others folded. */}
-      <section aria-label="Your classes" className="rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">
+      <section aria-label="Your classes" className="lgx-card rounded-card p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-small font-semibold uppercase tracking-caps text-slate-400">Your classes</h2>
           {upcomingBookings.length > 0 && (
@@ -417,7 +417,7 @@ export function ScheduleClient({
         {/* Self-service move of the standing weekly reservation, gated the same way solo self-reschedule is (a real open slot, no
             conflicts) via changeReservedSlot. The weekly time is the fact; changing it is the quiet action beside it. */}
         {changeSuccess && (
-          <p className="mt-4 rounded-lg px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
+          <p className="lgx-row mt-4 rounded-lg px-3.5 py-2.5 text-small text-slate-50">
             Your weekly time changed.
           </p>
         )}
@@ -438,7 +438,7 @@ export function ScheduleClient({
             </div>
           )
         ) : changingTime ? (
-          <div ref={pickerRef} className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
+          <div ref={pickerRef} className="lgx-row mt-4 rounded-lg p-3.5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
               <button

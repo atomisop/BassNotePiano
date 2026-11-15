@@ -251,20 +251,20 @@ export function ScholarshipCard() {
         {error && <p role="alert" className="text-small text-red-400">{error}</p>}
         {done && <p role="status" className="text-small text-slate-50">{done}</p>}
         {next === "start" && (
-          <Link href="/billing/plans?term=TERM_6" className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+          <Link href="/billing/plans?term=TERM_6" className={buttonVariants({ variant: "primary", className: "flex w-full md:w-auto" })}>
             Start your 6 Month plan
           </Link>
         )}
         {next === "switch" &&
           (switching === null ? (
-            <button type="button" onClick={() => setSwitching("ask")} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+            <button type="button" onClick={() => setSwitching("ask")} className={buttonVariants({ variant: "primary", className: "flex w-full md:w-auto" })}>
               Switch to 6 Months
             </button>
           ) : (
             <div className="rounded-control bg-neu-base p-3 shadow-pressed-low">
               <p className="text-small text-slate-200">Switch your plan to 6 Months now? Your next bill uses the scholarship price.</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" disabled={switching === "busy"} onClick={switchToSix} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                <button type="button" disabled={switching === "busy"} onClick={switchToSix} className={buttonVariants({ variant: "primary", size: "sm" })}>
                   {switching === "busy" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {switching === "busy" ? "Switching…" : "Yes, switch"}
                 </button>
@@ -275,7 +275,7 @@ export function ScholarshipCard() {
             </div>
           ))}
         {!next && (
-          <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "flex w-full text-black md:w-auto" })}>
+          <button type="submit" disabled={busy || digits.length !== 16} className={buttonVariants({ variant: "primary", className: "flex w-full md:w-auto" })}>
             {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {busy ? "Checking…" : "Claim scholarship"}
           </button>
@@ -315,7 +315,7 @@ export function ReferralCard() {
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
       <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-control bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
+        <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
         <span className="text-small text-slate-400">
           {data.joined === 0 ? "No one has joined yet." : `${data.joined} joined, ${data.rewarded} earned the discount.`}
         </span>
@@ -436,7 +436,7 @@ export function PushCard() {
       {state === "unsupported" && <p className="mt-3 text-small text-slate-500">Not supported here. Email still works.</p>}
       {state === "blocked" && <p className="mt-3 text-small text-slate-300">Blocked. Allow them in your browser settings.</p>}
       {state === "off" && (
-        <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}`}>
+        <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm" })}`}>
           {busy ? "Working…" : "Turn on reminders here"}
         </button>
       )}
@@ -502,7 +502,7 @@ export function CalendarFeedCard() {
       ) : (
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2">
-            <a href={links.webcal} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Subscribe on this device</a>
+            <a href={links.webcal} className={buttonVariants({ variant: "primary", size: "sm" })}>Subscribe on this device</a>
             <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
           </div>
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
@@ -513,7 +513,7 @@ export function CalendarFeedCard() {
             <div className="rounded-control bg-neu-base p-4 shadow-raised-low">
               <p className="text-small text-slate-200">The old link stops working.</p>
               <div className="mt-3 flex gap-2">
-                <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
+                <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm" })}>{busy ? "Working…" : "Make a new link"}</button>
                 <button type="button" disabled={busy} onClick={() => setConfirmReset(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep it</button>
               </div>
             </div>
@@ -727,7 +727,7 @@ export function DangerZoneSection() {
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className={buttonVariants({ variant: "destructive", className: "flex flex-1 font-semibold disabled:cursor-not-allowed" })}
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}

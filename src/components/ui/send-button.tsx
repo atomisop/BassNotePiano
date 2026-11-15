@@ -16,20 +16,18 @@ export function SendButton({ state }: SendButtonProps) {
 
   if (isStreaming) {
     return (
-      <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 shadow-raised-low">
-        <Square className="size-4 fill-current text-slate-950" aria-hidden />
+      <div className="lgx-btn flex size-9 items-center justify-center rounded-full">
+        <Square className="size-4 fill-current text-slate-50" aria-hidden />
       </div>
     );
   }
 
   return (
     <div
-      className={cn(
-        "flex size-9 items-center justify-center rounded-full transition-colors",
-        isTyping ? "bg-signal shadow-raised-low" : "bg-neu-base shadow-pressed-low",
-      )}
+      data-glass-tone={isTyping ? "primary" : undefined}
+      className="lgx-btn flex size-9 items-center justify-center rounded-full transition-colors"
     >
-      <ArrowUp className={cn("size-5", isTyping ? "text-slate-950" : "text-slate-500")} aria-hidden />
+      <ArrowUp className={cn("size-5", isTyping ? "text-slate-50" : "text-slate-500")} aria-hidden />
     </div>
   );
 }

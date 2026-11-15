@@ -195,7 +195,7 @@ export function AdminAttendanceQuickPanel() {
     "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
   // Absent is the rarer answer, so it is flat red text beside the raised Present: one obvious tap per row.
   const quietGatedClass =
-    "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition hover:bg-slate-50/6 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
+    "lgx-btn tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -289,7 +289,7 @@ export function AdminAttendanceQuickPanel() {
                       </button>
 
                       <Collapse open={expanded}>
-                        <div className="mt-1 divide-y divide-slate-50/8 overflow-hidden rounded-xl bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+                        <div className="lgx-row mt-1 divide-y divide-slate-50/8 overflow-hidden rounded-xl">
                           {group.rows.map((r) => {
                             if (r.awaitingPayment) {
                               return (

@@ -2,8 +2,8 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The middle-plane surface: the subject a screen is about (a scale, a
- * lesson, a chat). Depth comes from a soft shadow, not a heavy border.
+ * The card: the 21st.dev "Liquid Glass Login" card (Rule 1, docs/glass-revamp/DESIGN-SYSTEM.md). The glass is a layer behind the
+ * content (`lgx-card` in globals.css), so buttons and fields inside it still bend the page behind the card.
  *
  * - `interactive`: the whole card is tappable, so it lifts on hover.
  * - `selected`: the one chosen card. Selection is tappable state, so it is
@@ -21,7 +21,7 @@ export function Card({ interactive, selected, muted, padded = true, className, .
   return (
     <div
       className={cn(
-        "relative rounded-card bg-neu-base shadow-raised-mid",
+        "lgx-card relative rounded-card shadow-raised-mid",
         padded && "p-(--space-card) md:p-5",
         interactive &&
           "press-soft hover:shadow-raised-high active:shadow-pressed-mid",

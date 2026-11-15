@@ -35,7 +35,7 @@ function TabIcon({ icon: Icon, className = "h-[18px] w-[18px] shrink-0" }: { ico
 
 function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start rounded-card bg-neu-base shadow-raised-low p-2 lg:flex">
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start lgx-card rounded-card p-2 lg:flex">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -57,7 +57,7 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
 function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   // The same rows as Settings on a phone: a tinted icon, the name, one quiet line saying what is inside.
   return (
-    <div className="divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low lg:hidden">
+    <div className="divide-y divide-slate-50/8 overflow-hidden lgx-card rounded-card lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -81,7 +81,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 
 function AboutTab() {
   return (
-    <div className="rounded-card bg-neu-base shadow-raised-low p-5 md:p-6">
+    <div className="lgx-card rounded-card p-5 md:p-6">
       <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Bass Note Piano</p>
       <p className="mt-1 text-title text-slate-50 font-semibold">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-small text-slate-400">
@@ -98,7 +98,7 @@ const UPDATES_SHOWN = 3;
 
 function UpdateEntry({ entry }: { entry: (typeof CHANGELOG)[number] }) {
   return (
-    <div className="rounded-card bg-neu-base shadow-raised-low p-5 md:p-6">
+    <div className="lgx-card rounded-card p-5 md:p-6">
       <div className="flex items-baseline justify-between gap-4">
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">v{entry.version}</p>
         <p className="text-caption text-slate-500">{entry.date}</p>
@@ -141,7 +141,7 @@ function UpdatesTab() {
 
 function TermsTab() {
   return (
-    <div className="rounded-card bg-neu-base shadow-raised-low space-y-6 p-5 md:p-6">
+    <div className="lgx-card rounded-card space-y-6 p-5 md:p-6">
       <div>
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
         <p className="mt-1 text-title text-slate-50 font-semibold">Terms &amp; refund policy</p>
@@ -156,7 +156,7 @@ function TermsTab() {
 
 function PrivacyTab() {
   return (
-    <div className="rounded-card bg-neu-base shadow-raised-low space-y-6 p-5 md:p-6">
+    <div className="lgx-card rounded-card space-y-6 p-5 md:p-6">
       <div>
         <p className="text-caption font-medium uppercase tracking-caps text-slate-500">Legal</p>
         <p className="mt-1 text-title text-slate-50 font-semibold">Privacy policy</p>

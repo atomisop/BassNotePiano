@@ -99,7 +99,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
               // The screen showing is a soft neutral fill; the rest are plain words, so twelve chips do not read as twelve buttons
               // and the orange stays for the page's real calls to action.
               className={`tap shrink-0 snap-center rounded-full px-4 py-1.5 text-small font-medium transition-colors ${
-                selected ? "bg-cream/12 text-cream" : "text-cream/55 hover:text-cream"
+                selected ? "lgx-btn text-cream" : "text-cream/55 hover:text-cream"
               }`}
             >
               {s.label}

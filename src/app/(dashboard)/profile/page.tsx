@@ -117,7 +117,7 @@ export default async function ProfilePage() {
         ]}
       />
 
-      <section aria-label="Badges" className="rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">
+      <section aria-label="Badges" className="lgx-card rounded-card p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-small font-semibold uppercase tracking-caps text-slate-400">Badges</h2>
           <p className="text-small tabular-nums text-slate-500">

@@ -22,15 +22,9 @@ import { CHUNKED_CODE_LENGTH, chunkCode } from "@/lib/codeChunks";
 import { saveSignupClaim } from "@/lib/signupDraft";
 
 /**
- * The email-and-password login form, shared by the /login page and the Log in
- * panel that slides out from the site header. Email and password sit on one
- * screen (a two-step "email first" form breaks password managers), with the
- * right autocomplete hints so a saved login fills in with one tap.
- *
- * `embedded` is the panel version: after a successful login it calls
- * `onSuccess` (to close the panel) and refreshes in place, staying on the page
- * the visitor was on, instead of navigating away. The page version goes to
- * `callbackUrl`.
+ * The email-and-password login form of the /login page (there is no slide-over Log in panel any more: every "Log in" link opens
+ * /login?callbackUrl=<the page it was on>). Email and password sit on one screen (a two-step "email first" form breaks password
+ * managers), with the right autocomplete hints so a saved login fills in with one tap. After signing in it goes to `callbackUrl`.
  */
 /** A sign-in error in red; the ban notice gets a stronger red box so it cannot be missed. */
 function FormError({ message }: { message: string }) {
@@ -48,18 +42,7 @@ function FormError({ message }: { message: string }) {
   );
 }
 
-export function LoginForm({
-  callbackUrl,
-  embedded = false,
-  onSuccess,
-  onNavigateAway,
-}: {
-  callbackUrl: string;
-  embedded?: boolean;
-  onSuccess?: () => void;
-  /** Called just before leaving for another page (e.g. /register), so a panel can close first. */
-  onNavigateAway?: () => void;
-}) {
+export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,16 +69,14 @@ export function LoginForm({
   // A computer gets the cursor in the email field right away. A phone does not: focusing on
   // load opens the keyboard and shoves the page up before anyone has touched it.
   useEffect(() => {
-    if (window.matchMedia("(pointer: fine)").matches) document.getElementById(embedded ? "panel-email" : "email")?.focus();
-  }, [embedded]);
+    if (window.matchMedia("(pointer: fine)").matches) document.getElementById("email")?.focus();
+  }, []);
 
   function finishLogin() {
-    // Logged in means into the signed-in app: the Log in panel on the public pages
-    // goes to the dashboard, and a plain "/" callback does too. Only a real in-app
-    // destination (a relative path) is kept.
+    // Logged in means into the signed-in app: a plain "/" callback goes to the dashboard. Only a real in-app destination (a
+    // relative path) is kept.
     const safe = safeCallbackPath(callbackUrl);
-    const target = embedded || safe === "/" ? "/dashboard" : safe;
-    if (embedded) onSuccess?.();
+    const target = safe === "/" ? "/dashboard" : safe;
     startNavigation();
     router.push(target);
     router.refresh();
@@ -156,7 +137,6 @@ export function LoginForm({
       // The right password was typed here, so this browser keeps it through the confirmation (see pendingSignup.ts).
       saveSignupClaim(result.claim, email);
       const params = new URLSearchParams({ email, callbackUrl });
-      onNavigateAway?.();
       router.push(`/verify-email?${params}`);
       return;
     }
@@ -173,8 +153,8 @@ export function LoginForm({
   }
 
   if (method === "code") {
-    const emailId = embedded ? "panel-code-email" : "code-email";
-    const codeId = embedded ? "panel-code" : "code";
+    const emailId = "code-email";
+    const codeId = "code";
     return (
       <>
         <motion.div animate={shakeControls} className="space-y-4">
@@ -216,7 +196,7 @@ export function LoginForm({
               <p className="text-small text-slate-400">
                 If <span className="text-slate-200">{email.trim()}</span> has an account, a code is on its way. Nothing
                 after a minute? Check spam, or{" "}
-                <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
+                <Link href={registerHref(callbackUrl)} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
                   create an account
                 </Link>
                 .
@@ -290,7 +270,7 @@ export function LoginForm({
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
+          <Link href={registerHref(callbackUrl)} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
             Create an account
           </Link>
         </p>
@@ -302,11 +282,11 @@ export function LoginForm({
     <>
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="space-y-4">
         <div>
-          <Label htmlFor={embedded ? "panel-email" : "email"} className={fieldLabel}>
+          <Label htmlFor={"email"} className={fieldLabel}>
             Email
           </Label>
           <Input
-            id={embedded ? "panel-email" : "email"}
+            id={"email"}
             name="email"
             type="email"
             autoComplete="username"
@@ -323,19 +303,19 @@ export function LoginForm({
         </div>
         <div>
           <div className="mb-1 flex items-baseline justify-between">
-            <Label htmlFor={embedded ? "panel-password" : "password"} className={fieldLabel}>
+            <Label htmlFor={"password"} className={fieldLabel}>
               Password
             </Label>
             <Link
               href="/forgot-password"
-              onClick={onNavigateAway}
+             
               className="tap inline-flex items-center text-small text-slate-500 transition hover:text-slate-50"
             >
               Forgot?
             </Link>
           </div>
           <PasswordInput
-            id={embedded ? "panel-password" : "password"}
+            id={"password"}
             name="password"
             autoComplete="current-password"
             required
@@ -351,11 +331,11 @@ export function LoginForm({
 
         {needsSecondStep && (
           <div>
-            <Label htmlFor={embedded ? "panel-second-step" : "second-step"} className={fieldLabel}>
+            <Label htmlFor={"second-step"} className={fieldLabel}>
               Authenticator code
             </Label>
             <Input
-              id={embedded ? "panel-second-step" : "second-step"}
+              id={"second-step"}
               name="one-time-code"
               autoComplete="one-time-code"
               autoFocus
@@ -394,7 +374,7 @@ export function LoginForm({
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href={registerHref(callbackUrl, embedded)} onClick={onNavigateAway} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
+        <Link href={registerHref(callbackUrl)} className="font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 transition hover:text-slate-50">
           Create an account
         </Link>
       </p>

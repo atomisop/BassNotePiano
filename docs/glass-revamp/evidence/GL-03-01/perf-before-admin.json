@@ -1,0 +1,35 @@
+{
+  "note": "dev server, shared machine, compare only on the same machine",
+  "rows": [
+    {
+      "path": "/admin",
+      "size": "1440x900",
+      "role": "admin",
+      "solid": false,
+      "lcpMs": 948,
+      "cls": 0,
+      "backdropElements": 11,
+      "pseudoBackdrop": 2,
+      "pseudoBackdropOnScreen": 2,
+      "liveLenses": 0,
+      "svgFilters": 3,
+      "domNodes": 1260,
+      "at": "2026-11-14T18:36:49.206Z"
+    },
+    {
+      "path": "/admin",
+      "size": "390x844",
+      "role": "admin",
+      "solid": false,
+      "lcpMs": 788,
+      "cls": 0.1029,
+      "backdropElements": 12,
+      "pseudoBackdrop": 1,
+      "pseudoBackdropOnScreen": 1,
+      "liveLenses": 0,
+      "svgFilters": 3,
+      "domNodes": 1263,
+      "at": "2026-11-14T18:36:53.864Z"
+    }
+  ]
+}

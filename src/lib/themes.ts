@@ -143,6 +143,12 @@ export const THEME_BOOT_SCRIPT = `
   try {
     var d = document.documentElement;
     if (localStorage.getItem('bnp-solid-surfaces') === 'on') d.setAttribute('data-solid-surfaces', 'on');
+    try {
+      var ua = navigator.userAgent;
+      var safariLike = /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR/.test(ua);
+      var urlBackdrop = !!(window.CSS && CSS.supports && (CSS.supports('backdrop-filter', 'url(#x)') || CSS.supports('-webkit-backdrop-filter', 'url(#x)')));
+      d.setAttribute('data-lg-mode', safariLike || !urlBackdrop ? 'simple' : 'refract');
+    } catch (e) {}
     var loggedOutPaths = ${JSON.stringify(LOGGED_OUT_PATHS)};
     if (loggedOutPaths.indexOf(window.location.pathname) !== -1) {
       d.setAttribute('data-theme', '${LOGGED_OUT_THEME}');

@@ -4,7 +4,7 @@ import { writeFileSync } from "node:fs";
 const out = process.argv[2]; const paths = process.argv.slice(3);
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const rows = [];
 for (const path of paths) {
   const c = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });

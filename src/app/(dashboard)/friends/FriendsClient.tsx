@@ -77,7 +77,7 @@ function SectionCard({
   id?: string;
 }) {
   return (
-    <section id={id} aria-label={title} className="scroll-mt-24 rounded-card bg-neu-base p-5 shadow-raised-low sm:p-6">
+    <section id={id} aria-label={title} className="lgx-card scroll-mt-24 rounded-card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-small font-semibold uppercase tracking-caps text-slate-400">{title}</h2>
         {count ? <span className="min-w-7 rounded-full bg-slate-50/8 px-2 py-0.5 text-center text-small font-semibold tabular-nums text-slate-100">{count}</span> : null}
@@ -382,7 +382,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       <NudgeButton friendId={friend.id} friendName={nudgeSenderLabel(friend.name ?? friend.username)} />
                     </div>
                     {open && (
-                      <div className="mb-3 rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
+                      <div className="lgx-row mb-3 rounded-control p-3">
                         {friend.username && <FriendDetail username={friend.username} />}
                         <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 ${friend.username ? "mt-3 border-t border-slate-50/8 pt-2" : ""}`}>
                           {blockingId === friend.id ? (

@@ -177,7 +177,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         />
 
         {/* People as rows in one box: the name first, the balance on the right, no chips. */}
-        <div className="mt-3 max-h-72 overflow-y-auto rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+        <div className="lgx-card mt-3 max-h-72 overflow-y-auto rounded-card">
           {searching && <p className="px-4 py-3 text-small text-slate-500">Searching…</p>}
           {!searching && users.length === 0 && <p className="px-4 py-3 text-small text-slate-500">No students found.</p>}
           <div className="divide-y divide-slate-50/6">
@@ -292,7 +292,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // click" shape as PaymentQueue/StudentQueue's own Approve
                 // confirm. The number itself, spelled out in words, is the
                 // part a typo hides right up until this step.
-                <div className="space-y-3 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
+                <div className="lgx-row space-y-3 rounded-control p-3">
                   <p className="text-small text-slate-300">
                     {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?
@@ -362,7 +362,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
             <EmptyState icon={<Coins />} title="No adjustments yet" description="Credits you add or take away by hand are listed here." />
           )}
           {recentAdjustments.length > 0 && (
-            <ul className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+            <ul className="lgx-card divide-y divide-slate-50/6 overflow-hidden rounded-card">
               {recentAdjustments.map((row) => (
                 <li key={row.id} className="px-4 py-3">
                   <div className="flex items-baseline justify-between gap-3">

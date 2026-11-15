@@ -47,8 +47,7 @@ export const AttachmentButton = memo(function AttachmentButton({
       aria-label={label}
       aria-expanded={expanded}
       className={cn(
-        "tap flex size-9 cursor-pointer items-center justify-center rounded-full bg-neu-base transition",
-        expanded ? "shadow-pressed-low" : "shadow-raised-low",
+        "lgx-btn tap flex size-9 cursor-pointer items-center justify-center rounded-full transition",
       )}
     >
       {iconNode}

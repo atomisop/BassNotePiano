@@ -26,7 +26,9 @@ export function HomeHero({
 }) {
   const a = artworkColors(artwork);
   return (
-    <section className="color-tile relative overflow-hidden rounded-sheet text-white" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 48%, ${a.to} 100%)` }}>
+    // Coloured liquid glass (2026-11-14): the card is the app's glass, and the roadmap's colours are a see-through layer over it.
+    <section className="color-tile lgx-tinted lgx-card relative overflow-hidden rounded-sheet text-white shadow-raised-mid">
+      <span aria-hidden className="lgx-tint-layer" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 48%, ${a.to} 100%)` }} />
       <RoadmapKeys />
       <div className="relative flex min-h-[17rem] flex-col p-6 md:min-h-[22rem] md:p-8">
         <p className="text-small font-medium text-white/80">{eyebrow}</p>
@@ -37,7 +39,6 @@ export function HomeHero({
         {progress && (
           <Link
             href="/roadmap"
-            aria-label={`Open your roadmap, ${progress.name}. ${progress.percent}% done.`}
             className="group mt-auto block pt-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
             <span className="flex items-center justify-between gap-3 text-small text-white/75">
@@ -47,6 +48,8 @@ export function HomeHero({
               </span>
               <span className="shrink-0 tabular-nums">{progress.percent}%</span>
             </span>
+            {/* The link's name is the words on screen (WCAG 2.5.3); this tells a screen reader where it goes. */}
+            <span className="sr-only">, open your roadmap</span>
             <span className="mt-2 block h-1 overflow-hidden rounded-full bg-white/20">
               <span className="block h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${progress.percent}%` }} />
             </span>

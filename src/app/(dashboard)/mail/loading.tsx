@@ -18,7 +18,7 @@ export default function MailLoading() {
           ))}
         </div>
 
-        <div className="mt-6 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
+        <div className="mt-6 divide-y divide-slate-50/8 lgx-card rounded-card">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="px-4 py-3.5 md:px-5">
               <div className="flex items-center justify-between gap-3">

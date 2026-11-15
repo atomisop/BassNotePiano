@@ -60,7 +60,7 @@ export function SidebarToggle() {
       data-tip={collapsed ? "Expand" : "Collapse"}
       data-tip-key="B"
       data-tip-always=""
-      className="sidebar-toggle tap press flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-50/12 bg-slate-50/5 text-slate-400 transition-colors hover:bg-slate-50/10 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="lgx-btn sidebar-toggle tap press flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {/* The panel icon turns over as the sidebar closes, so the button shows which way it will go next. */}
       <PanelLeft className={`h-[18px] w-[18px] transition-transform duration-300 ease-[var(--ease-ios)] ${collapsed ? "-scale-x-100" : ""}`} strokeWidth={1.75} aria-hidden />

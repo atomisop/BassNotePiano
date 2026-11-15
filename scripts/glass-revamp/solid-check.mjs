@@ -6,7 +6,7 @@ import { join } from "node:path";
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });
 const page = await ctx.newPage();
 const results = [];

@@ -41,6 +41,7 @@
   ],
   "exclude": [
     "node_modules",
+    "reference",
     "**/* 2.ts",
     "**/* 2.tsx"
   ]

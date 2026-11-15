@@ -88,7 +88,7 @@ export default async function ParentPage() {
             <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">Also to pay</h2>
             {otherBills.map((bill) => (
               // Whose bill it is and what for, then the one primary button, which carries the amount.
-              <div key={bill.paymentId} className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
+              <div key={bill.paymentId} className="lgx-card rounded-card p-4 md:p-5">
                 <div className="mb-3 min-w-0">
                   <p className="truncate text-body font-semibold text-slate-50">{bill.childName}</p>
                   <Meta items={[bill.label, bill.planName]} />
@@ -126,10 +126,10 @@ export default async function ParentPage() {
           <span className="uppercase tracking-caps">Your children</span>
         </h2>
         {children.length === 0 ? (
-          <p className="mt-3 rounded-card bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No linked children yet. Add one with the form.</p>
+          <p className="lgx-card mt-3 rounded-card p-5 text-small text-slate-500">No linked children yet. Add one with the form.</p>
         ) : (
           // One row per child: the name and the one fact that matters (their next class), the rest a quiet line, the whole row opens them.
-          <ul className="mt-3 divide-y divide-slate-50/8 overflow-hidden rounded-card bg-neu-base shadow-raised-low">
+          <ul className="mt-3 divide-y divide-slate-50/8 overflow-hidden lgx-card rounded-card">
             {children.map((c) => {
               const owes = bills.some((b) => b.childIds.includes(c.childId) && b.status !== "PENDING_REVIEW");
               return (
@@ -167,7 +167,7 @@ export default async function ParentPage() {
         )}
       </section>
 
-      <section className="mt-8 rounded-card bg-neu-base p-5 shadow-raised-low lg:mt-6" aria-label="Add or manage children">
+      <section className="lgx-card mt-8 rounded-card p-5 lg:mt-6" aria-label="Add or manage children">
         <h2 className="mb-4 text-title font-semibold text-slate-50">Link an account</h2>
         <ParentLinksPanel />
       </section>

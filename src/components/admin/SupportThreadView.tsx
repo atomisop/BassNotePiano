@@ -358,7 +358,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 setReply(c.text);
                 inputRef.current?.focus();
               }}
-              className="tap shrink-0 rounded-full bg-slate-50/6 px-3 py-1 text-small text-slate-400 transition hover:bg-slate-50/10 hover:text-slate-50"
+              className="lgx-btn tap shrink-0 rounded-full px-3 py-1 text-small text-slate-400 transition hover:text-slate-50"
             >
               {c.label}
             </button>

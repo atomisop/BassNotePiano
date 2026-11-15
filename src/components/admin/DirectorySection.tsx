@@ -50,7 +50,7 @@ export function DirectorySection({ people, showKind = true }: { people: Person[]
             onSendSignUp={sendClassFormSignUpAction}
           />
         ) : (
-          <ul key={run.people[0].key} className="divide-y divide-slate-50/6 overflow-hidden rounded-card bg-neu-base shadow-raised-low">
+          <ul key={run.people[0].key} className="lgx-card divide-y divide-slate-50/6 overflow-hidden rounded-card">
             {run.people.map((person) => {
               const instrument = person.detail ? (INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? null) : null;
               return (

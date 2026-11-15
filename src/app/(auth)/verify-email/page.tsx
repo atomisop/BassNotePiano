@@ -209,7 +209,7 @@ function VerifyEmailForm() {
         </button>
       )}
       {changing && (
-        <form onSubmit={handleChangeEmail} className="mt-4 space-y-3 rounded-xl bg-slate-50/5 p-4">
+        <form onSubmit={handleChangeEmail} className="lgx-row mt-4 space-y-3 rounded-xl p-4">
           <div>
             <Label htmlFor="new-email" className={fieldLabel}>
               Correct email

@@ -64,7 +64,7 @@ export default async function ParentChildPage({ params, searchParams }: { params
             <section key="bills" className="space-y-3" aria-label="To pay">
               <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">To pay</h2>
               {bills.map((bill) => (
-                <div key={bill.paymentId} className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-5">
+                <div key={bill.paymentId} className="lgx-card rounded-card p-4 md:p-5">
                   <div className="mb-3 flex items-baseline justify-between gap-3">
                     <p className="min-w-0 truncate text-body font-semibold text-slate-50">{bill.label}</p>
                     <p className="shrink-0 text-small text-slate-500">{bill.planName}</p>

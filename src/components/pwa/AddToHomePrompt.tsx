@@ -126,7 +126,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
                 <button type="button" onClick={later} className="tap text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">
                   Maybe later
                 </button>
-                <button type="button" onClick={done} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
+                <button type="button" onClick={done} className={buttonVariants({ variant: "primary", size: "sm" })}>
                   I added it
                 </button>
               </div>
@@ -138,7 +138,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
 
       {note && (
         <div role="status" className="kb-hide fixed inset-x-0 bottom-24 z-[55] flex justify-center px-5">
-          <div className="flex max-w-[26rem] items-center gap-3 rounded-2xl border border-slate-50/10 bg-white/95 px-4 py-3 text-small text-slate-100 shadow-[0_8px_28px_rgb(0_0_0/0.2)] dark:bg-slate-900/97">
+          <div className="glass-surface-elevated flex max-w-[26rem] items-center gap-3 rounded-2xl px-4 py-3 text-small text-slate-100">
             <span>No problem. The steps are in Settings, under Tutorials, whenever you want them.</span>
             <Link href="/account?tab=tutorials" onClick={() => setNote(false)} className="tap shrink-0 font-medium underline underline-offset-4">
               Open

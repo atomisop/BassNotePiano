@@ -3,7 +3,7 @@ import { chromium } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(ok ? "PASS" : "FAIL", name, detail); };
 const count = (p) => p.evaluate(() => { const els = [...document.querySelectorAll('[class*="backdrop-blur"]')]; return { n: els.length, blurred: els.filter((e) => getComputedStyle(e).backdropFilter !== "none").length }; });

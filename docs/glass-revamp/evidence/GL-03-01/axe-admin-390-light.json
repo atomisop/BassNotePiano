@@ -1,0 +1,88 @@
+[
+ {
+  "path": "/admin",
+  "size": "390x844",
+  "role": "admin",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     ".text-left :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/admin/users",
+  "size": "390x844",
+  "role": "admin",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     ".ring-slate-50\\/12 :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/admin/payments",
+  "size": "390x844",
+  "role": "admin",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     ".text-left :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/admin/schedule",
+  "size": "390x844",
+  "role": "admin",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 8,
+    "sample": [
+     ".text-left :: Fix any of the following:\n  Text inside the element is not included in the accessible name",
+     "button[aria-label=\"Monday: 0 times. Open\"] :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/admin/settings",
+  "size": "390x844",
+  "role": "admin",
+  "mode": "light",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 1,
+    "sample": [
+     ".text-left :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ }
+]

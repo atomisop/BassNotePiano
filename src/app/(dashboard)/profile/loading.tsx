@@ -19,7 +19,7 @@ export default function ProfileLoading() {
           ))}
         </div>
 
-        <div className="rounded-card bg-neu-base shadow-raised-low mt-6 p-5 sm:p-6">
+        <div className="lgx-card rounded-card mt-6 p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-24" />

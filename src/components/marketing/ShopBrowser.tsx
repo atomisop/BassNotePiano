@@ -35,7 +35,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       // A filter is a choice, not a call to action: the chosen one gets a soft neutral fill and the rest are plain words, so
       // seven chips never outshout the products.
       className={`tap shrink-0 rounded-full px-4 py-2 text-small font-medium transition-colors ${
-        active ? "bg-cream/12 text-cream" : "text-cream/60 hover:text-cream"
+        active ? "lgx-btn text-cream" : "text-cream/60 hover:text-cream"
       }`}
     >
       {children}
@@ -45,7 +45,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 
 function ProductCard({ product }: { product: ShopProduct }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl bg-black p-3">
+    <div className="lgx-card flex flex-col overflow-hidden rounded-2xl p-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white">
         <BlurhashImage
           src={product.image}
@@ -66,7 +66,7 @@ function ProductCard({ product }: { product: ShopProduct }) {
             href={product.amazonUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="tap inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-4 py-2 text-small font-semibold text-cream transition-colors hover:bg-cream/16"
+            className="lgx-btn tap inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-small font-semibold text-cream transition-colors"
           >
             View on Amazon
             <ArrowUpRight aria-hidden className="h-4 w-4" />

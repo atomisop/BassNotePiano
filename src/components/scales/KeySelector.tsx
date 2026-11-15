@@ -25,10 +25,9 @@ export function KeySelector({ value, onChange }: KeySelectorProps) {
           type="button"
           onClick={() => onChange(key)}
           aria-pressed={key === value}
-          className={`h-11 min-w-[2.75rem] cursor-pointer rounded-control border px-2 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-            key === value
-              ? "border-signal bg-signal/14 text-signal-fg"
-              : "border-transparent text-slate-300 hover:text-slate-50 bg-neu-base shadow-raised-low"
+          data-glass-tone={key === value ? "primary" : undefined}
+          className={`lgx-btn h-11 min-w-[2.75rem] cursor-pointer rounded-control px-2 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            key === value ? "text-signal-fg" : "text-slate-300 hover:text-slate-50"
           }`}
         >
           {key}

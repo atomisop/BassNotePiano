@@ -9,8 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { seatsLeftNote } from "@/lib/seatRules";
 
-const chip = "tap rounded-control bg-neu-base text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-const chipState = (active: boolean) => (active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low");
+const chip = "tap lgx-btn rounded-control text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const keyOf = (s: ReservableSlot) => `${s.scheduleId}:${s.chunkIndex}`;
 // Defaults that stay the same object between renders (a fresh [] each time would redo the grouping below on every render).
 const NO_SLOTS: ReservableSlot[] = [];
@@ -86,7 +85,8 @@ export function WeekdayTimePicker({
                 setLooking(null);
                 if (selected && selected.dayOfWeek !== d) onSelect(null);
               }}
-              className={cn(chip, "flex min-h-14 flex-col items-center justify-center px-1 py-2", chipState(active))}
+              data-glass-tone={active ? "primary" : undefined}
+              className={cn(chip, "flex min-h-14 flex-col items-center justify-center px-1 py-2")}
             >
               <span className={cn("text-small font-semibold", active ? "text-signal-fg" : "text-slate-100")}>{DAY_SHORT[d]}</span>
               <span className="text-small text-slate-500">{open > 0 ? `${open} open` : "full"}</span>
@@ -112,7 +112,7 @@ export function WeekdayTimePicker({
                     setLooking(slot);
                     onSelect(null);
                   }}
-                  className={cn(chip, "flex min-h-11 items-center justify-center gap-1.5 px-1 py-2 text-small font-semibold", chipState(active), isWaiting ? "text-signal-fg" : "text-slate-500")}
+                  className={cn(chip, "flex min-h-11 items-center justify-center gap-1.5 px-1 py-2 text-small font-semibold", isWaiting ? "text-signal-fg" : "text-slate-500")}
                 >
                   {isWaiting ? <Bell aria-hidden className="h-3.5 w-3.5 shrink-0" fill="currentColor" /> : <Lock aria-hidden className="h-3.5 w-3.5 shrink-0" />}
                   <span className={isWaiting ? "" : "line-through decoration-slate-600"}>{formatTimeLabel(slot.startTime)}</span>
@@ -129,7 +129,8 @@ export function WeekdayTimePicker({
                   setLooking(null);
                   onSelect(slot);
                 }}
-                className={cn(chip, "flex min-h-11 flex-col items-center justify-center px-1 py-2 text-small font-semibold", chipState(active), active ? "text-signal-fg" : "text-slate-100")}
+                data-glass-tone={active ? "primary" : undefined}
+                className={cn(chip, "flex min-h-11 flex-col items-center justify-center px-1 py-2 text-small font-semibold", active ? "text-signal-fg" : "text-slate-100")}
               >
                 {formatTimeLabel(slot.startTime)}
                 {seatsLeftNote(slot.seats, slot.seatsLeft) && <span className="text-caption font-normal text-slate-500">{seatsLeftNote(slot.seats, slot.seatsLeft)}</span>}

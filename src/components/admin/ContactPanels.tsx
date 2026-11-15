@@ -484,7 +484,7 @@ export function ClassFormEntry({
   }
 
   return (
-    <div className="rounded-card bg-neu-base px-4 py-3 shadow-raised-low">
+    <div className="lgx-card rounded-card px-4 py-3">
       <p className="flex items-center gap-2">
         <span className="truncate text-body font-semibold text-slate-50">{name}</span>
         <span className="shrink-0 rounded-full bg-slate-700/40 px-2 py-0.5 text-small font-medium text-slate-200">Class form</span>

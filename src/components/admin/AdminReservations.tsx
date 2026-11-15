@@ -137,7 +137,7 @@ export function AdminReservations({
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-2">
-      <form onSubmit={reserve} className="space-y-4 rounded-2xl bg-neu-base p-5 shadow-raised-low">
+      <form onSubmit={reserve} className="lgx-card space-y-4 rounded-2xl p-5">
         <h2 className="text-title font-semibold text-slate-50">Keep a day for a customer</h2>
         <p className="text-small text-slate-400">Students see these times as taken and cannot book them. Name, email and phone are needed. If a student already has a class in them, it is refused. For a day off, use Close a day instead.</p>
         <label className="block text-small text-slate-400">
@@ -186,6 +186,7 @@ export function AdminReservations({
                           key={key(h)}
                           type="button"
                           aria-pressed={on}
+                          data-glass-tone={on ? "primary" : undefined}
                           onClick={() =>
                             setPicked((prev) => {
                               const next = new Set(prev);
@@ -194,7 +195,7 @@ export function AdminReservations({
                               return next;
                             })
                           }
-                          className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-slate-50/6 text-slate-300 hover:text-slate-50"}`}
+                          className={`lgx-btn tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "" : "text-slate-300 hover:text-slate-50"}`}
                         >
                           {h.time}
                         </button>
@@ -230,7 +231,7 @@ export function AdminReservations({
         </button>
       </form>
 
-      <section className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
+      <section className="lgx-card rounded-2xl p-5">
         <h2 className="flex items-baseline justify-between gap-3 text-title font-semibold text-slate-50">
           Kept for customers
           {reservations.length > 0 && <span className="text-small font-normal tabular-nums text-slate-500">{reservations.length}</span>}
@@ -365,12 +366,13 @@ function BookReservedDialog({ group, onClose, onBooked }: { group: ReservationGr
                 type="button"
                 data-no-lens=""
                 aria-pressed={on}
+                data-glass-tone={on ? "primary" : undefined}
                 onClick={() => {
                   setHour(h);
                   setShort(null);
                   setError(null);
                 }}
-                className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-slate-50/6 text-slate-300 hover:text-slate-50"}`}
+                className={`lgx-btn tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "" : "text-slate-300 hover:text-slate-50"}`}
               >
                 {h.time}
               </button>

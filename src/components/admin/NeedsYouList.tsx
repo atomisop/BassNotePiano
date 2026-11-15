@@ -172,7 +172,7 @@ function ItemRow({
   const btn = buttonVariants({ variant: "secondary", size: "sm" });
   const action = item.action;
   return (
-    <li className="flex flex-col gap-2 rounded-control bg-slate-50/4 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <li className="lgx-row flex flex-col gap-2 rounded-control p-3 sm:flex-row sm:items-center sm:justify-between">
       <Link href={item.href} className="min-w-0 hover:underline">
         <span className="block truncate text-small font-medium text-slate-50">{item.title}</span>
         {item.detail && <span className="block truncate text-small text-slate-500">{item.detail}</span>}

@@ -142,7 +142,7 @@ export function UnmatchedEmailList({
               <p className="mt-1 text-small text-slate-400">Attaching also remembers &ldquo;{row.senderName}&rdquo; as a name this student pays under, so their next payment clears by itself.</p>
               {/* Each open payment is a row: the student first, the facts in one quiet line, the action on the right. The best match is the
                   one orange button on the card. */}
-              <ul className="mt-2 divide-y divide-slate-50/6 overflow-hidden rounded-control bg-slate-50/4 ring-1 ring-inset ring-slate-50/8">
+              <ul className="lgx-row mt-2 divide-y divide-slate-50/6 overflow-hidden rounded-control">
                 {row.candidates.map((c, i) => {
                   const isConfirming = confirming?.receiptId === row.id && confirming.paymentId === c.id;
                   const who = c.studentName ? `${c.studentName} (${c.studentEmail})` : c.studentEmail;
@@ -349,7 +349,7 @@ function StudentFinder({
   }
 
   return (
-    <div className="mt-4 space-y-2 rounded-control bg-slate-50/4 p-3 ring-1 ring-inset ring-slate-50/8">
+    <div className="lgx-row mt-4 space-y-2 rounded-control p-3">
       <div className="flex items-center gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Search a name or email</span>

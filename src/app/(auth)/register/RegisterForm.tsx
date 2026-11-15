@@ -20,6 +20,7 @@ import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, MAX_PERSON_NAME_LENGTH, hasFirstAndLastName } from "@/lib/studentName";
 import { INSTRUMENT_INTENT_KEY, parseInstrumentIntent } from "@/lib/instrumentIntent";
 import { loginHref } from "@/lib/inPlaceLinks";
+import { AuthGlassCard } from "@/components/auth/AuthGlassCard";
 import { AuthHeading } from "@/components/auth/AuthHeading";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { readSignupDraft, saveSignupClaim, saveSignupDraft } from "@/lib/signupDraft";
@@ -148,10 +149,10 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full glass-surface-elevated p-7"
+      className="w-full"
     >
-      {/* The same plain title as every other sign-in screen: no icon over it and no centering, so moving between Log in and
-          Create account changes the fields and nothing else. */}
+      <AuthGlassCard>
+      {/* The same title as every other sign-in screen, so moving between Log in and Create account changes the fields and nothing else. */}
       <AuthHeading title="Create your account">
         {trialDays !== null
           ? `Free ${trialDays}-day trial, once per person, starting when you confirm your email. We'll send a 6-digit code next. Use your real first and last name so your teacher knows who you are. Passwords need 8 or more characters and one special character.`
@@ -287,6 +288,7 @@ function RegisterFormInner({ trialDays }: { trialDays: number | null }) {
           Log in
         </Link>
       </p>
+      </AuthGlassCard>
     </motion.div>
   );
 }

@@ -36,7 +36,7 @@ import { BackLink } from "@/components/ui/BackLink";
 const LessonPdfPlayer = dynamic(() => import("./LessonPdfPlayer").then((m) => m.LessonPdfPlayer), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[60vh] w-full items-center justify-center rounded-control bg-neu-base shadow-pressed-low text-small text-slate-400">
+    <div className="lgx-row flex h-[60vh] w-full items-center justify-center rounded-control text-small text-slate-400">
       Loading PDF viewer…
     </div>
   ),
@@ -525,7 +525,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
 
       {/* Tools as a row of icons on phones and tablets */}
       {!isDesktop && (
-        <div className="mt-4 flex gap-1 overflow-x-auto rounded-card bg-neu-base p-1 shadow-raised-low" role="toolbar" aria-label="Lesson tools">
+        <div className="lgx-card mt-4 flex gap-1 overflow-x-auto rounded-card p-1" role="toolbar" aria-label="Lesson tools">
           {TOOLS.map((t) => toolButton(t, "row"))}
         </div>
       )}
@@ -545,7 +545,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           <aside className="sticky top-0 overflow-hidden" aria-label="Lesson outline" aria-hidden={!outlineOpen} {...inertWhen(!outlineOpen)}>
             {/* The outline is a quiet panel, a step below the lesson card beside it. */}
             <div className="max-h-[calc(100svh-9rem)] w-[17.5rem] overflow-y-auto pr-6">
-              <div className="rounded-card bg-neu-base p-4 shadow-raised-low">{outline}</div>
+              <div className="lgx-card rounded-card p-4">{outline}</div>
             </div>
           </aside>
 
@@ -571,7 +571,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
           </aside>
 
           <div className="sticky top-0 pl-4" role="toolbar" aria-label="Lesson tools" aria-orientation="vertical">
-            <div className="flex flex-col items-center gap-1 rounded-card bg-neu-base p-1 shadow-raised-low">
+            <div className="lgx-card flex flex-col items-center gap-1 rounded-card p-1">
               {TOOLS.map((t) => toolButton(t, "rail"))}
             </div>
           </div>

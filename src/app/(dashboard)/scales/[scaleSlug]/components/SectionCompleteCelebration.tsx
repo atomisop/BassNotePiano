@@ -24,7 +24,7 @@ export function SectionCompleteCelebration({
   onCourseDetails: () => void;
 }) {
   return (
-    <motion.div variants={panelVariants} initial="hidden" animate="visible" className="relative mx-auto w-full max-w-md overflow-hidden rounded-card bg-[rgb(var(--plane-mid-bg))] p-8 text-center shadow-plane-mid">
+    <motion.div variants={panelVariants} initial="hidden" animate="visible" className="lgx-card relative mx-auto w-full max-w-md overflow-hidden rounded-card p-8 text-center">
       <SuccessGlowPulse />
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}

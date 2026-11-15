@@ -92,7 +92,7 @@ export function AdminBookingRequests({
       </Callout>
 
       {groups.length === 0 && (
-        <div className="rounded-card bg-neu-base px-4 py-10 text-center text-small text-slate-400 shadow-raised-low">No requests waiting.</div>
+        <div className="lgx-card rounded-card px-4 py-10 text-center text-small text-slate-400">No requests waiting.</div>
       )}
 
       {groups.map((group) => (

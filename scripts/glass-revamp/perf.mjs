@@ -8,7 +8,7 @@ const solid = args.includes("--solid");
 const paths = args.filter((a) => a.startsWith("/"));
 const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) { console.error("local only"); process.exit(2); }
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const rows = [];
 for (const path of paths) for (const [w, h] of [[1440, 900], [390, 844]]) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: "dark", storageState: role === "guest" ? undefined : `.auth/${role}.json` });
@@ -26,10 +26,27 @@ for (const path of paths) for (const [w, h] of [[1440, 900], [390, 844]]) {
   const m = await page.evaluate(() => ({
     ...window.__m,
     backdropEls: [...document.querySelectorAll("*")].filter((e) => { const s = getComputedStyle(e); return (s.backdropFilter && s.backdropFilter !== "none") || (s.webkitBackdropFilter && s.webkitBackdropFilter !== "none"); }).length,
+    // The liquid glass draws its backdrop on a ::before (cards, rows, panels) or ::after (buttons) layer, so count those too, and how many
+    // of them are on screen (the ones the browser actually composites while scrolling).
+    pseudoBackdrop: (() => {
+      let all = 0, onScreen = 0;
+      for (const e of document.querySelectorAll("*")) {
+        for (const p of ["::before", "::after"]) {
+          const s = getComputedStyle(e, p);
+          if (s.content !== "none" && s.backdropFilter && s.backdropFilter !== "none") {
+            all++;
+            const r = e.getBoundingClientRect();
+            if (r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && r.width > 0) onScreen++;
+          }
+        }
+      }
+      return { all, onScreen };
+    })(),
+    liveLenses: document.querySelectorAll("[data-lg-ready]").length,
     svgFilters: document.querySelectorAll("filter").length,
     domNodes: document.getElementsByTagName("*").length,
   }));
-  rows.push({ path, size: `${w}x${h}`, role, solid, lcpMs: Math.round(m.lcp), cls: +m.cls.toFixed(4), backdropElements: m.backdropEls, svgFilters: m.svgFilters, domNodes: m.domNodes, at: new Date().toISOString() });
+  rows.push({ path, size: `${w}x${h}`, role, solid, lcpMs: Math.round(m.lcp), cls: +m.cls.toFixed(4), backdropElements: m.backdropEls, pseudoBackdrop: m.pseudoBackdrop.all, pseudoBackdropOnScreen: m.pseudoBackdrop.onScreen, liveLenses: m.liveLenses, svgFilters: m.svgFilters, domNodes: m.domNodes, at: new Date().toISOString() });
   console.log(rows.at(-1));
   await ctx.close();
 }

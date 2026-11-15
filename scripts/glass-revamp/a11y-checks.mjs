@@ -6,7 +6,7 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!/localhost|127\.0\.0\.1/.test(base)) process.exit(2);
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(ok ? "PASS" : "FAIL", name, detail); };
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 async function open(features) {
   const c = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark", reducedMotion: "reduce", storageState: ".auth/student.json" });
   const p = await c.newPage();
@@ -19,22 +19,35 @@ async function open(features) {
   return { c, p };
 }
 const GLASS = ".glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill, .glass-menu, .chrome, .ig-dock";
-const noBackdrop = (p) => p.evaluate((sel) => { const els = [...document.querySelectorAll(sel)]; return { n: els.length, bad: els.filter((e) => getComputedStyle(e).backdropFilter !== "none").length }; }, GLASS);
+// The liquid glass (2026-11-14) draws its backdrop on a ::before (cards, rows, panels) or ::after (buttons) layer, so both the elements and
+// those layers are counted: `n`/`bad` for elements, `layers`/`badLayers` for the pseudo-element glass layers.
+const noBackdrop = (p) => p.evaluate((sel) => {
+  const els = [...document.querySelectorAll(sel)];
+  let layers = 0, badLayers = 0;
+  for (const e of document.querySelectorAll("*")) for (const ps of ["::before", "::after"]) {
+    const s = getComputedStyle(e, ps);
+    if (s.content === "none" || s.content === "normal") continue;
+    if (!/lgx|glass|liquid/.test(String(e.className)) && !e.matches('[data-glass-role], button, a')) continue;
+    layers++;
+    if (s.backdropFilter && s.backdropFilter !== "none") badLayers++;
+  }
+  return { n: els.length, bad: els.filter((e) => getComputedStyle(e).backdropFilter !== "none").length, layers, badLayers };
+}, GLASS);
 
 // 1. reduced transparency
 {
   const base0 = await open(null); const g0 = await noBackdrop(base0.p); await base0.c.close();
   const { c, p } = await open([{ name: "prefers-reduced-transparency", value: "reduce" }]);
   const g = await noBackdrop(p);
-  check("normal look has glass surfaces with a backdrop", g0.n > 0 && g0.bad > 0, JSON.stringify(g0));
-  check("prefers-reduced-transparency: no glass surface keeps a backdrop-filter", g.n > 0 && g.bad === 0, JSON.stringify(g));
+  check("normal look has glass surfaces with a backdrop", g0.n > 0 && (g0.bad > 0 || g0.badLayers > 0), JSON.stringify(g0));
+  check("prefers-reduced-transparency: no glass surface keeps a backdrop-filter", g.n > 0 && g.bad === 0 && g.badLayers === 0, JSON.stringify(g));
   await c.close();
 }
 // 2. forced colors
 {
   const { c, p } = await open([{ name: "forced-colors", value: "active" }]);
   const g = await noBackdrop(p);
-  check("forced-colors: no glass surface keeps a backdrop-filter", g.bad === 0, JSON.stringify(g));
+  check("forced-colors: no glass surface keeps a backdrop-filter", g.bad === 0 && g.badLayers === 0, JSON.stringify(g));
   await c.close();
 }
 // 3. keyboard

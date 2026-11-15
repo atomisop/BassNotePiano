@@ -14,7 +14,7 @@ export default function AboutLoading() {
         <Skeleton className="mt-2.5 h-10 w-36" />
 
         <div className="mt-6 lg:flex lg:gap-8">
-          <div className="rounded-card bg-neu-base shadow-raised-low divide-y divide-slate-50/8 lg:h-fit lg:w-56 lg:shrink-0">
+          <div className="lgx-card rounded-card divide-y divide-slate-50/8 lg:h-fit lg:w-56 lg:shrink-0">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex h-[53px] items-center gap-3 px-4">
                 <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
@@ -23,7 +23,7 @@ export default function AboutLoading() {
             ))}
           </div>
           <div className="mt-6 hidden min-w-0 flex-1 lg:mt-0 lg:block">
-            <div className="rounded-card bg-neu-base shadow-raised-low p-6">
+            <div className="lgx-card rounded-card p-6">
               <Skeleton className="h-3 w-28" />
               <Skeleton className="mt-2 h-6 w-32" />
               <div className="mt-4 space-y-2">

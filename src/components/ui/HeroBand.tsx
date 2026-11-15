@@ -39,7 +39,9 @@ export function HeroBand({
   // No overflow clipping on the section itself: a menu in the sheet has to open past the card's edge. Only the colored layer clips.
   return (
     <section aria-label={eyebrow} className={cn("relative rounded-sheet shadow-raised-mid", className)}>
-      <div className={cn("color-tile relative overflow-hidden text-white", hasSheet ? "rounded-t-sheet" : "rounded-sheet")} style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 52%, ${a.to} 100%)` }}>
+      {/* Coloured liquid glass (2026-11-14): the section is the glass; the colours are a see-through layer over it. */}
+      <div className={cn("color-tile lgx-tinted relative overflow-hidden text-white", hasSheet ? "rounded-t-sheet" : "rounded-sheet")}>
+        <span aria-hidden className="lgx-tint-layer" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 52%, ${a.to} 100%)` }} />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
         {keys && (
           <div aria-hidden className="absolute inset-0 opacity-60">

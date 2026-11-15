@@ -101,7 +101,7 @@ export function BookingAgenda({
         })}
       </div>
 
-      <ol className="max-h-[34rem] divide-y divide-(--neu-edge) overflow-y-auto rounded-2xl bg-neu-base shadow-raised-mid">
+      <ol className="lgx-card max-h-[34rem] divide-y divide-(--neu-edge) overflow-y-auto rounded-2xl">
         {days.map((ms) => {
           const key = dayKey(ms);
           const list = byDay.get(key) ?? [];
@@ -132,10 +132,10 @@ export function BookingAgenda({
                     const tone = r.isBooked
                       ? "bg-transparent text-slate-500 ring-1 ring-inset ring-slate-50/8"
                       : picked
-                        ? "bg-signal/16 text-slate-50 ring-1 ring-inset ring-signal/60"
+                        ? "lgx-btn text-slate-50"
                         : r.reservedForYou
                           ? "tint-peach"
-                          : "bg-slate-50/6 text-slate-100 hover:bg-slate-50/10";
+                          : "lgx-btn text-slate-100";
                     const state = r.isBooked ? "Taken" : picked ? "Picked" : r.reservedForYou ? "Reserved for you" : null;
                     return (
                       <button
@@ -143,6 +143,7 @@ export function BookingAgenda({
                         type="button"
                         disabled={r.isBooked}
                         aria-pressed={picked}
+                        data-glass-tone={picked && !r.isBooked ? "primary" : undefined}
                         onClick={() => onPick(r.key, key)}
                         className={`tap flex min-h-9 items-center gap-1.5 rounded-control px-3 py-1.5 text-left transition disabled:cursor-not-allowed ${tone}`}
                       >

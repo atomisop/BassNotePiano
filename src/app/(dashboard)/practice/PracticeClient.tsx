@@ -71,7 +71,7 @@ function PianoSectionView({ section, activeStep }: { section: PianoSection; acti
   const litFinger = lit === null ? null : section.steps[lit].finger;
 
   return (
-    <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+    <div className="lgx-card rounded-2xl p-4">
       <h3 className="text-body font-semibold text-slate-50">{section.label}</h3>
 
       {/* Steps in groups of four (one bar), with a gap between groups. */}
@@ -134,7 +134,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
     : [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "pinky"]];
 
   return (
-    <div className="rounded-2xl bg-neu-base p-3 shadow-raised-low sm:p-5">
+    <div className="lgx-card rounded-2xl p-3 sm:p-5">
       <div className="flex flex-wrap gap-1.5">
         {legend.map(([key, name]) => (
           <span key={key} className="inline-flex items-center gap-1.5 rounded-full bg-neu-lift px-3 py-1 text-small text-slate-300">
@@ -376,14 +376,14 @@ export function PracticeClient({
         )}
         {justCompleted && <Celebrate />}
         {justCompleted && (
-          <p className="mt-3 rounded-control bg-slate-50/6 px-4 py-3 text-small font-semibold text-slate-50">
+          <p className="lgx-row mt-3 rounded-control px-4 py-3 text-small font-semibold text-slate-50">
             10 minutes done. {"\u{1F389}"}
           </p>
         )}
       </HeroBand>
 
       {/* ---- Metronome ---- a quiet panel, a step below the timer. */}
-      <section aria-label="Tempo" className="rounded-card bg-neu-base p-4 shadow-raised-low md:p-6">
+      <section aria-label="Tempo" className="lgx-card rounded-card p-4 md:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-caption font-medium uppercase tracking-caps text-slate-500">Tempo</h2>
           <div className="flex items-center gap-1.5" aria-hidden>
@@ -449,9 +449,10 @@ export function PracticeClient({
               type="button"
               onClick={() => chooseExercise(e.id, e.bpm)}
               aria-pressed={e.id === exerciseId}
-              // A choice, not the next step: the chosen exercise is bright and outlined, the others quiet, and none of them orange.
-              className={`tap shrink-0 snap-start scroll-mx-4 rounded-full px-4 py-2.5 text-small font-medium transition ${
-                e.id === exerciseId ? "bg-slate-50/10 text-slate-50 ring-1 ring-inset ring-slate-50/20" : "bg-slate-50/4 text-slate-400 hover:text-slate-200"
+              // A choice, not the next step: every chip is a glass button, the chosen one carries the primary glass tint.
+              data-glass-tone={e.id === exerciseId ? "primary" : undefined}
+              className={`lgx-btn tap shrink-0 snap-start scroll-mx-4 rounded-full px-4 py-2.5 text-small font-medium transition ${
+                e.id === exerciseId ? "text-slate-50" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               {e.title}
@@ -471,7 +472,7 @@ export function PracticeClient({
         )}
 
         {/* The method is one tap away, not in the way. */}
-        <details className="group rounded-2xl bg-neu-base shadow-raised-low">
+        <details className="lgx-card group rounded-2xl">
           <summary className="tap flex cursor-pointer list-none items-center justify-between px-4 py-3 text-small font-semibold text-slate-100 [&::-webkit-details-marker]:hidden">
             How to play
             <span className="text-slate-500 transition group-open:rotate-45">+</span>

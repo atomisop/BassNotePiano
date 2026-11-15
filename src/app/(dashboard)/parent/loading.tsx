@@ -13,7 +13,7 @@ export default function ParentLoading() {
           <Skeleton className="h-28 rounded-card" />
           <Skeleton className="h-28 rounded-card" />
         </div>
-        <div className="mt-6 divide-y divide-slate-50/8 rounded-card bg-neu-base shadow-raised-low">
+        <div className="mt-6 divide-y divide-slate-50/8 lgx-card rounded-card">
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center justify-between gap-3 px-4 py-3.5 md:px-5">
               <div className="min-w-0 flex-1">

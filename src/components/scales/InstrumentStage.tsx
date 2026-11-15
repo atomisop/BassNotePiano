@@ -243,11 +243,10 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
               disabled={!supported}
               onClick={() => playDegree(spelled.notes, i)}
               aria-label={`Play ${note}, scale degree ${spelled.degrees[i]}`}
+              data-glass-tone={isActive ? "primary" : undefined}
               className={cn(
-                "tap flex w-14 cursor-pointer flex-col items-center rounded-control border py-2 transition duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
-                isActive
-                  ? "border-signal bg-signal/14 motion-safe:scale-105"
-                  : "border-transparent bg-slate-50/4 shadow-raised-low",
+                "tap lgx-btn flex w-14 cursor-pointer flex-col items-center rounded-control py-2 transition duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
+                isActive && "motion-safe:scale-105",
               )}
             >
               <span className={cn("text-body font-semibold", isActive ? "text-signal-fg" : "text-slate-50")}>{note}</span>

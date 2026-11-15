@@ -8,7 +8,7 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3101";
 if (!base.includes("localhost")) { console.error("local only"); process.exit(2); }
 mkdirSync(".auth", { recursive: true });
 const file = `.auth/${role}.json`;
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const ctx = await browser.newContext();
 const page = await ctx.newPage();
 {

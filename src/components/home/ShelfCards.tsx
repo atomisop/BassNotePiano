@@ -16,11 +16,12 @@ export function PathCard({ step, code, title, done, open, current, slug }: { ste
     <Link
       href={open ? `/scales/${slug}` : "/roadmap"}
       aria-current={current ? "step" : undefined}
-      aria-label={`${code}, ${title}: ${done ? "done" : current ? "you are here" : open ? "open" : "locked"}`}
       className={cn(
         SHELF_CARD_CLASS,
         "min-h-36",
-        current && "bg-signal/10 ring-2 ring-inset ring-signal/50 hover:bg-signal/14",
+        // The current scale: the same glass card with a warm tint and an orange edge (lgx-current), never a bare orange fill (a fill
+        // skips the glass and left its words straight on Home's photo).
+        current && "lgx-current",
       )}
     >
       <span
@@ -36,6 +37,8 @@ export function PathCard({ step, code, title, done, open, current, slug }: { ste
       <span className={cn("mt-0.5 block text-small font-semibold leading-snug line-clamp-2", current ? "text-slate-50" : done ? "text-slate-300" : open ? "text-slate-100" : "text-slate-400")}>
         {title}
       </span>
+      {/* The link's name is the words on the card (WCAG 2.5.3), plus its state for screen readers. */}
+      <span className="sr-only">{current ? ", you are here" : done ? ", done" : open ? ", open" : ", locked"}</span>
     </Link>
   );
 }

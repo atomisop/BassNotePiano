@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleRefusalNotice, GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { AuthHeading } from "@/components/auth/AuthHeading";
+import { AuthGlassCard } from "@/components/auth/AuthGlassCard";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { startNavigation } from "@/lib/navigationState";
 
@@ -49,14 +50,15 @@ function LoginCard() {
   }, [status, session, callbackUrl, router]);
 
   return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      {/* The same title and line as the Log in panel on the public pages (MarketingNav), so the two ways in read as one. */}
-      <AuthHeading title="Log in">Pick up your roadmap right where you left it.</AuthHeading>
-      <div className="mt-6">
-        <GoogleRefusalNotice error={searchParams.get("error")} />
-        <GoogleSignInButton callbackUrl={callbackUrl} />
-        <LoginForm callbackUrl={callbackUrl} />
-      </div>
+    <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full">
+      <AuthGlassCard>
+        <AuthHeading title="Log in">Pick up your roadmap right where you left it.</AuthHeading>
+        <div className="mt-7">
+          <GoogleRefusalNotice error={searchParams.get("error")} />
+          <GoogleSignInButton callbackUrl={callbackUrl} />
+          <LoginForm callbackUrl={callbackUrl} />
+        </div>
+      </AuthGlassCard>
     </motion.div>
   );
 }

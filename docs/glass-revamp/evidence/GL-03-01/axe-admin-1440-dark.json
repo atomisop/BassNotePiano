@@ -1,0 +1,180 @@
+[
+ {
+  "path": "/admin",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/today",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/activity",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/users",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/contacts",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/employees",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/lessons",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/schedule",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [
+   {
+    "id": "label-content-name-mismatch",
+    "impact": "serious",
+    "nodes": 7,
+    "sample": [
+     "button[aria-label=\"Monday: 0 times. Open\"] :: Fix any of the following:\n  Text inside the element is not included in the accessible name",
+     "button[aria-label=\"Tuesday: 0 times. Open\"] :: Fix any of the following:\n  Text inside the element is not included in the accessible name"
+    ]
+   }
+  ],
+  "overflow": false
+ },
+ {
+  "path": "/admin/roadmaps",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/messages",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/sent",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/support",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/payments",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/payment-plans",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/pricing",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/money-check",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/scholarships",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/data",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/discord",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/security",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ },
+ {
+  "path": "/admin/settings",
+  "size": "1440x900",
+  "role": "admin",
+  "mode": "dark",
+  "serious": [],
+  "overflow": false
+ }
+]

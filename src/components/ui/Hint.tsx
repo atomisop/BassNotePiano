@@ -114,7 +114,7 @@ export function Hint({
               width: hintWidth(document.documentElement.clientWidth),
               ...(place ? { left: place.left, top: place.top, ...(place.maxHeight ? { maxHeight: place.maxHeight } : {}) } : { left: 0, top: 0, visibility: "hidden" }),
             }}
-            className="fixed z-[80] block overflow-y-auto overscroll-contain rounded-xl bg-neu-lift p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200 shadow-raised-high ring-1 ring-slate-50/10"
+            className="glass-surface-elevated fixed z-[80] block overflow-y-auto overscroll-contain rounded-xl p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200"
           >
             {children}
           </span>,

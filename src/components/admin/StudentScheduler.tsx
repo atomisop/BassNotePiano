@@ -68,7 +68,7 @@ const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-f
 /** One question before a booking or a move runs (see nextBookingAsk). */
 function AskCard({ title, warn = false, children }: { title: string; warn?: boolean; children: React.ReactNode }) {
   return (
-    <div className={`rounded-control p-4 ring-1 ring-inset ${warn ? "bg-amber-300/10 ring-amber-300/20" : "bg-slate-50/5 ring-slate-50/10"}`}>
+    <div className={`rounded-control p-4 ${warn ? "bg-amber-300/10 ring-1 ring-inset ring-amber-300/20" : "lgx-row"}`}>
       <p className="text-body font-semibold text-slate-50">{title}</p>
       <p className="mt-1 text-small text-slate-300">{children}</p>
     </div>

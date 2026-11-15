@@ -42,8 +42,8 @@ export function AdminAlertsButton({ cards }: { cards: SidebarCard[] }) {
         aria-expanded={open}
         aria-label={attention > 0 ? `Alerts, ${attention} need you` : "Alerts"}
         title="Alerts"
-        className={`tap press relative flex h-9 w-9 items-center justify-center rounded-full bg-neu-base ${
-          open ? "text-signal-fg shadow-pressed-low" : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
+        className={`lgx-btn tap press relative flex h-9 w-9 items-center justify-center rounded-full ${
+          open ? "text-signal-fg" : "text-slate-400 hover:text-slate-200"
         }`}
       >
         <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden />
@@ -58,7 +58,7 @@ export function AdminAlertsButton({ cards }: { cards: SidebarCard[] }) {
         role="dialog"
         aria-label="Alerts"
         hidden={!open}
-        className="absolute right-0 top-full z-50 mt-2 max-h-[min(70dvh,34rem)] w-80 overflow-y-auto rounded-card bg-neu-base p-2.5 shadow-raised-high ring-1 ring-slate-50/8"
+        className="absolute right-0 top-full z-50 mt-2 max-h-[min(70dvh,34rem)] w-80 overflow-y-auto rounded-card glass-surface-elevated p-2.5"
       >
         <p className="px-1 pb-2 text-small font-semibold text-slate-200">Alerts</p>
         <SidebarSpotlight initial={cards} isAdmin mode="list" onAttention={onAttention} />

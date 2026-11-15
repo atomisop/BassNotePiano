@@ -247,7 +247,7 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
 
   const field = "min-h-11 w-full min-w-0 rounded-xl bg-neu-base px-3.5 py-2 text-body text-slate-100 shadow-pressed-low";
   // Chips turn solid orange when picked; data-no-lens keeps the glass lens (attached while they are plain) from painting over that.
-  const chip = (on: boolean) => `tap rounded-lg px-3 py-2 text-small font-medium ${on ? "bg-signal text-slate-950" : "bg-neu-base text-slate-200 shadow-raised-low"}`;
+  const chip = (on: boolean) => `lgx-btn tap rounded-lg px-3 py-2 text-small font-medium ${on ? "" : "text-slate-200"}`;
   const byDay = DAYS.map((day, i) => ({ day, items: slots.filter((s) => s.dayOfWeek === i) })).filter((g) => g.items.length > 0);
   const laterDates = slot?.dates.slice(4) ?? [];
   const ready = Boolean(preview) && !busy && !ctx?.blocked && (!heldForOther || takeHeld) && (!lowering || replaceScholarship);
@@ -373,9 +373,9 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
                 <p className="mb-1.5 text-caption text-slate-500">Nothing is booked before it. A running plan&apos;s next bill and credits move out by the weeks skipped, so no paid class is lost.</p>
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   {slot.dates.slice(0, 4).map((d) => (
-                    <button key={d} type="button" data-no-lens="" aria-pressed={firstClass === d} onClick={() => setFirstClass(d)} className={`${chip(firstClass === d)} flex flex-col items-start`}>
+                    <button key={d} type="button" data-no-lens="" aria-pressed={firstClass === d} data-glass-tone={firstClass === d ? "primary" : undefined} onClick={() => setFirstClass(d)} className={`${chip(firstClass === d)} flex flex-col items-start`}>
                       <span>{weekLabel(d)}</span>
-                      <span className={`text-caption ${firstClass === d ? "text-slate-950/80" : "text-slate-400"}`}>{shortDate(d)}</span>
+                      <span className={`text-caption ${firstClass === d ? "opacity-80" : "text-slate-400"}`}>{shortDate(d)}</span>
                     </button>
                   ))}
                 </div>
@@ -421,15 +421,15 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
               </span>
               <p className="mb-1.5 text-caption text-slate-500">Any scholarship means the 6 Month plan. Full makes every bill $0.</p>
               <div className="flex flex-wrap gap-1.5">
-                <button type="button" data-no-lens="" aria-pressed={pick === "keep"} onClick={() => setPick("keep")} className={chip(pick === "keep")}>
+                <button type="button" data-no-lens="" aria-pressed={pick === "keep"} data-glass-tone={pick === "keep" ? "primary" : undefined} onClick={() => setPick("keep")} className={chip(pick === "keep")}>
                   {current > 0 ? `Keep ${current}%` : "None"}
                 </button>
                 {current < 100 && (
-                  <button type="button" data-no-lens="" aria-pressed={pick === "full"} onClick={() => setPick("full")} className={chip(pick === "full")}>
+                  <button type="button" data-no-lens="" aria-pressed={pick === "full"} data-glass-tone={pick === "full" ? "primary" : undefined} onClick={() => setPick("full")} className={chip(pick === "full")}>
                     Full (free)
                   </button>
                 )}
-                <button type="button" data-no-lens="" aria-pressed={pick === "percent"} onClick={() => setPick("percent")} className={chip(pick === "percent")}>
+                <button type="button" data-no-lens="" aria-pressed={pick === "percent"} data-glass-tone={pick === "percent" ? "primary" : undefined} onClick={() => setPick("percent")} className={chip(pick === "percent")}>
                   {current > 0 ? "Another percent" : "Part"}
                 </button>
               </div>
@@ -454,7 +454,7 @@ export function AdminPlanSetupButton({ userId, compact = false }: { userId: stri
                 <span className="mb-1 block text-small font-medium text-slate-200">Plan length</span>
                 <div className="flex gap-1.5">
                   {ctx.terms.map((t) => (
-                    <button key={t.term} type="button" data-no-lens="" aria-pressed={term === t.term} onClick={() => setTerm(t.term)} className={`${chip(term === t.term)} flex-1`}>
+                    <button key={t.term} type="button" data-no-lens="" aria-pressed={term === t.term} data-glass-tone={term === t.term ? "primary" : undefined} onClick={() => setTerm(t.term)} className={`${chip(term === t.term)} flex-1`}>
                       {t.term === "MONTHLY" ? "1 mo" : t.term === "TERM_3" ? "3 mo" : "6 mo"}
                     </button>
                   ))}

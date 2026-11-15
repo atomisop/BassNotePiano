@@ -1,5 +1,7 @@
 # Glass revamp status
 
+> 2026-11-14: Rule 1 changed (every card and button is liquid glass). The older "content goes solid" target in the rows below is superseded; see LIQUID-GLASS-EVERYWHERE.md.
+
 Done so far: GL-01-01 to GL-01-05 and GL-02-01 (owner chose the subtle direction: keep the look and the approved dock; make glass consistent, accessible and reliable). A task is DONE only when `npm run glass:verify` passes for it with real before and after evidence.
 
 | Task | State | Evidence |
@@ -15,8 +17,7 @@ Done so far: GL-01-01 to GL-01-05 and GL-02-01 (owner chose the subtle direction
 | GL-02-01 Solid surfaces on public pages, piano lesson, admin at phone width, WebKit and Firefox: 0 overflow, 0 axe findings | DONE | evidence/GL-02-01/ |
 | Production-build performance (glass vs Solid) | MEASURED (not a code task, no DONE claim): Solid cuts blurred elements to 0-1 per page with no LCP change; `/account` at 390 has a pre-existing 0.113 layout shift | PERFORMANCE-BASELINE.md, evidence/GL-00-01/perf-production/ |
 | Phone backdrop budget | CHECKED, no change needed: the 19 on phone home were 3 on screen (PERFORMANCE-BASELINE.md correction) | PERFORMANCE-BASELINE.md |
-| Phase 1 remaining (move class-name glass consumers to roles, toasts, skeletons) | NEXT | |
-| Phases 2 to 6 | NOT STARTED | |
+| GL-03-01 Liquid glass everywhere (owner decision 2026-11-14: every card and button is the 21st.dev "Liquid Glass Login" glass; Log in is a page with the photo) | DONE on branch `liquid-glass-everywhere`, not merged: typecheck, lint, 867 unit tests, production build, reduced transparency, forced colors, Solid surfaces and keyboard checks pass; axe on 62 page runs shows no new serious or critical finding (the ones left are pre-existing, listed in LIQUID-GLASS-EVERYWHERE.md); zero horizontal overflow at 390 and 1440 | LIQUID-GLASS-EVERYWHERE.md, evidence/GL-03-01/ |
 
 ## Baseline defects to fix (from GL-00-01)
 

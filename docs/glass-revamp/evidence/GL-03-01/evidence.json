@@ -1,0 +1,28 @@
+{
+  "taskId": "GL-03-01",
+  "status": "DONE",
+  "commit": "f637a41",
+  "title": "Liquid glass everywhere: every card and button is the 21st.dev Liquid Glass Login glass; Log in is a page with the photo",
+  "viewports": ["1440x900", "390x844"],
+  "before": [
+    "before/login-guest-dark-390x844.png",
+    "before/login-guest-dark-1440x900.png",
+    "before/dashboard-student-dark-390x844.png",
+    "before/lesson-student-dark-390x844.png",
+    "before/admin-admin-dark-1440x900.png"
+  ],
+  "after": [
+    "after/login-guest-dark-390x844.png",
+    "after/login-guest-dark-1440x900.png",
+    "after/register-guest-dark-390x844.png",
+    "after/dashboard-student-dark-390x844.png",
+    "after/dashboard-student-dark-1440x900.png",
+    "after/dashboard-student-light-390x844.png",
+    "after/lesson-student-dark-390x844.png",
+    "after/admin-admin-dark-1440x900.png"
+  ],
+  "stateProof": ["state/dashboard-student-dark-solid-390x844.png"],
+  "testResults": "tests.txt",
+  "reviewerNotes": "REVIEW.md",
+  "blockingIssues": []
+}

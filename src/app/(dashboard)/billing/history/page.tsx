@@ -259,7 +259,7 @@ export default async function BillingHistoryPage(props: { searchParams: Promise<
           {/* One list of rows, not a pile of boxes: the amount and its state first, what it was for and when quiet under it. */}
           <section aria-label="All payments">
             <h2 className="px-1 text-caption font-medium uppercase tracking-caps text-slate-500">All payments</h2>
-            <ul className="mt-3 divide-y divide-slate-50/8 rounded-card bg-neu-base px-4 shadow-raised-low sm:px-5">
+            <ul className="lgx-card mt-3 divide-y divide-slate-50/8 rounded-card px-4 sm:px-5">
               {first.map(row)}
               {rest.length > 0 && (
                 <li>
