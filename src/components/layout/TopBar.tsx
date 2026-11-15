@@ -76,8 +76,9 @@ export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean
           <StreakBadge />
         </span>
         <CreditsBadge />
-        {/* Ask AI lives at the foot of the sidebar on a computer; search and the light/dark switch take its place here. */}
-        <span className="contents md:hidden">
+        {/* Ask AI lives at the foot of the sidebar on a computer; search and the light/dark switch take its place here. When the admin's
+            sidebar is too tall for the screen it comes back here instead (html[data-atom-top], set by AppSidebar; see .topbar-atom). */}
+        <span className="topbar-atom contents md:hidden">
           <AskAiButton />
         </span>
         <TopBarTools />

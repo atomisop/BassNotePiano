@@ -95,6 +95,45 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
   // The selector: one solid orange pill that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
   const sel = useActiveRect(navRef, [pathname, mounted, kids.length]);
 
+  // On a short screen the admin's list of sections makes the sidebar scroll, and Ask AI at its foot then sits on top of the list. In that
+  // case (admins only) Ask AI moves to the top right of the top bar instead (TopBar shows it while html[data-atom-top] is set); when the
+  // whole list fits, it stays here. Measured as if the button were still here, so moving it never flips the answer back.
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const [atomOnTop, setAtomOnTop] = useState(false);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!isAdmin || !nav) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      if (nav.clientHeight === 0) return; // hidden on phones
+      const foot = toolsRef.current?.offsetHeight ?? 0;
+      const ASK_AI_HEIGHT = 44; // the h-10 button plus the foot's top padding
+      setAtomOnTop(nav.scrollHeight - foot + ASK_AI_HEIGHT > nav.clientHeight + 1);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    const ro = new ResizeObserver(schedule);
+    ro.observe(nav);
+    Array.from(nav.children).forEach((c) => ro.observe(c));
+    window.addEventListener("resize", schedule);
+    schedule();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [isAdmin, pathname, mounted, kids.length]);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (atomOnTop) root.dataset.atomTop = "";
+    else delete root.dataset.atomTop;
+    return () => {
+      delete root.dataset.atomTop;
+    };
+  }, [atomOnTop]);
+
   // Hover labels (the rail shows icons only) and the pop-out list of an admin section's pages. Both are drawn in a portal on <body>, so
   // the sidebar's own clipping and view-transition layer can never cut them off.
   const [tip, setTip] = useState<{ label: string; hint?: string; top: number; left: number } | null>(null);
@@ -234,8 +273,8 @@ export function AppSidebar({ cards, isAdmin, adminBadges = {} }: { cards: Sideba
 
       {/* Ask AI at the foot of the sidebar (search and the light/dark switch are in the top bar): the same Ask AI pill as in the top
           bar (orbiting orange ring, sparkle), just as wide as the sidebar. */}
-      <div className="sb-tools sticky bottom-0 mt-auto pt-1">
-        {!atomHiddenOn(pathname) && (
+      <div ref={toolsRef} className="sb-tools sticky bottom-0 mt-auto pt-1">
+        {!atomHiddenOn(pathname) && !atomOnTop && (
         <div ref={askRef}>
           <GenerateAIButton calm ariaLabel="Ask AI" onClick={askAtom} className="sb-item tap h-10 w-full px-3">
             <span className="sb-label">Ask AI</span>
