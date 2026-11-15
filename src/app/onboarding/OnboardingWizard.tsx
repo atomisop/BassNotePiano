@@ -71,10 +71,9 @@ function RadioOption({
 }) {
   return (
     <label
-      data-glass-tone={checked ? "primary" : undefined}
-      className={`lgx-btn flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
+      className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
         comingSoon ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-      } ${checked ? "text-slate-50" : "text-slate-300 hover:text-slate-50"}`}
+      } ${checked ? "text-signal-fg shadow-pressed-low ring-1 ring-signal" : "text-slate-300 shadow-raised-low hover:text-slate-50"}`}
     >
       <input
         type="radio"
@@ -100,9 +99,8 @@ function RadioOption({
 function CheckOption({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
   return (
     <label
-      data-glass-tone={checked ? "primary" : undefined}
-      className={`lgx-btn flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
-        checked ? "text-slate-50" : "text-slate-300 hover:text-slate-50"
+      className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
+        checked ? "text-signal-fg shadow-pressed-low ring-1 ring-signal" : "text-slate-300 shadow-raised-low hover:text-slate-50"
       }`}
     >
       <input type="checkbox" checked={checked} onChange={onToggle} className="sr-only" />
@@ -331,7 +329,7 @@ export function OnboardingWizard({ initialInstrument = null, askFullName = false
                           setUsernameValue(name);
                           setError(null);
                         }}
-                        className="lgx-btn tap inline-flex items-center rounded-full px-3 py-1 text-small font-medium text-slate-300 transition hover:text-slate-50"
+                        className="tap inline-flex items-center rounded-full bg-neu-base px-3 py-1 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-50"
                       >
                         @{name}
                       </button>

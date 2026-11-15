@@ -110,7 +110,7 @@ export function SlideOverPanel({
                 type="button"
                 onClick={onClose}
                 aria-label="Back"
-                className="lgx-btn tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition"
+                className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 <ChevronLeft className="h-[18px] w-[18px]" />
               </button>

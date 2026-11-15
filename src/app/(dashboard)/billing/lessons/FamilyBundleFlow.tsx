@@ -189,7 +189,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         >
           ← Change bundle
         </button>
-        <div className="lgx-card mb-4 rounded-xl p-4">
+        <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">
             {perRecipientClasses} classes each, for {emails.length} accounts ({emails.length * perRecipientClasses} classes total)
           </p>
@@ -227,8 +227,9 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 type="button"
                 onClick={() => setTerm(option.value)}
                 aria-pressed={active}
-                data-glass-tone={active ? "primary" : undefined}
-                className="lgx-btn tap rounded-control px-3 py-3 text-center transition"
+                className={`tap rounded-control bg-neu-base px-3 py-3 text-center transition ${
+                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                }`}
               >
                 <p className={`text-small font-medium ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
@@ -330,7 +331,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </button>
       </div>
 
-      <div className="lgx-card rounded-xl p-4 sm:p-5">
+      <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
         <div className="flex items-center justify-between text-small text-slate-400">
           <span>
             {perRecipientClasses} classes × {emails.length} accounts ({formatUsd(total.perRecipientCents)} each)
@@ -347,7 +348,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
       </div>
 
-      <label className="lgx-row flex cursor-pointer items-start gap-2.5 rounded-xl p-3.5 text-small text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
