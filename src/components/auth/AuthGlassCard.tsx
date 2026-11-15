@@ -2,8 +2,8 @@
 
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { GlassLens } from "@/components/ui/GlassLens";
-import { GLASS_RECIPES } from "@/lib/liquidGlassMaps";
+import { LoginGlass } from "@/components/auth/LoginGlass";
+import { GLASS_RECIPES } from "@/lib/loginGlassMaps";
 import { isPhotoAuthPath } from "@/components/auth/AuthBackdrop";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +55,11 @@ export function AuthGlassCard({ children, className }: { children: ReactNode; cl
       onPointerUp={onDragEnd}
       onPointerCancel={onDragEnd}
       data-auth-card
+      // data-glass keeps the app-wide glass engine off this card: its buttons and fields have the login glass (globals.css).
+      data-glass
       className={cn("relative w-full rounded-[32px] text-slate-50", draggable && "md:cursor-grab md:active:cursor-grabbing [&_input]:cursor-text", className)}
     >
-      <GlassLens
+      <LoginGlass
         surface
         radius={CARD.radius}
         bezel={CARD.bevelDepth}

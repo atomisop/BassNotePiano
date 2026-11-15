@@ -221,7 +221,7 @@ export async function TodayView(props: { searchParams: Promise<{ day?: string | 
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link href="/admin/schedule" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        <Link href="/admin/schedule" className={buttonVariants({ variant: "ghost", size: "sm", className: "border border-slate-50/12" })}>
           <CalendarClock aria-hidden className="h-4 w-4" />
           Weekly schedule
         </Link>

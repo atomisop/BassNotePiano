@@ -137,8 +137,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
           type="button"
           aria-pressed={onlyChanged}
           onClick={() => setOnlyChanged((v) => !v)}
-          data-glass-tone={onlyChanged ? "primary" : undefined}
-          className={`lgx-btn tap rounded-full px-3 py-1 text-small font-medium ${onlyChanged ? "" : "text-slate-300"}`}
+          className={`tap rounded-full px-3 py-1 text-small font-medium ${onlyChanged ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"}`}
         >
           Only what I changed ({changedCount})
         </button>

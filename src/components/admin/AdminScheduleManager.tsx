@@ -108,7 +108,7 @@ function WindowMovePanel({ scheduleId, input, preview, onMoveEveryone, onClose }
   }
 
   return (
-    <div className="lgx-row mt-3 grid gap-3 rounded-control p-3">
+    <div className="mt-3 grid gap-3 rounded-control bg-slate-50/5 p-3 ring-1 ring-inset ring-slate-50/10">
       <p className="flex flex-wrap items-center gap-1.5 text-small font-medium text-slate-100">
         {preview.from} <ArrowRight aria-hidden className="h-3.5 w-3.5" /> {preview.to}
       </p>
@@ -403,13 +403,14 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
               <button
                 type="button"
                 onClick={() => openWindow(day)}
-                data-glass-tone={live > 0 ? "primary" : undefined}
-                className="lgx-btn tap flex w-full flex-col items-center gap-1.5 rounded-control py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`${DAY_LABELS[day]}: ${live} ${live === 1 ? "time" : "times"}${booked > 0 ? `, ${booked} booked` : ""}. Open`}
+                className={cn(
+                  "tap flex w-full flex-col items-center gap-1.5 rounded-control py-3 ring-1 ring-inset transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  live > 0 ? "bg-signal/10 ring-signal/25 hover:bg-signal/16" : "bg-slate-50/4 ring-slate-50/8 hover:bg-slate-50/7",
+                )}
               >
                 <span className={cn("text-caption font-medium", live > 0 ? "text-signal-fg" : "text-slate-500")}>{DAY_LABELS[day].slice(0, 3)}</span>
                 <span className={cn("text-title font-semibold tabular-nums", live > 0 ? "text-slate-50" : "text-slate-600")}>{live}</span>
-                {/* The tile's name is its own words (WCAG 2.5.3) plus this, for screen readers. */}
-                <span className="sr-only">{`, ${DAY_LABELS[day]}, ${live === 1 ? "time" : "times"}${booked > 0 ? `, ${booked} booked` : ""}. Open`}</span>
                 <span aria-hidden className="flex h-1.5 items-center gap-0.5">
                   {live === 0 ? (
                     <span className="h-1 w-1 rounded-full bg-slate-50/15" />
@@ -566,7 +567,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
           </ul>
 
             {adding ? (
-              <div className="lgx-row rounded-card p-4">
+              <div className="rounded-card bg-slate-50/4 p-4 ring-1 ring-inset ring-slate-50/8">
                 <h3 className="mb-3 text-body font-semibold text-slate-50">New weekly time</h3>
                 <ScheduleForm
                   initial={{ dayOfWeek: openDay, startTime: "16:00", endTime: "16:45", label: null, seats: 1 }}
