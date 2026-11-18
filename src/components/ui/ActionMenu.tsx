@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown as CaretDown } from "@/components/ui/appIcons";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,25 +12,47 @@ import { cn } from "@/lib/utils";
  * The panel stays MOUNTED while closed (it is only hidden): each action in it is a button that owns its own dialog, and that
  * dialog lives in a portal, so closing the panel after a tap never closes the dialog the tap opened.
  * Closes on a tap inside, a tap outside and Escape.
+ *
+ * The panel is drawn in a portal on <body> with a fixed position worked out from the button, so no card can ever cover or clip it: a
+ * card that comes later on the page, a card with its own stacking (a transform, a blur, a squircle) or one that hides its overflow.
+ * It opens below the button, or above it when there is more room there, and follows the button while the page scrolls.
  */
 export function ActionMenu({ label, icon, children, align = "left", className, openEvent }: { label: string; icon?: ReactNode; children: ReactNode; align?: "left" | "right"; className?: string; /** A window event name that opens the panel (the command menu uses it to jump to a job). */ openEvent?: string }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const panel = useRef<HTMLDivElement>(null);
-  // How far to pull the panel sideways so it stays on screen (a phone's narrow width would otherwise let it run past the edge).
-  const [shift, setShift] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // Where the panel sits on the screen (fixed), and whether it opened upward.
+  const [pos, setPos] = useState<{ top: number; left: number; up: boolean; maxHeight: number } | null>(null);
 
   useLayoutEffect(() => {
-    if (!open || !panel.current || !root.current) return;
-    const margin = 16;
-    const width = panel.current.offsetWidth;
-    const anchor = root.current.getBoundingClientRect();
-    const left = align === "right" ? anchor.right - width : anchor.left;
-    let next = 0;
-    if (left + width > window.innerWidth - margin) next = window.innerWidth - margin - (left + width);
-    if (left + next < margin) next = margin - left;
-    setShift(next);
+    if (!open) return;
+    const place = () => {
+      if (!panel.current || !root.current) return;
+      const margin = 16;
+      const gap = 8;
+      const width = panel.current.offsetWidth;
+      const height = panel.current.scrollHeight;
+      const anchor = root.current.getBoundingClientRect();
+      let left = align === "right" ? anchor.right - width : anchor.left;
+      left = Math.min(left, window.innerWidth - margin - width);
+      left = Math.max(left, margin);
+      const below = window.innerHeight - anchor.bottom - gap - margin;
+      const above = anchor.top - gap - margin;
+      const up = height > below && above > below;
+      const room = Math.max(120, up ? above : below);
+      const shown = Math.min(height, room);
+      setPos({ top: up ? anchor.top - gap - shown : anchor.bottom + gap, left, up, maxHeight: room });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
   }, [open, align]);
 
   useEffect(() => {
@@ -42,7 +65,9 @@ export function ActionMenu({ label, icon, children, align = "left", className, o
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (root.current?.contains(target) || panel.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -70,23 +95,27 @@ export function ActionMenu({ label, icon, children, align = "left", className, o
       </button>
       {/* Stays mounted while closed (a dialog opened from a button in here keeps its state); it fades and shrinks from the trigger's corner
           (rules 10, 11, 12, 15) and is taken out of the tab order and the pointer path once it has left. */}
-      <div
-        id={panelId}
-        ref={panel}
-        style={shift ? { translate: `${shift}px 0` } : undefined}
-        aria-hidden={!open}
-        data-open={open ? "" : undefined}
-        // A tap on any action closes the panel on the next turn, after that action's own click has run.
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest("button, a")) window.setTimeout(() => setOpen(false), 0);
-        }}
-        className={cn(
-          "menu-panel glass-menu absolute top-full z-30 mt-2 flex min-w-[15rem] max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1 rounded-2xl p-2 [&>*]:justify-start [&_button]:w-full [&_button]:justify-start",
-          align === "right" ? "right-0 origin-top-right" : "left-0 origin-top-left",
+      {mounted &&
+        createPortal(
+          <div
+            id={panelId}
+            ref={panel}
+            style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight }}
+            aria-hidden={!open}
+            data-open={open && pos ? "" : undefined}
+            // A tap on any action closes the panel on the next turn, after that action's own click has run.
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("button, a")) window.setTimeout(() => setOpen(false), 0);
+            }}
+            className={cn(
+              "menu-panel glass-menu fixed z-50 flex min-w-[15rem] max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1 overflow-y-auto rounded-2xl p-2 [&>*]:justify-start [&_button]:w-full [&_button]:justify-start",
+              pos?.up ? (align === "right" ? "origin-bottom-right" : "origin-bottom-left") : align === "right" ? "origin-top-right" : "origin-top-left",
+            )}
+          >
+            {children}
+          </div>,
+          document.body,
         )}
-      >
-        {children}
-      </div>
     </div>
   );
 }
