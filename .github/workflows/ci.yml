@@ -64,7 +64,8 @@ jobs:
       - run: npm ci
 
       # Fails the build on a high or critical known vulnerability in a package that ships to production.
-      - run: npm audit --omit=dev --audit-level=high
+      # An advisory that cannot reach a visitor and has no fix yet can be listed, with a reason and an end date, in audit-allowlist.json.
+      - run: node scripts/audit-check.mjs
 
       # prisma generate (also wired as postinstall, so `npm ci` above
       # already ran it once), repeated explicitly so this step's intent
