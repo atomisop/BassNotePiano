@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-FC5Q-39XC-VJPF",
+    "package": "picomatch",
+    "reason": "ReDoS in picomatch's glob parsing. Every version is affected and no fix exists yet. Our only copies come from @sentry/nextjs's build-time rollup and webpack plugins, which match the project's own build globs, never text from a visitor. Approved by the owner on 2026-11-18.",
+    "until": "2026-12-31"
+  }
+]
