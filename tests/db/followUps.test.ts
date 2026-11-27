@@ -7,6 +7,7 @@ import { day, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("fu");
 const groupIds: string[] = [];
+const scheduleIds: string[] = [];
 
 afterAll(async () => {
   const users = await prisma.user.findMany({ where: { email: { startsWith: tag } }, select: { id: true } });
@@ -16,6 +17,7 @@ afterAll(async () => {
   await prisma.zellePayment.deleteMany({ where: { userId: { in: ids } } });
   await prisma.paymentPlan.deleteMany({ where: { userId: { in: ids } } });
   await prisma.familyPlanGroup.deleteMany({ where: { id: { in: groupIds } } });
+  await prisma.classSchedule.deleteMany({ where: { id: { in: scheduleIds } } });
   await prisma.user.deleteMany({ where: { id: { in: ids } } });
 });
 
@@ -101,8 +103,9 @@ describe("people to follow up with", () => {
     const group = await prisma.familyPlanGroup.create({ data: { kind: "FAMILY", payerId: payer.id } });
     groupIds.push(group.id);
     await prisma.paymentPlan.create({ data: planData(unlinked.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: null }) });
-    const schedule = await prisma.classSchedule.findFirst({ where: { active: true } });
-    await prisma.paymentPlan.create({ data: planData(scheduled.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: schedule?.id ?? null, reservedChunkIndex: schedule ? 0 : null }) });
+    const schedule = await prisma.classSchedule.create({ data: { dayOfWeek: 3, startTime: "10:00", durationMin: 45, creditCost: 2, label: `${tag} slot` } });
+    scheduleIds.push(schedule.id);
+    await prisma.paymentPlan.create({ data: planData(scheduled.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: schedule.id, reservedChunkIndex: 0 }) });
     await prisma.parentLink.create({ data: { parentId: payer.id, childId: scheduled.id, status: "ACCEPTED", respondedAt: new Date() } });
 
     const people = await getFollowUpPeople("noSchedule");
