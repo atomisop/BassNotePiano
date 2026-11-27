@@ -25,7 +25,7 @@ export interface FollowUp {
 }
 
 /** The reasons to follow up on, each naming its people. */
-export type FollowUpPeopleKind = "overdue" | "atRisk" | "trial" | "credits" | "discord";
+export type FollowUpPeopleKind = "overdue" | "atRisk" | "trial" | "credits" | "discord" | "noSchedule";
 
 /** The Accounts list filters that show exactly one follow-up reason's people (`/admin/users?filter=...`). */
 export const ACCOUNT_FOLLOW_UP_FILTERS = ["trial", "credits", "discord"] as const;
@@ -97,6 +97,21 @@ export async function getFollowUpPeople(kind: FollowUpPeopleKind, now = new Date
       });
       return users.map(person);
     }
+    case "noSchedule": {
+      // A family (group) plan member whose own parent, by an accepted Parent Link, already manages their account: a Group plan
+      // only auto-books the payer's own weekly time, so a linked child here has a paid plan but no class ever gets booked for
+      // them unless an admin sets their weekly time by hand (the "Weekly time" button on their page).
+      const candidates = await prisma.paymentPlan.findMany({
+        where: { status: "ACTIVE", reservedScheduleId: null, familyGroup: { kind: "FAMILY" } },
+        select: {
+          familyGroup: { select: { payerId: true } },
+          user: { select: { id: true, name: true, email: true, parentLinksAsChild: { where: { status: "ACCEPTED" }, select: { parentId: true } } } },
+        },
+      });
+      return candidates
+        .filter((p) => p.user.parentLinksAsChild.some((l) => l.parentId === p.familyGroup?.payerId))
+        .map((p) => person(p.user));
+    }
   }
 }
 
@@ -106,6 +121,7 @@ const REASONS: { key: FollowUpPeopleKind; title: string; hint: string; href: str
   { key: "trial", title: "Trial ends within a day", hint: "No class booked yet.", href: "/admin/users?filter=trial" },
   { key: "credits", title: "Credits expire this week", hint: "They still have unused credits that lapse within 7 days.", href: "/admin/users?filter=credits" },
   { key: "discord", title: "Discord not connected", hint: "Paying, but not linked to Discord, where classes are held.", href: "/admin/users?filter=discord" },
+  { key: "noSchedule", title: "Child has no weekly class", hint: "On a family plan their parent manages, but no weekly time is set, so no class is ever booked for them. Set it with Weekly time.", href: "/admin/users" },
 ];
 
 export async function getFollowUps(now = new Date()): Promise<FollowUp[]> {

@@ -7,6 +7,7 @@ import { day, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("fu");
 const groupIds: string[] = [];
+const scheduleIds: string[] = [];
 
 afterAll(async () => {
   const users = await prisma.user.findMany({ where: { email: { startsWith: tag } }, select: { id: true } });
@@ -16,6 +17,7 @@ afterAll(async () => {
   await prisma.zellePayment.deleteMany({ where: { userId: { in: ids } } });
   await prisma.paymentPlan.deleteMany({ where: { userId: { in: ids } } });
   await prisma.familyPlanGroup.deleteMany({ where: { id: { in: groupIds } } });
+  await prisma.classSchedule.deleteMany({ where: { id: { in: scheduleIds } } });
   await prisma.user.deleteMany({ where: { id: { in: ids } } });
 });
 
@@ -80,6 +82,35 @@ describe("people to follow up with", () => {
     const g = await overdueGroup("PARENT", 1, false);
     const people = await getFollowUpPeople("overdue");
     expect(people.find((p) => p.id === g.kids[0].id)?.payer).toEqual({ id: g.payer.id, name: g.payer.name });
+  });
+
+  it("flags a family-plan member linked as another member's child who has no weekly time set", async () => {
+    const payer = await makeUser(tag, "SchedPayer");
+    const child = await makeUser(tag, "SchedChild");
+    const group = await prisma.familyPlanGroup.create({ data: { kind: "FAMILY", payerId: payer.id } });
+    groupIds.push(group.id);
+    await prisma.paymentPlan.create({ data: planData(child.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: null }) });
+    await prisma.parentLink.create({ data: { parentId: payer.id, childId: child.id, status: "ACCEPTED", respondedAt: new Date() } });
+
+    const people = await getFollowUpPeople("noSchedule");
+    expect(people.some((p) => p.id === child.id)).toBe(true);
+  });
+
+  it("does not flag a family-plan member with no parent link, or one whose weekly time is already set", async () => {
+    const payer = await makeUser(tag, "SchedPayer2");
+    const unlinked = await makeUser(tag, "SchedUnlinked");
+    const scheduled = await makeUser(tag, "SchedScheduled");
+    const group = await prisma.familyPlanGroup.create({ data: { kind: "FAMILY", payerId: payer.id } });
+    groupIds.push(group.id);
+    await prisma.paymentPlan.create({ data: planData(unlinked.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: null }) });
+    const schedule = await prisma.classSchedule.create({ data: { dayOfWeek: 3, startTime: "10:00", durationMin: 45, creditCost: 2, label: `${tag} slot` } });
+    scheduleIds.push(schedule.id);
+    await prisma.paymentPlan.create({ data: planData(scheduled.id, { familyGroupId: group.id, nextDueDate: new Date(Date.now() + 20 * day), reservedScheduleId: schedule.id, reservedChunkIndex: 0 }) });
+    await prisma.parentLink.create({ data: { parentId: payer.id, childId: scheduled.id, status: "ACCEPTED", respondedAt: new Date() } });
+
+    const people = await getFollowUpPeople("noSchedule");
+    expect(people.some((p) => p.id === unlinked.id)).toBe(false);
+    expect(people.some((p) => p.id === scheduled.id)).toBe(false);
   });
 });
 
