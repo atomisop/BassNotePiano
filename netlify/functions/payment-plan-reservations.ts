@@ -7,6 +7,8 @@ import { notifyAdmins } from "../../src/lib/adminNotifications";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
 import { addBillingCycles } from "../../src/lib/billingCycle";
 import { classesLeftInPaidMonth, topUpIfFifth } from "../../src/lib/paymentPlans";
+import { getBoolSetting } from "../../src/lib/siteSettings";
+import { overdueGraceEligible } from "../../src/lib/overdueCreditGrace";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -34,8 +36,10 @@ export const runPaymentPlanReservations = () =>
   });
 
   let booked = 0;
+  let graceBooked = 0;
   let skippedInsufficientCredits = 0;
   let notifiedInactive = 0;
+  const overdueGraceOn = await getBoolSetting("payments.overdueCreditGrace");
 
   // Sequential across plans and across each plan's own occurrences, not
   // parallel, a later credit-sufficiency check needs to see bookings this
@@ -106,15 +110,59 @@ export const runPaymentPlanReservations = () =>
       data: { creditsSpent: creditsPerClass },
     });
 
+    let pastPaidUntilHandled = false;
     for (const occurrenceDate of nextOccurrenceDates(reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const scheduledAt = computeScheduledAt(reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now()) continue; // already started/passed
+
       // Only classes inside the period already paid for (the same "paid until"
       // rule entitlement.ts uses: a COMPLETED plan's last installment does not
       // advance nextDueDate, so its paid period runs one month past it).
       // Without this, credits a student bought for extra sessions could be used
       // up by this job to book their weekly slot for weeks not yet paid for.
-      if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
+      if (scheduledAt.getTime() >= paidUntil.getTime()) {
+        // An established payer (paid at least once before) whose bill is now
+        // overdue still gets exactly ONE class past their paid period auto-booked,
+        // at most one credit into the negative (settings: payments.overdueCreditGrace).
+        // Only the very first such occurrence is ever considered here, and only
+        // once per overdue stretch: lapsePlanForNonPayment cancels the plan (and
+        // this skip-or-book decision) once "Cancel an unpaid plan after" is
+        // reached, so this never stacks beyond that window either.
+        if (pastPaidUntilHandled) continue;
+        pastPaidUntilHandled = true;
+        const alreadyGraced = Boolean(
+          await prisma.classBooking.findFirst({
+            where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gte: paidUntil } },
+            select: { id: true },
+          }),
+        );
+        const eligible = overdueGraceEligible({
+          graceEnabled: overdueGraceOn,
+          installmentsPaid: plan.installmentsPaid,
+          nextDueDate: plan.nextDueDate,
+          now: new Date(),
+          alreadyGraced,
+          availableCredits: await getEffectiveClassCredits(plan.userId),
+          creditsPerClass,
+        });
+        if (!eligible) continue;
+        try {
+          const result = await createReservedBookingIfAbsent({
+            studentId: plan.userId,
+            scheduleId: reservedSchedule.id,
+            occurrenceDate,
+            scheduledAt,
+            creditsSpent: creditsPerClass,
+            planId: plan.id,
+          });
+          if (result) graceBooked++;
+        } catch (err) {
+          if ((err as Prisma.PrismaClientKnownRequestError)?.code !== "P2002") {
+            console.error(`Grace reserved booking failed for plan ${plan.id}, occurrence ${occurrenceDate.toISOString()} (non-blocking):`, err);
+          }
+        }
+        continue;
+      }
 
       // A paid month is every one of this weekday inside the cycle: four, or five when the cycle holds five.
       // One plan that throws here must not stop every plan after it: log it and move on to the next plan.
@@ -157,7 +205,7 @@ export const runPaymentPlanReservations = () =>
   }
 
   console.log(
-    `Payment plan reservations: processed ${plans.length} plan(s), booked ${booked} occurrence(s), skipped ${skippedInsufficientCredits} for insufficient credits, notified ${notifiedInactive} inactive-schedule plan(s).`,
+    `Payment plan reservations: processed ${plans.length} plan(s), booked ${booked} occurrence(s) (${graceBooked} on overdue credit grace), skipped ${skippedInsufficientCredits} for insufficient credits, notified ${notifiedInactive} inactive-schedule plan(s).`,
   );
   return { statusCode: 200 };
 });
