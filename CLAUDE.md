@@ -538,6 +538,15 @@ its buttons and fields get the source's glass from the `[data-auth-card]` block 
 The app-wide liquid glass and the studio photo backgrounds were tried on 2026-11-14 and reverted by the owner on 2026-11-15 (including
 Home's dark studio photo): the rest of the app keeps the look it had before. Other auth pages keep the plain background.
 
+## UI and UX audits use every design skill (rule, added 2026-11-28, `docs/UI-AUDIT-RULE.md`)
+
+The owner's standing rule: any UI or UX audit, revamp, polish or "make it premium" job runs EVERY installed design skill
+(ui-design-review, ui-ux-behaves, dashboard-design, intuitive-software-design, design-skills, design, vectorlab-ux-skills, ux-ui-audit,
+uxkin, website-design, copywriting-kit) over the WHOLE app, rendered in a browser at 390px and 1280px (admin also 768px), both themes.
+Follow the order and coverage list in `docs/UI-AUDIT-RULE.md` and record every skill and screen in `docs/UI-AUDIT-LEDGER.md`: a skill is
+either run or marked N/A with a reason, never skipped quietly. Owner decisions in this file and `DESIGN.md` win over any skill's advice:
+log the conflict, do not undo the decision.
+
 ## Design system (added 2026-10-29, `DESIGN.md`)
 
 **Hierarchy (2026-11-10, the owner: "everything looks similar and I can't focus on anything")**: `DESIGN.md` "Hierarchy" has the ten rules
